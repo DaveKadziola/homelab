@@ -22,7 +22,7 @@ jobs:
         with:
           access_token: ${{ secrets.BW_ACCESS_TOKEN }}
           secrets: |
-            <SECRET_ID_DEVELOPMENT> > BW_TEST
+            5b619885-8a4f-4f96-a1e6-b2bb0122e782 > BW_TEST
 
       - name: Use Retrieved Secret
         run: |
@@ -42,7 +42,7 @@ jobs:
         with:
           access_token: ${{ secrets.BW_ACCESS_TOKEN }}
           secrets: |
-            <SECRET_ID_PRODUCTION> > BW_TEST
+            3d2d1a01-c1fe-46dc-a015-b2bb012303c0 > BW_TEST
 
       - name: Use Retrieved Secret
         run: |
