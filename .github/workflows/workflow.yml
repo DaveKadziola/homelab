@@ -26,7 +26,9 @@ jobs:
 
       - name: Use Retrieved Secret
         run: |
-          echo "Development Secret Value: $BW_TEST"
+          if [ "$BW_TEST" = "ok" ]; then
+            echo "true"
+          fi
 
   production:
     if: github.ref == 'refs/heads/main'
