@@ -42,4 +42,3 @@ jobs:
           terraform workspace select -or-create ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
           terraform init
           terraform plan
-          terraform apply -auto-approve
