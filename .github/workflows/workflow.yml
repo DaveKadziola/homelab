@@ -39,6 +39,7 @@ jobs:
           echo "Content:"
           ls -la
           cd terraform
-          terraform workspace select ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }} || terraform workspace new ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
+          terraform workspace select -or-create ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
           terraform init
+          terraform plan
           terraform apply -auto-approve
