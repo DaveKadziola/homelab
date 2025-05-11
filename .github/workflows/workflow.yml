@@ -22,6 +22,7 @@ jobs:
           access_token: ${{ secrets.BW_ACCESS_TOKEN }}
           secrets: |
             ${{ github.ref == 'refs/heads/main' && 'PROD_PROXMOX_API_TOKEN_SECRET' || '3d2f4daa-2567-4496-8b56-b2da00e9c9a7' }} > PROXMOX_API_TOKEN_SECRET
+            ${{ github.ref == 'refs/heads/main' && 'PROD_PROXMOX_SSH_PASSWORD' || 'e4bd0a67-e734-46e7-8a62-b2da0136c36f' }} > PROXMOX_SSH_PASSWORD
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -33,6 +34,8 @@ jobs:
           TF_VAR_proxmox_api_url: ${{ vars.PROXMOX_API_URL }}
           TF_VAR_proxmox_api_token_id: ${{ vars.PROXMOX_API_TOKEN_ID }}
           TF_VAR_proxmox_api_token_secret: ${{ env.PROXMOX_API_TOKEN_SECRET }}
+          TF_VAR_proxmox_ssh_username: ${{ vars.PROXMOX_SSH_USERNAME }}
+          TF_VAR_proxmox_ssh_password: ${{ env.PROXMOX_SSH_PASSWORD }}
           TF_VAR_environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
         run: |
           echo "Current catalog: $(pwd)"
