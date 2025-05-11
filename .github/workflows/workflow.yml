@@ -21,7 +21,7 @@ jobs:
         with:
           access_token: ${{ secrets.BW_ACCESS_TOKEN }}
           secrets: |
-            ${{ github.ref == 'refs/heads/main' && 'PROD_PROXMOX_API_TOKEN_SECRET' || 'DEV_PROXMOX_API_TOKEN_SECRET' }} > PROXMOX_API_TOKEN_SECRET
+            ${{ github.ref == 'refs/heads/main' && 'PROD_PROXMOX_API_TOKEN_SECRET' || '3d2f4daa-2567-4496-8b56-b2da00e9c9a7' }} > PROXMOX_API_TOKEN_SECRET
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
