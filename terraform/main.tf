@@ -1,4 +1,4 @@
-resource "null_resource" "download_and_extract" {
+/*resource "null_resource" "download_and_extract" {
   provisioner "local-exec" {
     command = <<-EOT
       if [ ! -f "${var.haos_base_filename}.qcow2.img" ]; then
@@ -11,6 +11,8 @@ resource "null_resource" "download_and_extract" {
     EOT
   }
 }
+
+
 resource "proxmox_virtual_environment_file" "vm_image" {
   for_each     = { for k, v in var.vm_config : k => v if contains(["homeassistant"], k) }
   content_type = "iso"
@@ -22,6 +24,7 @@ resource "proxmox_virtual_environment_file" "vm_image" {
   }
   overwrite    = true
 }
+*/
 
 resource "proxmox_virtual_environment_file" "ubuntu_cloud_image" {
   content_type = "iso"
@@ -52,6 +55,7 @@ resource "proxmox_virtual_environment_vm" "vm" {
     bridge = "vmbr0"
   }
 
+/*
   dynamic "disk" {
     for_each = contains(["homeassistant"], each.key) ? [1] : []
     content {
@@ -62,6 +66,7 @@ resource "proxmox_virtual_environment_vm" "vm" {
       file_format  = "qcow2"
     }
   }
+*/
 
   dynamic "disk" {
     for_each = contains(["docker"], each.key) ? [1] : []
