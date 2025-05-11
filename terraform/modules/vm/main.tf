@@ -2,7 +2,7 @@ resource "proxmox_virtual_environment_download_file" "vm_image" {
   for_each     = { for k, v in var.vm_config : k => v if contains(["homeassistant"], k) }
   content_type = "iso"
   datastore_id = "local"
-  node_name    = "pve"
+  node_name    = var.environment
   url          = each.value.image_url
   overwrite    = true
 }
@@ -11,7 +11,7 @@ resource "proxmox_virtual_environment_vm" "vm" {
   for_each    = var.vm_config
   name        = "${each.key}-${var.environment}"
   description = "Managed by Terraform"
-  node_name   = "pve"
+  node_name   = var.environment
   vm_id       = each.value.vm_id
 
   cpu {
