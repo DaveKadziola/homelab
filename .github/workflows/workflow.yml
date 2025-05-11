@@ -45,4 +45,4 @@ jobs:
           terraform workspace select -or-create ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
           terraform init
           terraform plan -var-file=environments/$TF_VAR_environment/terraform.tfvars
-          terraform apply -var-file=environments/$TF_VAR_environment/terraform.tfvars
+          terraform apply -auto-approve -var-file=environments/$TF_VAR_environment/terraform.tfvars
