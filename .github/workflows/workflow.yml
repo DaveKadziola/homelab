@@ -30,19 +30,19 @@ jobs:
 
       - name: Terraform Init & Apply
         env:
-          proxmox_api_url: ${{ vars.PROXMOX_API_URL }}
-          proxmox_api_token_id: ${{ vars.PROXMOX_API_TOKEN_ID }}
-          proxmox_api_token_secret: ${{ env.PROXMOX_API_TOKEN_SECRET }}
-          environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
+          TF_VAR_proxmox_api_url: ${{ vars.PROXMOX_API_URL }}
+          TF_VAR_proxmox_api_token_id: ${{ vars.PROXMOX_API_TOKEN_ID }}
+          TF_VAR_proxmox_api_token_secret: ${{ env.PROXMOX_API_TOKEN_SECRET }}
+          TF_VAR_environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
         run: |
           echo "Current catalog: $(pwd)"
           echo "Content:"
-          echo "Environment: $environment"
-          echo "Proxmox URL: $proxmox_api_url"
-          echo "Proxmox Token ID: $proxmox_api_token_id"
+          echo "Environment: $TF_VAR_environment"
+          echo "Proxmox URL: $TF_VAR_proxmox_api_url"
+          echo "Proxmox Token ID: $TF_VAR_proxmox_api_token_id"
           ls -la
           cd terraform
           terraform workspace select -or-create ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
           terraform init
-          terraform plan -var-file=environments/$environment/terraform.tfvars
-          terraform apply terraform plan -var-file=environments/$environment/terraform.tfvars
+          terraform plan -var-file=environments/$TF_VAR_environment/terraform.tfvars
+          terraform apply terraform plan -var-file=environments/$TF_VAR_environment/terraform.tfvars
