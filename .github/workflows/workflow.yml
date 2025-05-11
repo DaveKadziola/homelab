@@ -35,7 +35,10 @@ jobs:
           proxmox_api_token_secret: ${{ env.PROXMOX_API_TOKEN_SECRET }}
           environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
         run: |
-          cd ../terraform
+          echo "Current catalog: $(pwd)"
+          echo "Content:"
+          ls -la
+          cd terraform
           terraform workspace select ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }} || terraform workspace new ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
           terraform init
           terraform apply -auto-approve
