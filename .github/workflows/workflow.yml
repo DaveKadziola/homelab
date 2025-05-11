@@ -37,8 +37,12 @@ jobs:
         run: |
           echo "Current catalog: $(pwd)"
           echo "Content:"
+          echo "Environment: $environment"
+          echo "Proxmox URL: $proxmox_api_url"
+          echo "Proxmox Token ID: $proxmox_api_token_id"
           ls -la
           cd terraform
           terraform workspace select -or-create ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
           terraform init
-          terraform plan
+          terraform plan -var-file=environments/$environment/terraform.tfvars
+          terraform apply terraform plan -var-file=environments/$environment/terraform.tfvars
