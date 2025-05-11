@@ -1,4 +1,4 @@
-name: Setup Infrastructure
+name: Setup Homelab
 
 on:
   push:
@@ -8,48 +8,34 @@ on:
   workflow_dispatch:
 
 jobs:
-  development:
-    env:
-      ENV: dev
-    if: github.ref == 'refs/heads/dev'
-    name: Development Environment Setup
+  deploy:
     runs-on: self-hosted
+    environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Get Secrets from Bitwarden
+      - name: Get Secrets
         uses: bitwarden/sm-action@v2
         with:
           access_token: ${{ secrets.BW_ACCESS_TOKEN }}
           secrets: |
-            5b619885-8a4f-4f96-a1e6-b2bb0122e782 > BW_TEST
+            ${{ github.ref == 'refs/heads/main' && 'PROD_PROXMOX_API_TOKEN_SECRET' || 'DEV_PROXMOX_API_TOKEN_SECRET' }} > PROXMOX_API_TOKEN_SECRET
 
-      - name: Use Retrieved Secret
-        run: |
-          if [ "$BW_TEST" = "ok" ]; then
-            echo "true"
-          fi
-
-  production:
-    env:
-      ENV: prod
-    if: github.ref == 'refs/heads/main'
-    name: Production Environment Setup
-    runs-on: self-hosted
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Get Secrets from Bitwarden
-        uses: bitwarden/sm-action@v2
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
         with:
-          access_token: ${{ secrets.BW_ACCESS_TOKEN }}
-          secrets: |
-            3d2d1a01-c1fe-46dc-a015-b2bb012303c0 > BW_TEST
+          terraform_version: 1.8.0
 
-      - name: Use Retrieved Secret
+      - name: Terraform Init & Apply
+        env:
+          proxmox_api_url: ${{ vars.PROXMOX_API_URL }}
+          proxmox_api_token_id: ${{ vars.PROXMOX_API_TOKEN_ID }}
+          proxmox_api_token_secret: ${{ env.PROXMOX_API_TOKEN_SECRET }}
+          environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
         run: |
-          echo "Production Secret Value: $BW_TEST"
+          cd ../../terraform
+          terraform workspace select ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }} || terraform workspace new ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
+          terraform init
+          terraform apply -auto-approve
