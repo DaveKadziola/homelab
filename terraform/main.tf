@@ -6,13 +6,13 @@ resource "proxmox_virtual_environment_file" "cloud_config" {
   node_name    = var.environment
   source_raw{
     data = <<-EOF
-      users:
-    - name: ubuntu
-      lock_passwd: false
-      passwd: ubuntu
-      sudo: ALL=(ALL) NOPASSWD:ALL
-      groups: sudo
-      shell: /bin/bash
+    #password id an output from mkpasswd --method=SHA-512 --rounds=4096
+    users:
+      - name: brandon
+        groups: [ sudo ]
+        shell: /bin/bash
+        lock_passwd: false
+        hashed_passwd: "${ubuntu_password}"
     EOF
 
     file_name = "ubuntu-cloud-init-user-data.yaml"
