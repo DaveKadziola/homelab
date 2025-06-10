@@ -1,5 +1,5 @@
 terraform {
   backend "local" {
-    path = "$HOME/HomeLab/git/actions-runner/terraform/states/${var.environment}/terraform.tfstate"
+    path = "$HOME/HomeLab/git/actions-runner/terraform/states/dev/terraform.tfstate"
   }
 }

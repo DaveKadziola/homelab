@@ -53,10 +53,10 @@ jobs:
           ls -la
           cd terraform
           terraform workspace select -or-create $TF_VAR_environment
-          terraform init -backend-config="path=terraform.tfstate.d/$TF_VAR_environment/terraform.tfstate"
+          terraform init -backend-config="path=$HOME/HomeLab/git/actions-runner/terraform/states/$TF_VAR_environment/terraform.tfstate"
           terraform plan -var-file=environments/$TF_VAR_environment/terraform.tfvars
           terraform apply -auto-approve -var-file=environments/$TF_VAR_environment/terraform.tfvars
 
       - name: Copy Terraform tfstate
         run: |
-          cp terraform/terraform.tfstate.d/$TF_VAR_environment/terraform.tfstate $HOME/HomeLab/git/actions-runner/terraform/states/$ENV/terraform.tfstateeee
+          cp terraform/terraform.tfstate.d/$TF_VAR_environment/terraform.tfstate $HOME/HomeLab/git/actions-runner/terraform/states/$ENV/terraform.tfstate
