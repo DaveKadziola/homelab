@@ -43,7 +43,7 @@ resource "proxmox_virtual_environment_vm" "vm" {
   initialization {
     ip_config {
       ipv4 {
-        address = split("/", each.value.cidr)[0]
+        address = each.value.cidr
         gateway = each.value.gateway
       }
     }
