@@ -29,6 +29,12 @@ jobs:
         with:
           terraform_version: 1.8.0
 
+      - name: Prepare Environment Directory
+        run: |
+          ENV=${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
+          mkdir -p /var/lib/terraform/$ENV
+          chmod -R 700 /var/lib/terraform/$ENV
+
       - name: Terraform Init & Apply
         env:
           TF_VAR_proxmox_api_url: ${{ vars.PROXMOX_API_URL }}
@@ -46,7 +52,7 @@ jobs:
           echo "Proxmox Token ID: $TF_VAR_proxmox_api_token_id"
           ls -la
           cd terraform
-          terraform workspace select -or-create ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
-          terraform init
+          terraform workspace select -or-create $TF_VAR_environment
+          terraform init -backend-config="path=/var/lib/terraform/$TF_VAR_environment/terraform.tfstate"
           terraform plan -var-file=environments/$TF_VAR_environment/terraform.tfvars
           terraform apply -auto-approve -var-file=environments/$TF_VAR_environment/terraform.tfvars
