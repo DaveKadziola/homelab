@@ -1,4 +1,3 @@
-# Plik cloud-init dla maszyn z włączonym cloud-init
 resource "proxmox_virtual_environment_file" "cloud_config" {
   for_each = { for k, v in var.vm_config : k => v if try(v.enable_cloud_init, false) }
 
