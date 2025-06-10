@@ -49,7 +49,7 @@ resource "proxmox_virtual_environment_vm" "vm" {
 
 # cloud-init
   dynamic "initialization" {
-    for_each = try(each.value.enable_cloud_init, true) ? [1] : []
+    for_each = try(each.value.enable_cloud_init, true) ? [1] : [0]
     content {
       ip_config {
         ipv4 {

@@ -53,7 +53,7 @@ variable "vm_config" {
     storage_type        = string
     storage_interface   = string
     storage_size        = number
-    ssd_enabled         = number
+    ssd_enabled         = bool
     boot_order          = optional(set(string))
     image_url           = string
     img_storage_type    = string
