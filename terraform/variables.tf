@@ -43,27 +43,27 @@ variable "environment" {
 
 variable "vm_config" {
   type = map(object({
-    vm_id               = number
-    vm_name             = string
-    vm_description      = string
-    vm_tags             = set(string)
-    bios                = string
-    ram                 = number
-    cpu_cores           = number
-    net_dev_type        = string
-    enable_cloud_init   = optional(bool)
-    cloud_init_cidr     = optional(string)
-    cloud_init_gateway  = optional(string)
-    cloud_init_dns      = optional(string)
-    efi_disk_size       = optional(string)
-    storage_type        = string
-    storage_interface   = string
-    storage_size        = number
-    ssd_enabled         = bool
-    boot_order          = optional(set(string))
-    image_url           = string
-    img_storage_type    = string
-    img_file_format     = string
+    vm_id              = number
+    vm_name            = string
+    vm_description     = string
+    vm_tags            = set(string)
+    bios               = string
+    ram                = number
+    cpu_cores          = number
+    net_dev_type       = string
+    enable_cloud_init  = optional(bool)
+    cloud_init_cidr    = optional(string)
+    cloud_init_gateway = optional(string)
+    cloud_init_dns     = optional(string)
+    efi_disk_size      = optional(string)
+    storage_type       = string
+    storage_interface  = string
+    storage_size       = number
+    ssd_enabled        = bool
+    boot_order         = optional(set(string))
+    image_url          = string
+    img_storage_type   = string
+    img_file_format    = string
   }))
   description = "Config VMs for specific environment"
 }

@@ -4,17 +4,10 @@ resource "proxmox_virtual_environment_file" "cloud_config" {
   content_type = "snippets"
   datastore_id = "local"
   node_name    = var.environment
-  source_raw{
-    data = <<-EOF
-    #password id an output from mkpasswd --method=SHA-512 --rounds=4096
-    users:
-      - name: brandon
-        groups: [ sudo ]
-        shell: /bin/bash
-        lock_passwd: false
-        hashed_passwd: "${ubuntu_password}"
-    EOF
-
+  source_raw {
+    data = templatefile("${path.module}/cloud-init-user-data.yaml.tpl", {
+      ubuntu_password = var.ubuntu_password
+    })
     file_name = "ubuntu-cloud-init-user-data.yaml"
   }
 }
@@ -33,7 +26,7 @@ resource "proxmox_virtual_environment_file" "vm_image" {
 }
 
 resource "proxmox_virtual_environment_vm" "vm" {
-  for_each    = var.vm_config
+  for_each = var.vm_config
 
   name        = "${each.value.vm_name}-${var.environment}"
   description = each.value.vm_description
@@ -41,9 +34,9 @@ resource "proxmox_virtual_environment_vm" "vm" {
   vm_id       = each.value.vm_id
   tags        = each.value.vm_tags
 
-  bios        = each.value.bios
+  bios = each.value.bios
 
-  boot_order  = each.value.boot_order
+  boot_order = each.value.boot_order
   cpu {
     cores = each.value.cpu_cores
   }
@@ -68,7 +61,7 @@ resource "proxmox_virtual_environment_vm" "vm" {
     ssd          = each.value.ssd_enabled
   }
 
-# cloud-init
+  # cloud-init
   dynamic "initialization" {
     for_each = each.value.enable_cloud_init == true ? [1] : []
     content {
@@ -81,7 +74,7 @@ resource "proxmox_virtual_environment_vm" "vm" {
       dns {
         servers = [each.value.cloud_init_dns]
       }
-      user_data_file_id = proxmox_virtual_environment_file.cloud_config[each.key].id   
+      user_data_file_id = proxmox_virtual_environment_file.cloud_config[each.key].id
     }
   }
 }
