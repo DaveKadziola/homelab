@@ -16,7 +16,7 @@ resource "proxmox_virtual_environment_file" "cloud_config" {
       shell: /bin/bash
     EOF
 
-    file_name = ubuntu-cloud-init-user-data.yaml
+    file_name = "ubuntu-cloud-init-user-data.yaml"
   }
 }
 
