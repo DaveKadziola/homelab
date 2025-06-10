@@ -20,11 +20,6 @@ variable "proxmox_api_token_secret" {
   description = "Proxmox API token secret"
 }
 
-variable "environment" {
-  type        = string
-  description = "Deployment environment (dev/prod)"
-}
-
 variable "proxmox_ssh_username" {
   type        = string
   description = "Proxmox SSH username"
@@ -35,29 +30,28 @@ variable "proxmox_ssh_password" {
   description = "Proxmox SSH password"
 }
 
+variable "environment" {
+  type        = string
+  description = "Deployment environment"
+}
+
 variable "vm_config" {
   type = map(object({
-    cores     = number
-    memory    = number
-    ip        = string
-    storage   = string
-    vm_id     = number
-    image_url = optional(string)
+    vm_id             = number
+    vm_name           = string
+    vm_description    = string
+    vm_tags           = set(string)
+    ram               = number
+    cpu_cores         = number
+    net_dev_type      = string
+    cidr              = string
+    gateway           = string
+    dns               = string
+    storage_type      = string
+    storage_interface = string
+    storage_size      = number
+    file_format       = string
+    image_url         = string
   }))
   description = "Config VMs for specific environment"
-}
-
-variable "haos_download_url" {
-  description = "Home Assistant source URL"
-  default     = "https://github.com/home-assistant/operating-system/releases/download/15.2/haos_ova-15.2.qcow2.xz"
-}
-
-variable "haos_base_filename" {
-  description = "Home Assistant base file name"
-  default     = "homeassistant"
-}
-
-variable "haos_download_directory" {
-  description = "Target directory for Home Assistant download"
-  default     = "/var/local"
 }
