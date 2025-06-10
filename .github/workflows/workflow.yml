@@ -51,9 +51,10 @@ jobs:
           echo "Proxmox URL: $TF_VAR_proxmox_api_url"
           echo "Proxmox Token ID: $TF_VAR_proxmox_api_token_id"
           ls -la
+          cp $HOME/HomeLab/git/actions-runner/terraform/states/$TF_VAR_environment/terraform.tfstate terraform/terraform.tfstate.d/$TF_VAR_environment/terraform.tfstate
           cd terraform
           terraform workspace select -or-create $TF_VAR_environment
-          terraform init -backend-config="path=$HOME/HomeLab/git/actions-runner/terraform/states/$TF_VAR_environment/terraform.tfstate"
+          terraform init 
           terraform plan -var-file=environments/$TF_VAR_environment/terraform.tfvars
           terraform apply -auto-approve -var-file=environments/$TF_VAR_environment/terraform.tfvars
 
