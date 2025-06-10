@@ -51,6 +51,7 @@ variable "vm_config" {
     storage_interface = string
     storage_size      = number
     file_format       = string
+    img_storage_type  = string
     image_url         = string
   }))
   description = "Config VMs for specific environment"
