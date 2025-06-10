@@ -49,16 +49,16 @@ resource "proxmox_virtual_environment_vm" "vm" {
 
 # cloud-init
   dynamic "initialization" {
-    for_each = try(each.value.enable_cloud_init, true) ? [1] : [0]
+    for_each = each.value.enable_cloud_init == true ? [1] : []
     content {
       ip_config {
         ipv4 {
-          address = each.value.cidr
-          gateway = each.value.gateway
+          address = each.value.cloud_init_cidr
+          gateway = each.value.cloud_init_gateway
         }
       }
       dns {
-        servers = [each.value.dns]
+        servers = [each.value.cloud_init_dns]
       }
     }
   }

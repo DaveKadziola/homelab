@@ -29,6 +29,7 @@ docker = {
     ram                 = 4096
     cpu_cores           = 1
     net_dev_type        = "vmbr0"
+    enable_cloud_init   = false
     cloud_init_cidr     = "192.168.20.12/24"
     cloud_init_gateway  = "192.168.20.1"
     cloud_init_dns      = "192.168.1.1"
