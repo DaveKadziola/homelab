@@ -36,6 +36,7 @@ jobs:
           TF_VAR_proxmox_api_token_secret: ${{ env.PROXMOX_API_TOKEN_SECRET }}
           TF_VAR_proxmox_ssh_username: ${{ vars.PROXMOX_SSH_USERNAME }}
           TF_VAR_proxmox_ssh_password: ${{ env.PROXMOX_SSH_PASSWORD }}
+          TF_VAR_ubuntu_password_hash: ${{ secrets.UBUNTU_PASSWORD_HASH }}
           TF_VAR_environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
         run: |
           echo "Current catalog: $(pwd)"

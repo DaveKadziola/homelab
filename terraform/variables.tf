@@ -30,6 +30,12 @@ variable "proxmox_ssh_password" {
   description = "Proxmox SSH password"
 }
 
+variable "ubuntu_password_hash" {
+  type        = string
+  description = "SHA-512 hash of the ubuntu vm cuser password"
+  sensitive   = true
+}
+
 variable "environment" {
   type        = string
   description = "Deployment environment"
