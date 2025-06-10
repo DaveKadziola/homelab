@@ -8,7 +8,7 @@ resource "proxmox_virtual_environment_file" "vm_image" {
     path = each.value.image_url
   }
 
-  overwrite = true
+  overwrite = false
 }
 
 resource "proxmox_virtual_environment_vm" "vm" {
@@ -20,6 +20,9 @@ resource "proxmox_virtual_environment_vm" "vm" {
   vm_id       = each.value.vm_id
   tags        = each.value.vm_tags
 
+  bios        = each.value.bios
+
+  boot_order  = each.value.boot_order
   cpu {
     cores = each.value.cpu_cores
   }
@@ -32,24 +35,31 @@ resource "proxmox_virtual_environment_vm" "vm" {
     bridge = each.value.net_dev_type
   }
 
+  efi_disk {
+    type = each.value.efi_disk_size
+  }
   disk {
     datastore_id = each.value.storage_type
     file_id      = proxmox_virtual_environment_file.vm_image[each.key].id
     interface    = each.value.storage_interface
     size         = each.value.storage_size
-    file_format  = each.value.file_format
+    file_format  = each.value.img_file_format
+    ssd          = each.value.ssd_enabled
   }
 
-  initialization {
-    ip_config {
-      ipv4 {
-        address = each.value.cidr
-        gateway = each.value.gateway
+# cloud-init
+  dynamic "initialization" {
+    for_each = try(each.value.enable_cloud_init, true) ? [1] : []
+    content {
+      ip_config {
+        ipv4 {
+          address = each.value.cidr
+          gateway = each.value.gateway
+        }
       }
-    }
-
-    dns {
-      servers = [each.value.dns]
+      dns {
+        servers = [each.value.dns]
+      }
     }
   }
 }
