@@ -9,7 +9,7 @@ resource "proxmox_virtual_environment_file" "cloud_config" {
       users:
     - name: ubuntu
       lock_passwd: false
-      passwd: ${var.ubuntu_password}
+      passwd: ubuntu
       sudo: ALL=(ALL) NOPASSWD:ALL
       groups: sudo
       shell: /bin/bash
