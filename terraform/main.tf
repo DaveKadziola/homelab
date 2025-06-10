@@ -8,7 +8,7 @@ resource "proxmox_virtual_environment_file" "vm_image" {
     path = each.value.image_url
   }
 
-  overwrite = false
+  overwrite = true
 }
 
 resource "proxmox_virtual_environment_vm" "vm" {
