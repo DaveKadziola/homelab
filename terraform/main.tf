@@ -1,7 +1,7 @@
 resource "proxmox_virtual_environment_file" "vm_image" {
   for_each     = var.vm_config
   content_type = "iso"
-  datastore_id = each.value.storage_type
+  datastore_id = each.value.img_storage_type
   node_name    = var.environment
 
   source_file {

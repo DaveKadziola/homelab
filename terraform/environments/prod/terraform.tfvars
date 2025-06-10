@@ -10,11 +10,12 @@ vm_config = {
     cidr              = "192.168.20.11/24"
     gateway           = "192.168.20.1"
     dns               = "192.168.1.1"
-    storage_type      = "local"
+    storage_type      = "local-lvm"
     storage_interface = "virtio0"
     storage_size      = 45
     file_format       = "qcow2"
     image_url         = "https://github.com/DaveKadziola/homelab/releases/download/HomeAssistantImages/haos_ova-15.2.qcow2.img"
+    img_storage_type  = "local"
   }
 
 docker = {
@@ -28,10 +29,11 @@ docker = {
     cidr              = "192.168.20.12/24"
     gateway           = "192.168.20.1"
     dns               = "192.168.1.1"
-    storage_type      = "local"
+    storage_type      = "local-lvm"
     storage_interface = "virtio0"
     storage_size      = 25
     file_format       = "qcow2"
     image_url         = "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
+    img_storage_type  = "local"
   }
 }
