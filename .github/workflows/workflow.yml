@@ -1,36 +1,58 @@
-# This is a basic workflow to help you get started with Actions
+name: Setup Homelab
 
-name: Setup infrastructure
-
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
     branches: ["dev", "main"]
   pull_request:
     branches: ["main"]
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
-    runs-on: ubuntu-latest
+  deploy:
+    runs-on: self-hosted
+    environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
+    env:
+      TF_VAR_environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.0
 
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
+      - name: Prepare Terraform environment directory
         run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+          mkdir -p $HOME/HomeLab/git/actions-runner/terraform/states/$TF_VAR_environment
+          chmod -R 700 $HOME/HomeLab/git/actions-runner/terraform/states/$TF_VAR_environment
+
+      - name: Terraform Init & Apply
+        env:
+          TF_VAR_proxmox_api_url: ${{ vars.PROXMOX_API_URL }}
+          TF_VAR_proxmox_api_token_id: ${{ vars.PROXMOX_API_TOKEN_ID }}
+          TF_VAR_proxmox_api_token_secret: ${{ secrets.PROXMOX_API_TOKEN_SECRET }}
+          TF_VAR_proxmox_ssh_username: ${{ vars.PROXMOX_SSH_USERNAME }}
+          TF_VAR_proxmox_ssh_password: ${{ secrets.PROXMOX_SSH_PASSWORD }}
+          TF_VAR_ubuntu_password: ${{ secrets.UBUNTU_PASSWORD }}
+        run: |
+          mkdir -p $(pwd)/terraform/terraform.tfstate.d/$TF_VAR_environment
+
+          if [ -f "$HOME/HomeLab/git/actions-runner/terraform/states/$TF_VAR_environment/terraform.tfstate" ]; then
+            echo "terraform.tfstate exists. Last state will be used for provisioning."
+            cp $HOME/HomeLab/git/actions-runner/terraform/states/$TF_VAR_environment/terraform.tfstate $(pwd)/terraform/terraform.tfstate.d/$TF_VAR_environment/terraform.tfstate
+          else
+            echo "terraform.tfstate doesn't exist. Initial provisioning will be performed."
+          fi
+
+          cp $HOME/HomeLab/git/actions-runner/terraform/states/$TF_VAR_environment/terraform.tfstate $(pwd)/terraform/terraform.tfstate.d/$TF_VAR_environment/terraform.tfstate
+          cd terraform
+          terraform workspace select -or-create $TF_VAR_environment
+          terraform init 
+          terraform plan -var-file=environments/$TF_VAR_environment/terraform.tfvars
+          terraform apply -auto-approve -var-file=environments/$TF_VAR_environment/terraform.tfvars
+
+      - name: Copy Terraform tfstate
+        run: |
+          cp terraform/terraform.tfstate.d/$TF_VAR_environment/terraform.tfstate $HOME/HomeLab/git/actions-runner/terraform/states/$TF_VAR_environment/terraform.tfstate
