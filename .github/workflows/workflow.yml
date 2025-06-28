@@ -45,13 +45,15 @@ jobs:
           TF_VAR_proxmox_ssh_password: ${{ env.PROXMOX_SSH_PASSWORD }}
           TF_VAR_ubuntu_password: ${{ secrets.UBUNTU_PASSWORD }}
         run: |
-          echo "Current catalog: $(pwd)"
-          echo "Content:"
-          echo "Environment: $TF_VAR_environment"
-          echo "Proxmox URL: $TF_VAR_proxmox_api_url"
-          echo "Proxmox Token ID: $TF_VAR_proxmox_api_token_id"
-          ls -la
           mkdir -p $(pwd)/terraform/terraform.tfstate.d/$TF_VAR_environment
+
+          if [ -f "$HOME/HomeLab/git/actions-runner/terraform/states/$TF_VAR_environment/terraform.tfstate" ]; then
+            echo "terraform.tfstate exists. Last state will be used for provisioning."
+            cp $HOME/HomeLab/git/actions-runner/terraform/states/$TF_VAR_environment/terraform.tfstate $(pwd)/terraform/terraform.tfstate.d/$TF_VAR_environment/terraform.tfstate
+          else
+            echo "terraform.tfstate doesn't exist. Initial provisioning will be performed."
+          fi
+
           cp $HOME/HomeLab/git/actions-runner/terraform/states/$TF_VAR_environment/terraform.tfstate $(pwd)/terraform/terraform.tfstate.d/$TF_VAR_environment/terraform.tfstate
           cd terraform
           terraform workspace select -or-create $TF_VAR_environment

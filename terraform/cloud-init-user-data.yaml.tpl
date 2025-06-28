@@ -1,6 +1,6 @@
 #password id an output from mkpasswd --method=SHA-512 --rounds=4096
 users:
-  - name: brandon
+  - name: homelab
     groups: [sudo]
     shell: /bin/bash
     lock_passwd: false
