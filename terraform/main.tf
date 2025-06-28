@@ -1,17 +1,3 @@
-resource "proxmox_virtual_environment_file" "cloud_config" {
-  for_each = { for k, v in var.vm_config : k => v if try(v.enable_cloud_init, false) }
-
-  content_type = "snippets"
-  datastore_id = "local"
-  node_name    = var.environment
-  source_raw {
-    data = templatefile("${path.module}/cloud-init-user-data.yaml.tpl", {
-      ubuntu_password = var.ubuntu_password
-    })
-    file_name = "ubuntu-cloud-init-user-data.yaml"
-  }
-}
-
 resource "proxmox_virtual_environment_file" "vm_image" {
   for_each     = var.vm_config
   content_type = "iso"
@@ -74,7 +60,6 @@ resource "proxmox_virtual_environment_vm" "vm" {
       dns {
         servers = [each.value.cloud_init_dns]
       }
-      user_data_file_id = proxmox_virtual_environment_file.cloud_config[each.key].id
     }
   }
 }
