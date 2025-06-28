@@ -46,7 +46,6 @@ jobs:
             echo "terraform.tfstate doesn't exist. Initial provisioning will be performed."
           fi
 
-          cp $HOME/HomeLab/git/actions-runner/terraform/states/$TF_VAR_environment/terraform.tfstate $(pwd)/terraform/terraform.tfstate.d/$TF_VAR_environment/terraform.tfstate
           cd terraform
           terraform workspace select -or-create $TF_VAR_environment
           terraform init 
