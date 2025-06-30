@@ -4,13 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       value1:
-        description: "Log level"
+        description: "Value 1"
         required: true
-        default: "warning"
+        default: "Value 1"
       value2:
-        description: "Environment to deploy"
+        description: "Value 2"
         required: false
-        default: "staging"
+        default: "Value 2"
 
 jobs:
   build:
@@ -20,5 +20,5 @@ jobs:
         uses: actions/checkout@v2
       - name: Echo parameters
         run: |
-          echo "Log level: ${{ github.event.inputs.logLevel }}"
-          echo "Environment: ${{ github.event.inputs.environment }}"
+          echo "Value 1: ${{ github.event.inputs.value1 }}"
+          echo "Value 2: ${{ github.event.inputs.value2 }}"
