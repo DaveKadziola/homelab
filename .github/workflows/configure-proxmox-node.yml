@@ -6,6 +6,7 @@ name: Configure Proxmox Node
 # For initial node setup user, roles, API token must be set inside Proxmox
 # The API token for node must be also set in github actions env variables
 # Some values better to take from env variables instead from input fields
+# (add setting up ssl using secret - only prod)
 
 on:
   workflow_dispatch:
@@ -44,7 +45,7 @@ on:
         default: "192.168.1.1"
 
 jobs:
-  build:
+  Configure_Proxmox_Node:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
