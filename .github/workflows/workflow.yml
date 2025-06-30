@@ -1,4 +1,4 @@
-name: Setup Homelab
+name: Setup Proxmox VVs
 
 on:
   push:
