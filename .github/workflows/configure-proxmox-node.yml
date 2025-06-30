@@ -1,0 +1,61 @@
+name: Configure Proxmox Node
+
+# Template to configure the Proxmox node as a manual job, as it is a one-time process
+# during machine setup and occasionally ad hoc changes.
+#
+# For initial node setup user, roles, API token must be set inside Proxmox
+# The API token for node must be also set in github actions env variables
+# Some values better to take from env variables instead from input fields
+
+on:
+  workflow_dispatch:
+    inputs:
+      node_name:
+        description: "Node Name:"
+        required: true
+        default: "dev"
+      storage_id:
+        description: "Storage ID to set its content:"
+        required: false
+        default: "local"
+      storage_content:
+        description: "Set datacenter storage content if storage ID specified:"
+        required: false
+        default: "ISO image, Container template, Snippets, Backup"
+      if_node_vlan:
+        description: "Setup VLAN? (y/n):"
+        required: false
+        default: "n"
+      node_cidr:
+        description: "Node CIDR (exctract from vars.PROXMOX_API_URL instead of input value in the final version):"
+        required: false
+        default: "192.168.1.10/24"
+      node_gateway:
+        description: "Node gateway (take from env var instead of input value in the final version):"
+        required: false
+        default: "192.168.1.1/24"
+      node_sdomain:
+        description: "Node search domain:"
+        required: false
+        default: "example.com"
+      node_dns:
+        description: "Node DNS (take from env var in the final version):"
+        required: false
+        default: "192.168.1.1"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Echo parameters
+        run: |
+          echo "Node name: ${{ github.event.inputs.node_name }}"
+          echo "Storage ID: ${{ github.event.inputs.storage_id }}"
+          echo "Storage content: ${{ github.event.inputs.storage_content }}"
+          echo "Setup node VLAN?: ${{ github.event.inputs.if_node_vlan }}"
+          echo "Node CIDR: ${{ github.event.inputs.node_cidr }}"
+          echo "Node gateway: ${{ github.event.inputs.node_gateway }}"
+          echo "Node search domain: ${{ github.event.inputs.node_sdomain }}"
+          echo "Node DNS: ${{ github.event.inputs.node_dns }}"

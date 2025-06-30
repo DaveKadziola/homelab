@@ -1,4 +1,4 @@
-name: Setup Proxmox VVs
+name: Setup Proxmox VMs
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  Deploy_Proxmox_VMs:
+  Setup_Proxmox_VMs:
     runs-on: self-hosted
     environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
     env:
