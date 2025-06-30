@@ -1,6 +1,8 @@
 name: Manuallly Triggered Workflow
 
 on:
+  push:
+    branches: ["dev", "main"]
   workflow_dispatch:
     inputs:
       value1:
