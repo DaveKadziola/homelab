@@ -1,0 +1,31 @@
+name: Force Proxmox resource backup
+
+# Template to force backup of Proxmox resources
+
+on:
+  workflow_dispatch:
+    inputs:
+      if_bckp_proxmox_cfg:
+        description: "Backup Proxmox config? (y/n):"
+        required: false
+        default: "n"
+      if_bckp_proxmox_vms:
+        description: "Backup Proxmox VMs? (y/n):"
+        required: false
+        default: "n"
+      if_bckp_hass_config:
+        description: "Backup Home Assistant config? (y/n):"
+        required: false
+        default: "n"
+
+jobs:
+  Force_Proxmox_resource_backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Echo parameters
+        run: |
+          echo "Backup Proxmox config?: ${{ github.event.inputs.if_bckp_proxmox_cfg }}"
+          echo "Backup Proxmox VMs?: ${{ github.event.inputs.if_bckp_proxmox_cfg }}"
+          echo "Backup Home Assistant config?: ${{ github.event.inputs.if_bckp_proxmox_cfg }}"
