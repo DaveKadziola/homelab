@@ -46,7 +46,8 @@ resource "proxmox_virtual_environment_vm" "vm" {
   }
 
   network_device {
-    bridge = each.value.net_dev_type
+    bridge  = each.value.net_dev_type
+    vlan_id = each.value.vlan_tag
   }
 
   efi_disk {

@@ -1,0 +1,24 @@
+name: Manuallly Triggered Workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      value1:
+        description: "Log level"
+        required: true
+        default: "warning"
+      value2:
+        description: "Environment to deploy"
+        required: false
+        default: "staging"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Echo parameters
+        run: |
+          echo "Log level: ${{ github.event.inputs.logLevel }}"
+          echo "Environment: ${{ github.event.inputs.environment }}"

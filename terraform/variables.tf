@@ -51,6 +51,7 @@ variable "vm_config" {
     ram                = number
     cpu_cores          = number
     net_dev_type       = string
+    vlan_tag           = optional(number)
     enable_cloud_init  = optional(bool)
     cloud_init_cidr    = optional(string)
     cloud_init_gateway = optional(string)
