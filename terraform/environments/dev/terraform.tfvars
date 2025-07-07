@@ -1,5 +1,6 @@
 node_config = {
   cert_setup_enabled = false
+  vlan_name          = "vmbr0.20"
   bridge_name        = "vmbr0"
   bridge_address     = "192.168.122.219/24"
   bridge_gateway     = "192.168.122.1"

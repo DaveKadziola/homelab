@@ -62,7 +62,7 @@ variable "ssl_cert_pkey" {
 variable "node_config" {
   type = object({
     cert_setup_enabled = bool
-    vlan_name          = optional(string)
+    vlan_name          = string
     vlan_address       = optional(string)
     vlan_gateway       = optional(string)
     bridge_name        = string
