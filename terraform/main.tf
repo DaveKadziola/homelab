@@ -23,7 +23,7 @@ resource "proxmox_virtual_environment_network_linux_bridge" "vmbr0" {
   name       = var.node_config.bridge_name
   address    = var.node_config.bridge_address
   gateway    = var.node_config.bridge_gateway
-  vlan_aware = var.node_config.vlan_aware
+  vlan_aware = var.node_config.bridge_vlan_aware
 }
 
 resource "proxmox_virtual_environment_network_linux_vlan" "vlan20" {
