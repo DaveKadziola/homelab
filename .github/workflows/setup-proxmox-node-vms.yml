@@ -1,4 +1,4 @@
-name: Setup Proxmox VMs
+name: Setup Proxmox node & VMs
 
 on:
   push:
@@ -35,6 +35,9 @@ jobs:
           TF_VAR_proxmox_api_token_secret: ${{ secrets.PROXMOX_API_TOKEN_SECRET }}
           TF_VAR_proxmox_ssh_username: ${{ vars.PROXMOX_SSH_USERNAME }}
           TF_VAR_proxmox_ssh_password: ${{ secrets.PROXMOX_SSH_PASSWORD }}
+          TF_VAR_ssl_cert: ${{ secrets.SSL_CERT }}
+          TF_VAT_ssl_cert_chain: ${{ secrets.SSL_CHAIN }}
+          TF_VAR_ssl_cert_pkey: ${{ secrets.SSL_PKEY }}
           TF_VAR_ubuntu_password: ${{ secrets.UBUNTU_PASSWORD }}
         run: |
           mkdir -p $(pwd)/terraform/terraform.tfstate.d/$TF_VAR_environment

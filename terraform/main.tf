@@ -1,3 +1,42 @@
+#Config node
+resource "proxmox_virtual_environment_certificate" "node_ssl_setup" {
+  node_name         = var.environment
+  certificate       = var.ssl_cert
+  certificate_chain = var.ssl_cert_chain
+  private_key       = var.ssl_cert_pkey
+}
+
+resource "proxmox_virtual_environment_dns" "node_dns_setup" {
+  for_each  = var.node_config
+  node_name = var.environment
+  domain    = each.value.dns_domain
+  servers   = each.value.dns_servers
+}
+
+resource "proxmox_virtual_environment_network_linux_bridge" "vmbr0" {
+  for_each  = var.node_config
+  node_name = var.environment
+
+  depends_on = [
+    proxmox_virtual_environment_network_linux_vlan.vlan20
+  ]
+
+  name       = each.value.bridge_name
+  address    = each.value.bridge_address
+  gateway    = each.value.bridge_gateway
+  vlan_aware = each.value.vlan_aware
+}
+
+resource "proxmox_virtual_environment_network_linux_vlan" "vlan20" {
+  for_each  = var.node_config
+  node_name = var.environment
+  name      = each.value.vlan_name
+  address   = each.value.vlan_address
+  gateway   = each.value.vlan_gateway
+  comment   = "VLAN 20 for IOT"
+}
+
+#Config VMs
 resource "proxmox_virtual_environment_file" "cloud_config" {
   for_each = { for k, v in var.vm_config : k => v if try(v.enable_cloud_init, false) }
 

@@ -1,3 +1,16 @@
+node_config = {
+  vlan_name         = "vmbr0.20"
+  vlan_address      = "192.168.20.20/24"
+  vlan_gateway      = "192.168.20.1"
+  bridge_name       = "vmbr0"
+  bridge_vlan_aware = true
+  dns_domain        = "router.dkhomelabserver.xyz"
+  dns_servers       = ["192.168.20.1"]
+  datastore_id      = "local"
+  ds_type           = "Directory"
+  ds_content_type   = ["ISO image", "Snippets", "Container template", "Backup"]
+}
+
 vm_config = {
   homeassistant = {
     vm_id             = 100
@@ -31,7 +44,7 @@ vm_config = {
     cpu_cores          = 1
     net_dev_type       = "vmbr0"
     vlan_tag           = 20
-    enable_cloud_init  = false
+    enable_cloud_init  = true
     cloud_init_cidr    = "192.168.20.21/24"
     cloud_init_gateway = "192.168.20.1"
     cloud_init_dns     = "192.168.20.1"

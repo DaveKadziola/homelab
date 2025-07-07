@@ -41,6 +41,24 @@ variable "environment" {
   description = "Deployment environment"
 }
 
+variable "node_config" {
+  type = object({
+    vlan_name         = optional(string)
+    vlan_address      = optional(string)
+    vlan_gateway      = optional(string)
+    bridge_name       = string
+    bridge_address    = optional(string)
+    bridge_gateway    = optional(string)
+    bridge_vlan_aware = boolean
+    ssl_cert          = optional(string)
+    ssl_cert_chain    = optional(string)
+    ssl_cert_pkey     = optional(string)
+    dns_domain        = string
+    dns_servers       = set(string)
+  })
+  description = "Config the Proxmox node"
+}
+
 variable "vm_config" {
   type = map(object({
     vm_id              = number
