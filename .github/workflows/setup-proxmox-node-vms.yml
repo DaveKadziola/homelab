@@ -1,4 +1,4 @@
-name: Setup Proxmox VMs
+name: Setup Proxmox node & VMs
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  Setup_Proxmox_VMs:
+  Setup_Proxmox_Node_VMs:
     runs-on: self-hosted
     environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
     env:
@@ -35,6 +35,9 @@ jobs:
           TF_VAR_proxmox_api_token_secret: ${{ secrets.PROXMOX_API_TOKEN_SECRET }}
           TF_VAR_proxmox_ssh_username: ${{ vars.PROXMOX_SSH_USERNAME }}
           TF_VAR_proxmox_ssh_password: ${{ secrets.PROXMOX_SSH_PASSWORD }}
+          TF_VAR_ssl_cert: ${{ secrets.SSL_CERT }}
+          TF_VAT_ssl_cert_chain: ${{ secrets.SSL_CHAIN }}
+          TF_VAR_ssl_cert_pkey: ${{ secrets.SSL_PKEY }}
           TF_VAR_ubuntu_password: ${{ secrets.UBUNTU_PASSWORD }}
         run: |
           mkdir -p $(pwd)/terraform/terraform.tfstate.d/$TF_VAR_environment
@@ -48,7 +51,9 @@ jobs:
 
           cd terraform
           terraform workspace select -or-create $TF_VAR_environment
-          terraform init 
+          terraform init
+          terraform import -var-file=environments/$TF_VAR_environment/terraform.tfvars proxmox_virtual_environment_network_linux_bridge.vmbr0 $TF_VAR_environment:vmbr0 || true
+          terraform import -var-file=environments/$TF_VAR_environment/terraform.tfvars proxmox_virtual_environment_network_linux_vlan.vlan20 $TF_VAR_environment:vmbr0.20 || true
           terraform plan -var-file=environments/$TF_VAR_environment/terraform.tfvars
           terraform apply -auto-approve -var-file=environments/$TF_VAR_environment/terraform.tfvars
 

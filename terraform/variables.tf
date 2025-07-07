@@ -41,6 +41,41 @@ variable "environment" {
   description = "Deployment environment"
 }
 
+variable "ssl_cert" {
+  type        = string
+  default     = ""
+  description = "SSL certification"
+}
+
+variable "ssl_cert_chain" {
+  type        = string
+  default     = ""
+  description = "SSL certification chain"
+}
+
+variable "ssl_cert_pkey" {
+  type        = string
+  default     = ""
+  description = "SSL certification private key"
+}
+
+variable "node_config" {
+  type = object({
+    cert_setup_enabled = bool
+    vlan_name          = string
+    vlan_address       = optional(string)
+    vlan_gateway       = optional(string)
+    bridge_name        = string
+    bridge_address     = optional(string)
+    bridge_gateway     = optional(string)
+    bridge_ports       = optional(set(string))
+    bridge_vlan_aware  = bool
+    dns_domain         = string
+    dns_servers        = set(string)
+  })
+  description = "Config the Proxmox node"
+}
+
 variable "vm_config" {
   type = map(object({
     vm_id              = number

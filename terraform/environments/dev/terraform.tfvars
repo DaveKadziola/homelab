@@ -1,3 +1,15 @@
+node_config = {
+  cert_setup_enabled = false
+  vlan_name          = "vmbr0.20"
+  bridge_name        = "vmbr0"
+  bridge_address     = "192.168.122.219/24"
+  bridge_gateway     = "192.168.122.1"
+  bridge_ports       = ["enp8s0"]
+  bridge_vlan_aware  = false
+  dns_domain         = "homelabdev"
+  dns_servers        = ["192.168.1.1"]
+}
+
 vm_config = {
   homeassistant = {
     vm_id             = 100
