@@ -47,11 +47,12 @@ resource "proxmox_virtual_environment_file" "cloud_config" {
     #cloud-config
     #password id an output from mkpasswd --method=SHA-512 --rounds=4096
     users:
-      - name: ubuntu
-        sudo: [sudo]
+      - name: ubuntu-${var.environment}
+        sudo: [ "ALL=(ALL) ALL" ] 
+        groups: [ "sudo" ]
         shell: /bin/bash
         lock_passwd: false
-        passwd: "{{ ubuntu_docker_password | password_hash('sha512') }}"
+        passwd: "${var.ubuntu_docker_password}"
         ssh_authorized_keys:
           - "${var.ubuntu_docker_ssh_pub}"
 
