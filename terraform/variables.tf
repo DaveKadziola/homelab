@@ -49,7 +49,7 @@ variable "node_config" {
     bridge_name       = string
     bridge_address    = optional(string)
     bridge_gateway    = optional(string)
-    bridge_vlan_aware = boolean
+    bridge_vlan_aware = bool
     ssl_cert          = optional(string)
     ssl_cert_chain    = optional(string)
     ssl_cert_pkey     = optional(string)

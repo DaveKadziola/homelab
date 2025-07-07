@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  Setup_Proxmox_VMs:
+  Setup_Proxmox_Node_VMs:
     runs-on: self-hosted
     environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
     env:
