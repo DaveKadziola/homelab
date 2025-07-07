@@ -4,6 +4,7 @@ node_config = {
   vlan_address       = "192.168.20.20/24"
   vlan_gateway       = "192.168.20.1"
   bridge_name        = "vmbr0"
+  bridge_ports       = "enp1s0"
   bridge_vlan_aware  = true
   dns_domain         = "router.dkhomelabserver.xyz"
   dns_servers        = ["192.168.20.1"]

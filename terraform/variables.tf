@@ -68,6 +68,7 @@ variable "node_config" {
     bridge_name        = string
     bridge_address     = optional(string)
     bridge_gateway     = optional(string)
+    bridge_ports       = optional(set(string))
     bridge_vlan_aware  = bool
     dns_domain         = string
     dns_servers        = set(string)
