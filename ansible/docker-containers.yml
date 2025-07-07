@@ -3,7 +3,7 @@
   become: true
   vars:
     postgres_password: "{{ lookup('env', 'POSTGRES_PASSWORD') }}"
-    ubuntu_password: "{{ lookup('env', 'UBUNTU_PASSWORD') }}"
+    ubuntu_docker_password: "{{ lookup('env', 'UBUNTU_DOCKER_PASSWORD') }}"
     containers:
       - name: nginx-proxy-manager
         image: jc21/nginx-proxy-manager:latest

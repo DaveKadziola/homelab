@@ -51,7 +51,7 @@ resource "proxmox_virtual_environment_file" "cloud_config" {
         sudo: [sudo]
         shell: /bin/bash
         lock_passwd: false
-        passwd: "{{ ubuntu_password | password_hash('sha512') }}"
+        passwd: "{{ ubuntu_docker_password | password_hash('sha512') }}"
         ssh_authorized_keys:
           - "${var.ubuntu_docker_ssh_pub}"
 
@@ -137,6 +137,13 @@ resource "proxmox_virtual_environment_vm" "vm" {
       dns {
         servers = [each.value.cloud_init_dns]
       }
+
+      user_account {
+        keys     = [trimspace(var.ubuntu_docker_ssh_pub)]
+        password = var.ubuntu_docker_password
+        username = "ubuntu-${var.environment}"
+      }
+
       user_data_file_id = proxmox_virtual_environment_file.cloud_config[each.key].id
     }
   }

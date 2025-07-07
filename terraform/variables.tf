@@ -36,7 +36,7 @@ variable "ubuntu_docker_ssh_pub" {
   sensitive   = true
 }
 
-variable "ubuntu_password" {
+variable "ubuntu_docker_password" {
   type        = string
   description = "SHA-512 hash of the ubuntu vm cuser password"
   sensitive   = true

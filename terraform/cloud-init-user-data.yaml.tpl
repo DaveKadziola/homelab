@@ -5,7 +5,7 @@ users:
     sudo: [sudo]
     shell: /bin/bash
     lock_passwd: false
-    passwd: "{{ ubuntu_password | password_hash('sha512') }}"
+    passwd: "{{ ubuntu_docker_password | password_hash('sha512') }}"
 
 package_update: true
 package_upgrade: true

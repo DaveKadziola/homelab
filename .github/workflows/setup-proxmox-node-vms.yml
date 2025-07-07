@@ -39,7 +39,7 @@ jobs:
           TF_VAT_ssl_cert_chain: ${{ secrets.SSL_CHAIN }}
           TF_VAR_ssl_cert_pkey: ${{ secrets.SSL_PKEY }}
           TF_VAR_ubuntu_docker_ssh_pub: ${{ vars.UBUNTU_DOCKER_SSH_PUB }}
-          TF_VAR_ubuntu_password: ${{ secrets.UBUNTU_PASSWORD }}
+          TF_VAR_ubuntu_docker_password: ${{ secrets.UBUNTU_DOCKER_PASSWORD }}
         run: |
           mkdir -p $(pwd)/terraform/terraform.tfstate.d/$TF_VAR_environment
 
@@ -74,13 +74,13 @@ jobs:
       - name: Run Ansible Playbook for ubuntu-docker VM
         env:
           ANSIBLE_HOST_KEY_CHECKING: "False"
-          UBUNTU_PASSWORD: ${{ secrets.UBUNTU_PASSWORD }}
+          UBUNTU_DOCKER_PASSWORD: ${{ secrets.UBUNTU_DOCKER_PASSWORD }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         run: |
           #cd ansible
           #ansible-playbook -i hosts.ini user-setup.yml \
           #  --user=ubuntu \
-          #  --extra-vars "ubuntu_password=$UBUNTU_PASSWORD postgres_password=$POSTGRES_PASSWORD"
+          #  --extra-vars "ubuntu_docker_password=$UBUNTU_DOCKER_PASSWORD postgres_password=$POSTGRES_PASSWORD"
           #  --ask-pass
           echo "Ansible will do job here soon..."
 
