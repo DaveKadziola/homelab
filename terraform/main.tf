@@ -43,9 +43,31 @@ resource "proxmox_virtual_environment_file" "cloud_config" {
   datastore_id = "local"
   node_name    = var.environment
   source_raw {
-    data = templatefile("${path.module}/cloud-init-user-data.yaml.tpl", {
-      ubuntu_password = var.ubuntu_password
-    })
+    data = <<-EOF
+    #cloud-config
+    #password id an output from mkpasswd --method=SHA-512 --rounds=4096
+    users:
+      - name: ubuntu
+        sudo: [sudo]
+        shell: /bin/bash
+        lock_passwd: false
+        passwd: "{{ ubuntu_password | password_hash('sha512') }}"
+
+    package_update: true
+    package_upgrade: true
+    packages:
+      - docker.io
+      - docker-compose
+      - git
+      - curl
+
+    runcmd:
+      - systemctl enable docker
+      - systemctl start docker
+      - usermod -aG docker ubuntu
+      - curl -L https://downloads.portainer.io/ce2-20/portainer-agent-stack.yml -o /home/ubuntu/portainer-agent-stack.yml
+    EOF
+
     file_name = "ubuntu-cloud-init-user-data.yaml"
   }
 }

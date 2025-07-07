@@ -76,10 +76,12 @@ jobs:
           UBUNTU_PASSWORD: ${{ secrets.UBUNTU_PASSWORD }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         run: |
-          cd ansible
-          ansible-playbook -i hosts.ini user-setup.yml \
-            --user=ubuntu \
-            --extra-vars "ubuntu_password=$UBUNTU_PASSWORD postgres_password=$POSTGRES_PASSWORD"
+          #cd ansible
+          #ansible-playbook -i hosts.ini user-setup.yml \
+          #  --user=ubuntu \
+          #  --extra-vars "ubuntu_password=$UBUNTU_PASSWORD postgres_password=$POSTGRES_PASSWORD"
+          #  --ask-pass
+          echo "Ansible will do job here soon..."
 
       - name: Copy Terraform tfstate
         run: |
