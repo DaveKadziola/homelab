@@ -1,0 +1,177 @@
+---
+- hosts: ubuntu-docker
+  become: true
+  vars:
+    postgres_password: "{{ lookup('env', 'POSTGRES_PASSWORD') }}"
+    ubuntu_password: "{{ lookup('env', 'UBUNTU_PASSWORD') }}"
+    containers:
+      - name: nginx-proxy-manager
+        image: jc21/nginx-proxy-manager:latest
+        ports:
+          - "80:80"
+          - "81:81"
+          - "443:443"
+        volumes:
+          - /opt/nginx-proxy-manager/data:/data
+          - /opt/nginx-proxy-manager/letsencrypt:/etc/letsencrypt
+      - name: authelia
+        image: authelia/authelia:latest
+        ports:
+          - "9091:9091"
+        volumes:
+          - /opt/authelia/config:/config
+      - name: pgadmin
+        image: dpage/pgadmin4:latest
+        ports:
+          - "5050:80"
+        env:
+          PGADMIN_DEFAULT_EMAIL: admin@local
+          PGADMIN_DEFAULT_PASSWORD: admin
+        volumes:
+          - /opt/pgadmin:/var/lib/pgadmin
+      - name: homarr
+        image: ghcr.io/ajnart/homarr:latest
+        ports:
+          - "7575:7575"
+        volumes:
+          - /opt/homarr/configs:/app/data/configs
+          - /opt/homarr/icons:/app/public/icons
+      - name: portainer
+        image: portainer/portainer-ce:latest
+        ports:
+          - "9000:9000"
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock
+          - /opt/portainer/data:/data
+      - name: prometheus
+        image: prom/prometheus:latest
+        ports:
+          - "9090:9090"
+        volumes:
+          - /opt/prometheus:/etc/prometheus
+      - name: grafana
+        image: grafana/grafana:latest
+        ports:
+          - "3000:3000"
+        volumes:
+          - /opt/grafana:/var/lib/grafana
+      - name: linkwarden
+        image: ghcr.io/linkwarden/linkwarden:latest
+        ports:
+          - "3001:3000"
+        env:
+          DATABASE_URL: postgres://linkwarden:{{ postgres_password }}@postgres:5432/linkwarden
+      - name: fireflyiii
+        image: fireflyiii/core:latest
+        ports:
+          - "8080:8080"
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: postgres
+          DB_DATABASE: firefly3
+          DB_USERNAME: firefly3
+          DB_PASSWORD: "{{ postgres_password }}"
+      - name: syncthing
+        image: syncthing/syncthing:latest
+        ports:
+          - "8384:8384"
+          - "22000:22000/tcp"
+          - "21027:21027/udp"
+        volumes:
+          - /opt/syncthing:/var/syncthing
+      - name: speedtest-tracker
+        image: ghcr.io/alexjustesen/speedtest-tracker:latest
+        ports:
+          - "8081:80"
+        volumes:
+          - /opt/speedtest-tracker:/config
+      - name: postgres
+        image: postgres:15
+        ports:
+          - "5432:5432"
+        env:
+          POSTGRES_PASSWORD: "{{ postgres_password }}"
+        volumes:
+          - /opt/postgres:/var/lib/postgresql/data
+      - name: easytodo-grocery
+        build:
+          context: /opt/easytodo-grocery
+        ports:
+          - "8082:8080"
+        env:
+          DATABASE_URL: postgres://easytodo:{{ postgres_password }}@postgres:5432/easytodo
+
+  tasks:
+    - name: Ensure Docker is running
+      service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Pull and run containers
+      community.docker.docker_container:
+        name: "{{ item.name }}"
+        image: "{{ item.image | default(omit) }}"
+        build: "{{ item.build | default(omit) }}"
+        ports: "{{ item.ports | default(omit) }}"
+        volumes: "{{ item.volumes | default(omit) }}"
+        env: "{{ item.env | default(omit) }}"
+        restart_policy: always
+        state: started
+      loop: "{{ containers }}"
+
+    - name: Tworzenie baz danych dla aplikacji
+      community.postgresql.postgresql_db:
+        name: "{{ item }}"
+        login_user: postgres
+        login_password: "{{ postgres_password }}"
+      loop:
+        - linkwarden
+        - firefly3
+        - pihole
+        - syncthing
+        - homeassistant
+        - grafana
+        - easytodo
+
+    - name: Tworzenie użytkowników dla baz danych
+      community.postgresql.postgresql_user:
+        name: "{{ item }}"
+        password: "{{ postgres_password }}"
+        db: "{{ item }}"
+        login_user: postgres
+        login_password: "{{ postgres_password }}"
+        priv: "ALL"
+      loop:
+        - linkwarden
+        - firefly3
+        - pihole
+        - syncthing
+        - homeassistant
+        - grafana
+        - easytodo
+
+    - name: Budowanie obrazu easytodo-grocery
+      community.docker.docker_image:
+        build:
+          path: /opt/easytodo-grocery
+        name: easytodo-grocery
+      when: "'easytodo-grocery' in containers | map(attribute='name') | list"
+
+    - name: Dodanie użytkownika ubuntu do grupy docker
+      user:
+        name: ubuntu
+        groups: docker
+        append: yes
+
+    - name: Uruchomienie Portainera
+      community.docker.docker_container:
+        name: portainer
+        image: portainer/portainer-ce:latest
+        ports:
+          - "9000:9000"
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock
+          - /opt/portainer/data:/data
+        restart_policy: always
+        state: started
