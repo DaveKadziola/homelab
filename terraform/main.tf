@@ -1,5 +1,6 @@
 #Config node
 resource "proxmox_virtual_environment_certificate" "node_ssl_setup" {
+  for_each          = var.node_config.cert_setup_enabled ? { "ssl_setup" = true } : {}
   node_name         = var.environment
   certificate       = var.ssl_cert
   certificate_chain = var.ssl_cert_chain

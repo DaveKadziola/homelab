@@ -1,14 +1,12 @@
 node_config = {
-  vlan_name         = "vmbr0.20"
-  vlan_address      = "192.168.20.20/24"
-  vlan_gateway      = "192.168.20.1"
-  bridge_name       = "vmbr0"
-  bridge_vlan_aware = true
-  dns_domain        = "router.dkhomelabserver.xyz"
-  dns_servers       = ["192.168.20.1"]
-  datastore_id      = "local"
-  ds_type           = "Directory"
-  ds_content_type   = ["ISO image", "Snippets", "Container template", "Backup"]
+  cert_setup_enabled = true
+  vlan_name          = "vmbr0.20"
+  vlan_address       = "192.168.20.20/24"
+  vlan_gateway       = "192.168.20.1"
+  bridge_name        = "vmbr0"
+  bridge_vlan_aware  = true
+  dns_domain         = "router.dkhomelabserver.xyz"
+  dns_servers        = ["192.168.20.1"]
 }
 
 vm_config = {
