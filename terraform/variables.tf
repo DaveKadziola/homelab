@@ -30,7 +30,13 @@ variable "proxmox_ssh_password" {
   description = "Proxmox SSH password"
 }
 
-variable "ubuntu_password" {
+variable "ubuntu_docker_ssh_pub" {
+  type        = string
+  description = "Public SSH key for ubuntu docker"
+  sensitive   = true
+}
+
+variable "ubuntu_docker_password" {
   type        = string
   description = "SHA-512 hash of the ubuntu vm cuser password"
   sensitive   = true
