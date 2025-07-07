@@ -51,7 +51,8 @@ jobs:
 
           cd terraform
           terraform workspace select -or-create $TF_VAR_environment
-          terraform init 
+          terraform init
+          terraform import proxmox_virtual_environment_network_linux_bridge.vmbr0 dev/vmbr0 || true
           terraform plan -var-file=environments/$TF_VAR_environment/terraform.tfvars
           terraform apply -auto-approve -var-file=environments/$TF_VAR_environment/terraform.tfvars
 
