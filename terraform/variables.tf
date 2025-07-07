@@ -43,16 +43,19 @@ variable "environment" {
 
 variable "ssl_cert" {
   type        = string
+  default     = ""
   description = "SSL certification"
 }
 
 variable "ssl_cert_chain" {
   type        = string
+  default     = ""
   description = "SSL certification chain"
 }
 
 variable "ssl_cert_pkey" {
   type        = string
+  default     = ""
   description = "SSL certification private key"
 }
 
