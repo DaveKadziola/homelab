@@ -52,6 +52,8 @@ resource "proxmox_virtual_environment_file" "cloud_config" {
         shell: /bin/bash
         lock_passwd: false
         passwd: "{{ ubuntu_password | password_hash('sha512') }}"
+        ssh_authorized_keys:
+          - "${var.ubuntu_docker_ssh_pub}"
 
     package_update: true
     package_upgrade: true
