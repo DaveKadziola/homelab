@@ -41,6 +41,21 @@ variable "environment" {
   description = "Deployment environment"
 }
 
+variable "ssl_cert" {
+  type        = string
+  description = "SSL certification"
+}
+
+variable "ssl_cert_chain" {
+  type        = string
+  description = "SSL certification chain"
+}
+
+variable "ssl_cert_pkey" {
+  type        = string
+  description = "SSL certification private key"
+}
+
 variable "node_config" {
   type = object({
     cert_setup_enabled = bool
@@ -51,9 +66,6 @@ variable "node_config" {
     bridge_address     = optional(string)
     bridge_gateway     = optional(string)
     bridge_vlan_aware  = bool
-    ssl_cert           = optional(string)
-    ssl_cert_chain     = optional(string)
-    ssl_cert_pkey      = optional(string)
     dns_domain         = string
     dns_servers        = set(string)
   })
