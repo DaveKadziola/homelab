@@ -53,6 +53,7 @@ jobs:
           terraform workspace select -or-create $TF_VAR_environment
           terraform init
           terraform import -var-file=environments/$TF_VAR_environment/terraform.tfvars proxmox_virtual_environment_network_linux_bridge.vmbr0 dev/vmbr0 || true
+          terraform import -var-file=environments/$TF_VAR_environment/terraform.tfvars proxmox_virtual_environment_network_linux_vlan.vlan20 dev/vmbr0.20 || true
           terraform plan -var-file=environments/$TF_VAR_environment/terraform.tfvars
           terraform apply -auto-approve -var-file=environments/$TF_VAR_environment/terraform.tfvars
 
