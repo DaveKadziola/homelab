@@ -1,6 +1,6 @@
 #Config node
 resource "proxmox_virtual_environment_certificate" "node_ssl_setup" {
-  for_each          = var.node_config.cert_setup_enabled ? { "ssl_setup" = true } : {}
+  count             = var.node_config.cert_setup_enabled ? 1 : 0
   node_name         = var.environment
   certificate       = var.ssl_cert
   certificate_chain = var.ssl_cert_chain
@@ -8,32 +8,29 @@ resource "proxmox_virtual_environment_certificate" "node_ssl_setup" {
 }
 
 resource "proxmox_virtual_environment_dns" "node_dns_setup" {
-  for_each  = var.node_config
   node_name = var.environment
-  domain    = each.value.dns_domain
-  servers   = each.value.dns_servers
+  domain    = var.node_config.dns_domain
+  servers   = var.node_config.dns_servers
 }
 
 resource "proxmox_virtual_environment_network_linux_bridge" "vmbr0" {
-  for_each  = var.node_config
   node_name = var.environment
 
   depends_on = [
     proxmox_virtual_environment_network_linux_vlan.vlan20
   ]
 
-  name       = each.value.bridge_name
-  address    = each.value.bridge_address
-  gateway    = each.value.bridge_gateway
-  vlan_aware = each.value.vlan_aware
+  name       = var.node_config.bridge_name
+  address    = var.node_config.bridge_address
+  gateway    = var.node_config.bridge_gateway
+  vlan_aware = var.node_config.vlan_aware
 }
 
 resource "proxmox_virtual_environment_network_linux_vlan" "vlan20" {
-  for_each  = var.node_config
   node_name = var.environment
-  name      = each.value.vlan_name
-  address   = each.value.vlan_address
-  gateway   = each.value.vlan_gateway
+  name      = var.node_config.vlan_name
+  address   = var.node_config.vlan_address
+  gateway   = var.node_config.vlan_gateway
   comment   = "VLAN 20 for IOT"
 }
 
