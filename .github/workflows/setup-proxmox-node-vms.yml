@@ -43,9 +43,9 @@ jobs:
         run: |
           mkdir -p $(pwd)/terraform/terraform.tfstate.d/$TF_VAR_environment
 
-          if [ -f "$HOME/HomeLab/git/actions-runner/terraform/states/$TF_VAR_environment/terraform.tfstate" ]; then
+          if [ -f "$HOME/HomeLab/CiCdResources/terraform/states/$TF_VAR_environment/terraform.tfstate" ]; then
             echo "terraform.tfstate exists. Last state will be used for provisioning."
-            cp $HOME/HomeLab/git/actions-runner/terraform/states/$TF_VAR_environment/terraform.tfstate $(pwd)/terraform/terraform.tfstate.d/$TF_VAR_environment/terraform.tfstate
+            cp $HOME/HomeLab/CiCdResources/terraform/states/$TF_VAR_environment/terraform.tfstate $(pwd)/terraform/terraform.tfstate.d/$TF_VAR_environment/terraform.tfstate
           else
             echo "terraform.tfstate doesn't exist. Initial provisioning will be performed."
           fi
@@ -73,7 +73,7 @@ jobs:
 
       - name: Copy Terraform tfstate
         run: |
-          cp terraform/terraform.tfstate.d/$TF_VAR_environment/terraform.tfstate $HOME/HomeLab/git/actions-runner/terraform/states/$TF_VAR_environment/terraform.tfstate
+          cp terraform/terraform.tfstate.d/$TF_VAR_environment/terraform.tfstate $HOME/HomeLab/CiCdResources/terraform/states/$TF_VAR_environment/terraform.tfstate
 
       - name: Run Ansible Playbook for ubuntu-docker VM
         env:
