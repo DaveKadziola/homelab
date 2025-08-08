@@ -49,7 +49,7 @@ resource "proxmox_virtual_environment_file" "cloud_config" {
     users:
       - name: ubuntu-${var.environment}
         sudo: [ "ALL=(ALL) ALL" ] 
-        groups: [ "sudo" ]
+        groups: [ "sudo", "docker" ]
         shell: /bin/bash
         lock_passwd: false
         passwd: "${var.ubuntu_docker_password}"
