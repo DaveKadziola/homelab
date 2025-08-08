@@ -102,13 +102,13 @@
           DATABASE_URL: postgres://easytodo:{{ postgres_password }}@postgres:5432/easytodo
 
   tasks:
-    - name: Ensure Docker is running
+    - name: Make sure Docker service is running
       service:
         name: docker
         state: started
         enabled: true
 
-    - name: Pull and run containers
+    - name: Pull and run all defined containers
       community.docker.docker_container:
         name: "{{ item.name }}"
         image: "{{ item.image | default(omit) }}"
@@ -120,7 +120,7 @@
         state: started
       loop: "{{ containers }}"
 
-    - name: Tworzenie baz danych dla aplikacji
+    - name: Create application databases
       community.postgresql.postgresql_db:
         name: "{{ item }}"
         login_user: postgres
@@ -134,7 +134,7 @@
         - grafana
         - easytodo
 
-    - name: Tworzenie użytkowników dla baz danych
+    - name: Create PostgreSQL users for each database
       community.postgresql.postgresql_user:
         name: "{{ item }}"
         password: "{{ postgres_password }}"
@@ -151,20 +151,20 @@
         - grafana
         - easytodo
 
-    - name: Budowanie obrazu easytodo-grocery
+    - name: Build Docker image for easytodo-grocery
       community.docker.docker_image:
         build:
           path: /opt/easytodo-grocery
         name: easytodo-grocery
       when: "'easytodo-grocery' in containers | map(attribute='name') | list"
 
-    - name: Dodanie użytkownika ubuntu do grupy docker
+    - name: Add user ubuntu to docker group
       user:
         name: ubuntu
         groups: docker
         append: yes
 
-    - name: Uruchomienie Portainera
+    - name: Ensure Portainer container is running
       community.docker.docker_container:
         name: portainer
         image: portainer/portainer-ce:latest

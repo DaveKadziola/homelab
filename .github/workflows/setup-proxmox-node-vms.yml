@@ -82,7 +82,14 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         run: |
           cd ansible
+          echo 'User setup'
           ansible-playbook -i environments/$TF_VAR_environment/hosts.ini user-setup.yml \
             --user=ubuntu-$TF_VAR_environment \
-            --extra-vars "postgres_password=$POSTGRES_PASSWORD" \
+            --extra-vars "postgres_password=$POSTGRES_PASSWORD" ubuntu_docker_password=$UBUNTU_DOCKER_PASSWORD" \
+            --private-key=$HOME/HomeLab/CiCdResources/ssh/ubuntu-docker-$TF_VAR_environment
+
+          echo 'Deploy Docker containers'
+          ansible-playbook -i environments/$TF_VAR_environment/hosts.ini docker-containers.yml \
+            --user=ubuntu-$TF_VAR_environment \
+            --extra-vars "postgres_password=$POSTGRES_PASSWORD" ubuntu_docker_password=$UBUNTU_DOCKER_PASSWORD" \
             --private-key=$HOME/HomeLab/CiCdResources/ssh/ubuntu-docker-$TF_VAR_environment
