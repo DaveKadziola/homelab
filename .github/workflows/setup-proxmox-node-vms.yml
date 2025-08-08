@@ -83,6 +83,6 @@ jobs:
         run: |
           cd ansible
           ansible-playbook -i environments/$TF_VAR_environment/hosts.ini user-setup.yml \
-            --user=ubuntu \
+            --user=root \
             --extra-vars "postgres_password=$POSTGRES_PASSWORD"
             --private-key=/home/kdzl/HomeLab/CiCdResources/ssh/ubuntu_docker_$TF_VAR_environment
