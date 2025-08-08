@@ -71,19 +71,18 @@ jobs:
           terraform plan -var-file=environments/$TF_VAR_environment/terraform.tfvars
           terraform apply -auto-approve -var-file=environments/$TF_VAR_environment/terraform.tfvars
 
+      - name: Copy Terraform tfstate
+        run: |
+          cp terraform/terraform.tfstate.d/$TF_VAR_environment/terraform.tfstate $HOME/HomeLab/git/actions-runner/terraform/states/$TF_VAR_environment/terraform.tfstate
+
       - name: Run Ansible Playbook for ubuntu-docker VM
         env:
           ANSIBLE_HOST_KEY_CHECKING: "False"
           UBUNTU_DOCKER_PASSWORD: ${{ secrets.UBUNTU_DOCKER_PASSWORD }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         run: |
-          #cd ansible
-          #ansible-playbook -i hosts.ini user-setup.yml \
-          #  --user=ubuntu \
-          #  --extra-vars "ubuntu_docker_password=$UBUNTU_DOCKER_PASSWORD postgres_password=$POSTGRES_PASSWORD"
-          #  --ask-pass
-          echo "Ansible will do job here soon..."
-
-      - name: Copy Terraform tfstate
-        run: |
-          cp terraform/terraform.tfstate.d/$TF_VAR_environment/terraform.tfstate $HOME/HomeLab/git/actions-runner/terraform/states/$TF_VAR_environment/terraform.tfstate
+          cd ansible
+          ansible-playbook -i environments/$TF_VAR_environment/hosts.ini user-setup.yml \
+            --user=ubuntu \
+            --extra-vars "ubuntu_docker_password=$UBUNTU_DOCKER_PASSWORD postgres_password=$POSTGRES_PASSWORD"
+            --ask-pass
