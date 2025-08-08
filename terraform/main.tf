@@ -48,7 +48,7 @@ resource "proxmox_virtual_environment_file" "cloud_config" {
     #password id an output from mkpasswd --method=SHA-512 --rounds=4096
     users:
       - name: ubuntu-${var.environment}
-        sudo: [ "ALL=(ALL) ALL" ] 
+        sudo: [ "ALL=(ALL) NOPASSWD:ALL" ] 
         groups: [ "sudo", "docker" ]
         shell: /bin/bash
         lock_passwd: false
