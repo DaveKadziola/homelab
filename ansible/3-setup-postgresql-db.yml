@@ -16,7 +16,7 @@
       - name: pgadmin
         image: dpage/pgadmin4:latest
         ports:
-          - "5050:80"
+          - "5050:5050"
         env:
           PGADMIN_DEFAULT_EMAIL: admin@local
           PGADMIN_DEFAULT_PASSWORD: admin
@@ -24,6 +24,11 @@
           - /opt/pgadmin:/var/lib/pgadmin
 
   tasks:
+    - name: Install Python dependencies
+      pip:
+        name: psycopg2-binary
+        executable: pip3
+
     - name: Pull and run all defined DB containers
       community.docker.docker_container:
         name: "{{ item.name }}"

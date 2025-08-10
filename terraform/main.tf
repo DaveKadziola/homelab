@@ -63,6 +63,7 @@ resource "proxmox_virtual_environment_file" "cloud_config" {
       - docker-compose
       - git
       - curl
+      - python3-pip
 
     runcmd:
       - systemctl enable docker

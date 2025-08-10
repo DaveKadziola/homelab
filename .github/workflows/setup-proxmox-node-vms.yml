@@ -73,12 +73,13 @@ jobs:
           terraform apply -auto-approve -var-file=environments/$TF_VAR_environment/terraform.tfvars
 
       - name: Copy Terraform tfstate
+        id: copy-terraform-tfstate
         if: steps.terraform-init-apply.outcome == 'success'
         run: |
           cp terraform/terraform.tfstate.d/$TF_VAR_environment/terraform.tfstate $HOME/HomeLab/CiCdResources/terraform/states/$TF_VAR_environment/terraform.tfstate
 
       - name: Run Ansible Playbook for ubuntu-docker VM
-        if: steps.terraform-init-apply.outcome == 'success'
+        if: steps.copy-terraform-tfstate.outcome == 'success'
         env:
           ANSIBLE_HOST_KEY_CHECKING: "False"
           UBUNTU_DOCKER_PASSWORD: ${{ secrets.UBUNTU_DOCKER_PASSWORD }}
