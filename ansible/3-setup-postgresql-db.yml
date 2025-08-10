@@ -4,6 +4,7 @@
   vars:
     postgres_password: "{{ lookup('env', 'POSTGRES_PASSWORD') }}"
     ubuntu_docker_password: "{{ lookup('env', 'UBUNTU_DOCKER_PASSWORD') }}"
+    deploy_env: "{{ lookup('env', 'DEPLOY_ENV') }}"
     containers:
       - name: postgres
         image: postgres:17
@@ -16,10 +17,11 @@
       - name: pgadmin
         image: dpage/pgadmin4:latest
         ports:
-          - "5050:5050"
+          - "5050:80"
         env:
           PGADMIN_DEFAULT_EMAIL: admin@local.com
           PGADMIN_DEFAULT_PASSWORD: admin
+          PGADMIN_CONFIG_SERVER_MODE: "False"
         volumes:
           - /opt/pgadmin:/var/lib/pgadmin
 
@@ -42,6 +44,12 @@
         state: started
       loop: "{{ containers }}"
 
+    - name: Setup directories for pgAdmin and its default UID/GID
+      ansible.builtin.shell: |
+        mkdir -p /opt/pgadmin/sessions && 
+        chown -R 5050:5050 /opt/pgadmin && 
+        chmod -R 700 /opt/pgadmin
+
     - name: Create application databases
       community.postgresql.postgresql_db:
         name: "{{ item }}"
@@ -60,15 +68,38 @@
       community.postgresql.postgresql_user:
         name: "{{ item }}"
         password: "{{ postgres_password }}"
-        db: "{{ item }}"
+        login_db: "{{ item }}"
         login_user: postgres
         login_password: "{{ postgres_password }}"
         login_host: 192.168.122.221
         login_port: 5432
-        query: "GRANT ALL PRIVILEGES ON DATABASE {{ item }} TO {{ item }};"
       loop:
         - linkwarden
         - firefly3
         - easytodo
         - authelia
         - nginx
+
+    - name: Grant privileges for PostgreSQL users
+      community.postgresql.postgresql_query:
+        login_user: postgres
+        login_password: "{{ postgres_password }}"
+        login_host: 192.168.122.221
+        login_port: 5432
+        login_db: "{{ item }}"
+        query:
+          - "GRANT ALL PRIVILEGES ON DATABASE {{ item }} TO {{ item }};"
+      loop:
+        - linkwarden
+        - firefly3
+        - easytodo
+        - authelia
+        - nginx
+
+    - name: Deploy pgAdmin servers.json config
+      template:
+        src: environments/deploy_env/pdAdminServers.json.j2
+        dest: /opt/pgadmin/servers.json
+        owner: 5050
+        group: 5050
+        mode: "0600"

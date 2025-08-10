@@ -84,6 +84,7 @@ jobs:
           ANSIBLE_HOST_KEY_CHECKING: "False"
           UBUNTU_DOCKER_PASSWORD: ${{ secrets.UBUNTU_DOCKER_PASSWORD }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          DEPLOY_ENV: $TF_VAR_environment
         run: |
           cd ansible
           echo '0. Check if target machine is online'
