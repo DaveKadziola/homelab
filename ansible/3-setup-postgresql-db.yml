@@ -47,6 +47,8 @@
         name: "{{ item }}"
         login_user: postgres
         login_password: "{{ postgres_password }}"
+        login_host: 192.168.122.221
+        login_port: 5432
       loop:
         - linkwarden
         - firefly3
@@ -61,6 +63,8 @@
         db: "{{ item }}"
         login_user: postgres
         login_password: "{{ postgres_password }}"
+        login_host: 192.168.122.221
+        login_port: 5432
         priv: "ALL"
       loop:
         - linkwarden
