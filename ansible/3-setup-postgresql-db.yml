@@ -24,6 +24,7 @@
           PGADMIN_CONFIG_SERVER_MODE: "False"
         volumes:
           - /opt/pgadmin:/var/lib/pgadmin
+          - /opt/pgadmin/servers.json:/var/lib/pgadmin/servers.json
 
   tasks:
     - name: Install Python dependencies
@@ -31,6 +32,30 @@
         name: python3-psycopg2
         state: present
       become: true
+
+    - name: Ensure pgAdmin sessions directory exists with correct permissions
+      file:
+        path: /opt/pgadmin/sessions
+        state: directory
+        owner: 5050
+        group: 5050
+        mode: "0700"
+
+    - name: Set permissions recursively for /opt/pgadmin directory
+      file:
+        path: /opt/pgadmin
+        recurse: yes
+        owner: 5050
+        group: 5050
+        mode: "0700"
+
+    - name: Deploy pgAdmin servers.json config
+      template:
+        src: environments/{{ deploy_env }}/pdAdminServers.json.j2
+        dest: /opt/pgadmin/servers.json
+        owner: 5050
+        group: 5050
+        mode: "0600"
 
     - name: Pull and run all defined DB containers
       community.docker.docker_container:
@@ -43,12 +68,6 @@
         restart_policy: always
         state: started
       loop: "{{ containers }}"
-
-    - name: Setup directories for pgAdmin and its default UID/GID
-      ansible.builtin.shell: |
-        mkdir -p /opt/pgadmin/sessions && 
-        chown -R 5050:5050 /opt/pgadmin && 
-        chmod -R 700 /opt/pgadmin
 
     - name: Create application databases
       community.postgresql.postgresql_db:
@@ -95,11 +114,3 @@
         - easytodo
         - authelia
         - nginx
-
-    - name: Deploy pgAdmin servers.json config
-      template:
-        src: environments/deploy_env/pdAdminServers.json.j2
-        dest: /opt/pgadmin/servers.json
-        owner: 5050
-        group: 5050
-        mode: "0600"

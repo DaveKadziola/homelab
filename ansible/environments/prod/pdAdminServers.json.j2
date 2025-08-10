@@ -2,13 +2,14 @@
     "Servers": {
         "1": {
             "Group": "Servers",
-            "Name": "Postgres",
-            "Host": "192.168.20.21",
+            "Name": "DockerPostgres",
+            "Host": "192.168.122.221",
             "Port": 5432,
             "MaintenanceDB": "postgres",
             "Username": "postgres",
-            "Password": "{{ postgres_password }}"
-            "SSLMode": "prefer"
+            "Password": "{{ postgres_password }}",
+            "SSLMode": "prefer",
+            "Favorite": true
         }
     }
 }
