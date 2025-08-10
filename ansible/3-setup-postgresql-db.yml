@@ -108,6 +108,8 @@
         login_db: "{{ item }}"
         query:
           - "GRANT ALL PRIVILEGES ON DATABASE {{ item }} TO {{ item }};"
+          - "GRANT ALL PRIVILEGES ON SCHEMA public TO {{ item }};"
+          - "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO {{ item }};"
       loop:
         - linkwarden
         - firefly3

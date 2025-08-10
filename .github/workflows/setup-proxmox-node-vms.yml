@@ -110,3 +110,9 @@ jobs:
             --user=ubuntu-$TF_VAR_environment \
             --extra-vars "postgres_password=$POSTGRES_PASSWORD ubuntu_docker_password=$UBUNTU_DOCKER_PASSWORD" \
             --private-key=$HOME/HomeLab/CiCdResources/ssh/ubuntu-docker-$TF_VAR_environment
+
+          echo '4. Setup containerized applications'
+          ansible-playbook -i environments/$TF_VAR_environment/hosts.ini 4-setup-app-containers.yml \
+            --user=ubuntu-$TF_VAR_environment \
+            --extra-vars "postgres_password=$POSTGRES_PASSWORD ubuntu_docker_password=$UBUNTU_DOCKER_PASSWORD" \
+            --private-key=$HOME/HomeLab/CiCdResources/ssh/ubuntu-docker-$TF_VAR_environment
