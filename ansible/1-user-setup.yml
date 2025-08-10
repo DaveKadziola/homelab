@@ -1,5 +1,15 @@
 ---
-- hosts: ubuntu-docker
+- name: Waiting for SSH port to be available when Terraform triggers restart
+  ansible.builtin.wait_for:
+    host: "{{ inventory_hostname }}"
+    port: 22
+    state: started
+    delay: 10
+    timeout: 300
+  delegate_to: localhost
+  become: false
+
+- hosts: "{{ inventory_hostname }}"
   become: true
   vars:
     postgres_password: "{{ lookup('env', 'POSTGRES_PASSWORD') }}"
