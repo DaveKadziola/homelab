@@ -1,0 +1,64 @@
+---
+- hosts: ubuntu-docker
+  become: true
+  vars:
+    postgres_password: "{{ lookup('env', 'POSTGRES_PASSWORD') }}"
+    ubuntu_docker_password: "{{ lookup('env', 'UBUNTU_DOCKER_PASSWORD') }}"
+    containers:
+      - name: postgres
+        image: postgres:17
+        ports:
+          - "5432:5432"
+        env:
+          POSTGRES_PASSWORD: "{{ postgres_password }}"
+        volumes:
+          - /opt/postgres:/var/lib/postgresql/data
+      - name: pgadmin
+        image: dpage/pgadmin4:latest
+        ports:
+          - "5050:80"
+        env:
+          PGADMIN_DEFAULT_EMAIL: admin@local
+          PGADMIN_DEFAULT_PASSWORD: admin
+        volumes:
+          - /opt/pgadmin:/var/lib/pgadmin
+
+  tasks:
+    - name: Pull and run all defined DB containers
+      community.docker.docker_container:
+        name: "{{ item.name }}"
+        image: "{{ item.image | default(omit) }}"
+        build: "{{ item.build | default(omit) }}"
+        ports: "{{ item.ports | default(omit) }}"
+        volumes: "{{ item.volumes | default(omit) }}"
+        env: "{{ item.env | default(omit) }}"
+        restart_policy: always
+        state: started
+      loop: "{{ containers }}"
+
+    - name: Create application databases
+      community.postgresql.postgresql_db:
+        name: "{{ item }}"
+        login_user: postgres
+        login_password: "{{ postgres_password }}"
+      loop:
+        - linkwarden
+        - firefly3
+        - easytodo
+        - authelia
+        - nginx
+
+    - name: Create PostgreSQL users for each database
+      community.postgresql.postgresql_user:
+        name: "{{ item }}"
+        password: "{{ postgres_password }}"
+        db: "{{ item }}"
+        login_user: postgres
+        login_password: "{{ postgres_password }}"
+        priv: "ALL"
+      loop:
+        - linkwarden
+        - firefly3
+        - easytodo
+        - authelia
+        - nginx

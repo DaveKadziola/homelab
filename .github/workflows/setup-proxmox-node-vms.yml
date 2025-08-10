@@ -73,6 +73,7 @@ jobs:
           terraform apply -auto-approve -var-file=environments/$TF_VAR_environment/terraform.tfvars
 
       - name: Copy Terraform tfstate
+        if: steps.terraform-init-apply.outcome == 'success'
         run: |
           cp terraform/terraform.tfstate.d/$TF_VAR_environment/terraform.tfstate $HOME/HomeLab/CiCdResources/terraform/states/$TF_VAR_environment/terraform.tfstate
 
@@ -84,14 +85,20 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         run: |
           cd ansible
-          echo 'User setup'
-          ansible-playbook -i environments/$TF_VAR_environment/hosts.ini user-setup.yml \
+          echo '1. User setup'
+          ansible-playbook -i environments/$TF_VAR_environment/hosts.ini 1-user-setup.yml \
             --user=ubuntu-$TF_VAR_environment \
             --extra-vars "postgres_password=$POSTGRES_PASSWORD ubuntu_docker_password=$UBUNTU_DOCKER_PASSWORD" \
             --private-key=$HOME/HomeLab/CiCdResources/ssh/ubuntu-docker-$TF_VAR_environment
 
-          echo 'Deploy Docker containers'
-          ansible-playbook -i environments/$TF_VAR_environment/hosts.ini docker-containers.yml \
+          echo '2. Setup Docker & Portainer'
+          ansible-playbook -i environments/$TF_VAR_environment/hosts.ini 2-setup-docker-portainer.yml \
+            --user=ubuntu-$TF_VAR_environment \
+            --extra-vars "postgres_password=$POSTGRES_PASSWORD ubuntu_docker_password=$UBUNTU_DOCKER_PASSWORD" \
+            --private-key=$HOME/HomeLab/CiCdResources/ssh/ubuntu-docker-$TF_VAR_environment
+
+          echo '3. Setup PostgreSQL database, pgAdmin and create databases'
+          ansible-playbook -i environments/$TF_VAR_environment/hosts.ini 3-setup-postgresql-db.yml \
             --user=ubuntu-$TF_VAR_environment \
             --extra-vars "postgres_password=$POSTGRES_PASSWORD ubuntu_docker_password=$UBUNTU_DOCKER_PASSWORD" \
             --private-key=$HOME/HomeLab/CiCdResources/ssh/ubuntu-docker-$TF_VAR_environment

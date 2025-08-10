@@ -1,0 +1,51 @@
+---
+- hosts: ubuntu-docker
+  become: true
+  vars:
+    postgres_password: "{{ lookup('env', 'POSTGRES_PASSWORD') }}"
+    ubuntu_docker_password: "{{ lookup('env', 'UBUNTU_DOCKER_PASSWORD') }}"
+    containers:
+      - name: portainer
+        image: portainer/portainer-ce:latest
+        ports:
+          - "9000:9000"
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock
+          - /opt/portainer/data:/data
+
+  tasks:
+    - name: Make sure Docker service is running
+      service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Add user ubuntu to docker group
+      user:
+        name: ubuntu
+        groups: docker
+        append: yes
+
+    - name: Pull and run Portainer container
+      community.docker.docker_container:
+        name: "{{ item.name }}"
+        image: "{{ item.image | default(omit) }}"
+        build: "{{ item.build | default(omit) }}"
+        ports: "{{ item.ports | default(omit) }}"
+        volumes: "{{ item.volumes | default(omit) }}"
+        env: "{{ item.env | default(omit) }}"
+        restart_policy: always
+        state: started
+      loop: "{{ containers }}"
+
+    - name: Ensure Portainer container is running
+      community.docker.docker_container:
+        name: portainer
+        image: portainer/portainer-ce:latest
+        ports:
+          - "9000:9000"
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock
+          - /opt/portainer/data:/data
+        restart_policy: always
+        state: started
