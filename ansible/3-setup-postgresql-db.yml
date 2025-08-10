@@ -25,9 +25,10 @@
 
   tasks:
     - name: Install Python dependencies
-      pip:
-        name: psycopg2-binary
-        executable: pip3
+      apt:
+        name: python3-psycopg2
+        state: present
+      become: true
 
     - name: Pull and run all defined DB containers
       community.docker.docker_container:
