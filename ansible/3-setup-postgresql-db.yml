@@ -18,7 +18,7 @@
         ports:
           - "5050:5050"
         env:
-          PGADMIN_DEFAULT_EMAIL: admin@local
+          PGADMIN_DEFAULT_EMAIL: admin@local.com
           PGADMIN_DEFAULT_PASSWORD: admin
         volumes:
           - /opt/pgadmin:/var/lib/pgadmin
@@ -65,7 +65,7 @@
         login_password: "{{ postgres_password }}"
         login_host: 192.168.122.221
         login_port: 5432
-        priv: "ALL"
+        query: "GRANT ALL PRIVILEGES ON DATABASE {{ item }} TO {{ item }};"
       loop:
         - linkwarden
         - firefly3
