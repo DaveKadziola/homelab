@@ -86,6 +86,12 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         run: |
           cd ansible
+          echo '0. Check if target machine is online'
+          ansible-playbook -i environments/$TF_VAR_environment/hosts.ini 0-check-if-machine-online.yml \
+            --user=ubuntu-$TF_VAR_environment \
+            --extra-vars "postgres_password=$POSTGRES_PASSWORD ubuntu_docker_password=$UBUNTU_DOCKER_PASSWORD" \
+            --private-key=$HOME/HomeLab/CiCdResources/ssh/ubuntu-docker-$TF_VAR_environment
+
           echo '1. User setup'
           ansible-playbook -i environments/$TF_VAR_environment/hosts.ini 1-user-setup.yml \
             --user=ubuntu-$TF_VAR_environment \
