@@ -4,22 +4,6 @@
   become: false
   tasks:
     - name: Waiting for SSH port to be available when Terraform triggers restart
-      ansible.builtin.wait_for:
-        host: ubuntu-docker
-        port: 22
-        state: started
-        delay: 10
-        timeout: 300
-      delegate_to: localhost
-      become: false
-
-  #tasks:
-  #  - name: Create ubuntu user with password
-  #    user:
-  #      name: docker
-  #      password: "{{ ubuntu_docker_password | password_hash('sha512') }}"
-  #      shell: /bin/bash
-  #      groups: sudo,docker
-  #      append: yes
-  #      state: present
-  #      create_home: yes
+      ansible.builtin.wait_for_connection:
+        timeout: 180
+        delay: 5
