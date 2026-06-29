@@ -28,7 +28,7 @@
 | [F0-09](#f0-09--create-homelab-v2-branch) | Create `homelab-v2` branch | F0 | yes | [x] |
 | [F0-10](#f0-10--commit-docs-on-homelab-v2) | Commit `docs/` on `homelab-v2` | F0 | recommended | [x] |
 | [F0-11](#f0-11--bitwarden-preparation) | Bitwarden preparation | F0 | yes | [x] |
-| [F0-12](#f0-12--f0-gate--final-verification) | F0 gate — final verification | F0 | yes | [ ] |
+| [F0-12](#f0-12--f0-gate--final-verification) | F0 gate — final verification | F0 | yes | [x] |
 
 \* F0-08 only if a runner exists in the repo.  
 \* F0-04d blocks **F5** (backup jobs), not the F0→F1 gate — can be deferred to the F5 sprint, but a pCloud account is worth setting up early.
@@ -672,14 +672,16 @@ git push
 
 **Gate checklist:**
 
-- [ ] F0-01 … F0-11 complete (or F0-08 N/A)
-- [ ] Plan: 🔴 questions **B1–B7** closed (or consciously deferred with justification)
-- [ ] Plan: checklist **A** — **A0 ✅**, **A7 ✅**, **A8 ✅**, **A10 ✅**
-- [ ] `libvirtd` + `default` network — OK
+- [x] F0-01 … F0-11 complete (or F0-08 N/A; F0-04d `[~]` deferred to F5)
+- [x] Plan: 🔴 questions **B1–B7** closed (or consciously deferred with justification)
+- [x] Plan: checklist **A** — **A0 ✅**, **A7 ✅**, **A8 ✅**, **A10 ✅**
+- [x] `libvirtd` + `default` network — OK (F0-03)
 - [x] GitHub dev/prod — no legacy secrets (A0 2026-06-11)
 - [x] GitHub Environments — prod approval + branch `main` (A7 2026-06-11)
 - [x] Terraform Cloud — org `dkhomelabserver`, workspace `homelab`, `terraform login` (A8 ✅)
 - [x] Branch `homelab-v2` — on `origin` ✅ (F0-09); docs in F0-10
+
+**F0 gate closed:** 2026-06-11 — **F1 may start** (GHA pipelines, dev VM, new `gh secret set`, TFC execution **Local** before prod apply).
 
 **After gate:** start **F1** sprint (GitHub Actions, dev VM, `README` skeleton, new secrets).
 
