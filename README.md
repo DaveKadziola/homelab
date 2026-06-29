@@ -91,14 +91,18 @@ P0/P1/P2 phases and sources: [`docs/apps-sources.md`](docs/apps-sources.md). Pub
 
 ## Network
 
-VLAN map and static IPs: greenfield plan (A4/A5). Dev libvirt: `192.168.122.0/24` (default network).
+VLAN map, static IPs, and firewall notes: [docs/network.md](docs/network.md)  
+WireGuard (VPN): [docs/wireguard.md](docs/wireguard.md)  
+OPNsense F2 checklist: [docs/opnsense-baseline.md](docs/opnsense-baseline.md)
+
+Public app: `grocery.dkhomelabserver.xyz`. Dev libvirt: `192.168.122.0/24`.
 
 ## Roadmap
 
 | Phase | Scope |
 |-------|--------|
 | **F1** | Repo skeleton, CI, dev runner, dev VM, GH secrets (current) |
-| **F2** | OPNsense bootstrap |
+| **F2** | OPNsense baseline — [docs/opnsense-baseline.md](docs/opnsense-baseline.md), [docs/network.md](docs/network.md), [docs/wireguard.md](docs/wireguard.md) |
 | **F3** | Proxmox Terraform, prod runner |
 | **F4** | P0 applications |
 | **F5** | HA, backups, pCloud rclone |

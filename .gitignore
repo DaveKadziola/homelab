@@ -8,4 +8,5 @@ terraform/.terraform/
 actions-runner*/
 .cache/
 *.qcow2
-seed.iso
+opnsense/backups/
+opnsense/backups/*.xml
