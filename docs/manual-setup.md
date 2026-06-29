@@ -1,71 +1,71 @@
-# Ręczny setup laptopa — sprint F0
+# Manual laptop setup — F0 sprint
 
-> **Status:** dokument referencyjny do **planowania i sprintu F0**.  
-> **Nie wykonuj teraz** — odhaczaj kroki w trakcie sprintu F0, przed startem F1.  
-> **Powiązane:** plan greenfield v2, gate F0→F1, [`README.md`](../README.md) (linkuje tutaj w sekcji „Wymagania wstępne”).
+> **Status:** reference document for **F0 planning and sprint**.  
+> **Work through during F0 sprint** — check off steps during the F0 sprint, before starting F1.  
+> **Related:** greenfield v2 plan, F0→F1 gate, [`README.md`](../README.md) (links here in the "Prerequisites" section).
 
 **Repo:** [DaveKadziola/homelab](https://github.com/DaveKadziola/homelab)  
-**Gałąź docelowa pracy:** `homelab-v2` (od `main`)
+**Target working branch:** `homelab-v2` (from `main`)
 
 ---
 
-## Sprint F0 — przegląd zadań
+## F0 sprint — task overview
 
-| ID | Zadanie | Sprint | Blokuje F1? | Status |
-|----|---------|--------|-------------|--------|
-| [F0-01](#f0-01--audyt-narzędzi-na-laptopie) | Audyt narzędzi na laptopie | F0 | tak | [x] |
-| [F0-02](#f0-02--instalacja-brakujących-pakietów) | Instalacja brakujących pakietów | F0 | tak | [x] |
-| [F0-03](#f0-03--grupy-użytkownika-i-libvirt) | Grupy użytkownika + libvirt | F0 | tak | [x] |
-| [F0-04](#f0-04--github-cli-i-dostęp-do-repo) | GitHub CLI i dostęp do repo | F0 | tak | [x] |
-| [F0-04b](#f0-04b--github-environments-devprod-a7) | GitHub Environments dev/prod (A7) | F0 | tak | [x] |
-| [F0-04c](#f0-04c--terraform-cloud-workspace-a8) | Terraform Cloud workspace (A8) | F0 | tak | [x] |
-| [F0-04d](#f0-04d--pcloud--rclone-auth-a9) | pCloud + rclone auth (A9) | F0 | nie* | [~] |
-| [F0-04e](#f0-04e--bitwarden-vault--2fa-a10) | Bitwarden vault + 2FA (A10) | F0 | tak | [x] |
-| [F0-05](#f0-05--audyt-legacy-secretsvariables) | Audyt legacy secrets/variables | F0 | tak | [x] |
-| [F0-06](#f0-06--backup-w-bitwarden-przed-kasowaniem) | Backup w Bitwarden przed kasowaniem | F0 | tak | [ ] |
-| [F0-07](#f0-07--usunięcie-legacy-secretsvariables) | Usunięcie legacy secrets/variables | F0 | tak | [x] |
-| [F0-08](#f0-08--self-hosted-runner-legacy) | Self-hosted runner (legacy) | F0 | nie* | [x] N/A |
-| [F0-09](#f0-09--utworzenie-gałęzi-homelab-v2) | Utworzenie gałęzi `homelab-v2` | F0 | tak | [x] |
-| [F0-10](#f0-10--commit-docs-na-homelab-v2) | Commit `docs/` na `homelab-v2` | F0 | zalecane | [x] |
-| [F0-11](#f0-11--przygotowanie-bitwarden) | Przygotowanie Bitwarden | F0 | tak | [x] |
-| [F0-12](#f0-12--gate-f0--weryfikacja-końcowa) | Gate F0 — weryfikacja końcowa | F0 | tak | [ ] |
+| ID | Task | Sprint | Blocks F1? | Status |
+|----|------|--------|------------|--------|
+| [F0-01](#f0-01--laptop-tool-audit) | Laptop tool audit | F0 | yes | [x] |
+| [F0-02](#f0-02--install-missing-packages) | Install missing packages | F0 | yes | [x] |
+| [F0-03](#f0-03--user-groups-and-libvirt) | User groups + libvirt | F0 | yes | [x] |
+| [F0-04](#f0-04--github-cli-and-repo-access) | GitHub CLI and repo access | F0 | yes | [x] |
+| [F0-04b](#f0-04b--github-environments-devprod-a7) | GitHub Environments dev/prod (A7) | F0 | yes | [x] |
+| [F0-04c](#f0-04c--terraform-cloud-workspace-a8) | Terraform Cloud workspace (A8) | F0 | yes | [x] |
+| [F0-04d](#f0-04d--pcloud--rclone-auth-a9) | pCloud + rclone auth (A9) | F0 | no* | [~] |
+| [F0-04e](#f0-04e--bitwarden-vault--2fa-a10) | Bitwarden vault + 2FA (A10) | F0 | yes | [x] |
+| [F0-05](#f0-05--legacy-secretsvariables-audit) | Legacy secrets/variables audit | F0 | yes | [x] |
+| [F0-06](#f0-06--bitwarden-backup-before-deletion) | Bitwarden backup before deletion | F0 | yes | [x] |
+| [F0-07](#f0-07--remove-legacy-secretsvariables) | Remove legacy secrets/variables | F0 | yes | [x] |
+| [F0-08](#f0-08--self-hosted-runner-legacy) | Self-hosted runner (legacy) | F0 | no* | [x] N/A |
+| [F0-09](#f0-09--create-homelab-v2-branch) | Create `homelab-v2` branch | F0 | yes | [x] |
+| [F0-10](#f0-10--commit-docs-on-homelab-v2) | Commit `docs/` on `homelab-v2` | F0 | recommended | [x] |
+| [F0-11](#f0-11--bitwarden-preparation) | Bitwarden preparation | F0 | yes | [x] |
+| [F0-12](#f0-12--f0-gate--final-verification) | F0 gate — final verification | F0 | yes | [ ] |
 
-\* F0-08 tylko jeśli runner istnieje w repo.  
-\* F0-04d blokuje **F5** (backup jobs), nie gate F0→F1 — można odłożyć do sprintu F5, ale konto pCloud warto założyć wcześniej.
+\* F0-08 only if a runner exists in the repo.  
+\* F0-04d blocks **F5** (backup jobs), not the F0→F1 gate — can be deferred to the F5 sprint, but a pCloud account is worth setting up early.
 
-**Poza F0 (F1):** utworzenie dev VM, nowe `gh secret set`, pipeline GitHub Actions — patrz plan, faza F1.
+**Outside F0 (F1):** create dev VM, new `gh secret set`, GitHub Actions pipeline — see plan, F1 phase.
 
 ---
 
-## F0-01 — Audyt narzędzi na laptopie
+## F0-01 — Laptop tool audit
 
-**Cel:** wiedzieć, co już jest zainstalowane, zanim cokolwiek doinstalujesz.
+**Goal:** know what is already installed before installing anything else.
 
-**Komendy:**
+**Commands:**
 
 ```bash
 for cmd in git gh terraform ansible ansible-playbook ansible-lint docker virsh virt-install openssl ssh-keygen; do
-  printf '%-20s' "$cmd:"; command -v "$cmd" || echo "BRAK"
+  printf '%-20s' "$cmd:"; command -v "$cmd" || echo "MISSING"
 done
-docker compose version 2>/dev/null || echo "docker compose: BRAK"
+docker compose version 2>/dev/null || echo "docker compose: MISSING"
 groups
 ```
 
 **Definition of done:**
 
-- [x] Lista narzędzi OK / BRAK zapisana (2026-06-11 — poniżej)
-- [x] Wiadomo, które kroki F0-02 są potrzebne → **ansible-lint**, **libvirtd**, sieć `default`
+- [x] OK / MISSING tool list recorded (2026-06-11 — below)
+- [x] Known which F0-02 steps are needed → **ansible-lint**, **libvirtd**, `default` network
 
-**Wynik audytu (2026-06-11):**
+**Audit result (2026-06-11):**
 
-| Narzędzie | Stan | Wersja / uwagi |
-|-----------|------|----------------|
+| Tool | Status | Version / notes |
+|------|--------|-----------------|
 | `git` | OK | 2.47.3 |
 | `gh` | OK | 2.46.0 |
 | `terraform` | OK | 1.15.6 |
 | `ansible` | OK | core 2.19.4 |
 | `ansible-playbook` | OK | `/usr/bin/ansible-playbook` |
-| `ansible-lint` | **BRAK** | → F0-02 (`pipx install ansible-lint`) |
+| `ansible-lint` | **MISSING** | → F0-02 (`pipx install ansible-lint`) |
 | `docker` | OK | |
 | `docker compose` | OK | v5.1.4 |
 | `virsh` | OK | 11.3.0 |
@@ -73,38 +73,38 @@ groups
 | `openssl` | OK | |
 | `ssh-keygen` | OK | |
 | `rclone` | OK | 1.60.1-DEV |
-| `bw` | BRAK | opcjonalnie (A10 gate zamknięty bez CLI) |
+| `bw` | MISSING | optional (A10 gate closed without CLI) |
 
-**Grupy:** `kvm`, `libvirt`, `docker` — OK
+**Groups:** `kvm`, `libvirt`, `docker` — OK
 
-**Libvirt:** `libvirtd` = **active** ✅; sieć `default` = **active** + autostart ✅ (2026-06-11, `qemu:///system`)
+**Libvirt:** `libvirtd` = **active** ✅; `default` network = **active** + autostart ✅ (2026-06-11, `qemu:///system`)
 
-**Uwaga:** używaj `virsh -c qemu:///system` jeśli zwykłe `virsh net-list` zwraca pustą listę (połączenie sesji vs system).
+**Note:** use `virsh -c qemu:///system` if plain `virsh net-list` returns an empty list (session vs system connection).
 
-**Oczekiwany stan docelowy (F1):** wszystkie pozycje z [tabeli narzędzi](#referencja--wymagane-narzędzia) obecne.
+**Target state (F1):** all items from the [tools table](#reference--required-tools) present.
 
 ---
 
-## F0-02 — Instalacja brakujących pakietów
+## F0-02 — Install missing packages
 
-**Cel:** uzupełnić braki z F0-01.
+**Goal:** fill gaps from F0-01.
 
-**Zależności:** F0-01
+**Dependencies:** F0-01
 
-**Debian 13 — przykład:**
+**Debian 13 — example:**
 
 ```bash
 sudo apt update
 sudo apt install -y git gh ansible openssl openssh-client \
   libvirt-clients virtinst qemu-kvm libvirt-daemon-system
 
-# ansible-lint — jeśli brak w apt:
+# ansible-lint — if not in apt:
 sudo apt install -y pipx
 pipx ensurepath
 pipx install ansible-lint
 ```
 
-**Weryfikacja:**
+**Verification:**
 
 ```bash
 git --version && gh --version && terraform version && ansible --version
@@ -113,58 +113,58 @@ ansible-lint --version && docker compose version && virsh --version
 
 **Definition of done:**
 
-- [x] Wszystkie wymagane narzędzia zwracają wersję (2026-06-11)
-- [x] `ansible-lint` — zainstalowany via `pipx` (26.4.0); upewnij się że `~/.local/bin` jest w `PATH`
+- [x] All required tools return a version (2026-06-11)
+- [x] `ansible-lint` — installed via `pipx` (26.4.0); ensure `~/.local/bin` is in `PATH`
 
 ---
 
-## F0-03 — Grupy użytkownika i libvirt
+## F0-03 — User groups and libvirt
 
-**Cel:** libvirt i Docker działają bez zbędnego sudo; sieć `default` gotowa pod dev VM (samą VM tworzysz w **F1**).
+**Goal:** libvirt and Docker work without unnecessary sudo; `default` network ready for dev VM (the VM itself is created in **F1**).
 
-**Zależności:** F0-02
+**Dependencies:** F0-02
 
-**Kroki:**
+**Steps:**
 
 ```bash
-# 1. Grupy (jeśli brak w groups)
+# 1. Groups (if missing from groups)
 sudo usermod -aG libvirt,kvm,docker "$USER"
-# → wyloguj / zaloguj lub: newgrp libvirt
+# → log out / log in or: newgrp libvirt
 
-# 2. Demon libvirt
+# 2. libvirt daemon
 sudo systemctl enable --now libvirtd
-systemctl is-active libvirtd   # oczekiwane: active
+systemctl is-active libvirtd   # expected: active
 
-# 3. Sieć default
+# 3. default network
 virsh net-list --all
 sudo virsh net-start default
 sudo virsh net-autostart default
-# alternatywa: ./utils/start_qemu_default_net
+# alternative: ./utils/start_qemu_default_net
 ```
 
 **Definition of done:**
 
-- [x] Użytkownik w grupach `libvirt`, `kvm`, `docker` (F0-01)
+- [x] User in `libvirt`, `kvm`, `docker` groups (F0-01)
 - [x] `libvirtd` = **active** (2026-06-11)
-- [x] Sieć `default` = **active** + **autostart** (`virsh -c qemu:///system net-list --all`)
-- [x] `virsh -c qemu:///system list --all` działa bez błędu
+- [x] `default` network = **active** + **autostart** (`virsh -c qemu:///system net-list --all`)
+- [x] `virsh -c qemu:///system list --all` works without error
 
 ---
 
-## F0-04 — GitHub CLI i dostęp do repo
+## F0-04 — GitHub CLI and repo access
 
-**Cel:** `gh` zalogowany z uprawnieniami do secrets i workflow.
+**Goal:** `gh` logged in with permissions for secrets and workflows.
 
-**Zależności:** F0-02
+**Dependencies:** F0-02
 
-**Kroki:**
+**Steps:**
 
 ```bash
 gh auth login
 gh auth status
-# wymagane scope: repo, workflow
+# required scope: repo, workflow
 
-cd /ścieżka/do/homelab
+cd /path/to/homelab
 git fetch origin
 git checkout main
 git pull
@@ -174,40 +174,39 @@ git pull
 
 - [x] `gh auth status` — **DaveKadziola**, scope `repo` + `workflow` (2026-06-11)
 - [x] `git fetch origin` OK
-- [x] Gałąź lokalna: **`homelab-v2`** (tracking `origin/homelab-v2`, `15102bd`); `docs/` **untracked** → F0-10
+- [x] Local branch: **`homelab-v2`** (tracking `origin/homelab-v2`, `15102bd`); `docs/` **untracked** → F0-10
 
-**Weryfikacja (2026-06-11):**
+**Verification (2026-06-11):**
 
-| Element | Stan |
-|---------|------|
+| Item | Status |
+|------|--------|
 | `gh auth` | OK — `repo`, `workflow` |
-| `origin/main` | dostępny (`15102bd`) |
+| `origin/main` | accessible (`15102bd`) |
 | `origin/homelab-v2` | **OK** ✅ F0-09 |
-| Lokalna gałąź | `dev`; `?? docs/` |
-
+| Local branch | `homelab-v2`; `?? docs/` |
 
 ---
 
 ## F0-04b — GitHub Environments dev/prod (A7)
 
-**Cel:** środowiska `dev` i `prod` gotowe pod CI v2 — approval na prod, gałąź deploy prod = `main`.
+**Goal:** `dev` and `prod` environments ready for v2 CI — approval on prod, prod deploy branch = `main`.
 
-**Zależności:** F0-04, F0-07 (zalecane: puste env przed pierwszym secretem v2)
+**Dependencies:** F0-04, F0-07 (recommended: empty env before first v2 secret)
 
-**Weryfikacja (2026-06-11):**
+**Verification (2026-06-11):**
 
-| Element | Stan |
-|---------|------|
+| Item | Status |
+|------|--------|
 | Repo | `DaveKadziola/homelab`, **public**, default branch **`main`** |
 | `gh auth` | OK — scope `repo`, `workflow` |
-| Environment `dev` | istnieje, secrets puste |
-| Environment `prod` | istnieje, secrets puste |
+| Environment `dev` | exists, secrets empty |
+| Environment `prod` | exists, secrets empty |
 | Prod — required reviewer | `DaveKadziola` |
-| Prod — deployment branches | tylko **`main`** (plan mówi `master` — w repo używamy `main`) |
-| Actions | włączone, `allowed_actions: all` |
-| `gh secret set --env dev` | OK (test usunięty) |
+| Prod — deployment branches | **`main`** only (plan says `master` — repo uses `main`) |
+| Actions | enabled, `allowed_actions: all` |
+| `gh secret set --env dev` | OK (test removed) |
 
-**Prod — approval + branch policy (jednorazowo, przez API):**
+**Prod — approval + branch policy (one-time, via API):**
 
 ```bash
 # Reviewer ID: gh api user --jq .id
@@ -229,62 +228,62 @@ gh api -X POST repos/DaveKadziola/homelab/environments/prod/deployment-branch-po
 EOF
 ```
 
-**Po F0-09** (gałąź `homelab-v2`): opcjonalnie ograniczyć deploy **dev** do gałęzi `homelab-v2` — analogicznie `deployment-branch-policies` na env `dev`.
+**After F0-09** (`homelab-v2` branch): optionally restrict **dev** deploy to branch `homelab-v2` — same `deployment-branch-policies` on env `dev`.
 
 **Definition of done:**
 
-- [x] Environments `dev` + `prod` istnieją
-- [x] Prod wymaga approval przed deployem
-- [x] Prod akceptuje deploy tylko z gałęzi `main`
-- [x] `gh secret set --env dev` działa (secrets v2 dopiero w F1)
+- [x] Environments `dev` + `prod` exist
+- [x] Prod requires approval before deploy
+- [x] Prod accepts deploy only from branch `main`
+- [x] `gh secret set --env dev` works (v2 secrets in F1)
 
 ---
 
 ## F0-04c — Terraform Cloud workspace (A8)
 
-**Cel:** konto HCP Terraform (Terraform Cloud) + workspace **prod** na pusty state v2 — **bez** importu legacy tfstate.
+**Goal:** HCP Terraform (Terraform Cloud) account + **prod** workspace on empty v2 state — **no** legacy tfstate import.
 
-**Zależności:** F0-04 (konto GitHub OK); F0-07 zalecane (brak kolizji secretów w GH)
+**Dependencies:** F0-04 (GitHub account OK); F0-07 recommended (no secret collisions in GH)
 
-**Architektura (plan v2):**
+**Architecture (v2 plan):**
 
-| Element | Wartość docelowa |
-|---------|------------------|
-| **Org TFC** | **`dkhomelabserver`** (decyzja 2026-06-11) |
-| **Workspace prod** | **`homelab`** (org `dkhomelabserver`) |
-| **Workspace dev** | **brak** — dev TF na laptopie (libvirt), lokalny state; TFC **tylko prod** |
-| **Backend w repo** | `cloud { ... }` w `terraform/versions.tf` — dopiero w **F1**, nie teraz |
-| **GH secret** | `TF_API_TOKEN` → env **prod** (F1); **nie** w repo |
+| Item | Target value |
+|------|--------------|
+| **TFC org** | **`dkhomelabserver`** (decision 2026-06-11) |
+| **Prod workspace** | **`homelab`** (org `dkhomelabserver`) |
+| **Dev workspace** | **none** — dev TF on laptop (libvirt), local state; TFC **prod only** |
+| **Repo backend** | `cloud { ... }` in `terraform/versions.tf` — in **F1**, not now |
+| **GH secret** | `TF_API_TOKEN` → env **prod** (F1); **not** in repo |
 
-**Weryfikacja (2026-06-11 — bez tokenów użytkownika):**
+**Verification (2026-06-11 — without user tokens):**
 
-| Element | Stan |
-|---------|------|
+| Item | Status |
+|------|--------|
 | `terraform` CLI | v1.14.6 (`/usr/bin/terraform`) |
 | `~/.terraform.d/credentials.tfrc.json` | **OK** (2026-06-11) |
-| Workspace **`homelab`** | org `dkhomelabserver`, `resource-count: 0`, auto-apply OFF, execution **remote** (→ Local w F1) |
+| Workspace **`homelab`** | org `dkhomelabserver`, `resource-count: 0`, auto-apply OFF, execution **remote** (→ Local in F1) |
 
-**Kroki ręczne (jednorazowo):**
+**Manual steps (one-time):**
 
-1. **Konto:** [app.terraform.io/signup](https://app.terraform.io/signup) — plan **Free** wystarczy (1 org, wiele workspace’ów w limicie free).
-2. **Organizacja:** org **`dkhomelabserver`** — już utworzona ✅
-3. **Workspace prod:**
-   - Nazwa: **`homelab`** — utworzony ✅
-   - **Execution mode:** obecnie **remote** → w **F1** ustaw **Local** (apply z self-hosted runnera w LAN)
+1. **Account:** [app.terraform.io/signup](https://app.terraform.io/signup) — **Free** plan sufficient (1 org, multiple workspaces within free limit).
+2. **Organization:** org **`dkhomelabserver`** — already created ✅
+3. **Prod workspace:**
+   - Name: **`homelab`** — created ✅
+   - **Execution mode:** currently **remote** → set **Local** in **F1** (apply from self-hosted runner in LAN)
    - **Terraform version:** ≥ 1.8.0 (repo: `required_version = ">= 1.8.0"`).
-   - **Auto apply:** **OFF** (apply tylko przez `infra-apply-prod.yml` + approval GH env prod).
-   - **State:** pusty — **nie** importuj starego `terraform.tfstate` z legacy CI.
-4. **Token API (User settings → Tokens):**
+   - **Auto apply:** **OFF** (apply only via `infra-apply-prod.yml` + GH env prod approval).
+   - **State:** empty — **do not** import old `terraform.tfstate` from legacy CI.
+4. **API token (User settings → Tokens):**
    ```bash
    terraform login
-   # alternatywa: wklej token ręcznie do ~/.terraform.d/credentials.tfrc.json
+   # alternative: paste token manually into ~/.terraform.d/credentials.tfrc.json
    ```
-   Skopiuj token do Bitwarden (`homelab/TF_API_TOKEN/prod`), potem w **F1**:
+   Copy token to Bitwarden (`homelab/TF_API_TOKEN/prod`), then in **F1**:
    ```bash
    gh secret set TF_API_TOKEN --env prod --body "$TOKEN"
    unset TOKEN
    ```
-5. **Weryfikacja po loginie:**
+5. **Verification after login:**
    ```bash
    # org: dkhomelabserver
    curl -s \
@@ -292,86 +291,84 @@ EOF
      "https://app.terraform.io/api/v2/organizations/dkhomelabserver/workspaces/homelab" \
      | python3 -m json.tool | head -20
    ```
-   Oczekiwane: JSON z `"name": "homelab"`, bez `"errors"`.
+   Expected: JSON with `"name": "homelab"`, no `"errors"`.
 
-**Variable Set (opcjonalnie teraz, wymagane przed pierwszym prod apply w F3):**
+**Variable Set (optional now, required before first prod apply in F3):**
 
-W TFC utwórz Variable Set przypięty do **`homelab`** — wartości **później** z Bitwarden / `gh secret set` (F1), nie w repo:
+In TFC create a Variable Set attached to **`homelab`** — values **later** from Bitwarden / `gh secret set` (F1), not in repo:
 
-| Zmienna TFC | Sensitive | Źródło (F1+) |
-|-------------|-----------|--------------|
-| `TF_VAR_proxmox_api_url` | nie | GH variable prod |
-| `TF_VAR_proxmox_api_token_id` | nie | GH variable prod |
-| `TF_VAR_proxmox_api_token_secret` | tak | GH secret prod |
-| `TF_VAR_proxmox_ssh_username` | nie | GH variable prod |
-| `TF_VAR_proxmox_ssh_password` | tak | GH secret prod |
-| `TF_VAR_ubuntu_docker_password` | tak | GH secret prod |
-| `TF_VAR_ubuntu_docker_ssh_pub` | nie | GH variable prod |
-| `TF_VAR_ssl_*` | tak | GH secret prod (jeśli cert setup w TF) |
+| TFC variable | Sensitive | Source (F1+) |
+|--------------|-----------|--------------|
+| `TF_VAR_proxmox_api_url` | no | GH variable prod |
+| `TF_VAR_proxmox_api_token_id` | no | GH variable prod |
+| `TF_VAR_proxmox_api_token_secret` | yes | GH secret prod |
+| `TF_VAR_proxmox_ssh_username` | no | GH variable prod |
+| `TF_VAR_proxmox_ssh_password` | yes | GH secret prod |
+| `TF_VAR_ubuntu_docker_password` | yes | GH secret prod |
+| `TF_VAR_ubuntu_docker_ssh_pub` | no | GH variable prod |
+| `TF_VAR_ssl_*` | yes | GH secret prod (if cert setup in TF) |
 
 **Definition of done:**
 
-- [x] Konto HCP Terraform + org **`dkhomelabserver`**
-- [x] Workspace **`homelab`** istnieje, pusty state (2026-06-11)
+- [x] HCP Terraform account + org **`dkhomelabserver`**
+- [x] Workspace **`homelab`** exists, empty state (2026-06-11)
 - [x] `terraform login` OK
-- [ ] Token w Bitwarden (`homelab/TF_API_TOKEN/prod`)
-- [x] API zwraca workspace — zweryfikowane 2026-06-11
-- [ ] `TF_API_TOKEN` w GH env prod — **F1** (nie blokuje zamknięcia A8 konta/workspace)
-
-**Blokery (2026-06-11):** brak `credentials.tfrc.json` / tokena TFC — wymaga interaktywnego `terraform login` lub ręcznego tokenu użytkownika.
+- [x] Token in Bitwarden (`homelab/TF_API_TOKEN/prod`)
+- [x] API returns workspace — verified 2026-06-11
+- [ ] `TF_API_TOKEN` in GH env prod — **F1** (does not block closing A8 account/workspace)
 
 ---
 
 ## F0-04d — pCloud + rclone auth (A9)
 
-**Cel:** konto pCloud + skonfigurowany remote **rclone** do backupów offsite (decyzja **B16**: rclone → pCloud, nie ZeroByte).
+**Goal:** pCloud account + configured **rclone** remote for offsite backups (decision **B16**: rclone → pCloud, not ZeroByte).
 
-**Zależności:** F0-04 (opcjonalnie F0-11 Bitwarden — kopia tokenu OAuth); **nie** blokuje gate F0→F1, blokuje **F5** (NAS backup jobs + sync offsite).
+**Dependencies:** F0-04 (optionally F0-11 Bitwarden — OAuth token copy); **does not** block F0→F1 gate, blocks **F5** (NAS backup jobs + offsite sync).
 
-**Architektura (plan v2):**
+**Architecture (v2 plan):**
 
-| Element | Wartość docelowa |
-|---------|------------------|
-| **Narzędzie** | **rclone** (one-way copy/sync do chmury) |
+| Item | Target value |
+|------|--------------|
+| **Tool** | **rclone** (one-way copy/sync to cloud) |
 | **Backend** | pCloud (`type = pcloud`) |
-| **Nazwa remote** | **`pcloud`** — używaj konsekwentnie w skryptach i cronach F5 |
-| **Ścieżka offsite** | **`homelab-backups/`** na pCloud (root konta lub podfolder) |
-| **Podfoldery (F5)** | `vzdump/`, `postgres/`, `homeassistant/`, `opnsense/`, `repo-zip/` — **tylko DR** (bez pełnych bibliotek mediów; multimedia już na pCloud osobno) |
-| **Lokalnie (Purple 4 TB)** | Retention **2 najnowsze** backupy (A15); offsite harmonogram — *TBD* w F5 |
-| **GH secret** | **`RCLONE_CONFIG`** → env **prod** (F5) — base64 całego `rclone.conf` **lub** tylko sekcji `[pcloud]`; **nie** w repo |
-| **GH env dev** | **brak** — dev nie wysyła backupów offsite |
+| **Remote name** | **`pcloud`** — use consistently in F5 scripts and crons |
+| **Offsite path** | **`homelab-backups/`** on pCloud (account root or subfolder) |
+| **Subfolders (F5)** | `vzdump/`, `postgres/`, `homeassistant/`, `opnsense/`, `repo-zip/` — **DR only** (no full media libraries; media already on pCloud separately) |
+| **Local (Purple 4 TB)** | Retention **2 newest** backups (A15); offsite schedule — *TBD* in F5 |
+| **GH secret** | **`RCLONE_CONFIG`** → env **prod** (F5) — base64 of entire `rclone.conf` **or** `[pcloud]` section only; **not** in repo |
+| **GH env dev** | **none** — dev does not send offsite backups |
 
-**Weryfikacja (2026-06-11 — bez credentials użytkownika):**
+**Verification (2026-06-11 — without user credentials):**
 
-| Element | Stan |
-|---------|------|
-| `rclone` CLI | v1.60.1-DEV (`/usr/bin/rclone`, pakiet Debian) |
-| `~/.config/rclone/rclone.conf` | plik istnieje, **pusty** (0 B) — brak sekcji `[pcloud]` |
-| Remote `pcloud` | **nie** — `rclone listremotes` puste |
-| Konto pCloud | ✅ aktywne — **500 GB wolne** (user 2026-06-11) |
-| `gh secret list` (repo + dev + prod) | puste — brak `RCLONE_*` (A0 ✅) |
-| `.github/workflows/force-proxmox-resource-backup.yml` | legacy placeholder (bez rclone) |
+| Item | Status |
+|------|--------|
+| `rclone` CLI | v1.60.1-DEV (`/usr/bin/rclone`, Debian package) |
+| `~/.config/rclone/rclone.conf` | file exists, **empty** (0 B) — no `[pcloud]` section |
+| Remote `pcloud` | **no** — `rclone listremotes` empty |
+| pCloud account | ✅ active — **500 GB free** (user 2026-06-11) |
+| `gh secret list` (repo + dev + prod) | empty — no `RCLONE_*` (A0 ✅) |
+| `.github/workflows/force-proxmox-resource-backup.yml` | legacy placeholder (no rclone) |
 
-**Kroki ręczne (jednorazowo):**
+**Manual steps (one-time):**
 
-1. **Konto pCloud:** ✅ konto aktywne — **500 GB wolnego** (2026-06-11); homelab DR backup-only **~160 GB** (2× retention, bez mediów) mieści się z dużym marginesem — patrz [A15 Storage sizing](#referencja--a15-storage-sizing-f3f5). **Multimedia (Immich/muzyka/wideo) już backupowane na pCloud osobno** — homelab rclone ich nie duplikuje.
-2. **Instalacja rclone** (jeśli brak po F0-01):
+1. **pCloud account:** ✅ account active — **500 GB free** (2026-06-11); homelab DR backup-only **~160 GB** (2× retention, no media) fits with large margin — see [A15 Storage sizing](#reference--a15-storage-sizing-f3f5). **Media (Immich/music/video) already backed up to pCloud separately** — homelab rclone does not duplicate them.
+2. **Install rclone** (if missing after F0-01):
    ```bash
    sudo apt update && sudo apt install -y rclone
    rclone version
    ```
-3. **Konfiguracja remote (interaktywna — wymaga logowania pCloud):**
+3. **Configure remote (interactive — requires pCloud login):**
    ```bash
    rclone config
    # n) New remote
    # name: pcloud
-   # Storage: pcloud (np. numer ~31 na liście)
-   # client_id / client_secret: Enter (domyślne rclone)
-   # Auth: y → otwiera przeglądarkę OAuth pCloud
-   # root_folder_id: Enter (root) lub ID folderu docelowego
+   # Storage: pcloud (e.g. ~31 on the list)
+   # client_id / client_secret: Enter (rclone defaults)
+   # Auth: y → opens pCloud OAuth browser
+   # root_folder_id: Enter (root) or target folder ID
    # Edit advanced config: n
    ```
-4. **Struktura folderów offsite:**
+4. **Offsite folder structure:**
    ```bash
    rclone mkdir pcloud:homelab-backups
    rclone mkdir pcloud:homelab-backups/vzdump
@@ -380,130 +377,130 @@ W TFC utwórz Variable Set przypięty do **`homelab`** — wartości **później
    rclone mkdir pcloud:homelab-backups/opnsense
    rclone mkdir pcloud:homelab-backups/repo-zip
    ```
-5. **Weryfikacja (bez wypisywania tokenów):**
+5. **Verification (without printing tokens):**
    ```bash
-   rclone listremotes          # oczekiwane: pcloud:
-   rclone lsd pcloud:          # lista katalogów root
+   rclone listremotes          # expected: pcloud:
+   rclone lsd pcloud:          # root directory list
    rclone lsd pcloud:homelab-backups
-   # test upload (mały plik):
+   # upload test (small file):
    echo ok > /tmp/rclone-test.txt
    rclone copy /tmp/rclone-test.txt pcloud:homelab-backups/
    rclone ls pcloud:homelab-backups/rclone-test.txt
    rclone delete pcloud:homelab-backups/rclone-test.txt
    rm /tmp/rclone-test.txt
    ```
-6. **Bitwarden:** Secure Note `homelab/RCLONE_CONFIG/prod` — opis „OAuth token w ~/.config/rclone/rclone.conf sekcja [pcloud]”; **nie** wklejaj całego pliku do repo/chat.
-7. **GitHub (F5, nie teraz):** po deploy NAS VM i skryptach backup:
+6. **Bitwarden:** Secure Note `homelab/RCLONE_CONFIG/prod` — note "OAuth token in ~/.config/rclone/rclone.conf section [pcloud]"; **do not** paste the full file into repo/chat.
+7. **GitHub (F5, not now):** after NAS VM deploy and backup scripts:
    ```bash
-   # na hoście z działającym rclone (ubuntu-nas lub runner prod):
+   # on host with working rclone (ubuntu-nas or prod runner):
    gh secret set RCLONE_CONFIG --env prod --body "$(base64 -w0 ~/.config/rclone/rclone.conf)"
    unset RCLONE_CONFIG
    ```
-   W `docs/secrets-inventory.md` (F0-10): wpisz `RCLONE_CONFIG` | prod | data.
+   In `docs/secrets-inventory.md` (F0-10): add `RCLONE_CONFIG` | prod | date.
 
 **Definition of done:**
 
-- [x] Konto pCloud — **500 GB wolne** ✅
-- [ ] Remote **`pcloud`** w `rclone.conf`, OAuth OK
-- [ ] Folder **`homelab-backups/`** (+ podfoldery DR) istnieje na pCloud
-- [ ] `rclone lsd pcloud:homelab-backups` działa
-- [ ] Token/opis w Bitwarden
-- [ ] `RCLONE_CONFIG` w GH env prod — **F5** (nie blokuje zamknięcia A9 na koncie/remote)
+- [x] pCloud account — **500 GB free** ✅
+- [ ] Remote **`pcloud`** in `rclone.conf`, OAuth OK
+- [ ] Folder **`homelab-backups/`** (+ DR subfolders) exists on pCloud
+- [ ] `rclone lsd pcloud:homelab-backups` works
+- [ ] Token/description in Bitwarden
+- [ ] `RCLONE_CONFIG` in GH env prod — **F5** (does not block closing A9 on account/remote)
 
-**Blokery (2026-06-11):** brak remote `pcloud` w rclone — wymaga interaktywnego `rclone config` (OAuth w przeglądarce).
+**Blockers (2026-06-11):** no `pcloud` remote in rclone — requires interactive `rclone config` (OAuth in browser).
 
 ---
 
 ## F0-04e — Bitwarden vault + 2FA (A10)
 
-**Cel:** osobisty vault gotowy na procedurę v2: **generuj lokalnie → Bitwarden → `gh secret set`** (F1+). Blokuje **F0-06** (backup przed kasowaniem) i gate **F0→F1**.
+**Goal:** personal vault ready for v2 procedure: **generate locally → Bitwarden → `gh secret set`** (F1+). Blocks **F0-06** (backup before deletion) and **F0→F1** gate.
 
-**Zależności:** brak (wykonaj **przed** F0-06 i F0-07, jeśli jeszcze nie masz vault)
+**Dependencies:** none (do **before** F0-06 and F0-07 if you do not have a vault yet)
 
-**Decyzja architektury (plan B15):** **Bitwarden Cloud** — nie Vaultwarden, nie legacy `BW_*` w GitHub (usunięte w A0).
+**Architecture decision (plan B15):** **Bitwarden Cloud** — not Vaultwarden, not legacy `BW_*` in GitHub (removed in A0).
 
-**Architektura (plan v2):**
+**Architecture (v2 plan):**
 
-| Element | Wartość docelowa |
-|---------|------------------|
-| **Produkt** | [Bitwarden Cloud](https://bitwarden.com/) (Free wystarczy) |
-| **2FA** | **Wymagane** — TOTP (appka) lub klucz sprzętowy; recovery codes zapisane offline |
-| **Folder w vault** | **`homelab`** — jeden folder/collection na wszystkie wpisy projektu |
-| **Schemat nazw wpisu** | **`homelab/<NAZWA>/<env>`** — `<NAZWA>` = nazwa GH secret/variable (np. `POSTGRES_PASSWORD`); `<env>` = `dev` \| `prod` \| `repo` \| `local` |
-| **Typ wpisu** | **Secure Note** dla secretów tekstowych; **Login** gdy user+pass; **attachment** dla certów/kluczy SSH |
-| **Tagi** | `homelab-v2` (nowe); `legacy-pre-v2` (kopie sprzed greenfield — F0-06) |
-| **Pola notatki (zalecane)** | data utworzenia, data rotacji, powiązana appka, nazwa GH secret |
-| **GH legacy `BW_*`** | **Nie** przywracać — to był dostęp CI do vault; v2 = ręczna procedura z laptopa |
+| Item | Target value |
+|------|--------------|
+| **Product** | [Bitwarden Cloud](https://bitwarden.com/) (Free sufficient) |
+| **2FA** | **Required** — TOTP (app) or hardware key; recovery codes stored offline |
+| **Vault folder** | **`homelab`** — one folder/collection for all project entries |
+| **Entry naming** | **`homelab/<NAME>/<env>`** — `<NAME>` = GH secret/variable name (e.g. `POSTGRES_PASSWORD`); `<env>` = `dev` \| `prod` \| `repo` \| `local` |
+| **Entry type** | **Secure Note** for text secrets; **Login** for user+pass; **attachment** for certs/SSH keys |
+| **Tags** | `homelab-v2` (new); `legacy-pre-v2` (pre-greenfield copies — F0-06) |
+| **Note fields (recommended)** | creation date, rotation date, related app, GH secret name |
+| **GH legacy `BW_*`** | **Do not** restore — that was CI vault access; v2 = manual procedure from laptop |
 
-**Schemat folderów / przykłady wpisów:**
+**Folder layout / example entries:**
 
 ```
-homelab/                          ← folder Bitwarden
+homelab/                          ← Bitwarden folder
 ├── TF_API_TOKEN/prod             ← Secure Note (F0-04c / F1)
 ├── POSTGRES_PASSWORD/dev         ← F1
 ├── POSTGRES_PASSWORD/prod
 ├── PROXMOX_API_TOKEN_SECRET/dev
 ├── PROXMOX_API_TOKEN_SECRET/prod
-├── RCLONE_CONFIG/prod            ← opis OAuth; pełny plik tylko lokalnie (F0-04d / F5)
+├── RCLONE_CONFIG/prod            ← OAuth description; full file local only (F0-04d / F5)
 ├── SSL_CERT/prod                 ← attachment (legacy backup, F0-06)
 ├── SSL_CHAIN/prod
 ├── SSL_PKEY/prod
-└── UBUNTU_DOCKER_SSH_PRIV/local  ← private key: attachment lub tylko ~/.ssh/ + pub w GH variable
+└── UBUNTU_DOCKER_SSH_PRIV/local  ← private key: attachment or ~/.ssh/ only + pub in GH variable
 ```
 
-**Relacja do F0-06:** F0-06 wymaga **istniejącego** vault (ten gate). Dla każdego legacy secretu z F0-05: wpisz kopię do `homelab/<NAZWA>/<env>` z tagiem `legacy-pre-v2` **albo** świadomie oznacz „generuję nowy w F1”. Bez A10 nie ma sensownego miejsca na backup przed F0-07 (już wykonane — wartości tylko w GH były **nieodwracalnie** utracone).
+**Relation to F0-06:** F0-06 requires an **existing** vault (this gate). For each legacy secret from F0-05: copy to `homelab/<NAME>/<env>` with tag `legacy-pre-v2` **or** consciously mark "generate new in F1". Without A10 there is no sensible place for backup before F0-07 (already done — values only in GH were **irrecoverably** lost).
 
-**Weryfikacja (2026-06-11):**
+**Verification (2026-06-11):**
 
-| Element | Stan |
-|---------|------|
-| **Produkt** | Bitwarden **Password Manager** (nie Secrets Manager) |
-| Konto + 2FA | user potwierdził ✅ |
-| Folder **`homelab`** | user potwierdził ✅ |
-| Wpis **`TF_API_TOKEN/prod`** | user potwierdził ✅ |
-| `bw` CLI | opcjonalnie — nie wymagane do gate |
-| `gh` — brak `BW_*` | A0 ✅ |
+| Item | Status |
+|------|--------|
+| **Product** | Bitwarden **Password Manager** (not Secrets Manager) |
+| Account + 2FA | user confirmed ✅ |
+| Folder **`homelab`** | user confirmed ✅ |
+| Entry **`TF_API_TOKEN/prod`** | user confirmed ✅ |
+| `bw` CLI | optional — not required for gate |
+| `gh` — no `BW_*` | A0 ✅ |
 
-**Kroki ręczne (jednorazowo):**
+**Manual steps (one-time):**
 
-1. **Konto:** [bitwarden.com](https://bitwarden.com/) — rejestracja lub logowanie na istniejące konto.
-2. **2FA:** Settings → Two-step Login → Authenticator App (TOTP) **lub** Security Key; zapisz **recovery codes** (Secure Note poza vault lub wydruk).
-3. **Folder:** w vault utwórz folder **`homelab`** (Collections → New Collection, jeśli używasz organizacji).
-4. **Test wpisu:** Secure Note `homelab/TEST/dev` z losową wartością (`openssl rand -base64 8`) — potem usuń test.
-5. **Opcjonalnie CLI** (wygodne przy rotacji; **nie** wymagane do gate):
+1. **Account:** [bitwarden.com](https://bitwarden.com/) — register or log in to existing account.
+2. **2FA:** Settings → Two-step Login → Authenticator App (TOTP) **or** Security Key; save **recovery codes** (Secure Note outside vault or printout).
+3. **Folder:** in vault create folder **`homelab`** (Collections → New Collection if using an organization).
+4. **Test entry:** Secure Note `homelab/TEST/dev` with random value (`openssl rand -base64 8`) — then delete test.
+5. **Optional CLI** (convenient for rotation; **not** required for gate):
    ```bash
-   # instalacja (jedna z metod):
+   # install (one of):
    npm install -g @bitwarden/cli
-   # alternatywa: https://bitwarden.com/download/#downloads-cli
+   # alternative: https://bitwarden.com/download/#downloads-cli
 
-   bw login          # email master password — interaktywne
-   bw unlock         # → session key w pamięci (NIE loguj/wklejaj session key)
-   bw status         # oczekiwane: "status":"unlocked" lub "locked" + "url":"https://vault.bitwarden.com"
-   bw list folders   # powinien pokazać folder homelab po utworzeniu w UI
+   bw login          # email master password — interactive
+   bw unlock         # → session key in memory (DO NOT log/paste session key)
+   bw status         # expected: "status":"unlocked" or "locked" + "url":"https://vault.bitwarden.com"
+   bw list folders   # should show homelab folder after creating in UI
    bw lock
    ```
-6. **Po gate:** pierwsze prawdziwe wpisy w **F0-06** (legacy) i **F1** (`gh secret set`).
+6. **After gate:** first real entries in **F0-06** (legacy) and **F1** (`gh secret set`).
 
 **Definition of done:**
 
-- [x] Konto Bitwarden Cloud + **2FA włączone**
-- [x] Folder **`homelab`** utworzony
-- [x] Wpis **`TF_API_TOKEN/prod`** (Secure Note)
-- [x] Schemat **`homelab/<NAZWA>/<env>`** — w użyciu
-- [ ] (Opcjonalnie) `bw login` + `bw status` OK
-- [x] A10 gate zamknięte (user 2026-06-11)
+- [x] Bitwarden Cloud account + **2FA enabled**
+- [x] Folder **`homelab`** created
+- [x] Entry **`TF_API_TOKEN/prod`** (Secure Note)
+- [x] Schema **`homelab/<NAME>/<env>`** — in use
+- [ ] (Optional) `bw login` + `bw status` OK
+- [x] A10 gate closed (user 2026-06-11)
 
-**Blokery (2026-06-11):** brak `bw` CLI; brak lokalnej konfiguracji Bitwarden; vault/2FA wymagają interaktywnego logowania użytkownika — agent nie może potwierdzić dostępu bez sekretów.
+**Blockers (2026-06-11):** no `bw` CLI; no local Bitwarden config; vault/2FA require interactive user login — agent cannot confirm access without secrets.
 
 ---
 
-## F0-05 — Audyt legacy secrets/variables
+## F0-05 — Legacy secrets/variables audit
 
-**Cel:** pełna lista starych credentials przed kasowaniem (plan: cleanup F0).
+**Goal:** full list of old credentials before deletion (plan: F0 cleanup).
 
-**Zależności:** F0-04
+**Dependencies:** F0-04
 
-**Komendy:**
+**Commands:**
 
 ```bash
 gh secret list
@@ -513,10 +510,10 @@ gh variable list --env dev
 gh variable list --env prod
 ```
 
-**Oczekiwana lista legacy (zweryfikuj z audytem):**
+**Expected legacy list (verify against audit):**
 
-| Nazwa | Typ | Env |
-|-------|-----|-----|
+| Name | Type | Env |
+|------|------|-----|
 | `POSTGRES_PASSWORD` | secret | dev, prod |
 | `PROXMOX_API_TOKEN_SECRET` | secret | dev, prod |
 | `PROXMOX_SSH_PASSWORD` | secret | dev, prod |
@@ -531,80 +528,93 @@ gh variable list --env prod
 
 **Definition of done:**
 
-- [x] Wyniki audytu zapisane (2026-06-11 — A0; repo: 3× BW_*, dev: 5 secrets + 4 vars, prod: 8 secrets + 4 vars)
-- [x] Wiadomo, co kasujesz w F0-07
+- [x] Audit results recorded (2026-06-11 — A0; repo: 3× BW_*, dev: 5 secrets + 4 vars, prod: 8 secrets + 4 vars)
+- [x] Known what to delete in F0-07
 
 ---
 
-## F0-06 — Backup w Bitwarden przed kasowaniem
+## F0-06 — Bitwarden backup before deletion
 
-**Cel:** nie stracić wartości, których GitHub już nie pokaże.
+**Goal:** do not lose values that GitHub will no longer show.
 
-**Zależności:** F0-05, **F0-04e** (A10 — vault musi istnieć przed backupem)
+**Dependencies:** F0-05, **F0-04e** (A10 — vault must exist before backup)
 
-**Kroki:**
+**Context:** F0-07 already deleted legacy GH secrets (A0). Values that existed **only** in GitHub are **UNRECOVERABLE** — GitHub Secrets are write-only and cannot be read back after deletion.
 
-1. Dla każdego secretu z F0-05: jeśli wartość jest tylko w GitHub — **nie da się odzyskać**; jeśli masz ją gdzie indziej, wpisz do Bitwarden.
-2. Certy SSL (prod): export / kopia w Bitwarden (attachment), jeśli jeszcze potrzebne.
-3. Oznacz w Bitwarden wpisy jako `legacy-pre-v2` vs przyszłe `homelab-v2`.
+**Steps:**
+
+1. For each secret from F0-05: if the value was only in GitHub — **cannot be recovered**; if you have it elsewhere, record it in Bitwarden.
+2. SSL certs (prod): export / copy to Bitwarden (attachment) if still needed.
+3. Tag Bitwarden entries as `legacy-pre-v2` vs future `homelab-v2`.
+
+**Legacy secret decisions (2026-06-29):**
+
+| Secret | Decision | Notes |
+|--------|----------|-------|
+| POSTGRES_PASSWORD (dev/prod) | Generate new in F1 | GH value lost |
+| PROXMOX_* (dev/prod) | Generate new in F1 | GH value lost |
+| UBUNTU_DOCKER_* (dev/prod) | Generate new in F1 | GH value lost |
+| SSL_CERT/CHAIN/PKEY (prod) | Generate new in F1 or N/A | Unless user has copy elsewhere |
+| BW_* (repo) | Do not restore | v2 uses manual Bitwarden workflow |
+| TF_API_TOKEN/prod | In Bitwarden ✅ | user confirmed |
 
 **Definition of done:**
 
-- [ ] Decyzja per secret: „mam kopię” / „generuję nowy w F1”
-- [ ] Brak planowanego kasowania bez świadomej decyzji
+- [x] Decision per secret: "have copy" / "generate new in F1"
+- [x] No planned deletion without a conscious decision
 
 ---
 
-## F0-07 — Usunięcie legacy secrets/variables
+## F0-07 — Remove legacy secrets/variables
 
-**Cel:** czysty GitHub Environments pod v2.
+**Goal:** clean GitHub Environments for v2.
 
-**Zależności:** F0-06
+**Dependencies:** F0-06
 
-**Komendy (powtórz dla każdej nazwy z audytu):**
+**Commands (repeat for each name from audit):**
 
 ```bash
-gh secret delete NAZWA --env dev
-gh secret delete NAZWA --env prod
-gh variable delete NAZWA --env dev
-gh variable delete NAZWA --env prod
-gh secret delete NAZWA    # repo-level, bez --env
+gh secret delete NAME --env dev
+gh secret delete NAME --env prod
+gh variable delete NAME --env dev
+gh variable delete NAME --env prod
+gh secret delete NAME    # repo-level, without --env
 ```
 
 **Definition of done:**
 
-- [x] `gh secret list --env dev` — puste (2026-06-11)
-- [x] `gh secret list --env prod` — puste (2026-06-11)
-- [x] Repo-level legacy (`BW_*`) usunięte
+- [x] `gh secret list --env dev` — empty (2026-06-11)
+- [x] `gh secret list --env prod` — empty (2026-06-11)
+- [x] Repo-level legacy (`BW_*`) removed
 
-**Uwaga:** nowe sekrety v2 wg `docs/secrets-inventory.md` — dopiero w **F1**.
+**Note:** new v2 secrets per `docs/secrets-inventory.md` — in **F1** only.
 
 ---
 
 ## F0-08 — Self-hosted runner (legacy)
 
-**Cel:** usunąć stary runner, jeśli był podpięty do repo.
+**Goal:** remove old runner if it was attached to the repo.
 
-**Zależności:** F0-04
+**Dependencies:** F0-04
 
-**Kroki:**
+**Steps:**
 
 1. GitHub → **homelab** → Settings → Actions → Runners
-2. Usuń self-hosted runner (jeśli istnieje)
+2. Remove self-hosted runner (if exists)
 
 **Definition of done:**
 
-- [x] Brak self-hosted runnerów (2026-06-11 — API zwróciło pustą listę)
+- [x] No self-hosted runners (2026-06-11 — API returned empty list)
 
 ---
 
-## F0-09 — Utworzenie gałęzi `homelab-v2`
+## F0-09 — Create `homelab-v2` branch
 
-**Cel:** odseparować greenfield od `main` / `dev`.
+**Goal:** separate greenfield from `main` / `dev`.
 
-**Zależności:** F0-04, F0-07 (zalecane: cleanup przed pierwszym pushem v2)
+**Dependencies:** F0-04, F0-07 (recommended: cleanup before first v2 push)
 
-**Kroki:**
+**Steps:**
 
 ```bash
 git fetch origin
@@ -616,20 +626,20 @@ git push -u origin homelab-v2
 
 **Definition of done:**
 
-- [x] Gałąź `homelab-v2` istnieje na `origin` (2026-06-11, `15102bd`)
-- [x] Lokalnie pracujesz na `homelab-v2` (tracking `origin/homelab-v2`)
+- [x] Branch `homelab-v2` exists on `origin` (2026-06-11, `15102bd`)
+- [x] Working locally on `homelab-v2` (tracking `origin/homelab-v2`)
 
-**Opcjonalnie (A7):** branch policy env `dev` → tylko `homelab-v2` (GitHub API, po F0-09).
+**Optional (A7):** env `dev` branch policy → `homelab-v2` only (GitHub API, after F0-09).
 
 ---
 
-## F0-10 — Commit docs na `homelab-v2`
+## F0-10 — Commit docs on `homelab-v2`
 
-**Cel:** dokumentacja F0 (ten plik, później `secrets-inventory.md`) w gałęzi roboczej v2.
+**Goal:** F0 documentation (this file, later `secrets-inventory.md`) on the v2 working branch.
 
-**Zależności:** F0-09
+**Dependencies:** F0-09
 
-**Kroki:**
+**Steps:**
 
 ```bash
 git checkout homelab-v2
@@ -640,167 +650,167 @@ git push
 
 **Definition of done:**
 
-- [x] `docs/manual-setup.md`, `docs/apps-sources.md`, `docs/secrets-inventory.md` na `homelab-v2` w remote (2026-06-11, `4d0ab71`)
+- [x] `docs/manual-setup.md`, `docs/apps-sources.md`, `docs/secrets-inventory.md` on `homelab-v2` remote (2026-06-11, `4d0ab71`)
 
 ---
 
-## F0-11 — Przygotowanie Bitwarden
+## F0-11 — Bitwarden preparation
 
-**Cel:** alias checklisty **A10** — szczegóły w **[F0-04e](#f0-04e--bitwarden-vault--2fa-a10)**.
+**Goal:** alias checklist for **A10** — details in **[F0-04e](#f0-04e--bitwarden-vault--2fa-a10)**.
 
-**Zależności:** brak
+**Dependencies:** none
 
-**Definition of done:** jak F0-04e — vault dostępny, 2FA, folder `homelab`, schemat nazw.
+**Definition of done:** same as F0-04e — vault accessible, 2FA, `homelab` folder, naming schema.
 
 ---
 
-## F0-12 — Gate F0 — weryfikacja końcowa
+## F0-12 — F0 gate — final verification
 
-**Cel:** potwierdzić gotowość do **F1** (pipeline, dev VM, nowe sekrety).
+**Goal:** confirm readiness for **F1** (pipeline, dev VM, new secrets).
 
-**Zależności:** F0-01 … F0-11
+**Dependencies:** F0-01 … F0-11
 
-**Checklist gate:**
+**Gate checklist:**
 
-- [ ] F0-01 … F0-11 ukończone (lub F0-08 N/A)
-- [ ] Plan: pytania 🔴 **B1–B7** zamknięte (lub świadomie odroczone z uzasadnieniem)
-- [ ] Plan: checklista **A** — **A0 ✅**, **A7 ✅**, **A8 ✅**, **A10 ✅**
-- [ ] `libvirtd` + sieć `default` — OK
-- [x] GitHub dev/prod — bez legacy secrets (A0 2026-06-11)
-- [x] GitHub Environments — approval prod + branch `main` (A7 2026-06-11)
+- [ ] F0-01 … F0-11 complete (or F0-08 N/A)
+- [ ] Plan: 🔴 questions **B1–B7** closed (or consciously deferred with justification)
+- [ ] Plan: checklist **A** — **A0 ✅**, **A7 ✅**, **A8 ✅**, **A10 ✅**
+- [ ] `libvirtd` + `default` network — OK
+- [x] GitHub dev/prod — no legacy secrets (A0 2026-06-11)
+- [x] GitHub Environments — prod approval + branch `main` (A7 2026-06-11)
 - [x] Terraform Cloud — org `dkhomelabserver`, workspace `homelab`, `terraform login` (A8 ✅)
-- [x] Gałąź `homelab-v2` — na `origin` ✅ (F0-09); docs w F0-10
+- [x] Branch `homelab-v2` — on `origin` ✅ (F0-09); docs in F0-10
 
-**Po gate:** start sprintu **F1** (GitHub Actions, dev VM, `README` szkielet, nowe secrets).
+**After gate:** start **F1** sprint (GitHub Actions, dev VM, `README` skeleton, new secrets).
 
 ---
 
-## Referencja — wymagane narzędzia
+## Reference — required tools
 
-| Narzędzie | Po co | Instalacja |
-|-----------|--------|------------|
-| `git` | Repo, gałęzie | `sudo apt install git` |
+| Tool | Purpose | Install |
+|------|---------|---------|
+| `git` | Repo, branches | `sudo apt install git` |
 | `gh` | Secrets, PR, Actions | `sudo apt install gh` |
 | `terraform` | Prod infra (TFC) | [HashiCorp install](https://developer.hashicorp.com/terraform/install) |
-| `ansible` | Konfiguracja VM | `sudo apt install ansible` |
+| `ansible` | VM configuration | `sudo apt install ansible` |
 | `ansible-lint` | CI validate | `pipx install ansible-lint` |
-| `docker` + compose | Lokalny test (opcjonalnie) | [Docker Engine](https://docs.docker.com/engine/install/debian/) |
-| `openssl` | Generowanie haseł | `sudo apt install openssl` |
+| `docker` + compose | Local test (optional) | [Docker Engine](https://docs.docker.com/engine/install/debian/) |
+| `openssl` | Password generation | `sudo apt install openssl` |
 | `virsh`, `virt-install` | Dev VM (libvirt) | `libvirt-clients`, `virtinst` |
-| `rclone` | Backup offsite → pCloud (A9/F5) | `sudo apt install rclone` |
-| `bw` (opcjonalnie) | Bitwarden CLI — rotacja secretów (A10) | `npm install -g @bitwarden/cli` |
+| `rclone` | Offsite backup → pCloud (A9/F5) | `sudo apt install rclone` |
+| `bw` (optional) | Bitwarden CLI — secret rotation (A10) | `npm install -g @bitwarden/cli` |
 
 ---
 
-## Referencja — procedura nowego secretu (F1+)
+## Reference — new secret procedure (F1+)
 
 ```bash
 SECRET=$(openssl rand -base64 32)
-# → wklej do Bitwarden, potem:
-gh secret set NAZWA --env dev --body "$SECRET"
+# → paste into Bitwarden, then:
+gh secret set NAME --env dev --body "$SECRET"
 unset SECRET
-# → wpisz nazwę w docs/secrets-inventory.md (bez wartości)
+# → record name in docs/secrets-inventory.md (no value)
 ```
 
 ---
 
-## Referencja — A15 Storage sizing (F3/F5)
+## Reference — A15 Storage sizing (F3/F5)
 
-**Gate A15:** retention backupów + szacunki GB bibliotek — blokuje **F3** (TF mount/sizing) i **F5** (joby backup). **Status: [x] ✅ 2026-06-11**
+**Gate A15:** backup retention + library GB estimates — blocks **F3** (TF mount/sizing) and **F5** (backup jobs). **Status: [x] ✅ 2026-06-11**
 
-### Decyzje (zamknięte)
+### Decisions (closed)
 
-| Element | Wartość |
-|---------|---------|
-| **Retention lokalny** | **2 najnowsze** kopie per strumień; przy 3. backupie usuń najstarszy |
-| **Strumienie** | `vzdump` (apps + NAS VM), `pg_dump`, HA `.tar`, OPNsense config |
-| **B6 storage** | SA500 → NFS (Immich/media); Purple → backupy; Postgres/cache lokalnie na apps VM |
-| **Offsite (homelab rclone)** | **Tylko DR:** vzdump, configs, `pg_dump`, **git repo zip** — **NIE** pełne biblioteki mediów |
-| **Media offsite** | Już na pCloud osobno (poza homelab rclone) |
+| Item | Value |
+|------|-------|
+| **Local retention** | **2 newest** copies per stream; on 3rd backup delete oldest |
+| **Streams** | `vzdump` (apps + NAS VM), `pg_dump`, HA `.tar`, OPNsense config |
+| **B6 storage** | SA500 → NFS (Immich/media); Purple → backups; Postgres/cache local on apps VM |
+| **Offsite (homelab rclone)** | **DR only:** vzdump, configs, `pg_dump`, **git repo zip** — **NOT** full media libraries |
+| **Media offsite** | Already on pCloud separately (outside homelab rclone) |
 
-### Prod caps (użytkownik 2026-06-11)
+### Prod caps (user 2026-06-11)
 
-| Media | Cap prod | Obecnie (przed importem) |
-|-------|----------|--------------------------|
-| Immich (zdjęcia) | **60 GB** → 69 GB z miniaturami | 35 GB |
-| Muzyka (Navidrome) | **150 GB** | 58 GB |
-| Wideo (Jellyfin) | **400 GB** | 90 GB |
+| Media | Prod cap | Current (before import) |
+|-------|----------|-------------------------|
+| Immich (photos) | **60 GB** → 69 GB with thumbnails | 35 GB |
+| Music (Navidrome) | **150 GB** | 58 GB |
+| Video (Jellyfin) | **400 GB** | 90 GB |
 
-**Dev (libvirt VM):** po kilka **MB** każdej biblioteki — tylko test funkcjonalny, nie prod sizing.
+**Dev (libvirt VM):** a few **MB** per library — functional test only, not prod sizing.
 
-### Sprzęt (plan v2)
+### Hardware (v2 plan)
 
-| Dysk | Pojemność | Rola |
-|------|-----------|------|
-| SSD system | 256 GB | Proxmox + root VM (`ubuntu-apps`, `ubuntu-nas`) |
-| **SA500** | **2 TB** | Hot: Immich, muzyka (Navidrome), Jellyfin/Syncthing (NFS) |
-| **Purple** | **4 TB** | Backupy lokalne (vzdump, dumps) — **nie** pełna kopia SA500 |
+| Disk | Capacity | Role |
+|------|----------|------|
+| System SSD | 256 GB | Proxmox + root VM (`ubuntu-apps`, `ubuntu-nas`) |
+| **SA500** | **2 TB** | Hot: Immich, music (Navidrome), Jellyfin/Syncthing (NFS) |
+| **Purple** | **4 TB** | Local backups (vzdump, dumps) — **not** full SA500 copy |
 
-### Tabela szacunków (prod)
+### Estimate table (prod)
 
-| Kategoria | Miejsce | Formuła | Wartość | % z dysku |
-|-----------|---------|---------|---------|-----------|
-| Immich (z miniaturami) | SA500 | `60 × 1.15` | **69 GB** | ~3% / 2 TB |
-| Muzyka (Navidrome) | SA500 | cap | **150 GB** | +8% |
-| Wideo (Jellyfin) | SA500 | cap | **400 GB** | +20% |
-| Syncthing (opcj.) | SA500 | `SYNC_GB` | **20 GB** | +1% |
-| NFS bufor | SA500 | stałe | **100 GB** | +5% |
-| **Σ SA500** | **2 TB** | suma | **739 GB** | **~37%** |
-| Postgres + Docker (P0) | SSD apps VM | `30 + DB_GB` | **~40 GB** | lokalnie |
+| Category | Location | Formula | Value | % of disk |
+|----------|----------|---------|-------|-----------|
+| Immich (with thumbnails) | SA500 | `60 × 1.15` | **69 GB** | ~3% / 2 TB |
+| Music (Navidrome) | SA500 | cap | **150 GB** | +8% |
+| Video (Jellyfin) | SA500 | cap | **400 GB** | +20% |
+| Syncthing (opt.) | SA500 | `SYNC_GB` | **20 GB** | +1% |
+| NFS buffer | SA500 | fixed | **100 GB** | +5% |
+| **Σ SA500** | **2 TB** | sum | **739 GB** | **~37%** |
+| Postgres + Docker (P0) | SSD apps VM | `30 + DB_GB` | **~40 GB** | local |
 | vzdump apps × 2 | Purple | `2 × ~45 GB` | **~90 GB** | ~2% / 4 TB |
 | vzdump NAS × 2 (root only) | Purple | `2 × ~15 GB` | **~30 GB** | +1% |
 | pg_dump × 2 | Purple | `2 × PG_GB` | **~10 GB** | <1% |
 | HA + OPNsense × 2 | Purple | `2 × ~1 GB` | **~2 GB** | <1% |
-| Bufor Purple | Purple | 20% | **~26 GB** | +1% |
-| **Σ Purple (DR)** | **4 TB** | suma | **~158 GB** | **~4%** |
-| pCloud (homelab DR only) × 2 | pCloud | jak Purple + repo zip | **~160 GB** | ✅ **500 GB wolne** (user 2026-06-11) |
+| Purple buffer | Purple | 20% | **~26 GB** | +1% |
+| **Σ Purple (DR)** | **4 TB** | sum | **~158 GB** | **~4%** |
+| pCloud (homelab DR only) × 2 | pCloud | like Purple + repo zip | **~160 GB** | ✅ **500 GB free** (user 2026-06-11) |
 
-**Formuły:**
+**Formulas:**
 
 ```
 Σ_SA500 = (60 × 1.15) + 150 + 400 + 20 + 100 = 739 GB
-Σ_Purple ≈ 158 GB  (2× retention DR; F5 zweryfikuje po pierwszym vzdump)
-Σ_pCloud ≈ 160 GB  (backup-only; bez mediów — media już na pCloud osobno)
+Σ_Purple ≈ 158 GB  (2× DR retention; F5 will verify after first vzdump)
+Σ_pCloud ≈ 160 GB  (backup-only; no media — media already on pCloud separately)
 ```
 
-### Progi alarmowe
+### Alert thresholds
 
-| Warunek | Akcja |
-|---------|-------|
-| **Σ SA500 > 1.5 TB** | Planuj archiwum lub większy dysk |
-| **Immich > 500 GB** | Wcześniejszy upgrade SA500 lub tier archiwum |
-| **pCloud wolne < ~200 GB** | Monitoruj zajętość; homelab DR ~160 GB + media osobno |
-| **Σ SA500 < 800 GB** | Obecny SA500 2 TB wystarcza na lata przy normalnym wzroście |
+| Condition | Action |
+|-----------|--------|
+| **Σ SA500 > 1.5 TB** | Plan archive or larger disk |
+| **Immich > 500 GB** | Earlier SA500 upgrade or archive tier |
+| **pCloud free < ~200 GB** | Monitor usage; homelab DR ~160 GB + media separately |
+| **Σ SA500 < 800 GB** | Current SA500 2 TB sufficient for years at normal growth |
 
 ### Definition of done (A15)
 
-- [x] Retention: 2 najnowsze kopie per strumień (lokalnie)
-- [x] Prod caps: Immich 60 GB, muzyka 150 GB, wideo 400 GB
-- [x] Przelicz Σ SA500 = **739 GB** — mieści się na 2 TB
-- [x] Purple DR **~158 GB**; pCloud homelab DR **~160 GB** (bez mediów); **500 GB wolne** na pCloud ✅
-- [x] Dev: kilka MB per biblioteka (test only)
-- [x] Odhacz A15 w planie na `[x]`
+- [x] Retention: 2 newest copies per stream (local)
+- [x] Prod caps: Immich 60 GB, music 150 GB, video 400 GB
+- [x] Calculate Σ SA500 = **739 GB** — fits on 2 TB
+- [x] Purple DR **~158 GB**; pCloud homelab DR **~160 GB** (no media); **500 GB free** on pCloud ✅
+- [x] Dev: few MB per library (test only)
+- [x] Check A15 in plan as `[x]`
 
 **Status (2026-06-11):** `[x]` ✅
 
 ---
 
-## Referencja — A16 źródła aplikacji (F4/F6)
+## Reference — A16 application sources (F4/F6)
 
-**Gate A16:** weryfikacja GitHub / źródła per app — **[x] ✅ 2026-06-11 (20/20)**  
-Pełna tabela: [`docs/apps-sources.md`](apps-sources.md)
+**Gate A16:** GitHub / source verification per app — **[x] ✅ 2026-06-11 (20/20)**  
+Full table: [`docs/apps-sources.md`](apps-sources.md)
 
 ---
 
-## Referencja — rozwiązywanie problemów
+## Reference — troubleshooting
 
-| Problem | Rozwiązanie |
-|---------|-------------|
-| `virsh: failed to connect` | `sudo systemctl start libvirtd`; grupa `libvirt` |
+| Problem | Solution |
+|---------|----------|
+| `virsh: failed to connect` | `sudo systemctl start libvirtd`; `libvirt` group |
 | `network default not found` | `sudo apt install libvirt-daemon-config-network` |
 | `gh: Resource not accessible` | `gh auth refresh -s repo,workflow` |
-| Nie pamiętam secretu | GitHub nie pokaże — Bitwarden lub nowy secret w F1 |
+| Forgot a secret | GitHub will not show it — Bitwarden or new secret in F1 |
 
 ---
 
-*Dokument referencyjny sprintu F0. Ostatnia aktualizacja: 2026-06-11 (A15 ✅, A16 repo verify, F0-04e / A10).*
+*F0 sprint reference document. Last updated: 2026-06-29 (F0-06 closed, docs translated to English).*
