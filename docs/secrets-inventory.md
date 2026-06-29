@@ -6,6 +6,14 @@
 
 **Rule:** GitHub Secrets are **write-only** — after `gh secret set` you cannot read values back from GH. A copy in Bitwarden is mandatory.
 
+Helper scripts:
+
+| Script | Purpose |
+|--------|---------|
+| `utils/export-secrets-for-bitwarden.sh` | Export to `.txt` for Bitwarden (`--regenerate` for new GH-only secrets) |
+| `utils/bootstrap-f1-secrets.sh` | Push secrets/variables to GitHub (values not printed) |
+
+
 ## Legend
 
 | Column | Meaning |

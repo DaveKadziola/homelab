@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # Bootstrap F1 GitHub secrets/variables (generate → gh; copy values to Bitwarden manually).
 # Does not print secret values.
+#
+# Prefer: ./utils/export-secrets-for-bitwarden.sh --regenerate  (save to txt → Bitwarden)
+#         then sync GH if you regenerated new passwords.
 set -euo pipefail
 
 REPO="${GITHUB_REPO:-DaveKadziola/homelab}"
