@@ -26,7 +26,7 @@
 | [F0-07](#f0-07--usunięcie-legacy-secretsvariables) | Usunięcie legacy secrets/variables | F0 | tak | [x] |
 | [F0-08](#f0-08--self-hosted-runner-legacy) | Self-hosted runner (legacy) | F0 | nie* | [x] N/A |
 | [F0-09](#f0-09--utworzenie-gałęzi-homelab-v2) | Utworzenie gałęzi `homelab-v2` | F0 | tak | [x] |
-| [F0-10](#f0-10--commit-docs-na-homelab-v2) | Commit `docs/` na `homelab-v2` | F0 | zalecane | [ ] |
+| [F0-10](#f0-10--commit-docs-na-homelab-v2) | Commit `docs/` na `homelab-v2` | F0 | zalecane | [x] |
 | [F0-11](#f0-11--przygotowanie-bitwarden) | Przygotowanie Bitwarden | F0 | tak | [x] |
 | [F0-12](#f0-12--gate-f0--weryfikacja-końcowa) | Gate F0 — weryfikacja końcowa | F0 | tak | [ ] |
 
@@ -640,7 +640,7 @@ git push
 
 **Definition of done:**
 
-- [ ] `docs/manual-setup.md` na `homelab-v2` w remote
+- [x] `docs/manual-setup.md`, `docs/apps-sources.md`, `docs/secrets-inventory.md` na `homelab-v2` w remote (2026-06-11, `4d0ab71`)
 
 ---
 
