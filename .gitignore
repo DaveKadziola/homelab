@@ -1,2 +1,11 @@
 terraform/providers/
 terraform/.terraform/
+*.tfstate
+*.tfstate.*
+.env
+.env.*
+!.env.example
+actions-runner*/
+.cache/
+*.qcow2
+seed.iso

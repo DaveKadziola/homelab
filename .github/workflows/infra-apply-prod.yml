@@ -1,0 +1,37 @@
+name: Infra Apply Prod
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  apply:
+    runs-on: [self-hosted, homelab-prod]
+    environment: prod
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.15.6
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+      - name: Terraform init
+        working-directory: terraform
+        run: terraform init
+
+      - name: Terraform apply
+        working-directory: terraform
+        env:
+          TF_VAR_environment: prod
+          TF_VAR_proxmox_api_url: ${{ vars.PROXMOX_API_URL }}
+          TF_VAR_proxmox_api_token_id: ${{ vars.PROXMOX_API_TOKEN_ID }}
+          TF_VAR_proxmox_api_token_secret: ${{ secrets.PROXMOX_API_TOKEN_SECRET }}
+          TF_VAR_proxmox_ssh_username: ${{ vars.PROXMOX_SSH_USERNAME }}
+          TF_VAR_proxmox_ssh_password: ${{ secrets.PROXMOX_SSH_PASSWORD }}
+          TF_VAR_ubuntu_docker_password: ${{ secrets.UBUNTU_DOCKER_PASSWORD }}
+          TF_VAR_ubuntu_docker_ssh_pub: ${{ vars.UBUNTU_DOCKER_SSH_PUB }}
+        run: terraform apply -auto-approve -var-file=environments/prod/terraform.tfvars

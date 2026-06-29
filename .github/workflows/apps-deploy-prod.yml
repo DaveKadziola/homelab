@@ -1,0 +1,18 @@
+name: Apps Deploy Prod
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy-prod:
+    runs-on: [self-hosted, homelab-prod]
+    environment: prod
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Placeholder
+        run: |
+          echo "Ansible + compose + Portainer deploy — F4 after ubuntu-apps VM exists (F3)."

@@ -1,0 +1,6 @@
+---
+profile: production
+exclude_paths:
+  - ansible/docker-containers.yml
+  - ansible/user-setup.yml
+  - ansible/hosts.ini

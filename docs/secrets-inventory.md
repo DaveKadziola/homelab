@@ -21,17 +21,17 @@
 
 | Name | GH env | Type | Bitwarden | Status | Notes |
 |------|--------|------|-----------|--------|-------|
-| `POSTGRES_PASSWORD` | dev | secret | `homelab/POSTGRES_PASSWORD/dev` | planned | F1 |
-| `POSTGRES_PASSWORD` | prod | secret | `homelab/POSTGRES_PASSWORD/prod` | planned | F1 |
-| `PROXMOX_API_TOKEN_SECRET` | dev | secret | `homelab/PROXMOX_API_TOKEN_SECRET/dev` | planned | F1 |
-| `PROXMOX_API_TOKEN_SECRET` | prod | secret | `homelab/PROXMOX_API_TOKEN_SECRET/prod` | planned | F1 |
-| `PROXMOX_SSH_PASSWORD` | dev | secret | `homelab/PROXMOX_SSH_PASSWORD/dev` | planned | F1 |
-| `PROXMOX_SSH_PASSWORD` | prod | secret | `homelab/PROXMOX_SSH_PASSWORD/prod` | planned | F1 |
-| `UBUNTU_DOCKER_PASSWORD` | dev | secret | `homelab/UBUNTU_DOCKER_PASSWORD/dev` | planned | F1 |
-| `UBUNTU_DOCKER_PASSWORD` | prod | secret | `homelab/UBUNTU_DOCKER_PASSWORD/prod` | planned | F1 |
-| `UBUNTU_DOCKER_SSH_PRIV` | dev | secret | `homelab/UBUNTU_DOCKER_SSH_PRIV/dev` | planned | F1; or local only `~/.ssh/` |
-| `UBUNTU_DOCKER_SSH_PRIV` | prod | secret | `homelab/UBUNTU_DOCKER_SSH_PRIV/prod` | planned | F1 |
-| `TF_API_TOKEN` | prod | secret | `homelab/TF_API_TOKEN/prod` | planned | value in Bitwarden ✅; `gh secret set` in F1 |
+| `POSTGRES_PASSWORD` | dev | secret | `homelab/POSTGRES_PASSWORD/dev` | set | F1 2026-06-29 |
+| `POSTGRES_PASSWORD` | prod | secret | `homelab/POSTGRES_PASSWORD/prod` | set | F1 2026-06-29 |
+| `PROXMOX_API_TOKEN_SECRET` | dev | secret | `homelab/PROXMOX_API_TOKEN_SECRET/dev` | set | placeholder — update at F3 |
+| `PROXMOX_API_TOKEN_SECRET` | prod | secret | `homelab/PROXMOX_API_TOKEN_SECRET/prod` | set | placeholder — update at F3 |
+| `PROXMOX_SSH_PASSWORD` | dev | secret | `homelab/PROXMOX_SSH_PASSWORD/dev` | set | placeholder |
+| `PROXMOX_SSH_PASSWORD` | prod | secret | `homelab/PROXMOX_SSH_PASSWORD/prod` | set | placeholder |
+| `UBUNTU_DOCKER_PASSWORD` | dev | secret | `homelab/UBUNTU_DOCKER_PASSWORD/dev` | set | F1 |
+| `UBUNTU_DOCKER_PASSWORD` | prod | secret | `homelab/UBUNTU_DOCKER_PASSWORD/prod` | set | F1 |
+| `UBUNTU_DOCKER_SSH_PRIV` | dev | secret | `homelab/UBUNTU_DOCKER_SSH_PRIV/dev` | set | `~/.ssh/homelab_dev_ed25519` |
+| `UBUNTU_DOCKER_SSH_PRIV` | prod | secret | `homelab/UBUNTU_DOCKER_SSH_PRIV/prod` | set | placeholder — replace at F3 |
+| `TF_API_TOKEN` | prod | secret | `homelab/TF_API_TOKEN/prod` | set | F1 |
 | `SSL_CERT` | prod | secret | `homelab/SSL_CERT/prod` | planned | optional; legacy backup |
 | `SSL_CHAIN` | prod | secret | `homelab/SSL_CHAIN/prod` | planned | optional |
 | `SSL_PKEY` | prod | secret | `homelab/SSL_PKEY/prod` | planned | optional |
@@ -43,14 +43,14 @@
 
 | Name | GH env | Type | Bitwarden | Status | Notes |
 |------|--------|------|-----------|--------|-------|
-| `PROXMOX_API_URL` | dev | variable | — | planned | F1 |
-| `PROXMOX_API_URL` | prod | variable | — | planned | F1 |
-| `PROXMOX_API_TOKEN_ID` | dev | variable | — | planned | F1 |
-| `PROXMOX_API_TOKEN_ID` | prod | variable | — | planned | F1 |
-| `PROXMOX_SSH_USERNAME` | dev | variable | — | planned | F1 |
-| `PROXMOX_SSH_USERNAME` | prod | variable | — | planned | F1 |
-| `UBUNTU_DOCKER_SSH_PUB` | dev | variable | — | planned | F1 |
-| `UBUNTU_DOCKER_SSH_PUB` | prod | variable | — | planned | F1 |
+| `PROXMOX_API_URL` | dev | variable | — | set | placeholder URL — F3 |
+| `PROXMOX_API_URL` | prod | variable | — | set | placeholder URL — F3 |
+| `PROXMOX_API_TOKEN_ID` | dev | variable | — | set | F1 |
+| `PROXMOX_API_TOKEN_ID` | prod | variable | — | set | F1 |
+| `PROXMOX_SSH_USERNAME` | dev | variable | — | set | F1 |
+| `PROXMOX_SSH_USERNAME` | prod | variable | — | set | F1 |
+| `UBUNTU_DOCKER_SSH_PUB` | dev | variable | — | set | F1 |
+| `UBUNTU_DOCKER_SSH_PUB` | prod | variable | — | set | placeholder — F3 |
 
 ---
 
@@ -64,7 +64,7 @@
 | `TF_VAR_proxmox_ssh_username` | no | GH variable prod | planned | F3 |
 | `TF_VAR_proxmox_ssh_password` | yes | GH secret prod | planned | F3 |
 
-**F1:** set workspace execution mode **remote → Local** before prod apply from the self-hosted runner.
+**F1:** workspace execution mode **Local** ✅ 2026-06-29 (before prod apply from self-hosted runner).
 
 ---
 
@@ -85,4 +85,4 @@ Removed in A0 (2026-06-11): `BW_ACCESS_TOKEN`, `BW_CLIENTID`, `BW_CLIENTSECRET` 
 
 ---
 
-*Last updated: F0-10 — name template. Update **Status** and rotation date after each `gh secret set`.*
+*Last updated: F1 — secrets set in GH 2026-06-29; copy values to Bitwarden.*

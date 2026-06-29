@@ -1,0 +1,7 @@
+---
+- name: Ping dev docker host
+  hosts: ubuntu_docker
+  gather_facts: false
+  tasks:
+    - name: Ping
+      ansible.builtin.ping:
