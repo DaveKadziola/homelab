@@ -93,7 +93,9 @@ P0/P1/P2 phases and sources: [`docs/apps-sources.md`](docs/apps-sources.md). Pub
 
 VLAN map, static IPs, and firewall notes: [docs/network.md](docs/network.md)  
 WireGuard (VPN): [docs/wireguard.md](docs/wireguard.md)  
-OPNsense F2 checklist: [docs/opnsense-baseline.md](docs/opnsense-baseline.md)
+OPNsense F2 checklist: [docs/opnsense-baseline.md](docs/opnsense-baseline.md)  
+UI walkthrough: [docs/opnsense-ui-walkthrough.md](docs/opnsense-ui-walkthrough.md)  
+Verify: `utils/f2-verify.sh`
 
 Public app: `grocery.dkhomelabserver.xyz`. Dev libvirt: `192.168.122.0/24`.
 

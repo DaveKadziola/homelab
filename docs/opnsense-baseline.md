@@ -1,7 +1,8 @@
 # OPNsense baseline — F2 sprint
 
 > **Status:** F2 reference checklist — configure manually on the router (one-shot; not via GitHub Actions).  
-> **Related:** [network.md](network.md), [wireguard.md](wireguard.md), [../opnsense/RESTORE.md](../opnsense/RESTORE.md)
+> **Walkthrough:** [opnsense-ui-walkthrough.md](opnsense-ui-walkthrough.md)  
+> **Verify:** `utils/f2-verify.sh`
 
 **Goal:** router ready for F3 (Proxmox TF) and F4 (apps): VLANs, DHCP reservations, firewall, WireGuard, HAProxy for Grocery.
 
@@ -11,7 +12,7 @@
 
 | ID | Task | Blocks F3? | Status |
 |----|------|------------|--------|
-| F2-01 | VLAN interfaces (IOT 20, APP 51) | yes | [ ] |
+| F2-01 | VLAN interfaces (IOT 20, APP 51) | yes | [~] gateways ping OK 2026-06-29 |
 | F2-02 | DHCP reservations (see [network.md](network.md)) | yes | [ ] |
 | F2-03 | Firewall: APP → NAS NFS | yes | [ ] |
 | F2-04 | WireGuard VPN | recommended | [ ] |
@@ -34,7 +35,8 @@ Enable both interfaces; ensure trunk from switch carries tags 20 and 51 to Proxm
 
 **Definition of done:**
 
-- [ ] Ping `192.168.20.1` and `192.168.50.1` from laptop on respective VLANs (or after WireGuard)
+- [x] Ping `192.168.20.1` and `192.168.50.1` from laptop LAN (2026-06-29, `f2-verify.sh`)
+- [ ] Trunk/tags confirmed on switch + Proxmox NICs (manual)
 
 ---
 
@@ -123,9 +125,10 @@ After any OPNsense change:
 
 ```bash
 # From laptop (SSH key auth recommended)
-./utils/backup-opnsense-config.sh
+OPNSENSE_HOST=192.168.20.1 ./utils/backup-opnsense-config.sh
 
 # Or manual: System → Configuration → Backups → Download
+# See: docs/opnsense-ui-walkthrough.md (F2-06)
 ```
 
 Store copies:

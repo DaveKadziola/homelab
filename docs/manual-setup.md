@@ -687,6 +687,23 @@ git push
 
 ---
 
+## F2 sprint (OPNsense) — on router, not laptop
+
+> **Checklist:** [`docs/opnsense-baseline.md`](opnsense-baseline.md)  
+> **UI steps:** [`docs/opnsense-ui-walkthrough.md`](opnsense-ui-walkthrough.md)  
+> **Verify from laptop:** `utils/f2-verify.sh`
+
+F2 is configured in the **OPNsense web UI** (VLAN, DHCP, firewall, WireGuard, HAProxy). The repo provides docs and backup/verify scripts only — not automated deploy.
+
+| ID | Task | Status |
+|----|------|--------|
+| F2-01 | VLAN IOT 20 + APP 51 | [~] gateways ping OK |
+| F2-02 … F2-07 | DHCP, firewall, WG, HAProxy, backup, MACs | [ ] — see walkthrough |
+
+**F2 gate → F3:** F2-01…03 + config backup — see [opnsense-baseline.md](opnsense-baseline.md#f2-gate--f3).
+
+---
+
 ## Reference — required tools
 
 | Tool | Purpose | Install |
