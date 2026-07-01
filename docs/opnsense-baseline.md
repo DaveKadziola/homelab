@@ -16,7 +16,7 @@
 | F2-02 | DHCP reservations (see [network.md](network.md)) | yes | [~] Proxmox `.20.20` on router; NAS/apps/HA at F3/F5 |
 | F2-03 | Firewall: APP → NAS NFS | yes | [x] `opt6` → `.20.12` :2049/:111 (SSH 2026-07-01) |
 | F2-04 | WireGuard VPN | recommended | [x] `wg0` `10.10.10.0/24` :51820 (as-built) |
-| F2-05 | HAProxy + ACME `grocery.dkhomelabserver.xyz` | F4 public app | [~] ACME entry + HAProxy on; issue cert in UI |
+| F2-05 | HAProxy + ACME `grocery.dkhomelabserver.xyz` | F4 public app | [x] user 2026-07-01 — A record CF, cert, HAProxy frontend |
 | F2-06 | Export / backup `config.xml` | F5 DR | [x] local + router backups 2026-07-01 |
 | F2-07 | Document actual MAC addresses | F3 | [ ] |
 
@@ -114,9 +114,9 @@ Until F4, backend can point to a placeholder or remain disabled; cert and fronte
 
 **Definition of done:**
 
-- [ ] DNS resolves `grocery.dkhomelabserver.xyz` to WAN IP
-- [ ] ACME cert issued (valid)
-- [ ] HAProxy frontend listens on 443 (backend may be F4)
+- [x] DNS A record `grocery.dkhomelabserver.xyz` → public WAN IP (Cloudflare)
+- [x] ACME cert issued (valid)
+- [x] HAProxy frontend on WAN :443 (backend `.50.30` — app port w F4)
 
 ---
 
@@ -173,8 +173,9 @@ ip link show
 
 ## F2 gate → F3
 
-- [ ] F2-01 … F2-03 complete
-- [ ] F2-06 backup taken
-- [ ] WireGuard or LAN access to Proxmox **`192.168.20.20`** for TF/Ansible bootstrap
+- [x] F2-01 … F2-03 complete
+- [x] F2-05 grocery public (HAProxy + ACME + Cloudflare A)
+- [x] F2-06 backup taken (re-run after UI changes: `OPNSENSE_HOST=192.168.1.1 ./utils/backup-opnsense-config.sh`)
+- [ ] WireGuard or LAN access to Proxmox **`192.168.20.20`** (host must be online)
 
-**Next:** F3 — Proxmox Terraform (`ubuntu-nas`, `ubuntu-apps`), prod runner `homelab-prod`.
+**Gate open for F3** — router baseline done; DHCP static for VM MACs at F3/F5.
