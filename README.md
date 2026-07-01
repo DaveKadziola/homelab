@@ -61,9 +61,9 @@ Helper script (F1): `utils/bootstrap-f1-secrets.sh` — does not print values.
 ## Quick start — dev
 
 1. Register dev runner: `utils/setup-github-runner.sh --label homelab-dev`
-2. Create dev VM: `utils/create-dev-vm.sh`
-3. Update `ansible/environments/dev/hosts.ini` with VM IP if DHCP differs from `192.168.122.50`
-4. Push to `homelab-v2` → `ci-validate.yml` runs on `homelab-dev` runner
+2. Nested Proxmox: [`docs/dev-proxmox.md`](docs/dev-proxmox.md) — `ensure-dev-proxmox.sh` + `bootstrap-dev-proxmox.sh`
+3. Push to `homelab-v2` → `infra-plan-dev.yml` / `infra-apply-dev.yml` (Terraform IaC)
+4. Apps: `apps-deploy-dev.yml` → `ubuntu-apps-dev` @ `192.168.122.50`
 
 ## Quick start — prod
 
@@ -78,6 +78,8 @@ Order (after F2–F3): OPNsense → Proxmox TF apply → Ansible → Compose. Pr
 | Workflow | Trigger | Runner |
 |----------|---------|--------|
 | `ci-validate.yml` | push/PR `homelab-v2` | `homelab-dev` |
+| `infra-plan-dev.yml` | PR/push `homelab-v2` | `homelab-dev` |
+| `infra-apply-dev.yml` | push `homelab-v2` | `homelab-dev` |
 | `apps-deploy-dev.yml` | push `homelab-v2` | `homelab-dev` |
 | `infra-plan.yml` | PR → `main` | `homelab-prod` |
 | `infra-apply-prod.yml` | push `main` | `homelab-prod` |

@@ -2,6 +2,7 @@ terraform/providers/
 terraform/.terraform/
 *.tfstate
 *.tfstate.*
+terraform/environments/dev/plan.tfplan
 .env
 .env.*
 !.env.example

@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# DEPRECATED — use IaC instead:
+#   ./utils/ensure-dev-proxmox.sh
+#   ./utils/bootstrap-dev-proxmox.sh [--set-token]
+#   push homelab-v2 → infra-apply-dev.yml (or local terraform apply dev)
+#
 # Create homelab-dev Ubuntu VM on libvirt default network (laptop).
 # Usage: ./utils/create-dev-vm.sh [--recreate]
 # Images live under /tmp/homelab-libvirt (world-readable) for qemu:///system without sudo.

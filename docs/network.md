@@ -8,7 +8,8 @@
 | Role | Network | IP |
 |------|---------|-----|
 | libvirt `default` | `192.168.122.0/24` | GW `192.168.122.1` |
-| `homelab-dev` VM | same | DHCP (e.g. `192.168.122.229`) |
+| **Dev** | `192.168.122.0/24` (nested PVE) | DHCP/static `.122.50` |
+| `ubuntu-apps-dev` (TF) | same | **`192.168.122.50`** |
 | GH branch | `homelab-v2` | env **dev** |
 
 Dev is **isolated** from prod VLANs.
