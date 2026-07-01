@@ -78,7 +78,14 @@ Export client config from peer UI → store in Bitwarden.
 
 ## F2-05 — HAProxy + ACME (Grocery)
 
-**Prerequisite:** DNS A record `grocery.dkhomelabserver.xyz` → your WAN IP.
+**SSH scripts:**
+
+```bash
+OPNSENSE_HOST=192.168.1.1 ./utils/f2-opnsense-apply.sh      # F2-03 NFS + backup
+OPNSENSE_HOST=192.168.1.1 ./utils/f2-opnsense-f05.sh        # F2-05 ACME grocery + HAProxy enable
+```
+
+**Prerequisite:** DNS A record `grocery.dkhomelabserver.xyz` → WAN public IP (script prints `ifconfig.me`).
 
 1. **Services → HAProxy → Settings** — Enable HAProxy
 2. **System → Trust → ACME Client**

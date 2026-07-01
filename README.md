@@ -105,7 +105,7 @@ Public app: `grocery.dkhomelabserver.xyz`. Dev libvirt: `192.168.122.0/24`.
 |-------|--------|
 | **F1** | Repo skeleton, CI, dev runner, dev VM, GH secrets (current) |
 | **F2** | OPNsense baseline — [docs/opnsense-baseline.md](docs/opnsense-baseline.md), [docs/network.md](docs/network.md), [docs/wireguard.md](docs/wireguard.md) |
-| **F3** | Proxmox Terraform, prod runner |
+| **F3** | Proxmox Terraform, prod runner — [docs/f3-proxmox.md](docs/f3-proxmox.md), `utils/f3-verify.sh` |
 | **F4** | P0 applications |
 | **F5** | HA, backups, pCloud rclone |
 | **F6** | P1/P2, monitoring, README completion before merge |

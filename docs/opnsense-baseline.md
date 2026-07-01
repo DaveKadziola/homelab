@@ -16,8 +16,8 @@
 | F2-02 | DHCP reservations (see [network.md](network.md)) | yes | [~] Proxmox `.20.20` on router; NAS/apps/HA at F3/F5 |
 | F2-03 | Firewall: APP → NAS NFS | yes | [x] `opt6` → `.20.12` :2049/:111 (SSH 2026-07-01) |
 | F2-04 | WireGuard VPN | recommended | [x] `wg0` `10.10.10.0/24` :51820 (as-built) |
-| F2-05 | HAProxy + ACME `grocery.dkhomelabserver.xyz` | F4 public app | [ ] |
-| F2-06 | Export / backup `config.xml` | F5 DR | [~] after each router change |
+| F2-05 | HAProxy + ACME `grocery.dkhomelabserver.xyz` | F4 public app | [~] ACME entry + HAProxy on; issue cert in UI |
+| F2-06 | Export / backup `config.xml` | F5 DR | [x] local + router backups 2026-07-01 |
 | F2-07 | Document actual MAC addresses | F3 | [ ] |
 
 ---

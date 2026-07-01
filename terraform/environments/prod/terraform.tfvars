@@ -25,6 +25,7 @@ vm_config = {
     net_dev_type       = "vmbr0"
     vlan_tag           = 20
     enable_cloud_init  = true
+    docker_enabled     = false
     cloud_init_cidr    = "192.168.20.12/24"
     cloud_init_gateway = "192.168.20.1"
     cloud_init_dns     = "192.168.20.1"
