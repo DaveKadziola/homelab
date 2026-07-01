@@ -9,19 +9,19 @@
 - **Public HTTPS:** only `grocery.dkhomelabserver.xyz` (HAProxy)
 - Other services: **VPN-only**
 
-## Addressing
+## Addressing (as-built on router)
 
 | Item | Value |
 |------|-------|
-| VPN subnet | `10.0.0.0/24` |
-| OPNsense WG interface | `10.0.0.1` |
-| Client pool | `10.0.0.7` – `10.0.0.14` (adjust in UI) |
+| VPN subnet | **`10.10.10.0/24`** |
+| OPNsense WG interface | **`10.10.10.1`** (`wg0`) |
+| Listen port | `51820` |
 
 ## OPNsense setup (summary)
 
 1. **VPN → WireGuard → Local**
    - Listen port: e.g. `51820/udp` (forward on WAN if behind CGNAT, use documented port)
-   - Tunnel address: `10.0.0.1/24`
+   - Tunnel address: `10.10.10.1/24`
    - DNS: optional `192.168.20.1` or Pi-hole if added later
 
 2. **Peers** — one per device (laptop, phone):
@@ -42,14 +42,14 @@ Save as `homelab-wg-client.conf` ( **do not commit** — store in Bitwarden or p
 ```ini
 [Interface]
 PrivateKey = <CLIENT_PRIVATE_KEY>
-Address = 10.0.0.7/32
+Address = 10.10.10.7/32
 DNS = 192.168.20.1
 
 [Peer]
 PublicKey = <OPNSENSE_WG_PUBLIC_KEY>
 PresharedKey = <optional>
 Endpoint = <WAN_HOSTNAME_OR_IP>:51820
-AllowedIPs = 192.168.20.0/24, 192.168.50.0/24, 10.0.0.0/24
+AllowedIPs = 192.168.20.0/24, 192.168.50.0/24, 10.10.10.0/24
 PersistentKeepalive = 25
 ```
 

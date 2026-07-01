@@ -12,12 +12,12 @@
 
 | ID | Task | Blocks F3? | Status |
 |----|------|------------|--------|
-| F2-01 | VLAN interfaces (IOT 20, APP 51) | yes | [~] gateways ping OK 2026-06-29 |
-| F2-02 | DHCP reservations (see [network.md](network.md)) | yes | [ ] |
-| F2-03 | Firewall: APP → NAS NFS | yes | [ ] |
-| F2-04 | WireGuard VPN | recommended | [ ] |
+| F2-01 | VLAN interfaces (IOT 20, APP 51) | yes | [x] as-built: IOT `.20.1`, APP QinQ gw `.50.50` |
+| F2-02 | DHCP reservations (see [network.md](network.md)) | yes | [~] Proxmox `.20.20` on router; NAS/apps/HA at F3/F5 |
+| F2-03 | Firewall: APP → NAS NFS | yes | [x] `opt6` → `.20.12` :2049/:111 (SSH 2026-07-01) |
+| F2-04 | WireGuard VPN | recommended | [x] `wg0` `10.10.10.0/24` :51820 (as-built) |
 | F2-05 | HAProxy + ACME `grocery.dkhomelabserver.xyz` | F4 public app | [ ] |
-| F2-06 | Export / backup `config.xml` | F5 DR | [ ] |
+| F2-06 | Export / backup `config.xml` | F5 DR | [~] after each router change |
 | F2-07 | Document actual MAC addresses | F3 | [ ] |
 
 ---
@@ -29,13 +29,13 @@
 | VLAN tag | Name | IPv4 | Role |
 |----------|------|------|------|
 | 20 | IOT | 192.168.20.1/24 | Proxmox mgmt, HA, NAS |
-| 51 | APP | 192.168.50.1/24 | Docker / `ubuntu-apps` |
+| 51 | APP | **192.168.50.50/26** (QinQ) | Docker / `ubuntu-apps`; DHCP `.30`–`.62` |
 
 Enable both interfaces; ensure trunk from switch carries tags 20 and 51 to Proxmox NIC1/NIC3.
 
 **Definition of done:**
 
-- [x] Ping `192.168.20.1` and `192.168.50.1` from laptop LAN (2026-06-29, `f2-verify.sh`)
+- [x] Ping `192.168.20.1` and `192.168.50.50` from laptop LAN
 - [ ] Trunk/tags confirmed on switch + Proxmox NICs (manual)
 
 ---
@@ -48,7 +48,8 @@ Use the table in [network.md](network.md). Start with placeholder MACs; **F2-07*
 
 **Definition of done:**
 
-- [ ] Static mappings exist for Proxmox `.20.10`, HA `.20.11`, NAS `.20.12`, apps `.50.30`
+- [x] Static mapping for Proxmox **`192.168.20.20`** (MAC on router)
+- [ ] Static mappings for NAS `.20.12`, HA `.20.13`, apps `.50.30` (MAC at F3/F5)
 - [ ] No duplicate IPs on LAN
 
 ---
@@ -81,13 +82,13 @@ Default deny on WAN for other inbound services.
 
 **Definition of done:**
 
-- [ ] APP VM can reach NAS NFS (test from `ubuntu-apps` in F3/F4)
+- [x] APP → NAS NFS rules on `opt6` (homelab-v2 marker in config)
 
 ---
 
 ## F2-04 — WireGuard
 
-See **[wireguard.md](wireguard.md)** for client setup and addressing (`10.0.0.0/24`).
+See **[wireguard.md](wireguard.md)** — as-built **`10.10.10.0/24`** on `wg0`.
 
 **OPNsense:** VPN → WireGuard → Local instance + peers.
 
@@ -125,7 +126,7 @@ After any OPNsense change:
 
 ```bash
 # From laptop (SSH key auth recommended)
-OPNSENSE_HOST=192.168.20.1 ./utils/backup-opnsense-config.sh
+OPNSENSE_HOST=192.168.1.1 ./utils/backup-opnsense-config.sh
 
 # Or manual: System → Configuration → Backups → Download
 # See: docs/opnsense-ui-walkthrough.md (F2-06)
@@ -174,6 +175,6 @@ ip link show
 
 - [ ] F2-01 … F2-03 complete
 - [ ] F2-06 backup taken
-- [ ] WireGuard or LAN access to Proxmox `192.168.20.10` for TF/Ansible bootstrap
+- [ ] WireGuard or LAN access to Proxmox **`192.168.20.20`** for TF/Ansible bootstrap
 
 **Next:** F3 — Proxmox Terraform (`ubuntu-nas`, `ubuntu-apps`), prod runner `homelab-prod`.

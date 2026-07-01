@@ -8,8 +8,8 @@
 set -euo pipefail
 
 IOT_GW="${IOT_GW:-192.168.20.1}"
-APP_GW="${APP_GW:-192.168.50.1}"
-PROXMOX_IP="${PROXMOX_IP:-192.168.20.10}"
+APP_GW="${APP_GW:-192.168.50.50}"
+PROXMOX_IP="${PROXMOX_IP:-192.168.20.20}"
 GROCERY_HOST="${GROCERY_HOST:-grocery.dkhomelabserver.xyz}"
 DNS_SERVER="${DNS_SERVER:-8.8.8.8}"
 
@@ -96,7 +96,7 @@ check_https "https://${GROCERY_HOST}/" || true
 echo ""
 
 echo "--- F2-06 backup path ---"
-check_ssh_opnsense "$IOT_GW" || true
+check_ssh_opnsense "${OPNSENSE_HOST:-192.168.1.1}" || true
 if [[ -x "$(dirname "$0")/backup-opnsense-config.sh" ]]; then
   echo "INFO backup script: utils/backup-opnsense-config.sh"
 fi
@@ -106,7 +106,7 @@ echo "--- Summary ---"
 echo "pass=$pass fail=$fail warn=$warn"
 echo ""
 echo "Manual steps: docs/opnsense-baseline.md + docs/opnsense-ui-walkthrough.md"
-echo "After OPNsense UI work: OPNSENSE_HOST=$IOT_GW ./utils/backup-opnsense-config.sh"
+echo "After OPNsense work: OPNSENSE_HOST=192.168.1.1 ./utils/f2-opnsense-apply.sh"
 
 if [[ "$fail" -gt 0 ]]; then
   exit 1
