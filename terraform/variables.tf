@@ -44,7 +44,19 @@ variable "ubuntu_docker_password" {
 
 variable "environment" {
   type        = string
-  description = "Deployment environment"
+  description = "Deployment environment (dev/prod) — used in VM names, not Proxmox node name"
+}
+
+variable "proxmox_node_name" {
+  type        = string
+  default     = "proxmox"
+  description = "Proxmox cluster node name (e.g. proxmox), not GH environment"
+}
+
+variable "manage_node_network" {
+  type        = bool
+  default     = false
+  description = "Manage vmbr0/vlan via TF — false on as-built prod host"
 }
 
 variable "ssl_cert" {

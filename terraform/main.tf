@@ -1,20 +1,22 @@
 #Config node
 resource "proxmox_virtual_environment_certificate" "node_ssl_setup" {
   count             = var.node_config.cert_setup_enabled ? 1 : 0
-  node_name         = var.environment
+  node_name         = var.proxmox_node_name
   certificate       = var.ssl_cert
   certificate_chain = var.ssl_cert_chain
   private_key       = var.ssl_cert_pkey
 }
 
 resource "proxmox_virtual_environment_dns" "node_dns_setup" {
-  node_name = var.environment
+  count     = var.manage_node_network ? 1 : 0
+  node_name = var.proxmox_node_name
   domain    = var.node_config.dns_domain
   servers   = var.node_config.dns_servers
 }
 
 resource "proxmox_virtual_environment_network_linux_bridge" "vmbr0" {
-  node_name = var.environment
+  count     = var.manage_node_network ? 1 : 0
+  node_name = var.proxmox_node_name
 
   depends_on = [
     proxmox_virtual_environment_network_linux_vlan.vlan20
@@ -28,7 +30,8 @@ resource "proxmox_virtual_environment_network_linux_bridge" "vmbr0" {
 }
 
 resource "proxmox_virtual_environment_network_linux_vlan" "vlan20" {
-  node_name = var.environment
+  count     = var.manage_node_network ? 1 : 0
+  node_name = var.proxmox_node_name
   name      = var.node_config.vlan_name
   address   = var.node_config.vlan_address
   gateway   = var.node_config.vlan_gateway
@@ -41,7 +44,7 @@ resource "proxmox_virtual_environment_file" "cloud_config" {
 
   content_type = "snippets"
   datastore_id = "local"
-  node_name    = var.environment
+  node_name    = var.proxmox_node_name
   source_raw {
     data = templatefile("${path.module}/cloud-init-user-data.yaml.tpl", {
       environment     = var.environment
@@ -58,7 +61,7 @@ resource "proxmox_virtual_environment_file" "vm_image" {
   for_each     = var.vm_config
   content_type = "iso"
   datastore_id = each.value.img_storage_type
-  node_name    = var.environment
+  node_name    = var.proxmox_node_name
 
   source_file {
     path = each.value.image_url
@@ -72,7 +75,7 @@ resource "proxmox_virtual_environment_vm" "vm" {
 
   name        = "${each.value.vm_name}-${var.environment}"
   description = each.value.vm_description
-  node_name   = var.environment
+  node_name   = var.proxmox_node_name
   vm_id       = each.value.vm_id
   tags        = each.value.vm_tags
 
@@ -92,8 +95,11 @@ resource "proxmox_virtual_environment_vm" "vm" {
     vlan_id = each.value.vlan_tag
   }
 
-  efi_disk {
-    type = each.value.efi_disk_size
+  dynamic "efi_disk" {
+    for_each = try(each.value.efi_disk_size, null) != null ? [1] : []
+    content {
+      type = each.value.efi_disk_size
+    }
   }
   disk {
     datastore_id = each.value.storage_type

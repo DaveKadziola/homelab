@@ -1,8 +1,12 @@
 # Proxmox prod — homelab v2 (as-built: host .20.20, NAS .20.12, apps .50.30)
 # NIC1: vmbr0 vlan-aware (IOT mgmt + tag 20). NIC2: disk passthrough to NAS VM. NIC3: APP trunk tag 51.
+# Network is as-built — TF does not recreate vmbr0/vlan (manage_node_network = false).
+
+proxmox_node_name   = "proxmox"
+manage_node_network = false
 
 node_config = {
-  cert_setup_enabled = true
+  cert_setup_enabled = false
   vlan_name          = "vmbr0.20"
   vlan_address       = "192.168.20.20/24"
   vlan_gateway       = "192.168.20.1"

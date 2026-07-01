@@ -24,13 +24,21 @@ Host mgmt stays **`192.168.20.20`** (existing DHCP on OPNsense).
 | F3-01 | Proxmox reachable (SSH/API) | `./utils/f3-verify.sh` |
 | F3-02 | API token `terraform-prov@pam!terraform` | Proxmox UI → Datacenter → Permissions |
 | F3-03 | GH prod variables → real `PROXMOX_API_URL` | `./utils/bootstrap-f3-proxmox.sh` |
-| F3-04 | `terraform plan` (TFC local exec) | `infra-plan.yml` or laptop |
+| F3-04 | `terraform plan` | `./utils/f3-proxmox-preflight.sh` then plan |
 | F3-05 | `terraform apply` on `main` | `infra-apply-prod.yml` (needs prod runner — chicken/egg) |
 | F3-06 | DHCP static for VM MACs on OPNsense | after first boot |
 | F3-07 | Install `homelab-prod` runner on `ubuntu-apps` | `setup-github-runner.sh` |
 | F3-08 | Update `docs/network.md` MAC column | F2-07 |
 
 ---
+
+## Before first apply — clean conflicting VMs
+
+```bash
+./utils/f3-proxmox-preflight.sh   # lists VMs; remove vmid 101/102 if occupied
+```
+
+Legacy VMs on Proxmox with the same **vmid** or names must be **stopped and destroyed** in the UI before `terraform apply`.
 
 ## Bootstrap order (first prod apply)
 
