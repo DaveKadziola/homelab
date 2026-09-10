@@ -38,15 +38,17 @@ if [[ -z "${TF_VAR_ubuntu_docker_ssh_pub:-}" && -f "${HOME}/.ssh/homelab_dev_ed2
 fi
 
 if [[ -z "${TF_VAR_ubuntu_docker_password:-}" ]]; then
-  if [[ -f "${HOME}/.homelab-ubuntu-apps-dev-pass" ]]; then
-    export TF_VAR_ubuntu_docker_password="$(openssl passwd -6 "$(cat "${HOME}/.homelab-ubuntu-apps-dev-pass")")"
-  else
+  if [[ ! -f "${HOME}/.homelab-ubuntu-apps-dev-pass" ]]; then
     PLAIN=$(openssl rand -base64 12 | tr -d '/+=' | head -c 16)
     printf '%s\n' "$PLAIN" > "${HOME}/.homelab-ubuntu-apps-dev-pass"
     chmod 600 "${HOME}/.homelab-ubuntu-apps-dev-pass"
-    export TF_VAR_ubuntu_docker_password="$(openssl passwd -6 "$PLAIN")"
     echo "Generated ubuntu password -> ~/.homelab-ubuntu-apps-dev-pass"
   fi
+  # Fixed salt: a fresh openssl salt on every run looks like cloud-init drift
+  # and the Proxmox provider then wants to destroy the VM.
+  PLAIN="$(cat "${HOME}/.homelab-ubuntu-apps-dev-pass")"
+  SALT="$(printf '%s' "$PLAIN" | sha256sum | cut -c1-16)"
+  export TF_VAR_ubuntu_docker_password="$(openssl passwd -6 -salt "$SALT" "$PLAIN")"
 fi
 
 cd terraform

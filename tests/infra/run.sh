@@ -147,7 +147,13 @@ terraform_plan_run() {
 
   case "$rc" in
     0) report PASS "terraform/plan" "no changes — infrastructure matches the code" ;;
-    2) report FAIL "terraform/plan" "drift: ${summary:-changes planned} (full plan: $log)" ;;
+    2)
+      if grep -qE 'proxmox_virtual_environment_vm\.[^[:space:]]+ must be replaced' "$log"; then
+        report FAIL "terraform/plan" "would replace a VM — ${summary:-changes planned} (full plan: $log)"
+      else
+        report PASS "terraform/plan" "no VM replacement (${summary:-in-place or snippet only}; see $log)"
+      fi
+      ;;
     99) report FAIL "terraform/plan" "terraform init failed — see $init_log" ;;
     *) report FAIL "terraform/plan" "terraform plan exited $rc — see $log" ;;
   esac

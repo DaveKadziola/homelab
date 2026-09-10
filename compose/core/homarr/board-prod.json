@@ -1,0 +1,315 @@
+{
+  "generatedFrom": "config/services.yml",
+  "environment": "prod",
+  "board": {
+    "id": "lkmv1qnfkp2jrpczn7e7wicv",
+    "name": "homelab-prod",
+    "pageTitle": "Homelab (prod)",
+    "isPublic": false
+  },
+  "layout": {
+    "id": "9z0yvsdbopp5ae2ilol9q156",
+    "name": "Base",
+    "columnCount": 10,
+    "breakpoint": 0
+  },
+  "section": {
+    "id": "vkc4jt4khgo148cqfunl1rk6",
+    "kind": "empty",
+    "xOffset": 0,
+    "yOffset": 0
+  },
+  "apps": [
+    {
+      "id": "6fnuu7o7zwyyq0e7mkjja8cq",
+      "name": "Portainer",
+      "description": "infra · P0",
+      "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/portainer.svg",
+      "href": "http://192.168.50.30:9000/",
+      "pingUrl": "http://192.168.50.30:9000/"
+    },
+    {
+      "id": "vi8r0rqd02j4l729g0ox0z2f",
+      "name": "pgAdmin",
+      "description": "infra · P0",
+      "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/pgadmin.svg",
+      "href": "http://192.168.50.30:5050/",
+      "pingUrl": "http://192.168.50.30:5050/"
+    },
+    {
+      "id": "pyhbn0t4j6gme2ig6t9c4oyj",
+      "name": "Homarr",
+      "description": "infra · P0",
+      "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/homarr.svg",
+      "href": "http://192.168.50.30:7575/",
+      "pingUrl": "http://192.168.50.30:7575/"
+    },
+    {
+      "id": "tup4zi0gy2u9ltsrvutct65e",
+      "name": "Dozzle",
+      "description": "infra · P2",
+      "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/dozzle.svg",
+      "href": "http://192.168.50.30:8080/",
+      "pingUrl": "http://192.168.50.30:8080/"
+    },
+    {
+      "id": "1g6d32y3vk6vfm4koc780atj",
+      "name": "Authelia",
+      "description": "infra · P0",
+      "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/authelia.svg",
+      "href": "https://192.168.50.30:9091/",
+      "pingUrl": "https://192.168.50.30:9091/"
+    },
+    {
+      "id": "j5tmih76pj2fhs69l7936ec7",
+      "name": "Beszel",
+      "description": "infra · P2",
+      "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/beszel.svg",
+      "href": "http://192.168.50.30:8090/",
+      "pingUrl": "http://192.168.50.30:8090/"
+    },
+    {
+      "id": "ywi01u9abx7p0lz8ghqpyqid",
+      "name": "Trilium Notes",
+      "description": "apps · P0",
+      "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/trilium.svg",
+      "href": "http://192.168.50.30:8082/",
+      "pingUrl": "http://192.168.50.30:8082/"
+    },
+    {
+      "id": "dg5tkcklmjd2h33xcvc9ugsc",
+      "name": "Actual Budget",
+      "description": "apps · P0",
+      "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/actual-budget.svg",
+      "href": "http://192.168.50.30:5006/",
+      "pingUrl": "http://192.168.50.30:5006/"
+    },
+    {
+      "id": "xqbh0s9az2ilafkdr9gyvjif",
+      "name": "Linkwarden",
+      "description": "apps · P0",
+      "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/docker.svg",
+      "href": "http://192.168.50.30:3001/",
+      "pingUrl": "http://192.168.50.30:3001/"
+    },
+    {
+      "id": "qfnklg3p10wercx5930w5i2n",
+      "name": "Easy Todo Grocery",
+      "description": "apps · P0",
+      "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/grocy.svg",
+      "href": "https://grocery.dkhomelabserver.xyz/",
+      "pingUrl": "https://grocery.dkhomelabserver.xyz/"
+    },
+    {
+      "id": "5924fks08i00ij4urakzefln",
+      "name": "Syncthing",
+      "description": "apps · P1",
+      "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/syncthing.svg",
+      "href": "http://192.168.50.30:8384/",
+      "pingUrl": "http://192.168.50.30:8384/"
+    },
+    {
+      "id": "byi2xwhgfchqure1raf0wpxo",
+      "name": "Navidrome",
+      "description": "media · P1",
+      "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/navidrome.svg",
+      "href": "http://192.168.50.30:4533/",
+      "pingUrl": "http://192.168.50.30:4533/"
+    },
+    {
+      "id": "0uiahk2bhbjciqg2v2x68217",
+      "name": "Jellyfin",
+      "description": "media · P1",
+      "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/jellyfin.svg",
+      "href": "http://192.168.50.30:8096/web/",
+      "pingUrl": "http://192.168.50.30:8096/web/"
+    },
+    {
+      "id": "snwqgi2dgx2srbwxzm3t2uqi",
+      "name": "Immich",
+      "description": "media · P1",
+      "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/immich.svg",
+      "href": "http://192.168.50.30:2283/",
+      "pingUrl": "http://192.168.50.30:2283/api/server/ping"
+    },
+    {
+      "id": "jqc2rg30sqlymii57n9i6nmz",
+      "name": "Omni Tools",
+      "description": "tools · P0",
+      "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/it-tools.svg",
+      "href": "http://192.168.50.30:8083/",
+      "pingUrl": "http://192.168.50.30:8083/"
+    },
+    {
+      "id": "x08h9flsupucm828o1ikp56g",
+      "name": "DumbWhois",
+      "description": "tools · P0",
+      "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/docker.svg",
+      "href": "http://192.168.50.30:8084/",
+      "pingUrl": "http://192.168.50.30:8084/"
+    },
+    {
+      "id": "1nqk1e16kh07ezjyvvub1skc",
+      "name": "BentoPDF",
+      "description": "tools · P0",
+      "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/bentopdf.svg",
+      "href": "http://192.168.50.30:8085/",
+      "pingUrl": "http://192.168.50.30:8085/"
+    }
+  ],
+  "items": [
+    {
+      "id": "kwilhrb4dvnul6h5txxxo7mi",
+      "kind": "app",
+      "appId": "6fnuu7o7zwyyq0e7mkjja8cq",
+      "xOffset": 0,
+      "yOffset": 0,
+      "width": 2,
+      "height": 1
+    },
+    {
+      "id": "10w30ba9iua633db7qdm8mjk",
+      "kind": "app",
+      "appId": "vi8r0rqd02j4l729g0ox0z2f",
+      "xOffset": 2,
+      "yOffset": 0,
+      "width": 2,
+      "height": 1
+    },
+    {
+      "id": "7p8wkqpluyelgxlbp309u2pl",
+      "kind": "app",
+      "appId": "pyhbn0t4j6gme2ig6t9c4oyj",
+      "xOffset": 4,
+      "yOffset": 0,
+      "width": 2,
+      "height": 1
+    },
+    {
+      "id": "ig46mbwr32b9kmq39d62u3qw",
+      "kind": "app",
+      "appId": "tup4zi0gy2u9ltsrvutct65e",
+      "xOffset": 6,
+      "yOffset": 0,
+      "width": 2,
+      "height": 1
+    },
+    {
+      "id": "osbrd3oy079ka313klf3vs3f",
+      "kind": "app",
+      "appId": "1g6d32y3vk6vfm4koc780atj",
+      "xOffset": 8,
+      "yOffset": 0,
+      "width": 2,
+      "height": 1
+    },
+    {
+      "id": "au20lyiv183q0ew5ein6lyqk",
+      "kind": "app",
+      "appId": "j5tmih76pj2fhs69l7936ec7",
+      "xOffset": 0,
+      "yOffset": 1,
+      "width": 2,
+      "height": 1
+    },
+    {
+      "id": "k26xo29ha3729lpbo08d38zx",
+      "kind": "app",
+      "appId": "ywi01u9abx7p0lz8ghqpyqid",
+      "xOffset": 0,
+      "yOffset": 2,
+      "width": 2,
+      "height": 1
+    },
+    {
+      "id": "loi7l1q0umjgqt3hrzmiztxs",
+      "kind": "app",
+      "appId": "dg5tkcklmjd2h33xcvc9ugsc",
+      "xOffset": 2,
+      "yOffset": 2,
+      "width": 2,
+      "height": 1
+    },
+    {
+      "id": "n14mqbvs0j40rjvka1kjtb8u",
+      "kind": "app",
+      "appId": "xqbh0s9az2ilafkdr9gyvjif",
+      "xOffset": 4,
+      "yOffset": 2,
+      "width": 2,
+      "height": 1
+    },
+    {
+      "id": "icajtwpb8x0qjm8h3fvajv7k",
+      "kind": "app",
+      "appId": "qfnklg3p10wercx5930w5i2n",
+      "xOffset": 6,
+      "yOffset": 2,
+      "width": 2,
+      "height": 1
+    },
+    {
+      "id": "c983xw181og5o1aow5aq8squ",
+      "kind": "app",
+      "appId": "5924fks08i00ij4urakzefln",
+      "xOffset": 8,
+      "yOffset": 2,
+      "width": 2,
+      "height": 1
+    },
+    {
+      "id": "pl3eroeh38f4pws6lmsy2sv9",
+      "kind": "app",
+      "appId": "byi2xwhgfchqure1raf0wpxo",
+      "xOffset": 0,
+      "yOffset": 3,
+      "width": 2,
+      "height": 1
+    },
+    {
+      "id": "fk01g8jk3yssconas4a92rbb",
+      "kind": "app",
+      "appId": "0uiahk2bhbjciqg2v2x68217",
+      "xOffset": 2,
+      "yOffset": 3,
+      "width": 2,
+      "height": 1
+    },
+    {
+      "id": "4kbyfa1qmwo1xunqbisajekn",
+      "kind": "app",
+      "appId": "snwqgi2dgx2srbwxzm3t2uqi",
+      "xOffset": 4,
+      "yOffset": 3,
+      "width": 2,
+      "height": 1
+    },
+    {
+      "id": "suaxzr5pimfogdug2ao9lurb",
+      "kind": "app",
+      "appId": "jqc2rg30sqlymii57n9i6nmz",
+      "xOffset": 0,
+      "yOffset": 4,
+      "width": 2,
+      "height": 1
+    },
+    {
+      "id": "gv7hdju698opmx904f6l0061",
+      "kind": "app",
+      "appId": "x08h9flsupucm828o1ikp56g",
+      "xOffset": 2,
+      "yOffset": 4,
+      "width": 2,
+      "height": 1
+    },
+    {
+      "id": "pld20x226fqfj97ksfhx6g6n",
+      "kind": "app",
+      "appId": "1nqk1e16kh07ezjyvvub1skc",
+      "xOffset": 4,
+      "yOffset": 4,
+      "width": 2,
+      "height": 1
+    }
+  ]
+}

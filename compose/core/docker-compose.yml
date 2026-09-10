@@ -61,12 +61,16 @@ services:
     ports:
       - "5050:80"
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@example.com}
+      # Address comes from config/identities.yml — never hardcoded here.
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:?set PGADMIN_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:?set PGADMIN_PASSWORD}
+      PGADMIN_SERVER_JSON_FILE: /pgadmin4/servers.json
     volumes:
       - pgadmin_data:/var/lib/pgadmin
-    # DEV nested: 256m OOMs gunicorn workers → hung :5050
-    mem_limit: 384m
+      # Server list as code — utils/bootstrap/pgadmin.sh reloads it on every run.
+      - ./pgadmin/servers.json:/pgadmin4/servers.json:ro
+    # 256m hung :5050; 384m still OOM-kills gunicorn workers under load
+    mem_limit: 512m
 
   homarr:
     image: ghcr.io/homarr-labs/homarr:latest
@@ -76,7 +80,7 @@ services:
     volumes:
       - homarr_data:/appdata
     environment:
-      SECRET_ENCRYPTION_KEY: ${HOMARR_SECRET_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+      SECRET_ENCRYPTION_KEY: ${HOMARR_SECRET_KEY:?set HOMARR_SECRET_KEY}
     mem_limit: 512m
 
   dozzle:
@@ -120,18 +124,25 @@ services:
       - "3001:3000"
     environment:
       DATABASE_URL: postgresql://linkwarden:${POSTGRES_PASSWORD}@postgres:5432/linkwarden
-      NEXTAUTH_SECRET: ${LINKWARDEN_SECRET:-homelab-dev-linkwarden-change-me}
+      NEXTAUTH_SECRET: ${LINKWARDEN_SECRET:?set LINKWARDEN_SECRET}
       NEXTAUTH_URL: ${LINKWARDEN_URL:-http://192.168.122.50:3001}
     volumes:
       - linkwarden_data:/data/data
     mem_limit: 512m
 
   # Authelia — COMPOSE_PROFILES=auth (default on deploy)
+  # Secrets come from the environment; configuration.yml holds no key material.
+  # The admin hash in authelia/users_database.yml is written by
+  # utils/bootstrap/authelia.sh.
   authelia:
     image: authelia/authelia:latest
     restart: unless-stopped
     ports:
       - "9091:9091"
+    environment:
+      AUTHELIA_IDENTITY_VALIDATION_RESET_PASSWORD_JWT_SECRET: ${AUTHELIA_JWT_SECRET:?set AUTHELIA_JWT_SECRET}
+      AUTHELIA_SESSION_SECRET: ${AUTHELIA_SESSION_SECRET:?set AUTHELIA_SESSION_SECRET}
+      AUTHELIA_STORAGE_ENCRYPTION_KEY: ${AUTHELIA_STORAGE_KEY:?set AUTHELIA_STORAGE_KEY}
     volumes:
       - ./authelia:/config
     mem_limit: 256m
@@ -183,12 +194,11 @@ services:
     volumes:
       - navidrome_data:/data
       - navidrome_music:/music:ro
+      - ./navidrome/navidrome.toml:/etc/navidrome/navidrome.toml:ro
     environment:
-      ND_MUSICFOLDER: /music
-      ND_DATAFOLDER: /data
-      ND_SCANSCHEDULE: "1h"
-      ND_LOGLEVEL: info
-      ND_SESSIONTIMEOUT: 24h
+      ND_CONFIGFILE: /etc/navidrome/navidrome.toml
+      # Creates the `admin` user on first start — no web UI signup.
+      ND_DEVAUTOCREATEADMINPASSWORD: ${NAVIDROME_ADMIN_PASSWORD:?set NAVIDROME_ADMIN_PASSWORD}
     mem_limit: 256m
 
   jellyfin:

@@ -1,0 +1,24 @@
+# Navidrome configuration as code (F7-B).
+#
+# Everything that used to be implicit (or an env var in compose) lives here.
+# The only value kept in the environment is the admin password:
+# ND_DEVAUTOCREATEADMINPASSWORD creates the `admin` user on first start, so no
+# account is ever created through the web UI.
+
+MusicFolder = "/music"
+DataFolder = "/data"
+CacheFolder = "/data/cache"
+
+LogLevel = "info"
+SessionTimeout = "24h"
+ScanSchedule = "1h"
+EnableInsightsCollector = false
+
+# Nested DEV has no transcoding headroom and an empty library.
+EnableTranscodingConfig = false
+EnableDownloads = true
+EnableSharing = false
+EnableExternalServices = false
+
+DefaultTheme = "Auto"
+UILoginBackgroundUrl = ""

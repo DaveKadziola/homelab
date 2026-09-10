@@ -136,4 +136,10 @@ resource "proxmox_virtual_environment_vm" "vm" {
       user_data_file_id = proxmox_virtual_environment_file.cloud_config[each.key].id
     }
   }
+
+  # Cloud-init is first-boot only. Re-hashing the password or editing the
+  # snippet must not destroy a running VM (Immich data, Docker volumes).
+  lifecycle {
+    ignore_changes = [initialization]
+  }
 }

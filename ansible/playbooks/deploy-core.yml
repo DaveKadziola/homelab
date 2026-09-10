@@ -8,15 +8,72 @@
     compose_dest: /opt/homelab/compose/core
     grocery_src: "{{ playbook_dir }}/../../compose/grocery"
     grocery_dest: /opt/homelab/compose/grocery
-    postgres_password: "{{ lookup('env', 'POSTGRES_PASSWORD') }}"
-    immich_db_password: "{{ lookup('env', 'IMMICH_DB_PASSWORD') | default(postgres_password, true) }}"
+    utils_src: "{{ playbook_dir }}/../../utils"
+    config_src: "{{ playbook_dir }}/../../config"
+    homelab_root: /opt/homelab
+    secrets_dest: /opt/homelab/secrets
+    homelab_env: "{{ lookup('env', 'HOMELAB_ENV') | default('dev', true) }}"
+    # Values come from the environment, else from the per-env cache that
+    # utils/gen-app-credentials.sh writes on the operator machine.
+    secret_cache: "{{ lookup('env', 'HOME') }}/.homelab-secrets/{{ homelab_env }}"
+    identities: "{{ lookup('file', config_src + '/identities.yml') | from_yaml }}"
+    # homelab-admin declares `email: environment`, so it resolves to the mailbox
+    # of the target environment — same rule as utils/gen-app-credentials.sh.
+    pgadmin_email: "{{ identities.environment_email[homelab_env] }}"
+    # Names declared in config/identities.yml — the values never live in git.
+    homelab_secrets:
+      - POSTGRES_PASSWORD
+      - IMMICH_DB_PASSWORD
+      - GROCERY_DB_PASSWORD
+      - PGADMIN_PASSWORD
+      - PORTAINER_ADMIN_PASSWORD
+      - HOMARR_ADMIN_PASSWORD
+      - HOMARR_SECRET_KEY
+      - AUTHELIA_ADMIN_PASSWORD
+      - AUTHELIA_JWT_SECRET
+      - AUTHELIA_SESSION_SECRET
+      - AUTHELIA_STORAGE_KEY
+      - LINKWARDEN_ADMIN_PASSWORD
+      - LINKWARDEN_SECRET
+      - IMMICH_ADMIN_PASSWORD
+      - JELLYFIN_ADMIN_PASSWORD
+      - NAVIDROME_ADMIN_PASSWORD
+      - SYNCTHING_ADMIN_PASSWORD
+      - BESZEL_ADMIN_PASSWORD
+      - BESZEL_KEY
+    postgres_password: "{{ resolved_secrets.POSTGRES_PASSWORD }}"
+    immich_db_password: "{{ resolved_secrets.IMMICH_DB_PASSWORD | default(postgres_password, true) }}"
     compose_profiles: "{{ lookup('env', 'COMPOSE_PROFILES') | default('auth,media', true) }}"
+    run_bootstrap: "{{ lookup('env', 'HOMELAB_SKIP_BOOTSTRAP') | default('', true) | length == 0 }}"
   tasks:
+    - name: Resolve secrets from the environment or the operator secret cache
+      ansible.builtin.set_fact:
+        resolved_secrets: >-
+          {{ resolved_secrets | default({}) | combine({
+               item: lookup('env', item)
+                     | default(lookup('file', secret_cache ~ '/' ~ item, errors='ignore'), true)
+                     | default('', true)
+             }) }}
+      loop: "{{ homelab_secrets }}"
+      no_log: true
+
     - name: Require POSTGRES_PASSWORD
       ansible.builtin.assert:
         that:
           - postgres_password | length > 0
-        fail_msg: "Set POSTGRES_PASSWORD in the environment before deploy"
+        fail_msg: >-
+          Set POSTGRES_PASSWORD in the environment, or generate it with
+          utils/gen-app-credentials.sh --env {{ homelab_env }} --all
+
+    - name: Require application secrets that have no safe default
+      ansible.builtin.assert:
+        that:
+          - resolved_secrets.HOMARR_SECRET_KEY | length > 0
+          - resolved_secrets.LINKWARDEN_SECRET | length > 0
+          - resolved_secrets.PGADMIN_PASSWORD | length > 0
+        fail_msg: >-
+          Generate missing secrets with
+          utils/gen-app-credentials.sh --env {{ homelab_env }} --all
 
     - name: Ensure compose directories
       ansible.builtin.file:
@@ -30,7 +87,13 @@
         - "{{ compose_dest }}/authelia"
         - "{{ compose_dest }}/zotify"
         - "{{ compose_dest }}/diun"
+        - "{{ compose_dest }}/pgadmin"
+        - "{{ compose_dest }}/navidrome"
+        - "{{ compose_dest }}/immich"
+        - "{{ compose_dest }}/homarr"
         - "{{ grocery_dest }}"
+        - "{{ homelab_root }}/config"
+        - "{{ homelab_root }}/utils"
 
     - name: Sync core docker-compose.yml
       ansible.builtin.copy:
@@ -92,6 +155,21 @@
         group: docker
         mode: "0644"
 
+    - name: Sync application config as code (pgAdmin servers, Navidrome, Immich, Homarr board)
+      ansible.builtin.copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        owner: "{{ ansible_user }}"
+        group: docker
+        mode: "0644"
+      loop:
+        - { src: "{{ compose_src }}/pgadmin/servers.json", dest: "{{ compose_dest }}/pgadmin/servers.json" }
+        - { src: "{{ compose_src }}/navidrome/navidrome.toml", dest: "{{ compose_dest }}/navidrome/navidrome.toml" }
+        - { src: "{{ compose_src }}/immich/system-config.json", dest: "{{ compose_dest }}/immich/system-config.json" }
+        - { src: "{{ compose_src }}/homarr/board-{{ homelab_env }}.json", dest: "{{ compose_dest }}/homarr/board-{{ homelab_env }}.json" }
+      loop_control:
+        label: "{{ item.dest }}"
+
     - name: Sync grocery compose (bridge + published ports)
       ansible.builtin.copy:
         src: "{{ grocery_src }}/docker-compose.yml"
@@ -108,24 +186,76 @@
         mode: "0640"
         content: |
           POSTGRES_PASSWORD={{ postgres_password }}
-          PGADMIN_EMAIL={{ lookup('env', 'PGADMIN_EMAIL') | default('admin@example.com', true) }}
-          PGADMIN_PASSWORD={{ lookup('env', 'PGADMIN_PASSWORD') | default(postgres_password, true) }}
-          HOMARR_SECRET_KEY={{ lookup('env', 'HOMARR_SECRET_KEY') | default('0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef', true) }}
-          LINKWARDEN_SECRET={{ lookup('env', 'LINKWARDEN_SECRET') | default(postgres_password, true) }}
+          PGADMIN_EMAIL={{ lookup('env', 'PGADMIN_EMAIL') | default(pgadmin_email, true) }}
+          PGADMIN_PASSWORD={{ resolved_secrets.PGADMIN_PASSWORD | default(postgres_password, true) }}
+          HOMARR_SECRET_KEY={{ resolved_secrets.HOMARR_SECRET_KEY }}
+          LINKWARDEN_SECRET={{ resolved_secrets.LINKWARDEN_SECRET }}
           LINKWARDEN_URL={{ lookup('env', 'LINKWARDEN_URL') | default('http://127.0.0.1:3001', true) }}
+          NAVIDROME_ADMIN_PASSWORD={{ resolved_secrets.NAVIDROME_ADMIN_PASSWORD | default(postgres_password, true) }}
+          AUTHELIA_JWT_SECRET={{ resolved_secrets.AUTHELIA_JWT_SECRET | default(postgres_password, true) }}
+          AUTHELIA_SESSION_SECRET={{ resolved_secrets.AUTHELIA_SESSION_SECRET | default(postgres_password, true) }}
+          AUTHELIA_STORAGE_KEY={{ resolved_secrets.AUTHELIA_STORAGE_KEY | default(postgres_password, true) }}
           COMPOSE_PROFILES={{ compose_profiles }}
           IMMICH_DB_PASSWORD={{ immich_db_password }}
           IMMICH_VERSION={{ lookup('env', 'IMMICH_VERSION') | default('v3', true) }}
           JELLYFIN_URL={{ lookup('env', 'JELLYFIN_URL') | default('http://192.168.122.50:8096', true) }}
           BESZEL_HUB_URL={{ lookup('env', 'BESZEL_HUB_URL') | default('http://127.0.0.1:8090', true) }}
-          BESZEL_KEY={{ lookup('env', 'BESZEL_KEY') | default(lookup('file', lookup('env', 'HOME') + '/.homelab-beszel-key-dev', errors='ignore') | default('', true), true) }}
+          BESZEL_KEY={{ resolved_secrets.BESZEL_KEY | default('', true) }}
           BESZEL_TOKEN={{ lookup('env', 'BESZEL_TOKEN') | default('', true) }}
           ZOTIFY_USERNAME={{ lookup('env', 'ZOTIFY_USERNAME') | default('', true) }}
           ZOTIFY_TOKEN={{ lookup('env', 'ZOTIFY_TOKEN') | default('', true) }}
+      no_log: true
 
-    - name: Ensure docker compose plugin / v2
+    # The bootstrap scripts read secrets from here, so a re-run on the host
+    # needs no environment. Root only, never synced back to git.
+    - name: Ensure the host secret cache
+      ansible.builtin.file:
+        path: "{{ secrets_dest }}/{{ homelab_env }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0700"
+
+    - name: Write the host secret cache
+      ansible.builtin.copy:
+        dest: "{{ secrets_dest }}/{{ homelab_env }}/{{ item }}"
+        content: "{{ resolved_secrets[item] }}"
+        owner: root
+        group: root
+        mode: "0600"
+      loop: "{{ homelab_secrets }}"
+      when: resolved_secrets[item] | length > 0
+      no_log: true
+
+    - name: Sync declarative config (services + identities)
+      ansible.builtin.copy:
+        src: "{{ config_src }}/{{ item }}"
+        dest: "{{ homelab_root }}/config/{{ item }}"
+        owner: root
+        group: root
+        mode: "0644"
+      loop:
+        - services.yml
+        - identities.yml
+
+    - name: Sync the bootstrap scripts
+      ansible.builtin.copy:
+        src: "{{ item }}"
+        dest: "{{ homelab_root }}/utils/"
+        owner: root
+        group: root
+        mode: "0755"
+      loop:
+        - "{{ utils_src }}/bootstrap-apps.sh"
+        - "{{ utils_src }}/bootstrap"
+
+    - name: Ensure docker compose plugin / v2 and the bootstrap dependencies
       ansible.builtin.apt:
-        name: docker-compose-v2
+        name:
+          - docker-compose-v2
+          - python3-yaml
+          - python3-pexpect
+          - jq
         state: present
         update_cache: true
 
@@ -144,3 +274,21 @@
     - name: Print status
       ansible.builtin.debug:
         var: compose_ps.stdout_lines
+
+    # F7-B: every app account and setting is converged here, not in a browser.
+    # Apps behind a disabled compose profile report SKIP and do not fail the run.
+    - name: Bootstrap application accounts and settings
+      ansible.builtin.command:
+        cmd: "{{ homelab_root }}/utils/bootstrap-apps.sh --env {{ homelab_env }} --host 127.0.0.1"
+      environment:
+        HOMELAB_SECRETS_DIR: "{{ secrets_dest }}"
+        HOMELAB_CONFIG_DIR: "{{ homelab_root }}/config"
+        HOMELAB_COMPOSE_DIR: "{{ homelab_root }}/compose"
+      register: bootstrap_apps
+      changed_when: "'converged' in bootstrap_apps.stdout"
+      when: run_bootstrap | bool
+
+    - name: Print the bootstrap table
+      ansible.builtin.debug:
+        var: bootstrap_apps.stdout_lines
+      when: run_bootstrap | bool

@@ -1,14 +1,12 @@
 ---
-# DEV users database (file backend).
-# Plaintext password: ~/.homelab-authelia-dev-pass (not in git).
-# Regenerate hash:
-#   docker run --rm authelia/authelia:latest \
-#     authelia crypto hash generate argon2 --password "$(cat ~/.homelab-authelia-dev-pass)"
+# Authelia file backend — hash written by utils/bootstrap/authelia.sh.
+# The argon2id digest is safe to commit; the plaintext is not.
+# Email is the environment mailbox from config/identities.yml.
 users:
   admin:
     disabled: false
     displayname: Homelab Admin
     password: '$argon2id$v=19$m=65536,t=3,p=4$3CPq+leXAd8cr/qka3MWpw$+oBPe6dSAliXurQoXw+iKxlXXEbcs9aNIqCQup4BYwE'
-    email: admin@homelab.local
+    email: dev-homelabnotifications@pm.me
     groups:
       - admins

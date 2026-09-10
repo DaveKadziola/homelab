@@ -24,6 +24,9 @@ environments:
     ssh_user: ubuntu
     identity: homelab-prod
 
+# dashboard:        group / hidden / icon — drives the generated Homarr board
+#                   (utils/gen-homarr-board.sh); icon defaults to the service
+#                   name in homarr-labs/dashboard-icons
 # check:            http | https | tcp | container (no listener)
 # expect:           accepted HTTP status codes
 # config_as_code:   yes | partial | no   (F7-B matrix)
@@ -128,7 +131,7 @@ services:
     expect: [200]
     config_as_code: partial
     login: none
-    dashboard: { group: apps }
+    dashboard: { group: apps, icon: actual-budget }
 
   - name: linkwarden
     title: Linkwarden
@@ -144,7 +147,7 @@ services:
     login: email
     secret: LINKWARDEN_ADMIN_PASSWORD
     database: linkwarden
-    dashboard: { group: apps }
+    dashboard: { group: apps, icon: docker }
 
   - name: authelia
     title: Authelia
@@ -173,7 +176,7 @@ services:
     expect: [200]
     config_as_code: yes
     login: none
-    dashboard: { group: tools }
+    dashboard: { group: tools, icon: it-tools }
 
   - name: dumbwhois
     title: DumbWhois
@@ -186,7 +189,7 @@ services:
     expect: [200]
     config_as_code: yes
     login: none
-    dashboard: { group: tools }
+    dashboard: { group: tools, icon: docker }
 
   - name: bentopdf
     title: BentoPDF
@@ -215,7 +218,7 @@ services:
     login: none
     database: todo_grocery
     public_url: https://grocery.dkhomelabserver.xyz
-    dashboard: { group: apps }
+    dashboard: { group: apps, icon: grocy }
     notes: Deployed from its own Git repo via Portainer, not from compose/core.
 
   # ---------- P1 ----------
@@ -265,6 +268,11 @@ services:
     login: username
     secret: JELLYFIN_ADMIN_PASSWORD
     dashboard: { group: media }
+    # Paths live inside the jellyfin_media volume; bootstrap creates them.
+    libraries:
+      - { name: Movies, type: movies, path: /media/movies }
+      - { name: Shows, type: tvshows, path: /media/shows }
+      - { name: Music, type: music, path: /media/music }
     notes: Startup wizard is completed through the API; container health may read unhealthy.
 
   - name: immich

@@ -94,3 +94,18 @@ Removed in A0 (2026-06-11): `BW_ACCESS_TOKEN`, `BW_CLIENTID`, `BW_CLIENTSECRET` 
 ---
 
 *Last updated: F1 — secrets set in GH 2026-06-29; copy values to Bitwarden.*
+| `PORTAINER_ADMIN_PASSWORD` | dev | secret | homelab/PORTAINER_ADMIN_PASSWORD/dev | set | generated 2026-09-10 |
+| `PGADMIN_PASSWORD` | dev | secret | homelab/PGADMIN_PASSWORD/dev | set | generated 2026-09-10 |
+| `HOMARR_ADMIN_PASSWORD` | dev | secret | homelab/HOMARR_ADMIN_PASSWORD/dev | set | generated 2026-09-10 |
+| `AUTHELIA_ADMIN_PASSWORD` | dev | secret | homelab/AUTHELIA_ADMIN_PASSWORD/dev | set | generated 2026-09-10 |
+| `LINKWARDEN_ADMIN_PASSWORD` | dev | secret | homelab/LINKWARDEN_ADMIN_PASSWORD/dev | set | generated 2026-09-10 |
+| `IMMICH_ADMIN_PASSWORD` | dev | secret | homelab/IMMICH_ADMIN_PASSWORD/dev | set | generated 2026-09-10 |
+| `JELLYFIN_ADMIN_PASSWORD` | dev | secret | homelab/JELLYFIN_ADMIN_PASSWORD/dev | set | generated 2026-09-10 |
+| `NAVIDROME_ADMIN_PASSWORD` | dev | secret | homelab/NAVIDROME_ADMIN_PASSWORD/dev | set | generated 2026-09-10 |
+| `SYNCTHING_ADMIN_PASSWORD` | dev | secret | homelab/SYNCTHING_ADMIN_PASSWORD/dev | set | generated 2026-09-10 |
+| `BESZEL_ADMIN_PASSWORD` | dev | secret | homelab/BESZEL_ADMIN_PASSWORD/dev | set | generated 2026-09-10 |
+| `HOMARR_SECRET_KEY` | dev | secret | homelab/HOMARR_SECRET_KEY/dev | set | generated 2026-09-10 |
+| `LINKWARDEN_SECRET` | dev | secret | homelab/LINKWARDEN_SECRET/dev | set | generated 2026-09-10 |
+| `AUTHELIA_JWT_SECRET` | dev | secret | homelab/AUTHELIA_JWT_SECRET/dev | set | generated 2026-09-10 |
+| `AUTHELIA_SESSION_SECRET` | dev | secret | homelab/AUTHELIA_SESSION_SECRET/dev | set | generated 2026-09-10 |
+| `AUTHELIA_STORAGE_KEY` | dev | secret | homelab/AUTHELIA_STORAGE_KEY/dev | set | generated 2026-09-10 |

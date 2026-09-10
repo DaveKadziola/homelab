@@ -1,0 +1,23 @@
+{
+  "newVersionCheck": {
+    "enabled": false
+  },
+  "trash": {
+    "enabled": true,
+    "days": 30
+  },
+  "storageTemplate": {
+    "enabled": true,
+    "hashVerificationEnabled": true,
+    "template": "{{y}}/{{y}}-{{MM}}-{{dd}}/{{filename}}"
+  },
+  "passwordLogin": {
+    "enabled": true
+  },
+  "map": {
+    "enabled": true
+  },
+  "reverseGeocoding": {
+    "enabled": true
+  }
+}

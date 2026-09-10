@@ -167,6 +167,10 @@ def expected_secrets(env):
         name = secret.get("name")
         if not name or env not in (secret.get("envs") or []):
             continue
+        # Issued by another app at bootstrap (e.g. Beszel hub key) — not a
+        # GitHub secret until that bootstrap has run, so it is not required here.
+        if secret.get("issued_by"):
+            continue
         names[name] = "service secret for " + ",".join(secret.get("used_by") or [])
     return names
 

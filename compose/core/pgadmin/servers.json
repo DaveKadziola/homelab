@@ -1,0 +1,24 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "homelab-core",
+      "Group": "Homelab",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "homelab",
+      "Username": "homelab",
+      "SSLMode": "prefer",
+      "Comment": "Shared core Postgres — databases listed in config/services.yml"
+    },
+    "2": {
+      "Name": "immich",
+      "Group": "Homelab",
+      "Host": "immich-postgres",
+      "Port": 5432,
+      "MaintenanceDB": "immich",
+      "Username": "postgres",
+      "SSLMode": "prefer",
+      "Comment": "Immich runs its own Postgres (vectorchord); media profile only"
+    }
+  }
+}
