@@ -136,3 +136,30 @@
 | `docs/manual-setup.md` | archive as F0 |
 | `utils/bootstrap-f1-secrets.sh` | infra-only; don’t run `--all` over F7 |
 | `opnsense/backups/*.xml` | not in git; shred after Bitwarden |
+| `ansible/hosts.ini` | leftover; `.219` labelled as Docker host |
+| `utils/start_qemu_default_net` | undocumented one-liner |
+| `utils/reset-nested-proxmox-root.sh` | hardcoded `/home/kdzl/HomeLab/VMs/Proxmox.qcow2` |
+| `docs/opnsense-ui-walkthrough.md` | **SUPERSEDED** — wrong APP / PVE IPs |
+
+---
+
+## Fresh-eyes addendum
+
+A second reader (no chat context) walked README → KB → compose. Same verdict: **cannot rebuild DEV from `rebuild.md` alone.** Extra findings folded in here; dangerous docs were stamped or corrected in the same change.
+
+| Sev | Finding | Follow-up |
+|-----|---------|-----------|
+| high | README mermaid still showed `homelab-dev VM libvirt` as the apps host | Redrawn: `Proxmox` → `ubuntu-apps-dev`; prod runner on apps VM |
+| high | README roadmap said “F1 current” | Roadmap now F1–F8 done, F9 gate FAIL, F5/F3 metal open |
+| high | `docs/opnsense-ui-walkthrough.md` APP `/24` and PVE `.20.10` (printer) | Banner: superseded; use `network.md` |
+| high | `collect-homelab-macs.sh` defaulted to `.20.10` | Default is now `.20.20` |
+| high | Nested PVE hypervisor is assumed, not created | Stated in `rebuild.md` and `dev-proxmox.md` |
+| high | Grocery image + `todo_grocery` are not in this repo’s init | `postgres.md` and `rebuild.md` no longer claim they are |
+| high | APP CIDR written as `.50.50/26` / `.50.48/26` / guest `.50.30/26` | Still **open** — do not invent a fourth number; fix in F3 metal |
+| high | Three Proxmox token IDs in docs/scripts | Still **open** — pick one name at F3 |
+| med | `docs/manual-setup.md` is a second front door | README Prerequisites now point at `rebuild.md` |
+| med | “greenfield plan” is not in the repo | Cursor plan only; do not cite it as a file |
+| med | Hardcoded `192.168.122.50` in compose/workflows/docs | Still **open** — `services.yml` `environments.dev.host` |
+| med | Firefly/Grafana DBs in `postgres-init`, no such apps | Honest in `postgres.md`; trim init later |
+
+**Operate existing DEV from the KB:** yes, if the SSH key and `~/.homelab-secrets/dev/` already exist. That is not a clean-room rebuild.

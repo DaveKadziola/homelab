@@ -3,11 +3,12 @@
 #
 # Usage:
 #   ./utils/collect-homelab-macs.sh
-#   PROXMOX_HOST=192.168.20.10 ./utils/collect-homelab-macs.sh
+#   PROXMOX_HOST=192.168.20.20 ./utils/collect-homelab-macs.sh
 
 set -euo pipefail
 
-PROXMOX_HOST="${PROXMOX_HOST:-192.168.20.10}"
+# .20.10 is the Canon printer — the PVE host is .20.20 (docs/network.md).
+PROXMOX_HOST="${PROXMOX_HOST:-192.168.20.20}"
 PROXMOX_USER="${PROXMOX_USER:-root}"
 
 echo "=== Homelab MAC collection (F2-07) ==="

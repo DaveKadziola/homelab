@@ -1,5 +1,8 @@
 # OPNsense UI walkthrough — F2 sprint
 
+> **SUPERSEDED for addresses.** As-built numbers live in [`network.md`](network.md) and [`kb/networking.md`](kb/networking.md).
+> This page still says APP `192.168.50.1/24` and Proxmox `.20.10` — those are **wrong** (printer is `.20.10`; APP is QinQ `192.168.50.50/26`, apps VM `.50.30`). Do not click this into a live router.
+>
 > Step-by-step for **OPNsense web UI**. English labels match default OPNsense menus.  
 > **Checklist:** [opnsense-baseline.md](opnsense-baseline.md)  
 > **Verify from laptop:** `utils/f2-verify.sh`

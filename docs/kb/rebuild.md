@@ -4,6 +4,14 @@ Scenario: *clean Proxmox, new hardware, different storage, or a nested DEV rebui
 
 Do this in order. A later step will fail if an earlier one is skipped.
 
+**Do not run:** `utils/create-dev-vm.sh` (fights `ubuntu-apps-dev` on `.50`), `ansible/docker-containers.yml`, `ansible/user-setup.yml`, leftover `ansible/hosts.ini`.
+
+**Before step 4:** `./utils/gen-app-credentials.sh --env <env> --all` (or restore `~/.homelab-secrets/<env>/` from Bitwarden). GH cannot read secrets back.
+
+**DEV Authelia:** add `192.168.122.50 authelia.homelab.local homelab.local` on the **client**. Nested PVE itself is not created by this repo — `ensure-dev-proxmox.sh` only starts an existing libvirt domain named `Proxmox`.
+
+**Grocery:** image `easy-todo-grocery-nodb:latest` is built from `DaveKadziola/easytodo-grocery-list`, not this repo. DB `todo_grocery` is not created by `postgres-init`.
+
 ## Dependency graph
 
 ```

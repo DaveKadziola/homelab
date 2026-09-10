@@ -28,14 +28,19 @@ Operator docs live under **[`docs/kb/`](docs/kb/)** — start there, do not dupl
 flowchart TB
   subgraph laptop [Laptop dev]
     RunnerDev[homelab-dev runner]
-    DevVM[homelab-dev VM libvirt]
-    RunnerDev --> DevVM
+    NestedPVE[libvirt VM Proxmox]
+    AppsDev[ubuntu-apps-dev 192.168.122.50]
+    RunnerDev --> NestedPVE
+    NestedPVE --> AppsDev
   end
-  subgraph prod [Proxmox host]
+  subgraph prod [Physical Proxmox]
+    PVE[proxmox 192.168.20.20]
+    AppsVM[ubuntu-apps 192.168.50.30]
+    NASVM[ubuntu-nas 192.168.20.12]
     RunnerProd[homelab-prod runner]
-    AppsVM[ubuntu-apps VM]
-    NASVM[ubuntu-nas VM]
-    RunnerProd --> AppsVM
+    PVE --> AppsVM
+    PVE --> NASVM
+    AppsVM --> RunnerProd
   end
   OPNsense[OPNsense router]
   HA[Home Assistant T620]
@@ -62,7 +67,7 @@ homelab/
 
 ## Prerequisites
 
-Local laptop setup (F0 sprint): [`docs/manual-setup.md`](docs/manual-setup.md)
+First laptop / rebuild: [`docs/kb/rebuild.md`](docs/kb/rebuild.md) and [`docs/dev-proxmox.md`](docs/dev-proxmox.md). F0 sprint notes are historical: [`docs/manual-setup.md`](docs/manual-setup.md).
 
 Tools: `git`, `gh`, `terraform`, `ansible`, `ansible-lint`, `docker`, `virsh`, `virt-install`, `openssl`.
 
@@ -70,7 +75,7 @@ Tools: `git`, `gh`, `terraform`, `ansible`, `ansible-lint`, `docker`, `virsh`, `
 
 Generate locally → **Bitwarden** `homelab/<NAME>/<env>` → `gh secret set`. Names only: [`docs/secrets-inventory.md`](docs/secrets-inventory.md).
 
-Helper script (F1): `utils/bootstrap-f1-secrets.sh` — does not print values.
+App secrets: `utils/gen-app-credentials.sh` (not the older F1 `bootstrap-f1-secrets.sh`).
 
 ## Quick start — dev
 
@@ -125,14 +130,11 @@ WireGuard: [docs/wireguard.md](docs/wireguard.md). OPNsense F2: [docs/opnsense-b
 
 | Phase | Scope |
 |-------|--------|
-| **F1** | Repo skeleton, CI, dev runner, dev VM, GH secrets (current) |
-| **F2** | OPNsense baseline — [docs/opnsense-baseline.md](docs/opnsense-baseline.md), [docs/network.md](docs/network.md), [docs/wireguard.md](docs/wireguard.md) |
-| **F3** | Proxmox Terraform, prod runner — [docs/f3-proxmox.md](docs/f3-proxmox.md), `utils/f3-verify.sh` |
-| **F4–F7** | Apps, identities, bootstrap, tests (on `homelab-v2`) |
-| **F8** | Knowledge base `docs/kb/` (this README only points there) |
-| **F5** | NAS / NFS / backups (not started) |
-| **F9** | Security + repo audit + rebuild drill (gate → `main`) |
-| **F10** | Monitoring / alerts (after prod) |
+| **F1–F8** | Done on `homelab-v2` (repo, DEV nested PVE, apps, identities, tests, KB) |
+| **F9** | Audits written 2026-09-10 — **merge to `main` still FAIL** ([rebuild drill](docs/kb/rebuild-drill-2026-09-10.md)) |
+| **F5** | NAS / NFS / backups — not started (blocks a real rebuild) |
+| **F3 metal / prod** | Physical Proxmox apply — not started |
+| **F10** | Monitoring / alerts — after prod |
 
 ## Operations
 

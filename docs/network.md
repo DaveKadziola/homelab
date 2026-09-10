@@ -88,7 +88,7 @@ Zone: **`dkhomelabserver.xyz`**
 | | Dev | Prod |
 |---|-----|------|
 | Network | `192.168.122.0/24` | IOT 20 + APP 51 (QinQ) |
-| VMs | `homelab-dev` | `ubuntu-nas`, `ubuntu-apps` |
+| VMs | libvirt `Proxmox` → `ubuntu-apps-dev` | `ubuntu-nas`, `ubuntu-apps` |
 | Branch / GH | `homelab-v2` / dev | `main` / prod |
 
 ---
