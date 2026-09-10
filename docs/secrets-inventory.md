@@ -10,7 +10,9 @@ Helper scripts:
 
 | Script | Purpose |
 |--------|---------|
-| `utils/export-secrets-for-bitwarden.sh` | Export to `.txt` for Bitwarden (`--regenerate` for new GH-only secrets) |
+| `utils/export-secrets-for-bitwarden.sh` | Legacy F1 text export (`--regenerate` for GH-only secrets) |
+| `utils/sync-cache-to-bitwarden.sh` | Push `~/.homelab-secrets/<env>/` into Bitwarden (needs `BW_SESSION`) |
+| `utils/setup-rclone-pcloud.sh` | After OAuth: pCloud folders, optional `RCLONE_CONFIG` in GH prod |
 | `utils/bootstrap-f1-secrets.sh` | Push secrets/variables to GitHub (values not printed) |
 
 
@@ -43,7 +45,7 @@ Helper scripts:
 | `SSL_CERT` | prod | secret | `homelab/SSL_CERT/prod` | planned | optional; legacy backup |
 | `SSL_CHAIN` | prod | secret | `homelab/SSL_CHAIN/prod` | planned | optional |
 | `SSL_PKEY` | prod | secret | `homelab/SSL_PKEY/prod` | planned | optional |
-| `RCLONE_CONFIG` | prod | secret | `homelab/RCLONE_CONFIG/prod` | planned | F5; base64 `rclone.conf` — job SKIPs until set |
+| `RCLONE_CONFIG` | prod | secret | `homelab/RCLONE_CONFIG/prod` | set | generated 2026-09-11 — `rclone.conf` in GH prod; copy to Bitwarden via cache |
 | `HA_TOKEN` | prod | secret | `homelab/HA_TOKEN/prod` | planned | F5 HA Supervisor pull; T620 not flashed from this repo |
 | `PORTAINER_ADMIN_PASSWORD` | dev | secret | `homelab/PORTAINER_ADMIN_PASSWORD/dev` | set | generated 2026-09-10 |
 | `PGADMIN_PASSWORD` | dev | secret | `homelab/PGADMIN_PASSWORD/dev` | set | generated 2026-09-10 |
@@ -62,6 +64,23 @@ Helper scripts:
 | `AUTHELIA_STORAGE_KEY` | dev | secret | `homelab/AUTHELIA_STORAGE_KEY/dev` | set | generated 2026-09-10 |
 | `GROCERY_DB_PASSWORD` | dev | secret | `homelab/GROCERY_DB_PASSWORD/dev` | set | F4/F7 |
 | `IMMICH_DB_PASSWORD` | dev | secret | `homelab/IMMICH_DB_PASSWORD/dev` | set | F4/F7 |
+| `PORTAINER_ADMIN_PASSWORD` | prod | secret | `homelab/PORTAINER_ADMIN_PASSWORD/prod` | set | generated 2026-09-11 |
+| `PGADMIN_PASSWORD` | prod | secret | `homelab/PGADMIN_PASSWORD/prod` | set | generated 2026-09-11 |
+| `HOMARR_ADMIN_PASSWORD` | prod | secret | `homelab/HOMARR_ADMIN_PASSWORD/prod` | set | generated 2026-09-11 |
+| `AUTHELIA_ADMIN_PASSWORD` | prod | secret | `homelab/AUTHELIA_ADMIN_PASSWORD/prod` | set | generated 2026-09-11 |
+| `LINKWARDEN_ADMIN_PASSWORD` | prod | secret | `homelab/LINKWARDEN_ADMIN_PASSWORD/prod` | set | generated 2026-09-11 |
+| `IMMICH_ADMIN_PASSWORD` | prod | secret | `homelab/IMMICH_ADMIN_PASSWORD/prod` | set | generated 2026-09-11 |
+| `JELLYFIN_ADMIN_PASSWORD` | prod | secret | `homelab/JELLYFIN_ADMIN_PASSWORD/prod` | set | generated 2026-09-11 |
+| `NAVIDROME_ADMIN_PASSWORD` | prod | secret | `homelab/NAVIDROME_ADMIN_PASSWORD/prod` | set | generated 2026-09-11 |
+| `SYNCTHING_ADMIN_PASSWORD` | prod | secret | `homelab/SYNCTHING_ADMIN_PASSWORD/prod` | set | generated 2026-09-11 |
+| `BESZEL_ADMIN_PASSWORD` | prod | secret | `homelab/BESZEL_ADMIN_PASSWORD/prod` | set | generated 2026-09-11 |
+| `IMMICH_DB_PASSWORD` | prod | secret | `homelab/IMMICH_DB_PASSWORD/prod` | set | generated 2026-09-11 |
+| `GROCERY_DB_PASSWORD` | prod | secret | `homelab/GROCERY_DB_PASSWORD/prod` | set | generated 2026-09-11 |
+| `HOMARR_SECRET_KEY` | prod | secret | `homelab/HOMARR_SECRET_KEY/prod` | set | generated 2026-09-11 |
+| `LINKWARDEN_SECRET` | prod | secret | `homelab/LINKWARDEN_SECRET/prod` | set | generated 2026-09-11 |
+| `AUTHELIA_JWT_SECRET` | prod | secret | `homelab/AUTHELIA_JWT_SECRET/prod` | set | generated 2026-09-11 |
+| `AUTHELIA_SESSION_SECRET` | prod | secret | `homelab/AUTHELIA_SESSION_SECRET/prod` | set | generated 2026-09-11 |
+| `AUTHELIA_STORAGE_KEY` | prod | secret | `homelab/AUTHELIA_STORAGE_KEY/prod` | set | generated 2026-09-11 |
 
 ---
 
@@ -111,4 +130,4 @@ Removed in A0 (2026-06-11): `BW_ACCESS_TOKEN`, `BW_CLIENTID`, `BW_CLIENTSECRET` 
 
 ---
 
-*Last updated: F9 2026-09-10 — F7 app secrets are in GH env `dev`. Copy the laptop cache into Bitwarden; GH cannot read them back.*
+*Last updated: 2026-09-11 — operator ran `sync-cache-to-bitwarden.sh --env all` (vault locked afterwards). `RCLONE_CONFIG` is in GH prod + cache. `POSTGRES_PASSWORD` and F1 placeholders are still GH-only unless already in the vault.*

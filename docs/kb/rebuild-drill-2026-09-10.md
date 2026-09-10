@@ -47,9 +47,9 @@ Clock below is “stranger with this repo + Bitwarden + this laptop”, not wall
 
 ## Gate checklist (merge to `main`)
 
-- [ ] Bitwarden contains every name in `config/identities.yml` for **prod** (and remaining **dev**)
-- [ ] F5: `pg_dump` + volume/NFS + rclone job has run once
-- [ ] `tests/restore/` (C4) exists and PASSes on a copy
+- [~] Bitwarden — operator synced `~/.homelab-secrets/{dev,prod}` on 2026-09-11 (`bw` locked, session not held here). Still GH-only unless you pasted them: `POSTGRES_PASSWORD` (both), F1 Proxmox/Ubuntu placeholders
+- [~] F5: DEV `pg_dump` + NFS + restore suite PASS; rclone remote `pcloud:` + `RCLONE_CONFIG` in GH prod (2026-09-11). Timer offsite still DEV-disabled
+- [x] `tests/restore/` (C4) exists and PASSed on DEV (scratch DB)
 - [ ] Nested rebuild (new VMID or planned wipe) completed using only repo + vault + `rebuild.md`
 - [ ] nmap from WG/IOT/APP (S7)
 - [ ] GHA `apps-deploy-*` injects the full secret set (this change) and a DEV test workflow runs

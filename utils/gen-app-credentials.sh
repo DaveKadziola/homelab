@@ -223,8 +223,23 @@ if count:
     open(path, "w").write(text)
 PY
     else
-      printf '| `%s` | %s | secret | homelab/%s/%s | set | generated %s |\n' \
-        "$name" "$ENVIRONMENT" "$name" "$ENVIRONMENT" "$today" >> "$INVENTORY"
+      python3 - "$INVENTORY" "$name" "$ENVIRONMENT" "$today" <<'PY'
+import sys
+path, name, env, today = sys.argv[1:5]
+marker = "## GitHub Environments — variables"
+row = f"| `{name}` | {env} | secret | `homelab/{name}/{env}` | set | generated {today} |\n"
+text = open(path).read()
+if row in text:
+    raise SystemExit
+if marker not in text:
+    open(path, "a").write(row)
+    raise SystemExit
+head, tail = text.split(marker, 1)
+# Keep the secrets table closed by the --- before the variables heading.
+if not head.endswith("\n"):
+    head += "\n"
+open(path, "w").write(head + row + marker + tail)
+PY
     fi
   done
 fi

@@ -49,7 +49,7 @@ Do not restore over a live app database without stopping that app.
 ## What is still not automatic
 
 - Filling `passthrough[].by_id` and `utils/pve-attach-nas-disks.sh --env prod`
-- Interactive rclone OAuth → GH secret `RCLONE_CONFIG` (prod only)
+- Interactive rclone OAuth → `rclone config create pcloud pcloud` then `utils/setup-rclone-pcloud.sh --push-gh` (see [`security.md`](security.md))
 - Flashing HAOS on the T620 and a long-lived `HA_TOKEN`
 - Running `vzdump` on physical PVE (the script no-ops on the apps VM)
 

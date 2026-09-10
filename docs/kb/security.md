@@ -42,3 +42,39 @@ Generator: `utils/gen-app-credentials.sh` → GH Environment secret + Bitwarden 
 ```
 
 Legacy one-file caches (`~/.homelab-portainer-dev-pass`, …) are stale. Use `~/.homelab-secrets/<env>/`.
+
+## Bitwarden (mandatory copy)
+
+GH cannot read secrets back. After generate, sync the laptop cache:
+
+```bash
+# CLI lives in ~/.local/bin/bw (official 2025.9.0)
+export PATH="$HOME/.local/bin:$PATH"
+bw login          # email + master password + 2FA — interactive
+export BW_SESSION="$(bw unlock --raw)"
+./utils/sync-cache-to-bitwarden.sh --env all
+bw lock
+unset BW_SESSION
+```
+
+Notes are named `homelab/<NAME>/<env>` in folder `homelab`. The script never prints values.
+
+Still GH-only (not in the cache): `POSTGRES_PASSWORD` (both envs — F1, write-only), prod `UBUNTU_DOCKER_*` / Proxmox placeholders. Those need a value you already stored, or `--regenerate` (changes the live secret).
+
+Operator sync: **2026-09-11** (`--env all`). Vault is locked on this laptop; no session is kept in the repo or chat.
+
+Staging `.txt` files under `~/homelab-bitwarden-*` are leftovers — shred after you are happy with the vault:
+
+```bash
+shred -u ~/homelab-bitwarden-*.txt
+```
+
+## rclone / pCloud (prod offsite)
+
+```bash
+rclone config create pcloud pcloud    # browser OAuth, one time
+./utils/setup-rclone-pcloud.sh --push-gh
+./utils/sync-cache-to-bitwarden.sh --env prod   # picks up ~/.homelab-secrets/prod/RCLONE_CONFIG
+```
+
+DEV does not push offsite (`storage.yml` `rclone: false`).
