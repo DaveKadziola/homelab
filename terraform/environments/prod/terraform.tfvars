@@ -43,13 +43,15 @@ vm_config = {
   }
 
   apps = {
-    vm_id              = 101
-    vm_name            = "ubuntu-apps"
-    vm_description     = "Docker / core stack — APP VLAN 51"
-    vm_tags            = ["docker", "ubuntu-server", "cloud-init", "terraform"]
-    bios               = "seabios"
-    ram                = 8192
-    cpu_cores          = 2
+    vm_id          = 101
+    vm_name        = "ubuntu-apps"
+    vm_description = "Docker / core stack — APP VLAN 51"
+    vm_tags        = ["docker", "ubuntu-server", "cloud-init", "terraform"]
+    bios           = "seabios"
+    ram            = 8192
+    cpu_cores      = 2
+    # Immich machine-learning needs x86-64-v2 (NumPy) — kvm64 crashes.
+    cpu_type           = "host"
     net_dev_type       = "vmbr0"
     vlan_tag           = 51
     enable_cloud_init  = true
@@ -58,10 +60,11 @@ vm_config = {
     cloud_init_dns     = "192.168.20.1"
     storage_type       = "local-lvm"
     storage_interface  = "scsi0"
-    storage_size       = 32
-    ssd_enabled        = true
-    image_url          = "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
-    img_file_format    = "qcow2"
-    img_storage_type   = "local"
+    # Full P0–P2 image set needed 27G on dev (media libs live on NFS, not here).
+    storage_size     = 48
+    ssd_enabled      = true
+    image_url        = "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
+    img_file_format  = "qcow2"
+    img_storage_type = "local"
   }
 }

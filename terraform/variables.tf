@@ -103,6 +103,7 @@ variable "vm_config" {
     bios               = string
     ram                = number
     cpu_cores          = number
+    cpu_type           = optional(string, "host")
     net_dev_type       = string
     vlan_tag           = optional(number)
     enable_cloud_init  = optional(bool)

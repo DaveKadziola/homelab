@@ -82,8 +82,11 @@ resource "proxmox_virtual_environment_vm" "vm" {
   bios = each.value.bios
 
   boot_order = each.value.boot_order
+  # "host" is required by Immich machine-learning (NumPy needs x86-64-v2);
+  # the provider default kvm64 makes it crash with "Illegal instruction".
   cpu {
     cores = each.value.cpu_cores
+    type  = try(each.value.cpu_type, "host")
   }
 
   memory {

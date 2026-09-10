@@ -23,8 +23,10 @@ vm_config = {
     vm_tags        = ["docker", "ubuntu-server", "cloud-init", "terraform", "dev"]
     bios           = "seabios"
     # Nested PVE has ~8 GiB; HA-dev kept at 2 GiB so apps can use 6 GiB for full P0–P2 stack.
-    ram                = 6144
-    cpu_cores          = 2
+    ram       = 6144
+    cpu_cores = 2
+    # Immich machine-learning needs x86-64-v2 (NumPy) — kvm64 crashes.
+    cpu_type           = "host"
     net_dev_type       = "vmbr0"
     enable_cloud_init  = true
     docker_enabled     = true
