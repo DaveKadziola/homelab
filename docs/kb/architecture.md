@@ -11,7 +11,7 @@ Laptop (dev)
 
 Prod (physical — after sign-off)
   OPNsense  →  Proxmox host 192.168.20.20 (node `proxmox`)
-    ubuntu-nas   192.168.20.12   IOT VLAN 20   NFS / backups (F5)
+    ubuntu-nas   192.168.20.12   IOT VLAN 20   NFS exporter (not OMV/TrueNAS — see storage.md)
     ubuntu-apps  192.168.50.30   APP VLAN 51   Docker + runner `homelab-prod`
     HA T620      192.168.20.13   IOT VLAN 20   Home Assistant
   WireGuard 10.10.10.0/24

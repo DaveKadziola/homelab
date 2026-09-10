@@ -20,6 +20,8 @@
 
 Nested PVE is ~8 GiB and `ubuntu-apps-dev` is already 6144 MiB. **Do not** Terraform-apply a 4 GiB NAS VM on nested DEV. `ubuntu_nas` in the DEV inventory is the same guest.
 
+Ubuntu (not OMV/TrueNAS) is deliberate — see [`kb/storage.md`](kb/storage.md#why-ubuntu-not-a-nas-distro).
+
 ## Operator (DEV)
 
 ```bash
