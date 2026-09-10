@@ -1,4 +1,7 @@
 ---
+# DEPRECATED — do not run. The live path is ansible/playbooks/deploy-core.yml
+# plus compose/core. This file still contains a literal pgAdmin password and
+# a leftover NPM stack. Kept only so F9 can point at it; delete after F9 close.
 - hosts: ubuntu-docker
   become: true
   vars:

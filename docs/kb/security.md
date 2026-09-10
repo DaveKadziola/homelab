@@ -1,6 +1,6 @@
 # Security
 
-This is the **operating model**, not the F9 audit. The dated audit lands later as `docs/kb/security-audit-<date>.md`.
+Operating model. Dated findings: [`security-audit-2026-09-10.md`](security-audit-2026-09-10.md).
 
 ## Identities
 

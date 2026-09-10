@@ -27,3 +27,5 @@ Template: *date · phase · symptom · cause · fix · prevent / code pointer*.
 | 2026-09-10 | F7 | Navidrome `user edit` “inappropriate ioctl” | `--set-password` needs a TTY | `docker exec -t` + pexpect | `utils/bootstrap/navidrome.sh` |
 | 2026-09-10 | F7 | Jellyfin login failed for `admin` | First wizard created user **`root`** | Rename + PBKDF2 hash, or wipe `jellyfin_config` on DEV | `docs/kb/apps/jellyfin.md` |
 | 2026-09-10 | F4 | pgAdmin / Immich OOM under load | Limits too low for workers + geodata | pgAdmin 512m, Immich server 1536m, ML 384m | compose mem_limits |
+| 2026-09-10 | F9 | gitleaks 20 hits on the working tree | Local `opnsense/backups/*.xml` (gitignored) still contain private keys | Do not `git add -f`; import to Bitwarden then shred | `.gitleaks.toml` · S9 |
+| 2026-09-10 | F9 | GHA deploy would miss F7 secrets | Workflows only passed `POSTGRES_PASSWORD` | Pass the full GH Environment set | `apps-deploy-*.yml` |

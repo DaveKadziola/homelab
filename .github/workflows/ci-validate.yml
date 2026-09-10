@@ -36,5 +36,20 @@ jobs:
       - name: Docker Compose validate
         working-directory: compose/core
         env:
+          # Placeholders only — compose uses ${VAR:?} and will not render without them.
           POSTGRES_PASSWORD: ci-validate-placeholder
-        run: docker compose config
+          PGADMIN_EMAIL: ci@example.com
+          PGADMIN_PASSWORD: ci-validate-placeholder
+          HOMARR_SECRET_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+          LINKWARDEN_SECRET: ci-validate-placeholder
+          AUTHELIA_JWT_SECRET: ci-validate-placeholder-jwt-secret-32
+          AUTHELIA_SESSION_SECRET: ci-validate-placeholder-session-32
+          AUTHELIA_STORAGE_KEY: ci-validate-placeholder-storage-32
+          NAVIDROME_ADMIN_PASSWORD: ci-validate-placeholder
+          IMMICH_DB_PASSWORD: ci-validate-placeholder
+        run: docker compose --profile auth --profile media config
+
+      - name: Gitleaks
+        run: |
+          docker run --rm -v "$PWD:/repo:ro" zricethezav/gitleaks:latest \
+            detect --source /repo --no-banner

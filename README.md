@@ -19,6 +19,7 @@ Operator docs live under **[`docs/kb/`](docs/kb/)** — start there, do not dupl
 | Run / deploy / login | [operations](docs/kb/operations.md) · [deployment](docs/kb/deployment.md) |
 | Clean-room rebuild | [rebuild](docs/kb/rebuild.md) · [dr](docs/kb/dr.md) · [backup](docs/kb/backup.md) |
 | Failures we already paid for | [lessons-learned](docs/kb/lessons-learned.md) · [troubleshooting](docs/kb/troubleshooting.md) |
+| F9 audits (2026-09-10) | [security](docs/kb/security-audit-2026-09-10.md) · [repo](docs/kb/repo-audit-2026-09-10.md) · [rebuild drill](docs/kb/rebuild-drill-2026-09-10.md) |
 | Per app | [docs/kb/apps/](docs/kb/apps/) |
 
 ## Architecture

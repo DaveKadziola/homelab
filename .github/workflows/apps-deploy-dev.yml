@@ -24,7 +24,50 @@ jobs:
       - name: Deploy compose/core
         working-directory: ansible
         env:
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          HOMELAB_ENV: dev
           LINKWARDEN_URL: http://192.168.122.50:3001
+          JELLYFIN_URL: http://192.168.122.50:8096
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          IMMICH_DB_PASSWORD: ${{ secrets.IMMICH_DB_PASSWORD }}
+          GROCERY_DB_PASSWORD: ${{ secrets.GROCERY_DB_PASSWORD }}
+          PGADMIN_PASSWORD: ${{ secrets.PGADMIN_PASSWORD }}
+          PORTAINER_ADMIN_PASSWORD: ${{ secrets.PORTAINER_ADMIN_PASSWORD }}
+          HOMARR_ADMIN_PASSWORD: ${{ secrets.HOMARR_ADMIN_PASSWORD }}
+          HOMARR_SECRET_KEY: ${{ secrets.HOMARR_SECRET_KEY }}
+          AUTHELIA_ADMIN_PASSWORD: ${{ secrets.AUTHELIA_ADMIN_PASSWORD }}
+          AUTHELIA_JWT_SECRET: ${{ secrets.AUTHELIA_JWT_SECRET }}
+          AUTHELIA_SESSION_SECRET: ${{ secrets.AUTHELIA_SESSION_SECRET }}
+          AUTHELIA_STORAGE_KEY: ${{ secrets.AUTHELIA_STORAGE_KEY }}
+          LINKWARDEN_ADMIN_PASSWORD: ${{ secrets.LINKWARDEN_ADMIN_PASSWORD }}
+          LINKWARDEN_SECRET: ${{ secrets.LINKWARDEN_SECRET }}
+          IMMICH_ADMIN_PASSWORD: ${{ secrets.IMMICH_ADMIN_PASSWORD }}
+          JELLYFIN_ADMIN_PASSWORD: ${{ secrets.JELLYFIN_ADMIN_PASSWORD }}
+          NAVIDROME_ADMIN_PASSWORD: ${{ secrets.NAVIDROME_ADMIN_PASSWORD }}
+          SYNCTHING_ADMIN_PASSWORD: ${{ secrets.SYNCTHING_ADMIN_PASSWORD }}
+          BESZEL_ADMIN_PASSWORD: ${{ secrets.BESZEL_ADMIN_PASSWORD }}
+          BESZEL_KEY: ${{ secrets.BESZEL_KEY }}
         run: |
           ansible-playbook -i environments/dev/hosts.ini playbooks/deploy-core.yml
+
+  post-deploy-tests:
+    needs: deploy-dev
+    runs-on: [self-hosted, homelab-dev]
+    environment: dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run test suites
+        env:
+          HOMELAB_ENV: dev
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NO_COLOR: "1"
+        run: ./utils/run-tests.sh --env dev --suite all --json-out tests-dev-report.json
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tests-dev-report
+          path: tests-dev-report.json
+          if-no-files-found: ignore

@@ -17,3 +17,6 @@ This directory is the operator entry. The repo README only links here.
 | [rebuild.md](rebuild.md) | Clean-room order |
 | [lessons-learned.md](lessons-learned.md) | Append-only post-mortems |
 | [apps/](apps/) | One page per service |
+| [security-audit-2026-09-10.md](security-audit-2026-09-10.md) | F9-F1 — DEV nmap / inspect / gitleaks |
+| [repo-audit-2026-09-10.md](repo-audit-2026-09-10.md) | F9-F2 — stranger readability |
+| [rebuild-drill-2026-09-10.md](rebuild-drill-2026-09-10.md) | F9-F3 — tabletop; merge gate **FAIL** |

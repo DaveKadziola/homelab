@@ -9,6 +9,13 @@
 # Images live under /tmp/homelab-libvirt (world-readable) for qemu:///system without sudo.
 set -euo pipefail
 
+if [[ "${HOMELAB_I_MEAN_IT:-}" != "1" ]]; then
+  echo "DEPRECATED: this builds a libvirt Ubuntu guest on 192.168.122.50 and fights ubuntu-apps-dev." >&2
+  echo "Use: ./utils/ensure-dev-proxmox.sh && ./utils/dev-apply-local.sh" >&2
+  echo "Override only with HOMELAB_I_MEAN_IT=1" >&2
+  exit 1
+fi
+
 VM_NAME="${VM_NAME:-homelab-dev}"
 VM_RAM_MB="${VM_RAM_MB:-4096}"
 VM_VCPUS="${VM_VCPUS:-2}"
