@@ -84,12 +84,23 @@ Order (after F2–F3): OPNsense → Proxmox TF apply → Ansible → Compose. Pr
 | `infra-plan.yml` | PR → `main` | `homelab-prod` |
 | `infra-apply-prod.yml` | push `main` | `homelab-prod` |
 | `apps-deploy-prod.yml` | push `main` | `homelab-prod` |
+| `tests-dev.yml` | after `apps-deploy-dev` / manual | `homelab-dev` |
 
 Bootstrap: [`utils/setup-github-runner.sh`](utils/setup-github-runner.sh)
 
 ## Applications
 
 P0/P1/P2 phases and sources: [`docs/apps-sources.md`](docs/apps-sources.md). Public app: `grocery.dkhomelabserver.xyz`.
+
+Service endpoints (port, health path, expected status, container, priority) are declared once in [`config/services.yml`](config/services.yml); accounts and secret names in [`config/identities.yml`](config/identities.yml).
+
+## Tests
+
+```bash
+utils/run-tests.sh --env dev --suite all
+```
+
+Suites (`smoke`, `infra`, `net`, `config`) are driven by `config/services.yml` — see [`tests/README.md`](tests/README.md). `SKIP` is not a failure, so the same command works while prod is still being built.
 
 ## Network
 

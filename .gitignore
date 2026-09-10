@@ -11,3 +11,4 @@ actions-runner*/
 *.qcow2
 opnsense/backups/
 opnsense/backups/*.xml
+__pycache__/

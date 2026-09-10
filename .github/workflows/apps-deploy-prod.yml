@@ -28,3 +28,31 @@ jobs:
           LINKWARDEN_URL: http://192.168.50.30:3001
         run: |
           ansible-playbook -i environments/prod/hosts.ini playbooks/deploy-core.yml
+
+  # F7-C — a deploy is not done until its tests are green. Checks that need a
+  # part of prod that is not online yet report SKIP, which is not a failure.
+  post-deploy-tests:
+    needs: deploy-prod
+    runs-on: [self-hosted, homelab-prod]
+    environment: prod
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run test suites
+        env:
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          IMMICH_DB_PASSWORD: ${{ secrets.IMMICH_DB_PASSWORD }}
+          LINKWARDEN_URL: http://192.168.50.30:3001
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NO_COLOR: "1"
+        run: |
+          ./utils/run-tests.sh --env prod --suite all --json-out tests-prod-report.json
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tests-prod-report
+          path: tests-prod-report.json
+          if-no-files-found: ignore
