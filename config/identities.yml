@@ -11,28 +11,24 @@
 # Rule: an account created by hand in a web UI is a bug, not a deployment step.
 
 version: 1
-domain: dkhomelabserver.xyz
 
+# One real mailbox per environment — these actually receive mail, so app
+# notifications and password resets work. Logins are derived from them.
+# Never use a reserved TLD such as .local: pgAdmin refuses to start with it.
+environment_email:
+  dev: dev-homelabnotifications@pm.me
+  prod: prod-homelabnotifications@pm.me
+
+# email: environment  ->  resolved from environment_email for the target env
 identities:
   homelab-admin:
-    email: admin@dkhomelabserver.xyz
+    email: environment
     username: admin
     role: Human administrator — SSO and app admin panels.
-  homelab-prod:
-    email: homelab-prod@dkhomelabserver.xyz
-    username: homelab-prod
-    role: Service identity for the production environment (bootstrap, APIs, integrations).
-  homelab-dev:
-    email: homelab-dev@dkhomelabserver.xyz
-    username: homelab-dev
-    role: Same for dev. Never shares passwords with prod.
   homelab-notification:
-    email: homelab-notification@dkhomelabserver.xyz
+    email: environment
     username: homelab-notification
     role: Sender identity for notifications (Diun, Beszel, alerts).
-
-# Never use a reserved TLD such as .local here — pgAdmin refuses to start with it.
-email_pattern: "<identity>@<domain>"
 
 # inject: env       — password reaches the app through compose environment
 #         bootstrap — utils/bootstrap/<app>.sh creates the account through API/CLI

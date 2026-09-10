@@ -66,7 +66,13 @@ import sys, yaml
 path, environment, want_app, want_secret = sys.argv[1:5]
 doc = yaml.safe_load(open(path))
 identities = doc.get("identities", {})
+env_email = doc.get("environment_email", {}).get(environment, "")
 rows = []
+
+
+def email_for(ident):
+    value = ident.get("email", "")
+    return env_email if value == "environment" else value
 
 for account in doc.get("accounts", []):
     if environment not in account.get("envs", []):
@@ -80,7 +86,7 @@ for account in doc.get("accounts", []):
         account.get("app", ""),
         account.get("login", "none"),
         account.get("identity", ""),
-        ident.get("email", ""),
+        email_for(ident),
         ident.get("username", ""),
         "password",
         account.get("inject", "env"),
