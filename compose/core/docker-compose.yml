@@ -1,9 +1,9 @@
-# Core P0 stack — shared infra + first-wave apps (F4).
-# Dev: ubuntu-apps-dev @ 192.168.122.50
+# Core stack — P0 + P1 + P2 (F4).
+# Dev: ubuntu-apps-dev @ 192.168.122.50 (nested PVE; see docs/f4-apps-dev.md RAM note)
 # Prod: ubuntu-apps @ 192.168.50.30 (after F3)
 #
-# Grocery (public) is deployed separately via Portainer Git from
-# DaveKadziola/easytodo-grocery-list — see docs/f4-apps-dev.md
+# Grocery (public) is separate: compose/grocery via Portainer — see docs/f4-apps-dev.md
+# Profiles: `auth` (Authelia), `media` (Immich + Jellyfin). Deploy enables both by default.
 
 name: homelab-core
 
@@ -125,7 +125,7 @@ services:
       - linkwarden_data:/data/data
     mem_limit: 768m
 
-  # Authelia needs a config tree — minimal file mounted for bring-up; harden in F4/F6
+  # Authelia — COMPOSE_PROFILES=auth (default on deploy)
   authelia:
     image: authelia/authelia:latest
     restart: unless-stopped
@@ -157,6 +157,180 @@ services:
       - "8085:8080"
     mem_limit: 256m
 
+  # --- P1 ---
+  syncthing:
+    image: syncthing/syncthing:latest
+    restart: unless-stopped
+    hostname: syncthing-dev
+    ports:
+      - "8384:8384"
+      - "22000:22000/tcp"
+      - "22000:22000/udp"
+      - "21027:21027/udp"
+    volumes:
+      - syncthing_data:/var/syncthing
+    environment:
+      PUID: "1000"
+      PGID: "1000"
+    mem_limit: 256m
+
+  navidrome:
+    image: deluan/navidrome:latest
+    restart: unless-stopped
+    ports:
+      - "4533:4533"
+    volumes:
+      - navidrome_data:/data
+      - navidrome_music:/music:ro
+    environment:
+      ND_MUSICFOLDER: /music
+      ND_DATAFOLDER: /data
+      ND_SCANSCHEDULE: "1h"
+      ND_LOGLEVEL: info
+      ND_SESSIONTIMEOUT: 24h
+    mem_limit: 256m
+
+  jellyfin:
+    image: jellyfin/jellyfin:latest
+    restart: unless-stopped
+    ports:
+      - "8096:8096"
+    volumes:
+      - jellyfin_config:/config
+      - jellyfin_cache:/cache
+      - jellyfin_media:/media
+    environment:
+      JELLYFIN_PublishedServerUrl: ${JELLYFIN_URL:-http://192.168.122.50:8096}
+    # DEV: no HW transcode; keep footprint small
+    mem_limit: 768m
+    profiles: ["media"]
+
+  # Immich — own Postgres + Valkey; DEV uses local Docker volumes (not NFS SA500)
+  immich-server:
+    image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-v3}
+    restart: unless-stopped
+    ports:
+      - "2283:2283"
+    volumes:
+      - immich_upload:/data
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      DB_HOSTNAME: immich-postgres
+      DB_USERNAME: postgres
+      DB_PASSWORD: ${IMMICH_DB_PASSWORD:?set IMMICH_DB_PASSWORD}
+      DB_DATABASE_NAME: immich
+      REDIS_HOSTNAME: immich-redis
+      IMMICH_HOST: 0.0.0.0
+      IMMICH_PORT: 2283
+    depends_on:
+      immich-redis:
+        condition: service_started
+      immich-postgres:
+        condition: service_started
+    mem_limit: 768m
+    profiles: ["media"]
+
+  immich-machine-learning:
+    image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-v3}
+    restart: unless-stopped
+    volumes:
+      - immich_model_cache:/cache
+    environment:
+      DB_HOSTNAME: immich-postgres
+      DB_USERNAME: postgres
+      DB_PASSWORD: ${IMMICH_DB_PASSWORD:?set IMMICH_DB_PASSWORD}
+      DB_DATABASE_NAME: immich
+      REDIS_HOSTNAME: immich-redis
+    depends_on:
+      - immich-server
+    mem_limit: 768m
+    profiles: ["media"]
+
+  immich-redis:
+    image: docker.io/valkey/valkey:8-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    mem_limit: 128m
+    profiles: ["media"]
+
+  immich-postgres:
+    image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${IMMICH_DB_PASSWORD:?set IMMICH_DB_PASSWORD}
+      POSTGRES_USER: postgres
+      POSTGRES_DB: immich
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+    volumes:
+      - immich_postgres:/var/lib/postgresql/data
+    shm_size: 128mb
+    mem_limit: 512m
+    profiles: ["media"]
+
+  # --- P2 ---
+  beszel:
+    image: henrygd/beszel:latest
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    volumes:
+      - beszel_data:/beszel_data
+    mem_limit: 128m
+
+  beszel-agent:
+    image: henrygd/beszel-agent:latest
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      LISTEN: "45876"
+      HUB_URL: ${BESZEL_HUB_URL:-http://127.0.0.1:8090}
+      # After first hub login, paste public KEY (and TOKEN if required) into host .env
+      KEY: ${BESZEL_KEY:-}
+      TOKEN: ${BESZEL_TOKEN:-}
+    mem_limit: 64m
+
+  diun:
+    image: crazymax/diun:latest
+    restart: unless-stopped
+    command: serve
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./diun/diun.yml:/diun.yml:ro
+      - diun_data:/data
+    environment:
+      TZ: UTC
+      LOG_LEVEL: info
+      DIUN_WATCH_WORKERS: "5"
+      DIUN_PROVIDERS_DOCKER: "true"
+      DIUN_PROVIDERS_DOCKER_WATCHBYDEFAULT: "true"
+    mem_limit: 128m
+
+  # Zotify — Spotify downloader helper (CLI). Stay-up container; exec in to use.
+  # First login: docker exec -it homelab-core-zotify-1 zotify …
+  # OAuth callback listens on host :4381 during login. Secrets stay in volume / local .env.
+  zotify:
+    build:
+      context: ./zotify
+      dockerfile: Dockerfile
+    image: homelab-zotify:local
+    restart: unless-stopped
+    ports:
+      - "4381:4381"
+    environment:
+      ZOTIFY_USERNAME: ${ZOTIFY_USERNAME:-}
+      ZOTIFY_TOKEN: ${ZOTIFY_TOKEN:-}
+    volumes:
+      - zotify_music:/root/Music/Zotify Music
+      - zotify_podcasts:/root/Music/Zotify Podcasts
+      - zotify_config:/root/.zotify
+    mem_limit: 512m
+
 volumes:
   postgres_data:
   portainer_data:
@@ -165,3 +339,17 @@ volumes:
   trilium_data:
   actual_data:
   linkwarden_data:
+  syncthing_data:
+  navidrome_data:
+  navidrome_music:
+  jellyfin_config:
+  jellyfin_cache:
+  jellyfin_media:
+  immich_upload:
+  immich_model_cache:
+  immich_postgres:
+  beszel_data:
+  diun_data:
+  zotify_music:
+  zotify_podcasts:
+  zotify_config:

@@ -1,0 +1,61 @@
+---
+# DEV Authelia — file-backed users, TLS portal on host :9091
+# Login: user `admin` — plaintext password is NOT in git; see
+#   ~/.homelab-authelia-dev-pass  (operator machine)
+# Access: https://192.168.122.50:9091  (self-signed) or
+#         https://authelia.homelab.local:9091  (add /etc/hosts → 192.168.122.50)
+# Authelia 4.39 requires HTTPS for session cookie URLs.
+
+theme: auto
+
+server:
+  address: 'tcp://:9091'
+  tls:
+    certificate: /config/certs/cert.pem
+    key: /config/certs/key.pem
+
+log:
+  level: info
+
+totp:
+  disable: true
+
+identity_validation:
+  reset_password:
+    jwt_secret: 'dev-only-authelia-jwt-secret-change-me-32b'
+
+authentication_backend:
+  file:
+    path: /config/users_database.yml
+    watch: true
+
+access_control:
+  default_policy: one_factor
+  rules:
+    - domain: '*.homelab.local'
+      policy: one_factor
+    - domain: 'homelab.local'
+      policy: one_factor
+
+session:
+  secret: 'dev-only-authelia-session-secret-change-me'
+  cookies:
+    - name: authelia_session
+      domain: 'homelab.local'
+      authelia_url: 'https://authelia.homelab.local:9091'
+      expiration: 12h
+      inactivity: 1h
+
+regulation:
+  max_retries: 5
+  find_time: 2m
+  ban_time: 5m
+
+storage:
+  encryption_key: 'dev-only-authelia-storage-encryption-key-32chars'
+  local:
+    path: /config/db.sqlite3
+
+notifier:
+  filesystem:
+    filename: /config/notification.txt

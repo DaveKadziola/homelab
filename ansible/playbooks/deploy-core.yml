@@ -6,7 +6,10 @@
   vars:
     compose_src: "{{ playbook_dir }}/../../compose/core"
     compose_dest: /opt/homelab/compose/core
+    grocery_src: "{{ playbook_dir }}/../../compose/grocery"
+    grocery_dest: /opt/homelab/compose/grocery
     postgres_password: "{{ lookup('env', 'POSTGRES_PASSWORD') }}"
+    compose_profiles: "{{ lookup('env', 'COMPOSE_PROFILES') | default('auth', true) }}"
   tasks:
     - name: Require POSTGRES_PASSWORD
       ansible.builtin.assert:
@@ -14,23 +17,78 @@
           - postgres_password | length > 0
         fail_msg: "Set POSTGRES_PASSWORD in the environment before deploy"
 
-    - name: Ensure compose directory
+    - name: Ensure compose directories
       ansible.builtin.file:
-        path: "{{ compose_dest }}"
+        path: "{{ item }}"
         state: directory
         owner: "{{ ansible_user }}"
         group: docker
         mode: "0755"
+      loop:
+        - "{{ compose_dest }}"
+        - "{{ compose_dest }}/authelia"
+        - "{{ compose_dest }}/zotify"
+        - "{{ grocery_dest }}"
 
-    - name: Sync compose files
+    - name: Sync core docker-compose.yml
       ansible.builtin.copy:
-        src: "{{ item }}"
-        dest: "{{ compose_dest }}/{{ item | basename }}"
+        src: "{{ compose_src }}/docker-compose.yml"
+        dest: "{{ compose_dest }}/docker-compose.yml"
+        owner: "{{ ansible_user }}"
+        group: docker
+        mode: "0644"
+
+    - name: Sync Authelia config
+      ansible.builtin.copy:
+        src: "{{ compose_src }}/authelia/"
+        dest: "{{ compose_dest }}/authelia/"
+        owner: "{{ ansible_user }}"
+        group: docker
+        mode: "0644"
+
+    - name: Ensure Authelia certs directory
+      ansible.builtin.file:
+        path: "{{ compose_dest }}/authelia/certs"
+        state: directory
+        owner: "{{ ansible_user }}"
+        group: docker
+        mode: "0750"
+
+    - name: Generate DEV Authelia self-signed TLS cert
+      ansible.builtin.command:
+        cmd: >
+          openssl req -x509 -nodes -newkey rsa:2048 -days 825
+          -keyout {{ compose_dest }}/authelia/certs/key.pem
+          -out {{ compose_dest }}/authelia/certs/cert.pem
+          -subj /CN=authelia.homelab.local
+          -addext subjectAltName=DNS:authelia.homelab.local,DNS:homelab.local,DNS:*.homelab.local,IP:192.168.122.50
+        creates: "{{ compose_dest }}/authelia/certs/cert.pem"
+
+    - name: Fix Authelia cert permissions
+      ansible.builtin.file:
+        path: "{{ item }}"
         owner: "{{ ansible_user }}"
         group: docker
         mode: "0644"
       loop:
-        - "{{ compose_src }}/docker-compose.yml"
+        - "{{ compose_dest }}/authelia/certs/cert.pem"
+        - "{{ compose_dest }}/authelia/certs/key.pem"
+
+    - name: Sync Zotify Dockerfile
+      ansible.builtin.copy:
+        src: "{{ compose_src }}/zotify/Dockerfile"
+        dest: "{{ compose_dest }}/zotify/Dockerfile"
+        owner: "{{ ansible_user }}"
+        group: docker
+        mode: "0644"
+
+    - name: Sync grocery compose (bridge + published ports)
+      ansible.builtin.copy:
+        src: "{{ grocery_src }}/docker-compose.yml"
+        dest: "{{ grocery_dest }}/docker-compose.yml"
+        owner: "{{ ansible_user }}"
+        group: docker
+        mode: "0644"
 
     - name: Write .env
       ansible.builtin.copy:
@@ -45,6 +103,9 @@
           HOMARR_SECRET_KEY={{ lookup('env', 'HOMARR_SECRET_KEY') | default('0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef', true) }}
           LINKWARDEN_SECRET={{ lookup('env', 'LINKWARDEN_SECRET') | default(postgres_password, true) }}
           LINKWARDEN_URL={{ lookup('env', 'LINKWARDEN_URL') | default('http://127.0.0.1:3001', true) }}
+          COMPOSE_PROFILES={{ compose_profiles }}
+          ZOTIFY_USERNAME={{ lookup('env', 'ZOTIFY_USERNAME') | default('', true) }}
+          ZOTIFY_TOKEN={{ lookup('env', 'ZOTIFY_TOKEN') | default('', true) }}
 
     - name: Ensure docker compose plugin / v2
       ansible.builtin.apt:
@@ -52,15 +113,15 @@
         state: present
         update_cache: true
 
-    - name: Pull and start core stack
+    - name: Pull/build and start core stack
       ansible.builtin.command:
-        cmd: docker compose -f {{ compose_dest }}/docker-compose.yml --env-file {{ compose_dest }}/.env up -d --remove-orphans
+        cmd: docker compose -f {{ compose_dest }}/docker-compose.yml --env-file {{ compose_dest }}/.env up -d --build --remove-orphans
         chdir: "{{ compose_dest }}"
       register: compose_up
       changed_when: "'Started' in compose_up.stderr or 'Created' in compose_up.stderr or 'Running' in compose_up.stderr or compose_up.rc == 0"
 
     - name: Show running containers
-      ansible.builtin.command: docker compose -f {{ compose_dest }}/docker-compose.yml ps
+      ansible.builtin.command: docker compose -f {{ compose_dest }}/docker-compose.yml --env-file {{ compose_dest }}/.env ps
       register: compose_ps
       changed_when: false
 

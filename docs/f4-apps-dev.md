@@ -20,10 +20,11 @@ Ansible playbook `ansible/playbooks/deploy-core.yml` syncs `compose/core/` to `/
 | Omni-tools | 8083 | |
 | DumbWhois | 8084 | |
 | BentoPDF | 8085 | |
-| Authelia | 9091 | profile `auth` — off by default |
-| EasyTodo Grocery | 8101 | Portainer Git stack (not in core compose) |
+| Authelia | 9091 (HTTPS) | profile `auth` — enabled by default on deploy (`COMPOSE_PROFILES=auth`) |
+| Zotify | 4381 | Spotify downloader helper (CLI via `docker exec`; OAuth on 4381) |
+| EasyTodo Grocery | 8101 | Portainer stack from `compose/grocery/` (bridge + published ports) |
 
-**Out of this compose:** public grocery (`easytodo-grocery-list`) — deploy via Portainer Git after Portainer is up. See `docs/apps-sources.md` and **Grocery (Portainer Git)** below.
+**Grocery** is not in core compose; use `compose/grocery/docker-compose.yml` (synced to `/opt/homelab/compose/grocery`) via Portainer. See **Grocery** below.
 
 ## Deploy (dev)
 
@@ -31,12 +32,37 @@ Ansible playbook `ansible/playbooks/deploy-core.yml` syncs `compose/core/` to `/
 # Password lives in ~/.homelab-postgres-dev-pass and GH env secret POSTGRES_PASSWORD (dev)
 export POSTGRES_PASSWORD="$(cat ~/.homelab-postgres-dev-pass)"
 export LINKWARDEN_URL=http://192.168.122.50:3001
+# Optional: export COMPOSE_PROFILES=auth  (default in deploy-core.yml)
+# Optional: export ZOTIFY_USERNAME=… ZOTIFY_TOKEN=…  (usually unused — interactive login)
 
 cd ansible
 ansible-playbook -i environments/dev/hosts.ini playbooks/deploy-core.yml
 ```
 
 Or push to `homelab-v2` (paths under `compose/` / `ansible/`) with runner label `homelab-dev` online → `apps-deploy-dev.yml`.
+
+### Authelia (DEV)
+
+- UI: `https://192.168.122.50:9091` (self-signed TLS — accept browser warning) or `https://authelia.homelab.local:9091`
+- User: `admin`
+- Password: `~/.homelab-authelia-dev-pass` (not in git)
+- Config: `compose/core/authelia/` (file users + sqlite notifier); TLS cert generated on deploy under `authelia/certs/`
+- Cookie domain is `homelab.local`. For a working login session/SSO, add to client `/etc/hosts`:
+  `192.168.122.50 authelia.homelab.local homelab.local`
+- Disable: set `COMPOSE_PROFILES=` (empty) before deploy, or stop the `authelia` service on the host.
+
+### Zotify (DEV)
+
+- Helper container in core compose (no web UI). Music/podcast volumes + config volume persist credentials after first login.
+- OAuth port during Spotify login: `http://192.168.122.50:4381`
+- Use:
+
+  ```bash
+  ssh ubuntu-dev@192.168.122.50
+  docker exec -it homelab-core-zotify-1 zotify -u '<spotify-username>' '<track-or-playlist-url>'
+  ```
+
+- Optional env placeholders: `ZOTIFY_USERNAME` / `ZOTIFY_TOKEN` in `.env` (upstream prefers interactive login + `credentials.json` in the volume).
 
 ### Portainer first-admin (dev)
 
@@ -46,24 +72,24 @@ Portainer CE 2.45+ prints a one-time `setup_token` in `docker logs` on startup. 
 - Password for this lab: `~/.homelab-portainer-dev-pass` (not in git)
 - After admin exists, add environment **local** (Docker socket) if the Environments list is empty
 
-### Grocery (Portainer Git) — verified on `.50`
+### Grocery (Portainer) — bridge + published ports on `.50`
 
-Uses shared Postgres on the host (`network_mode: host` → `DB_HOST=127.0.0.1`). Prep DB once, then deploy the stack from Git (not via `compose/core`).
+Upstream `easytodo-grocery-list` compose uses `network_mode: host`, so Portainer shows **no** Published Ports. DEV uses `compose/grocery/docker-compose.yml` instead: **bridge** + `8101:8101`, `DB_HOST=host.docker.internal` (Postgres published on the host). Same app URL.
 
-1. **DB prep** (on the VM, against `homelab-core-postgres-1`):
+1. **DB prep** (once, against `homelab-core-postgres-1`):
    - `CREATE DATABASE todo_grocery;`
    - role `prod_todo_grocery` with password (store in `~/.homelab-grocery-db-dev-pass`)
    - apply repo DDL `ddl/3_3-ddl_prod.sql` with owner `postgres` remapped to `homelab`
-2. **Portainer → Stacks → Add stack → Repository**
+2. **Image** — build once from the app repo if missing: `easy-todo-grocery-nodb:latest` (Portainer Git build from `DaveKadziola/easytodo-grocery-list` or local Dockerfile).
+3. **Portainer → Stacks** (preferred for Published Ports visibility):
    - Name: `easytodo-grocery`
-   - Repo: `https://github.com/DaveKadziola/easytodo-grocery-list`
-   - Reference: `refs/heads/main`
-   - Compose path: `docker/v1.0.0/no-db/docker-compose.yml`
+   - Method: **Web editor** / file — paste or load `/opt/homelab/compose/grocery/docker-compose.yml` (synced by `deploy-core.yml`)
+   - Or Repository: this `homelab` repo, compose path `compose/grocery/docker-compose.yml`
    - Env:
 
      | Name | Value |
      |------|--------|
-     | `DB_HOST` | `127.0.0.1` |
+     | `DB_HOST` | `host.docker.internal` |
      | `DB_PORT` | `5432` |
      | `DB_NAME` | `todo_grocery` |
      | `DB_USER` | `prod_todo_grocery` |
@@ -74,8 +100,10 @@ Uses shared Postgres on the host (`network_mode: host` → `DB_HOST=127.0.0.1`).
      | `SOCKETIO_HOST` | `192.168.122.50` |
      | `SOCKETIO_PORT` | `8101` |
 
-3. Deploy builds image `easy-todo-grocery-nodb` and starts container `easytodo-grocery-easytodo-1`.
-4. App: `http://192.168.122.50:8101`
+4. Container: `easytodo-grocery-easytodo-1` — Portainer should list **Published Ports** `8101:8101`.
+5. App: `http://192.168.122.50:8101`
+
+**Do not** use upstream `docker/v1.0.0/no-db/docker-compose.yml` on DEV if you need Portainer port visibility (host networking hides ports).
 
 ## Test checklist (you)
 
@@ -86,8 +114,9 @@ From laptop (libvirt network):
 3. [x] `http://192.168.122.50:8080` — Dozzle shows containers
 4. [x] `http://192.168.122.50:5050` — pgAdmin → server `postgres` / user `homelab`
 5. [x] Linkwarden `:3001` / Trilium `:8082` / Actual `:5006` / Omni-tools `:8083` / DumbWhois `:8084` / BentoPDF `:8085`
-6. [x] Portainer Git stack `easytodo-grocery` → `http://192.168.122.50:8101`
-7. [ ] Optional: `docker compose --profile auth up -d` only after Authelia config under `compose/core/authelia/`
+6. [x] Portainer stack `easytodo-grocery` → `http://192.168.122.50:8101` (Published Ports visible)
+7. [ ] Authelia `https://192.168.122.50:9091` — login `admin` / `~/.homelab-authelia-dev-pass` (self-signed)
+8. [ ] Zotify container up; optional login via `docker exec` (needs Spotify account)
 
 When all OK → prod rollout.
 

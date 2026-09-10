@@ -1,0 +1,14 @@
+# Diun — watch local Docker images; DEV logs to stdout (no Gotify/Discord required).
+# Docs: https://crazymax.dev/diun/
+watch:
+  workers: 5
+  schedule: "0 */6 * * *"
+  firstCheckNotif: false
+
+providers:
+  docker:
+    watchByDefault: true
+    watchStopped: false
+
+# No notifiers configured → Diun still runs and logs new tags to container stdout.
+# Optional later: Gotify / Discord via env DIUN_NOTIF_* in .env
