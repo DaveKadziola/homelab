@@ -9,6 +9,18 @@ Self-hosted homelab on Proxmox: Terraform + Ansible + Docker Compose, deployed v
 
 Legacy pre-v2 code is tagged `legacy-pre-v2` on `main` before merge (see greenfield plan).
 
+## Knowledge base
+
+Operator docs live under **[`docs/kb/`](docs/kb/)** — start there, do not duplicate them here.
+
+| Topic | Page |
+|-------|------|
+| How it fits together | [architecture](docs/kb/architecture.md) · [infrastructure](docs/kb/infrastructure.md) · [networking](docs/kb/networking.md) |
+| Run / deploy / login | [operations](docs/kb/operations.md) · [deployment](docs/kb/deployment.md) |
+| Clean-room rebuild | [rebuild](docs/kb/rebuild.md) · [dr](docs/kb/dr.md) · [backup](docs/kb/backup.md) |
+| Failures we already paid for | [lessons-learned](docs/kb/lessons-learned.md) · [troubleshooting](docs/kb/troubleshooting.md) |
+| Per app | [docs/kb/apps/](docs/kb/apps/) |
+
 ## Architecture
 
 ```mermaid
@@ -40,6 +52,7 @@ homelab/
   ansible/               # VM configuration
   compose/core/          # Core Docker stack (Postgres, …)
   docs/                  # Manual setup, secrets names, app sources
+  docs/kb/               # Operator knowledge base (F8) — start here
   opnsense/              # Router baseline (F2)
   homeassistant/         # HA config (F5)
   terraform/             # Proxmox VMs (TFC workspace homelab)
@@ -114,15 +127,20 @@ WireGuard: [docs/wireguard.md](docs/wireguard.md). OPNsense F2: [docs/opnsense-b
 | **F1** | Repo skeleton, CI, dev runner, dev VM, GH secrets (current) |
 | **F2** | OPNsense baseline — [docs/opnsense-baseline.md](docs/opnsense-baseline.md), [docs/network.md](docs/network.md), [docs/wireguard.md](docs/wireguard.md) |
 | **F3** | Proxmox Terraform, prod runner — [docs/f3-proxmox.md](docs/f3-proxmox.md), `utils/f3-verify.sh` |
-| **F4** | P0 applications |
-| **F5** | HA, backups, pCloud rclone |
-| **F6** | P1/P2, monitoring, README completion before merge |
+| **F4–F7** | Apps, identities, bootstrap, tests (on `homelab-v2`) |
+| **F8** | Knowledge base `docs/kb/` (this README only points there) |
+| **F5** | NAS / NFS / backups (not started) |
+| **F9** | Security + repo audit + rebuild drill (gate → `main`) |
+| **F10** | Monitoring / alerts (after prod) |
 
-## Operations (TBD in F4–F6)
+## Operations
 
-- Add app: Portainer Git deploy or `compose/core`
-- Rotate secret: regenerate → Bitwarden → `gh secret set` → update inventory status
-- Logs: Dozzle (F6)
+See [`docs/kb/operations.md`](docs/kb/operations.md). Short version:
+
+- Add an app: `config/services.yml` first, then compose, then `docs/kb/apps/<app>.md`
+- Rotate a secret: `utils/gen-app-credentials.sh` → Bitwarden → bootstrap
+- Logs: Dozzle `:8080`
+- Logins: `~/.homelab-secrets/<env>/` — never the legacy `~/.homelab-*-dev-pass` files
 
 ## License
 

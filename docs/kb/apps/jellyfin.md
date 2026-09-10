@@ -1,22 +1,29 @@
-# Jellyfin — headless limits
+# Jellyfin
 
-The `/Startup/*` wizard only runs once. After `StartupWizardCompleted=true`,
-Jellyfin has no supported CLI to reset the admin password.
+| | |
+|--|--|
+| URL (dev) | http://192.168.122.50:8096 |
+| Login | username `admin` |
+| Secret | `JELLYFIN_ADMIN_PASSWORD` |
+| Volumes | `jellyfin_config`, `jellyfin_cache`, `jellyfin_media` |
+| Bootstrap | `utils/bootstrap/jellyfin.sh` |
+| Profile | `media` |
 
-If bootstrap reports that `admin` cannot log in, the account was created by
-the first-run UI (or an earlier wizard) with a password that is not in the
-secret cache.
+The `/Startup/*` wizard runs **once**. After `StartupWizardCompleted=true` there is no supported CLI password reset.
 
-Recover:
+On this DEV guest the first wizard created user **`root`**. It was renamed to `admin` and the password set to the secret cache (PBKDF2-SHA512 in `jellyfin.db`). `/Users/Public` can still return `[]` even when `admin` exists.
+
+Libraries declared in `config/services.yml` (`Movies` / `Shows` / `Music` under `/media/…`) are created by bootstrap when login works.
+
+## Recover on DEV (destructive)
 
 ```bash
-# Destructive — wipes Jellyfin config and re-runs the wizard on next bootstrap.
 ssh -i ~/.ssh/homelab_dev_ed25519 ubuntu-dev@192.168.122.50 \
-  'docker compose -f /opt/homelab/compose/core/docker-compose.yml stop jellyfin
+  'cd /opt/homelab/compose/core && docker compose stop jellyfin
    docker volume rm homelab-core_jellyfin_config
-   docker compose -f /opt/homelab/compose/core/docker-compose.yml up -d jellyfin'
+   docker compose --profile media up -d jellyfin'
 ./utils/bootstrap/jellyfin.sh --env dev --host 192.168.122.50
 ```
 
-Do this only on DEV. On prod, reset the password from the UI and then store
-it with `utils/gen-app-credentials.sh --env prod --secret JELLYFIN_ADMIN_PASSWORD --rotate`.
+On prod: reset in the UI, then
+`utils/gen-app-credentials.sh --env prod --secret JELLYFIN_ADMIN_PASSWORD --rotate`.

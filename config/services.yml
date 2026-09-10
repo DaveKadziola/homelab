@@ -249,6 +249,7 @@ services:
     path: /
     expect: [200, 302]
     config_as_code: yes
+    bootstrap: utils/bootstrap/navidrome.sh
     login: username
     secret: NAVIDROME_ADMIN_PASSWORD
     dashboard: { group: media }

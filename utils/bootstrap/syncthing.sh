@@ -3,7 +3,8 @@
 #
 #   1. read the API key Syncthing generated in its config.xml
 #   2. set the GUI user/password declared in config/identities.yml
-#   3. verify HTTP basic auth against /rest/system/status
+#   3. verify session login against /rest/noauth/auth/password
+#      (current Syncthing dropped HTTP basic auth for the GUI)
 #
 # Peers and folders are not touched — device IDs are created on first start and
 # pairing stays a deliberate action (docs/kb/apps/syncthing.md).
@@ -36,9 +37,12 @@ api_key() {
 
 auth_works() {
   local code
-  code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 \
-    -u "${USERNAME}:${PASSWORD}" "${BASE}/rest/system/status")"
-  [[ "$code" == "200" ]]
+  code="$(printf '{"username":%s,"password":%s}' \
+    "$(hl_json_escape "$USERNAME")" "$(hl_json_escape "$PASSWORD")" |
+    curl -s -o /dev/null -w '%{http_code}' --max-time 20 \
+      -X POST "${BASE}/rest/noauth/auth/password" \
+      -H 'Content-Type: application/json' --data @-)"
+  [[ "$code" == "200" || "$code" == "204" ]]
 }
 
 KEY="$(api_key)"

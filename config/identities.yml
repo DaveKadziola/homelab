@@ -88,8 +88,9 @@ accounts:
     identity: homelab-admin
     login: username
     secret: NAVIDROME_ADMIN_PASSWORD
-    inject: env
+    inject: bootstrap
     envs: [dev, prod]
+    notes: First start uses ND_DEVAUTOCREATEADMINPASSWORD; later resets go through navidrome.sh.
 
   - app: syncthing
     identity: homelab-admin

@@ -19,7 +19,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BOOTSTRAP_DIR="${ROOT}/utils/bootstrap"
 
 # Dependency order: Portainer owns the stacks, Homarr's board links everything.
-APPS=(portainer pgadmin authelia linkwarden immich jellyfin syncthing beszel homarr)
+APPS=(portainer pgadmin authelia linkwarden immich jellyfin navidrome syncthing beszel homarr)
 
 ENVIRONMENT=""
 HOST=""

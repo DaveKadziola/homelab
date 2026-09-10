@@ -13,7 +13,7 @@ Ansible playbook `ansible/playbooks/deploy-core.yml` syncs `compose/core/` (+ gr
 |----------|---------|-------------|---------------|--------|
 | P0 | Portainer | 9000 / 9443 | Up | UI + grocery stack |
 | P0 | Postgres 16 | 5432 | Up | Shared core DBs + grocery `todo_grocery` |
-| P0 | pgAdmin | 5050 | Up | `admin@example.com` / `POSTGRES_PASSWORD` |
+| P0 | pgAdmin | 5050 | Up | env mailbox / `PGADMIN_PASSWORD` |
 | P0 | Homarr | 7575 | Up | dashboard |
 | P0 | Dozzle | 8080 | Up | container logs |
 | P0 | Trilium | 8082 | Up | notes |
@@ -44,18 +44,19 @@ Nested Proxmox host has **~8 GiB**. To fit Immich + Jellyfin + the rest:
 - CPU set to **`host`** on nested PVE (was `qemu64`) so Immich ML NumPy gets x86-64-v2/SSE4.2.
 - `home-assistant-dev` temporarily set to **2048 MiB** on nested PVE to free headroom (not managed by this repo’s TF).
 - Compose uses strict `mem_limit` on every service; Immich/Jellyfin behind profile `media`.
-- Immich Postgres **768m**, Immich server **1536m**, ML **384m**, pgAdmin **384m** (lower Immich limits OOM’d on DEV).
+- Immich Postgres **768m**, Immich server **1536m**, ML **384m**, pgAdmin **512m** (lower Immich/pgAdmin limits OOM’d on DEV).
 
 Laptop libvirt “Proxmox” guest stayed at 8 GiB — do not add more guests without raising that first.
 
 ## Deploy (dev)
 
 ```bash
-export POSTGRES_PASSWORD="$(cat ~/.homelab-postgres-dev-pass)"
-export IMMICH_DB_PASSWORD="$(cat ~/.homelab-immich-db-dev-pass)"
+# Load ~/.homelab-secrets/dev/* — do not use the legacy ~/.homelab-*-dev-pass files
+export POSTGRES_PASSWORD="$(cat ~/.homelab-secrets/dev/POSTGRES_PASSWORD)"
+export IMMICH_DB_PASSWORD="$(cat ~/.homelab-secrets/dev/IMMICH_DB_PASSWORD)"
 export LINKWARDEN_URL=http://192.168.122.50:3001
 # Default profiles in playbook: auth,media
-# Optional: BESZEL_KEY=… after hub UI setup; ZOTIFY_* unused (interactive login)
+# Optional: BESZEL_KEY=… after hub bootstrap; ZOTIFY_* unused (interactive login)
 
 cd ansible
 ansible-playbook -i environments/dev/hosts.ini playbooks/deploy-core.yml
@@ -67,7 +68,7 @@ Or push to `homelab-v2` (paths under `compose/` / `ansible/`) with runner label 
 
 - URL: `https://192.168.122.50:9091` (self-signed — accept browser warning) or `https://authelia.homelab.local:9091`
 - User: `admin`
-- Password file: `~/.homelab-authelia-dev-pass` (not in git)
+- Password file: `~/.homelab-secrets/dev/AUTHELIA_ADMIN_PASSWORD` (not in git)
 - Config: `compose/core/authelia/` (file users + sqlite); TLS cert generated on deploy under `authelia/certs/`
 - Cookie domain `homelab.local` — for SSO cookies add to client `/etc/hosts`:
   `192.168.122.50 authelia.homelab.local homelab.local`
@@ -89,13 +90,13 @@ Or push to `homelab-v2` (paths under `compose/` / `ansible/`) with runner label 
 ### Portainer first-admin (dev)
 
 - UI: `http://192.168.122.50:9000`
-- Password: `~/.homelab-portainer-dev-pass`
+- Password: `~/.homelab-secrets/dev/PORTAINER_ADMIN_PASSWORD`
 
 ### Grocery (Portainer) — bridge + published ports
 
 Upstream grocery Git compose uses `network_mode: host` → Portainer shows **no** Published Ports. DEV uses `compose/grocery/docker-compose.yml`: **bridge** + `8101:8101`, `DB_HOST=host.docker.internal`.
 
-1. DB prep once (`todo_grocery` / role `prod_todo_grocery` — password in `~/.homelab-grocery-db-dev-pass`)
+1. DB prep once (`todo_grocery` / role `prod_todo_grocery` — password in `~/.homelab-secrets/dev/GROCERY_DB_PASSWORD`)
 2. Image `easy-todo-grocery-nodb:latest` (built earlier from app repo)
 3. Portainer stack `easytodo-grocery` from `/opt/homelab/compose/grocery/docker-compose.yml` (or this repo path `compose/grocery/docker-compose.yml`) with env:
 
@@ -105,7 +106,7 @@ Upstream grocery Git compose uses `network_mode: host` → Portainer shows **no*
    | `DB_PORT` | `5432` |
    | `DB_NAME` | `todo_grocery` |
    | `DB_USER` | `prod_todo_grocery` |
-   | `DB_PASSWORD` | (from `~/.homelab-grocery-db-dev-pass`) |
+   | `DB_PASSWORD` | (from `~/.homelab-secrets/dev/GROCERY_DB_PASSWORD`) |
    | `DB_SCHEMA` | `prod` |
    | `APP_HOST_NAME` | `0.0.0.0` |
    | `APP_HOST_PORT` | `8101` |
@@ -120,7 +121,7 @@ Upstream grocery Git compose uses `network_mode: host` → Portainer shows **no*
 2. [x] Homarr `:7575` / Dozzle `:8080` / pgAdmin `:5050`
 3. [x] Linkwarden `:3001` / Trilium `:8082` / Actual `:5006` / Omni `:8083` / DumbWhois `:8084` / BentoPDF `:8085`
 4. [x] Grocery `:8101` with Published Ports visible
-5. [x] Authelia `https://192.168.122.50:9091` — `admin` / `~/.homelab-authelia-dev-pass`
+5. [x] Authelia `https://authelia.homelab.local:9091` — `admin` / `~/.homelab-secrets/dev/AUTHELIA_ADMIN_PASSWORD`
 6. [x] Syncthing `:8384` / Navidrome `:4533` / Jellyfin `:8096` / Immich `:2283` (+ ML healthy with CPU=host)
 7. [x] Beszel hub `:8090` / Diun running / Zotify container Up
 8. [ ] Optional: Beszel agent (`COMPOSE_PROFILES=…,beszel-agent` + `BESZEL_KEY` from hub UI)
