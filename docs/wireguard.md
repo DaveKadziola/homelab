@@ -1,7 +1,7 @@
 # WireGuard — homelab v2
 
-> **Status:** F2 — configure on OPNsense.  
-> **Related:** [opnsense-baseline.md](opnsense-baseline.md) (F2-04)
+> **Status:** F2-04 as-built — `wg0` **`10.10.10.0/24`** :51820 on OPNsense.  
+> **Related:** [opnsense-baseline.md](opnsense-baseline.md) (F2-04), [network.md](network.md)
 
 ## Decision (B3)
 
@@ -26,7 +26,7 @@
 
 2. **Peers** — one per device (laptop, phone):
    - Generate keypair per client (never reuse private keys)
-   - Allowed IPs for full homelab access: `192.168.20.0/24, 192.168.50.0/24, 10.0.0.0/24`
+   - Allowed IPs for full homelab access: `192.168.20.0/24, 192.168.50.0/24, 10.10.10.0/24`
    - Or split: only subnets you need
 
 3. **Firewall → WireGuard**
@@ -60,7 +60,7 @@ Import in WireGuard app (Linux: `sudo wg-quick up ./homelab-wg-client.conf`).
 ```bash
 # After connecting
 ping 192.168.20.1    # OPNsense IOT
-ping 192.168.20.10   # Proxmox (when online)
+ping 192.168.20.20   # Proxmox (when online)
 ping 192.168.50.30   # ubuntu-apps (F3+)
 ```
 
