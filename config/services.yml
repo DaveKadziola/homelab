@@ -1,0 +1,337 @@
+---
+# Single source of truth for homelab service endpoints (F7-B).
+#
+# Consumers:
+#   - tests/smoke        — health checks per environment
+#   - tests/config       — consistency vs compose/core/docker-compose.yml
+#   - Homarr board seed  — dashboard generated, not clicked
+#   - Grafana/Beszel     — monitoring targets
+#   - docs/f4-apps-dev.md, README — port tables
+#
+# Rule: a port exists here first, then in compose. Never only in docs.
+
+version: 1
+
+environments:
+  dev:
+    host: 192.168.122.50
+    inventory: ansible/environments/dev/hosts.ini
+    ssh_user: ubuntu-dev
+    identity: homelab-dev
+  prod:
+    host: 192.168.50.30
+    inventory: ansible/environments/prod/hosts.ini
+    ssh_user: ubuntu
+    identity: homelab-prod
+
+# check:            http | https | tcp | container (no listener)
+# expect:           accepted HTTP status codes
+# config_as_code:   yes | partial | no   (F7-B matrix)
+# bootstrap:        script under utils/bootstrap/ that configures the app headlessly
+# login:            email | username | none  (how the app identifies the admin)
+services:
+  # ---------- P0 ----------
+  - name: postgres
+    title: PostgreSQL
+    priority: P0
+    stack: core
+    container: homelab-core-postgres-1
+    check: tcp
+    port: 5432
+    config_as_code: yes
+    login: username
+    databases: [homelab, linkwarden, firefly3, actual, trilium, grafana, easytodo]
+    dashboard: { group: infra, hidden: true }
+
+  - name: portainer
+    title: Portainer
+    priority: P0
+    stack: core
+    container: homelab-core-portainer-1
+    check: http
+    port: 9000
+    path: /
+    expect: [200]
+    extra_ports: [9443]
+    config_as_code: partial
+    bootstrap: utils/bootstrap/portainer.sh
+    login: username
+    secret: PORTAINER_ADMIN_PASSWORD
+    dashboard: { group: infra }
+    notes: Admin must be created shortly after first start or Portainer locks itself.
+
+  - name: pgadmin
+    title: pgAdmin
+    priority: P0
+    stack: core
+    container: homelab-core-pgadmin-1
+    check: http
+    port: 5050
+    path: /
+    expect: [200, 302]
+    config_as_code: yes
+    login: email
+    secret: PGADMIN_PASSWORD
+    dashboard: { group: infra }
+    notes: Rejects reserved TLDs such as .local in the login email.
+
+  - name: homarr
+    title: Homarr
+    priority: P0
+    stack: core
+    container: homelab-core-homarr-1
+    check: http
+    port: 7575
+    path: /
+    expect: [200, 307]
+    config_as_code: partial
+    bootstrap: utils/bootstrap/homarr.sh
+    login: username
+    secret: HOMARR_ADMIN_PASSWORD
+    dashboard: { group: infra }
+    notes: Board seeded from this file; app state lives in its own database.
+
+  - name: dozzle
+    title: Dozzle
+    priority: P2
+    stack: core
+    container: homelab-core-dozzle-1
+    check: http
+    port: 8080
+    path: /
+    expect: [200]
+    config_as_code: yes
+    login: none
+    dashboard: { group: infra }
+
+  - name: trilium
+    title: Trilium Notes
+    priority: P0
+    stack: core
+    container: homelab-core-trilium-1
+    check: http
+    port: 8082
+    path: /
+    expect: [200]
+    config_as_code: partial
+    login: none
+    dashboard: { group: apps }
+
+  - name: actual
+    title: Actual Budget
+    priority: P0
+    stack: core
+    container: homelab-core-actual-1
+    check: http
+    port: 5006
+    path: /
+    expect: [200]
+    config_as_code: partial
+    login: none
+    dashboard: { group: apps }
+
+  - name: linkwarden
+    title: Linkwarden
+    priority: P0
+    stack: core
+    container: homelab-core-linkwarden-1
+    check: http
+    port: 3001
+    path: /
+    expect: [200]
+    config_as_code: partial
+    bootstrap: utils/bootstrap/linkwarden.sh
+    login: email
+    secret: LINKWARDEN_ADMIN_PASSWORD
+    database: linkwarden
+    dashboard: { group: apps }
+
+  - name: authelia
+    title: Authelia
+    priority: P0
+    stack: core
+    profile: auth
+    container: homelab-core-authelia-1
+    check: https
+    port: 9091
+    path: /
+    expect: [200]
+    config_as_code: yes
+    login: username
+    secret: AUTHELIA_ADMIN_PASSWORD
+    dashboard: { group: infra }
+    notes: Session cookie is bound to a domain — logging in by bare IP does not persist.
+
+  - name: omni-tools
+    title: Omni Tools
+    priority: P0
+    stack: core
+    container: homelab-core-omni-tools-1
+    check: http
+    port: 8083
+    path: /
+    expect: [200]
+    config_as_code: yes
+    login: none
+    dashboard: { group: tools }
+
+  - name: dumbwhois
+    title: DumbWhois
+    priority: P0
+    stack: core
+    container: homelab-core-dumbwhois-1
+    check: http
+    port: 8084
+    path: /
+    expect: [200]
+    config_as_code: yes
+    login: none
+    dashboard: { group: tools }
+
+  - name: bentopdf
+    title: BentoPDF
+    priority: P0
+    stack: core
+    container: homelab-core-bentopdf-1
+    check: http
+    port: 8085
+    path: /
+    expect: [200]
+    config_as_code: yes
+    login: none
+    dashboard: { group: tools }
+    notes: Container listens on 8080 internally, not 80.
+
+  - name: grocery
+    title: Easy Todo Grocery
+    priority: P0
+    stack: grocery
+    container: easytodo-grocery-easytodo-1
+    check: http
+    port: 8101
+    path: /
+    expect: [200]
+    config_as_code: yes
+    login: none
+    database: todo_grocery
+    public_url: https://grocery.dkhomelabserver.xyz
+    dashboard: { group: apps }
+    notes: Deployed from its own Git repo via Portainer, not from compose/core.
+
+  # ---------- P1 ----------
+  - name: syncthing
+    title: Syncthing
+    priority: P1
+    stack: core
+    container: homelab-core-syncthing-1
+    check: http
+    port: 8384
+    path: /
+    expect: [200]
+    extra_ports: [22000, 21027]
+    config_as_code: partial
+    bootstrap: utils/bootstrap/syncthing.sh
+    login: username
+    secret: SYNCTHING_ADMIN_PASSWORD
+    dashboard: { group: apps }
+    notes: Device IDs are generated on first start; peers are wired up afterwards.
+
+  - name: navidrome
+    title: Navidrome
+    priority: P1
+    stack: core
+    container: homelab-core-navidrome-1
+    check: http
+    port: 4533
+    path: /
+    expect: [200, 302]
+    config_as_code: yes
+    login: username
+    secret: NAVIDROME_ADMIN_PASSWORD
+    dashboard: { group: media }
+
+  - name: jellyfin
+    title: Jellyfin
+    priority: P1
+    stack: core
+    profile: media
+    container: homelab-core-jellyfin-1
+    check: http
+    port: 8096
+    path: /web/
+    expect: [200, 302]
+    config_as_code: partial
+    bootstrap: utils/bootstrap/jellyfin.sh
+    login: username
+    secret: JELLYFIN_ADMIN_PASSWORD
+    dashboard: { group: media }
+    notes: Startup wizard is completed through the API; container health may read unhealthy.
+
+  - name: immich
+    title: Immich
+    priority: P1
+    stack: core
+    profile: media
+    container: homelab-core-immich-server-1
+    check: http
+    port: 2283
+    path: /api/server/ping
+    expect: [200]
+    config_as_code: partial
+    bootstrap: utils/bootstrap/immich.sh
+    login: email
+    secret: IMMICH_ADMIN_PASSWORD
+    dashboard: { group: media }
+    notes: Machine learning requires host CPU passthrough (x86-64-v2).
+
+  # ---------- P2 ----------
+  - name: beszel
+    title: Beszel
+    priority: P2
+    stack: core
+    container: homelab-core-beszel-1
+    check: http
+    port: 8090
+    path: /
+    expect: [200]
+    config_as_code: partial
+    bootstrap: utils/bootstrap/beszel.sh
+    login: email
+    secret: BESZEL_ADMIN_PASSWORD
+    dashboard: { group: infra }
+
+  - name: beszel-agent
+    title: Beszel agent
+    priority: P2
+    stack: core
+    profile: beszel-agent
+    container: homelab-core-beszel-agent-1
+    check: container
+    port: 45876
+    config_as_code: partial
+    login: none
+    optional: true
+    notes: Needs a key issued by the hub; enabled through its own compose profile.
+
+  - name: diun
+    title: Diun
+    priority: P2
+    stack: core
+    container: homelab-core-diun-1
+    check: container
+    config_as_code: yes
+    login: none
+    dashboard: { group: infra, hidden: true }
+
+  - name: zotify
+    title: Zotify
+    priority: P2
+    stack: core
+    container: homelab-core-zotify-1
+    check: container
+    port: 4381
+    config_as_code: no
+    login: none
+    manual_steps: docs/kb/apps/zotify.md
+    dashboard: { group: media, hidden: true }
+    notes: Spotify OAuth is interactive; the port is only used during that login.
