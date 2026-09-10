@@ -1,13 +1,8 @@
 #!/usr/bin/env bash
 # Local terraform apply for nested Proxmox (dev).
-# Requires: nested PVE up, real API token (not F1 placeholder).
+# Requires: nested PVE up, token in ~/.homelab-pve-dev-token-secret (or env).
 #
-# Usage:
-#   export TF_VAR_proxmox_api_token_secret='...'   # from PVE UI or Bitwarden
-#   export TF_VAR_proxmox_ssh_password='...'        # root password (provider SSH)
-#   ./utils/dev-apply-local.sh
-#
-# Optional: TF_VAR_ubuntu_docker_password (SHA-512 hash), TF_VAR_ubuntu_docker_ssh_pub
+# Usage: ./utils/dev-apply-local.sh
 
 set -euo pipefail
 
@@ -16,11 +11,9 @@ cd "$REPO_ROOT"
 
 ./utils/ensure-dev-proxmox.sh
 
-IP="${DEV_PROXMOX_IP:-}"
-if [[ -z "$IP" ]]; then
-  IP=$(ip neigh show | awk '/52:54:00:a9:32:90/ {print $1; exit}')
-fi
-IP="${IP:-192.168.122.219}"
+IP="${DEV_PROXMOX_IP:-192.168.122.219}"
+PASS_FILE="${HOME}/.homelab-pve-dev-root-pass"
+TOKEN_FILE="${HOME}/.homelab-pve-dev-token-secret"
 
 export TF_VAR_environment=dev
 export TF_VAR_proxmox_node_name="${TF_VAR_proxmox_node_name:-dev}"
@@ -28,15 +21,16 @@ export TF_VAR_proxmox_api_url="${TF_VAR_proxmox_api_url:-https://${IP}:8006/api2
 export TF_VAR_proxmox_api_token_id="${TF_VAR_proxmox_api_token_id:-root@pam!terraform}"
 export TF_VAR_proxmox_ssh_username="${TF_VAR_proxmox_ssh_username:-root}"
 
-if [[ -z "${TF_VAR_proxmox_api_token_secret:-}" ]]; then
-  echo "ERROR: set TF_VAR_proxmox_api_token_secret"
-  echo "  UI: https://${IP}:8006 → Datacenter → Permissions → API Tokens"
-  echo "  Create token for root@pam (Privilege Separation OFF for bootstrap)"
-  exit 1
+if [[ -z "${TF_VAR_proxmox_api_token_secret:-}" && -f "$TOKEN_FILE" ]]; then
+  export TF_VAR_proxmox_api_token_secret="$(cat "$TOKEN_FILE")"
+fi
+if [[ -z "${TF_VAR_proxmox_ssh_password:-}" && -f "$PASS_FILE" ]]; then
+  export TF_VAR_proxmox_ssh_password="$(cat "$PASS_FILE")"
 fi
 
-if [[ -z "${TF_VAR_proxmox_ssh_password:-}" ]]; then
-  echo "WARN: TF_VAR_proxmox_ssh_password unset — provider SSH may fail for some resources"
+if [[ -z "${TF_VAR_proxmox_api_token_secret:-}" ]]; then
+  echo "ERROR: missing API token secret (${TOKEN_FILE} or TF_VAR_proxmox_api_token_secret)"
+  exit 1
 fi
 
 if [[ -z "${TF_VAR_ubuntu_docker_ssh_pub:-}" && -f "${HOME}/.ssh/homelab_dev_ed25519.pub" ]]; then
@@ -44,17 +38,38 @@ if [[ -z "${TF_VAR_ubuntu_docker_ssh_pub:-}" && -f "${HOME}/.ssh/homelab_dev_ed2
 fi
 
 if [[ -z "${TF_VAR_ubuntu_docker_password:-}" ]]; then
-  # cloud-init password field — generate hash for "changeme" only if unset (override!)
-  export TF_VAR_ubuntu_docker_password="$(openssl passwd -6 -salt homelab "changeme")"
-  echo "WARN: using temporary ubuntu password hash for 'changeme' — change after first login"
+  if [[ -f "${HOME}/.homelab-ubuntu-apps-dev-pass" ]]; then
+    export TF_VAR_ubuntu_docker_password="$(openssl passwd -6 "$(cat "${HOME}/.homelab-ubuntu-apps-dev-pass")")"
+  else
+    PLAIN=$(openssl rand -base64 12 | tr -d '/+=' | head -c 16)
+    printf '%s\n' "$PLAIN" > "${HOME}/.homelab-ubuntu-apps-dev-pass"
+    chmod 600 "${HOME}/.homelab-ubuntu-apps-dev-pass"
+    export TF_VAR_ubuntu_docker_password="$(openssl passwd -6 "$PLAIN")"
+    echo "Generated ubuntu password -> ~/.homelab-ubuntu-apps-dev-pass"
+  fi
 fi
 
 cd terraform
-terraform init -backend=false -reconfigure
-terraform plan \
-  -state=environments/dev/terraform.tfstate \
-  -var-file=environments/dev/terraform.tfvars \
-  -out=environments/dev/plan.tfplan
-terraform apply -state=environments/dev/terraform.tfstate environments/dev/plan.tfplan
+
+# Disable HCP Terraform cloud block for local state
+CLOUD_OFF=0
+if [[ -f cloud.tf ]]; then
+  mv cloud.tf cloud.tf.off
+  CLOUD_OFF=1
+fi
+restore_cloud() {
+  if [[ "$CLOUD_OFF" -eq 1 && -f cloud.tf.off ]]; then
+    mv cloud.tf.off cloud.tf
+  fi
+}
+trap restore_cloud EXIT
+
+rm -rf .terraform
+terraform init -reconfigure
+
+STATE="environments/dev/terraform.tfstate"
+terraform plan -state="$STATE" -var-file=environments/dev/terraform.tfvars -out=environments/dev/plan.tfplan
+terraform apply -state="$STATE" environments/dev/plan.tfplan
 
 echo "Done. SSH: ssh -i ~/.ssh/homelab_dev_ed25519 ubuntu-dev@192.168.122.50"
+echo "Password: cat ~/.homelab-ubuntu-apps-dev-pass"

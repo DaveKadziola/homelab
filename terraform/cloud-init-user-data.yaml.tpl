@@ -1,8 +1,8 @@
 #cloud-config
 users:
   - name: ubuntu-${environment}
-    sudo: ["ALL=(ALL) ALL"]
-    groups: ["sudo"]
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    groups: [sudo, docker]
     shell: /bin/bash
     lock_passwd: false
     passwd: "${ubuntu_password}"
@@ -23,6 +23,7 @@ runcmd:
 %{ if docker_enabled ~}
   - systemctl enable docker
   - systemctl start docker
-  - usermod -aG docker ubuntu
-  - curl -L https://downloads.portainer.io/ce2-20/portainer-agent-stack.yml -o /home/ubuntu/portainer-agent-stack.yml
+  - usermod -aG docker ubuntu-${environment}
+  - curl -L https://downloads.portainer.io/ce2-20/portainer-agent-stack.yml -o /home/ubuntu-${environment}/portainer-agent-stack.yml
+  - chown ubuntu-${environment}:ubuntu-${environment} /home/ubuntu-${environment}/portainer-agent-stack.yml
 %{ endif ~}

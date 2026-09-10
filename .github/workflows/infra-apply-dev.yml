@@ -21,11 +21,7 @@ jobs:
         with:
           terraform_version: 1.15.6
 
-      - name: Terraform init (local state)
-        working-directory: terraform
-        run: terraform init -backend=false -reconfigure
-
-      - name: Terraform apply
+      - name: Terraform apply (local state, cloud block off)
         working-directory: terraform
         env:
           TF_VAR_environment: dev
@@ -38,6 +34,9 @@ jobs:
           TF_VAR_ubuntu_docker_password: ${{ secrets.UBUNTU_DOCKER_PASSWORD }}
           TF_VAR_ubuntu_docker_ssh_pub: ${{ vars.UBUNTU_DOCKER_SSH_PUB }}
         run: |
+          mv cloud.tf cloud.tf.off
+          terraform init -reconfigure
           terraform apply -auto-approve \
             -state=environments/dev/terraform.tfstate \
             -var-file=environments/dev/terraform.tfvars
+          mv cloud.tf.off cloud.tf
