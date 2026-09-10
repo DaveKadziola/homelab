@@ -47,7 +47,7 @@ Clock below is “stranger with this repo + Bitwarden + this laptop”, not wall
 
 ## Gate checklist (merge to `main`)
 
-- [~] Bitwarden — operator synced `~/.homelab-secrets/{dev,prod}` on 2026-09-11 (`bw` locked, session not held here). Still GH-only unless you pasted them: `POSTGRES_PASSWORD` (both), F1 Proxmox/Ubuntu placeholders
+- [x] Bitwarden — cache synced 2026-09-11; operator confirmed remaining passwords (incl. `POSTGRES_PASSWORD` / F1) are in the vault
 - [~] F5: DEV `pg_dump` + NFS + restore suite PASS; rclone remote `pcloud:` + `RCLONE_CONFIG` in GH prod (2026-09-11). Timer offsite still DEV-disabled
 - [x] `tests/restore/` (C4) exists and PASSed on DEV (scratch DB)
 - [ ] Nested rebuild (new VMID or planned wipe) completed using only repo + vault + `rebuild.md`

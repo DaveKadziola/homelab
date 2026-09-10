@@ -59,15 +59,9 @@ unset BW_SESSION
 
 Notes are named `homelab/<NAME>/<env>` in folder `homelab`. The script never prints values.
 
-Still GH-only (not in the cache): `POSTGRES_PASSWORD` (both envs — F1, write-only), prod `UBUNTU_DOCKER_*` / Proxmox placeholders. Those need a value you already stored, or `--regenerate` (changes the live secret).
+Operator sync: **2026-09-11** (`--env all`). Vault also holds `POSTGRES_PASSWORD` / F1 leftovers (operator confirmed). Locked on this laptop; no session in the repo or chat.
 
-Operator sync: **2026-09-11** (`--env all`). Vault is locked on this laptop; no session is kept in the repo or chat.
-
-Staging `.txt` files under `~/homelab-bitwarden-*` are leftovers — shred after you are happy with the vault:
-
-```bash
-shred -u ~/homelab-bitwarden-*.txt
-```
+Staging `~/homelab-bitwarden-*.txt` shredded the same day.
 
 ## rclone / pCloud (prod offsite)
 

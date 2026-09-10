@@ -130,4 +130,4 @@ Removed in A0 (2026-06-11): `BW_ACCESS_TOKEN`, `BW_CLIENTID`, `BW_CLIENTSECRET` 
 
 ---
 
-*Last updated: 2026-09-11 — operator ran `sync-cache-to-bitwarden.sh --env all` (vault locked afterwards). `RCLONE_CONFIG` is in GH prod + cache. `POSTGRES_PASSWORD` and F1 placeholders are still GH-only unless already in the vault.*
+*Last updated: 2026-09-11 — vault holds the cache sync plus `POSTGRES_PASSWORD` / F1 (operator confirmed). Staging `~/homelab-bitwarden-*.txt` shredded. `RCLONE_CONFIG` is in GH prod + cache.*
