@@ -17,12 +17,13 @@ node_config = {
 
 vm_config = {
   apps = {
-    vm_id              = 101
-    vm_name            = "ubuntu-apps"
-    vm_description     = "Dev Docker stack — nested Proxmox"
-    vm_tags            = ["docker", "ubuntu-server", "cloud-init", "terraform", "dev"]
-    bios               = "seabios"
-    ram                = 4096
+    vm_id          = 101
+    vm_name        = "ubuntu-apps"
+    vm_description = "Dev Docker stack — nested Proxmox"
+    vm_tags        = ["docker", "ubuntu-server", "cloud-init", "terraform", "dev"]
+    bios           = "seabios"
+    # Nested PVE has ~8 GiB; HA-dev kept at 2 GiB so apps can use 6 GiB for full P0–P2 stack.
+    ram                = 6144
     cpu_cores          = 2
     net_dev_type       = "vmbr0"
     enable_cloud_init  = true
@@ -32,10 +33,11 @@ vm_config = {
     cloud_init_dns     = "192.168.122.1"
     storage_type       = "local-lvm"
     storage_interface  = "scsi0"
-    storage_size       = 16
-    ssd_enabled        = true
-    image_url          = "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
-    img_file_format    = "qcow2"
-    img_storage_type   = "local"
+    # Immich+Jellyfin+P0–P2 images need >16G; resized live to 27G on nested PVE (local-lvm headroom).
+    storage_size     = 27
+    ssd_enabled      = true
+    image_url        = "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
+    img_file_format  = "qcow2"
+    img_storage_type = "local"
   }
 }

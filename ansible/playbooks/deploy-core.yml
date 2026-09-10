@@ -9,7 +9,8 @@
     grocery_src: "{{ playbook_dir }}/../../compose/grocery"
     grocery_dest: /opt/homelab/compose/grocery
     postgres_password: "{{ lookup('env', 'POSTGRES_PASSWORD') }}"
-    compose_profiles: "{{ lookup('env', 'COMPOSE_PROFILES') | default('auth', true) }}"
+    immich_db_password: "{{ lookup('env', 'IMMICH_DB_PASSWORD') | default(postgres_password, true) }}"
+    compose_profiles: "{{ lookup('env', 'COMPOSE_PROFILES') | default('auth,media', true) }}"
   tasks:
     - name: Require POSTGRES_PASSWORD
       ansible.builtin.assert:
@@ -28,6 +29,7 @@
         - "{{ compose_dest }}"
         - "{{ compose_dest }}/authelia"
         - "{{ compose_dest }}/zotify"
+        - "{{ compose_dest }}/diun"
         - "{{ grocery_dest }}"
 
     - name: Sync core docker-compose.yml
@@ -82,6 +84,14 @@
         group: docker
         mode: "0644"
 
+    - name: Sync Diun config
+      ansible.builtin.copy:
+        src: "{{ compose_src }}/diun/diun.yml"
+        dest: "{{ compose_dest }}/diun/diun.yml"
+        owner: "{{ ansible_user }}"
+        group: docker
+        mode: "0644"
+
     - name: Sync grocery compose (bridge + published ports)
       ansible.builtin.copy:
         src: "{{ grocery_src }}/docker-compose.yml"
@@ -104,6 +114,12 @@
           LINKWARDEN_SECRET={{ lookup('env', 'LINKWARDEN_SECRET') | default(postgres_password, true) }}
           LINKWARDEN_URL={{ lookup('env', 'LINKWARDEN_URL') | default('http://127.0.0.1:3001', true) }}
           COMPOSE_PROFILES={{ compose_profiles }}
+          IMMICH_DB_PASSWORD={{ immich_db_password }}
+          IMMICH_VERSION={{ lookup('env', 'IMMICH_VERSION') | default('v3', true) }}
+          JELLYFIN_URL={{ lookup('env', 'JELLYFIN_URL') | default('http://192.168.122.50:8096', true) }}
+          BESZEL_HUB_URL={{ lookup('env', 'BESZEL_HUB_URL') | default('http://127.0.0.1:8090', true) }}
+          BESZEL_KEY={{ lookup('env', 'BESZEL_KEY') | default(lookup('file', lookup('env', 'HOME') + '/.homelab-beszel-key-dev', errors='ignore') | default('', true), true) }}
+          BESZEL_TOKEN={{ lookup('env', 'BESZEL_TOKEN') | default('', true) }}
           ZOTIFY_USERNAME={{ lookup('env', 'ZOTIFY_USERNAME') | default('', true) }}
           ZOTIFY_TOKEN={{ lookup('env', 'ZOTIFY_TOKEN') | default('', true) }}
 
@@ -121,7 +137,7 @@
       changed_when: "'Started' in compose_up.stderr or 'Created' in compose_up.stderr or 'Running' in compose_up.stderr or compose_up.rc == 0"
 
     - name: Show running containers
-      ansible.builtin.command: docker compose -f {{ compose_dest }}/docker-compose.yml --env-file {{ compose_dest }}/.env ps
+      ansible.builtin.command: docker compose -f {{ compose_dest }}/docker-compose.yml --env-file {{ compose_dest }}/.env ps -a
       register: compose_ps
       changed_when: false
 

@@ -65,7 +65,8 @@ services:
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:?set PGADMIN_PASSWORD}
     volumes:
       - pgadmin_data:/var/lib/pgadmin
-    mem_limit: 256m
+    # DEV nested: 256m OOMs gunicorn workers → hung :5050
+    mem_limit: 384m
 
   homarr:
     image: ghcr.io/homarr-labs/homarr:latest
@@ -123,7 +124,7 @@ services:
       NEXTAUTH_URL: ${LINKWARDEN_URL:-http://192.168.122.50:3001}
     volumes:
       - linkwarden_data:/data/data
-    mem_limit: 768m
+    mem_limit: 512m
 
   # Authelia — COMPOSE_PROFILES=auth (default on deploy)
   authelia:
@@ -202,7 +203,7 @@ services:
     environment:
       JELLYFIN_PublishedServerUrl: ${JELLYFIN_URL:-http://192.168.122.50:8096}
     # DEV: no HW transcode; keep footprint small
-    mem_limit: 768m
+    mem_limit: 512m
     profiles: ["media"]
 
   # Immich — own Postgres + Valkey; DEV uses local Docker volumes (not NFS SA500)
@@ -226,8 +227,9 @@ services:
       immich-redis:
         condition: service_started
       immich-postgres:
-        condition: service_started
-    mem_limit: 768m
+        condition: service_healthy
+    # Nested DEV can be tight; Immich API+microservices need headroom (1024m → exit 137)
+    mem_limit: 1536m
     profiles: ["media"]
 
   immich-machine-learning:
@@ -243,7 +245,8 @@ services:
       REDIS_HOSTNAME: immich-redis
     depends_on:
       - immich-server
-    mem_limit: 768m
+    # Needs host CPU (x86-64-v2 / SSE4.2). Nested qemu64 breaks NumPy — set Proxmox CPU=host.
+    mem_limit: 384m
     profiles: ["media"]
 
   immich-redis:
@@ -268,7 +271,13 @@ services:
     volumes:
       - immich_postgres:/var/lib/postgresql/data
     shm_size: 128mb
-    mem_limit: 512m
+    # 512m OOMs during Immich geodata/metadata init on DEV → crash loop
+    mem_limit: 768m
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d immich"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     profiles: ["media"]
 
   # --- P2 ---
@@ -283,6 +292,7 @@ services:
 
   beszel-agent:
     image: henrygd/beszel-agent:latest
+    # Exits without KEY — enable only after hub UI: COMPOSE_PROFILES=auth,media,beszel-agent + BESZEL_KEY=
     restart: unless-stopped
     network_mode: host
     volumes:
@@ -290,10 +300,10 @@ services:
     environment:
       LISTEN: "45876"
       HUB_URL: ${BESZEL_HUB_URL:-http://127.0.0.1:8090}
-      # After first hub login, paste public KEY (and TOKEN if required) into host .env
       KEY: ${BESZEL_KEY:-}
       TOKEN: ${BESZEL_TOKEN:-}
     mem_limit: 64m
+    profiles: ["beszel-agent"]
 
   diun:
     image: crazymax/diun:latest
