@@ -1,4 +1,12 @@
-# Core stack placeholder — expanded in F4 (Postgres, Homarr, Authelia, Portainer).
+# Core P0 stack — shared infra + first-wave apps (F4).
+# Dev: ubuntu-apps-dev @ 192.168.122.50
+# Prod: ubuntu-apps @ 192.168.50.30 (after F3)
+#
+# Grocery (public) is deployed separately via Portainer Git from
+# DaveKadziola/easytodo-grocery-list — see docs/f4-apps-dev.md
+
+name: homelab-core
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -11,6 +19,149 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U homelab -d homelab"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    mem_limit: 512m
+
+  postgres-init:
+    image: postgres:16-alpine
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        for db in linkwarden firefly3 actual trilium grafana easytodo; do
+          psql -h postgres -U homelab -d homelab -tc "SELECT 1 FROM pg_database WHERE datname='$$db'" | grep -q 1 \
+            || psql -h postgres -U homelab -d homelab -c "CREATE DATABASE $$db"
+          psql -h postgres -U homelab -d homelab -c "DO \$\$ BEGIN CREATE USER $$db WITH PASSWORD '${POSTGRES_PASSWORD}'; EXCEPTION WHEN duplicate_object THEN NULL; END \$\$;"
+          psql -h postgres -U homelab -d $$db -c "GRANT ALL ON SCHEMA public TO $$db"
+        done
+    restart: "no"
+
+  portainer:
+    image: portainer/portainer-ce:latest
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+      - "9443:9443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    mem_limit: 256m
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    restart: unless-stopped
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:?set PGADMIN_PASSWORD}
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    mem_limit: 256m
+
+  homarr:
+    image: ghcr.io/homarr-labs/homarr:latest
+    restart: unless-stopped
+    ports:
+      - "7575:7575"
+    volumes:
+      - homarr_data:/appdata
+    environment:
+      SECRET_ENCRYPTION_KEY: ${HOMARR_SECRET_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+    mem_limit: 512m
+
+  dozzle:
+    image: amir20/dozzle:latest
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    mem_limit: 128m
+
+  trilium:
+    image: triliumnext/trilium:latest
+    restart: unless-stopped
+    ports:
+      - "8082:8080"
+    volumes:
+      - trilium_data:/home/node/trilium-data
+    environment:
+      TRILIUM_DATA_DIR: /home/node/trilium-data
+    mem_limit: 512m
+
+  actual:
+    image: actualbudget/actual-server:latest
+    restart: unless-stopped
+    ports:
+      - "5006:5006"
+    volumes:
+      - actual_data:/data
+    mem_limit: 512m
+
+  linkwarden:
+    image: ghcr.io/linkwarden/linkwarden:latest
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      postgres-init:
+        condition: service_completed_successfully
+    ports:
+      - "3001:3000"
+    environment:
+      DATABASE_URL: postgresql://linkwarden:${POSTGRES_PASSWORD}@postgres:5432/linkwarden
+      NEXTAUTH_SECRET: ${LINKWARDEN_SECRET:-homelab-dev-linkwarden-change-me}
+      NEXTAUTH_URL: ${LINKWARDEN_URL:-http://192.168.122.50:3001}
+    volumes:
+      - linkwarden_data:/data/data
+    mem_limit: 768m
+
+  # Authelia needs a config tree — minimal file mounted for bring-up; harden in F4/F6
+  authelia:
+    image: authelia/authelia:latest
+    restart: unless-stopped
+    ports:
+      - "9091:9091"
+    volumes:
+      - ./authelia:/config
+    mem_limit: 256m
+    profiles: ["auth"]
+
+  omni-tools:
+    image: iib0011/omni-tools:latest
+    restart: unless-stopped
+    ports:
+      - "8083:80"
+    mem_limit: 256m
+
+  dumbwhois:
+    image: dumbwareio/dumbwhois:latest
+    restart: unless-stopped
+    ports:
+      - "8084:3000"
+    mem_limit: 128m
+
+  bentopdf:
+    image: ghcr.io/alam00000/bentopdf:latest
+    restart: unless-stopped
+    ports:
+      - "8085:8080"
+    mem_limit: 256m
 
 volumes:
   postgres_data:
+  portainer_data:
+  pgadmin_data:
+  homarr_data:
+  trilium_data:
+  actual_data:
+  linkwarden_data:

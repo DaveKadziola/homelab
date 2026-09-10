@@ -1,0 +1,69 @@
+---
+# Deploy compose/core to ubuntu_docker (dev or prod inventory).
+- name: Deploy homelab core stack
+  hosts: ubuntu_docker
+  become: true
+  vars:
+    compose_src: "{{ playbook_dir }}/../../compose/core"
+    compose_dest: /opt/homelab/compose/core
+    postgres_password: "{{ lookup('env', 'POSTGRES_PASSWORD') }}"
+  tasks:
+    - name: Require POSTGRES_PASSWORD
+      ansible.builtin.assert:
+        that:
+          - postgres_password | length > 0
+        fail_msg: "Set POSTGRES_PASSWORD in the environment before deploy"
+
+    - name: Ensure compose directory
+      ansible.builtin.file:
+        path: "{{ compose_dest }}"
+        state: directory
+        owner: "{{ ansible_user }}"
+        group: docker
+        mode: "0755"
+
+    - name: Sync compose files
+      ansible.builtin.copy:
+        src: "{{ item }}"
+        dest: "{{ compose_dest }}/{{ item | basename }}"
+        owner: "{{ ansible_user }}"
+        group: docker
+        mode: "0644"
+      loop:
+        - "{{ compose_src }}/docker-compose.yml"
+
+    - name: Write .env
+      ansible.builtin.copy:
+        dest: "{{ compose_dest }}/.env"
+        owner: "{{ ansible_user }}"
+        group: docker
+        mode: "0640"
+        content: |
+          POSTGRES_PASSWORD={{ postgres_password }}
+          PGADMIN_EMAIL={{ lookup('env', 'PGADMIN_EMAIL') | default('admin@example.com', true) }}
+          PGADMIN_PASSWORD={{ lookup('env', 'PGADMIN_PASSWORD') | default(postgres_password, true) }}
+          HOMARR_SECRET_KEY={{ lookup('env', 'HOMARR_SECRET_KEY') | default('0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef', true) }}
+          LINKWARDEN_SECRET={{ lookup('env', 'LINKWARDEN_SECRET') | default(postgres_password, true) }}
+          LINKWARDEN_URL={{ lookup('env', 'LINKWARDEN_URL') | default('http://127.0.0.1:3001', true) }}
+
+    - name: Ensure docker compose plugin / v2
+      ansible.builtin.apt:
+        name: docker-compose-v2
+        state: present
+        update_cache: true
+
+    - name: Pull and start core stack
+      ansible.builtin.command:
+        cmd: docker compose -f {{ compose_dest }}/docker-compose.yml --env-file {{ compose_dest }}/.env up -d --remove-orphans
+        chdir: "{{ compose_dest }}"
+      register: compose_up
+      changed_when: "'Started' in compose_up.stderr or 'Created' in compose_up.stderr or 'Running' in compose_up.stderr or compose_up.rc == 0"
+
+    - name: Show running containers
+      ansible.builtin.command: docker compose -f {{ compose_dest }}/docker-compose.yml ps
+      register: compose_ps
+      changed_when: false
+
+    - name: Print status
+      ansible.builtin.debug:
+        var: compose_ps.stdout_lines

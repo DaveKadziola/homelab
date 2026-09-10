@@ -3,6 +3,10 @@ name: Apps Deploy Dev
 on:
   push:
     branches: [homelab-v2]
+    paths:
+      - "compose/**"
+      - "ansible/**"
+      - ".github/workflows/apps-deploy-dev.yml"
   workflow_dispatch:
 
 jobs:
@@ -13,12 +17,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Ping dev host
+      - name: Ping ubuntu-apps-dev
         working-directory: ansible
-        run: |
-          ansible-playbook -i environments/dev/hosts.ini playbooks/ping.yml
+        run: ansible-playbook -i environments/dev/hosts.ini playbooks/ping.yml
 
-      - name: Deploy core stack (placeholder)
+      - name: Deploy compose/core
+        working-directory: ansible
+        env:
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          LINKWARDEN_URL: http://192.168.122.50:3001
         run: |
-          echo "Full compose deploy lands in F4."
-          echo "Target: dev VM from ansible/environments/dev/hosts.ini"
+          ansible-playbook -i environments/dev/hosts.ini playbooks/deploy-core.yml

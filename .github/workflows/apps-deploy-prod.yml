@@ -3,6 +3,10 @@ name: Apps Deploy Prod
 on:
   push:
     branches: [main]
+    paths:
+      - "compose/**"
+      - "ansible/**"
+      - ".github/workflows/apps-deploy-prod.yml"
   workflow_dispatch:
 
 jobs:
@@ -13,6 +17,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Placeholder
+      - name: Ping ubuntu-apps
+        working-directory: ansible
+        run: ansible-playbook -i environments/prod/hosts.ini playbooks/ping.yml
+
+      - name: Deploy compose/core
+        working-directory: ansible
+        env:
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          LINKWARDEN_URL: http://192.168.50.30:3001
         run: |
-          echo "Ansible + compose + Portainer deploy — F4 after ubuntu-apps VM exists (F3)."
+          ansible-playbook -i environments/prod/hosts.ini playbooks/deploy-core.yml
