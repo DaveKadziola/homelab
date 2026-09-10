@@ -14,4 +14,4 @@ GUI user/password are set via the API key in `config.xml`. Current Syncthing aut
 
 HTTP basic against `/rest/system/status` returns 401 even when the password is correct.
 
-Device IDs are generated on first start. **Peers and folders are not automated** — pair them deliberately after bootstrap.
+Device IDs are generated on first start. **Peers and folders are not automated** — pair them deliberately after bootstrap. Prod compose also bind-mounts `/mnt/homelab/sync` as `HomelabSync`.

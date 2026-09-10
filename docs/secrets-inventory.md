@@ -43,7 +43,8 @@ Helper scripts:
 | `SSL_CERT` | prod | secret | `homelab/SSL_CERT/prod` | planned | optional; legacy backup |
 | `SSL_CHAIN` | prod | secret | `homelab/SSL_CHAIN/prod` | planned | optional |
 | `SSL_PKEY` | prod | secret | `homelab/SSL_PKEY/prod` | planned | optional |
-| `RCLONE_CONFIG` | prod | secret | `homelab/RCLONE_CONFIG/prod` | planned | F5; base64 `rclone.conf` |
+| `RCLONE_CONFIG` | prod | secret | `homelab/RCLONE_CONFIG/prod` | planned | F5; base64 `rclone.conf` — job SKIPs until set |
+| `HA_TOKEN` | prod | secret | `homelab/HA_TOKEN/prod` | planned | F5 HA Supervisor pull; T620 not flashed from this repo |
 | `PORTAINER_ADMIN_PASSWORD` | dev | secret | `homelab/PORTAINER_ADMIN_PASSWORD/dev` | set | generated 2026-09-10 |
 | `PGADMIN_PASSWORD` | dev | secret | `homelab/PGADMIN_PASSWORD/dev` | set | generated 2026-09-10 |
 | `HOMARR_ADMIN_PASSWORD` | dev | secret | `homelab/HOMARR_ADMIN_PASSWORD/dev` | set | generated 2026-09-10; rotated same day |

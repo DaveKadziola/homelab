@@ -13,6 +13,7 @@ config, not the suites.
 ```bash
 utils/run-tests.sh --env dev                       # all suites
 utils/run-tests.sh --env dev --suite smoke         # one suite
+utils/run-tests.sh --env dev --suite restore       # F5/C4 — not in --suite all
 utils/run-tests.sh --env prod --suite net
 utils/run-tests.sh --env dev --json                # machine-readable, for CI
 utils/run-tests.sh --env dev --json-out report.json  # table + JSON file
@@ -32,6 +33,7 @@ in `/tmp/homelab-tests-<env>/` and referenced from the failure message.
 | `infra/` | `terraform plan` reports no changes; terraform state matches the tfvars it was applied with; `ansible-playbook --check` changes nothing; the guest really has the RAM/CPU/disk/IP from `terraform.tfvars`; IP, gateway, VLAN and prefix match `docs/network.md` | terraform, ansible, Proxmox API token, deploy secrets |
 | `net/` | public and host-side DNS resolve; a WireGuard peer has a recent handshake; the public HAProxy endpoint from `public_url` answers and its TLS certificate is not about to expire; APP→NAS `2049/111` is open and other APP→IOT paths are blocked | prod network for the firewall and HAProxy checks |
 | `config/` | every secret named in `config/identities.yml` exists in the matching GitHub environment; no secret value is committed; no deployed file carries a literal fallback secret; `config/services.yml` agrees with `compose/` and with the port tables in `docs/` | `gh` authenticated; nothing else |
+| `restore/` | NFS mount + backup timer + one `run-all.sh` + scratch Postgres dump→restore. rclone/HA/vzdump SKIP on DEV with reasons | SSH, `sudo -n`, F5 deployed |
 
 ### Test ids
 
@@ -133,11 +135,10 @@ Both upload the JSON report as a build artifact.
 
 ## Not covered yet
 
-- **`tests/restore/` (plan item C4)** — deliberately deferred. Restoring
-  `pg_dump` into a scratch database, a `vzdump` onto a throwaway VMID and an
-  OPNsense config into a file needs the F5 backup streams to exist first, and
-  the plan schedules it monthly rather than per push. It will be a fifth suite
-  with its own schedule, not part of `--suite all`.
+- **`vzdump` onto a throwaway VMID / OPNsense config replay** — `tests/restore/`
+  proves a scratch Postgres round-trip and that the F5 timer/artefacts exist.
+  Replaying OPNsense XML or restoring a vzdump archive still needs metal. The
+  suite is **not** part of `--suite all` (monthly / after a backup change).
 - **Authelia SSO coverage** — that a protected service actually redirects to
   Authelia is not asserted; the dev cookie domain is `homelab.local`, which only
   works with a hosts entry.

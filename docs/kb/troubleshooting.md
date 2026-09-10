@@ -37,6 +37,16 @@ Symptoms first. Root-cause write-ups go in [`lessons-learned.md`](lessons-learne
 | Homarr CLI hangs | Do not wait on `homarr-cli`. Do not put the password on host argv. Set once in the UI if API login fails. |
 | Jellyfin wizard already done | No official reset. DEV: wipe `jellyfin_config` or update the `Users` row. First wizard on this lab created `root`; it is now `admin`. |
 
+## Storage / backups
+
+| Symptom | Check |
+|---------|--------|
+| `/mnt/homelab` not NFS | `deploy-storage.yml` with `HOMELAB_ENV` set; `exportfs -v`; `showmount -e 127.0.0.1` |
+| Timer silent | `systemctl status homelab-backup.timer`; `journalctl -u homelab-backup` |
+| `run-all.sh` cannot read secrets | It must run as root (`HOMELAB_SECRETS_DIR=/opt/homelab/secrets`) |
+| rclone / HA / vzdump “failed” | They must SKIP with a reason on DEV, not fail the timer |
+| Immich photos vanished after compose | You applied `docker-compose.nfs.yml` on DEV. Do not. |
+
 ## CI
 
 | Symptom | Check |

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Single entrypoint for the homelab test suites (F7-C).
 #
-#   utils/run-tests.sh --env dev|prod [--suite smoke|infra|net|config|all] [--json]
+#   utils/run-tests.sh --env dev|prod [--suite smoke|infra|net|config|restore|all] [--json]
 #
 # Every suite is driven by config/services.yml and config/identities.yml, so
 # adding a service means editing that file, not this script.
@@ -26,7 +26,8 @@ Usage: utils/run-tests.sh --env dev|prod [options]
 
 Options:
   --env <dev|prod>       Environment from config/services.yml (required)
-  --suite <name>         smoke | infra | net | config | all   (default: all)
+  --suite <name>         smoke | infra | net | config | restore | all
+                         (default: all — restore is opt-in, not in all)
   --json                 Print a JSON report on stdout instead of the table
   --json-out <file>      Also write the JSON report to <file> (keeps the table)
   --list                 List the available suites and exit
@@ -37,6 +38,7 @@ Suites:
   infra   terraform/ansible drift, VM size vs tfvars, IP/VLAN vs docs
   net     DNS, WireGuard, public HAProxy endpoint + TLS expiry, firewall paths
   config  GH environment secrets, committed secrets, config vs compose vs docs
+  restore F5/C4 scratch dump→restore + NFS/timer (not in --suite all)
 EOF
 }
 
@@ -64,15 +66,17 @@ if [[ "$ENVIRONMENT" != "dev" && "$ENVIRONMENT" != "prod" ]]; then
   exit 2
 fi
 
+SUITES_KNOWN=("${SUITES_ALL[@]}" restore)
 if [[ "$SUITE" == "all" ]]; then
+  # restore is monthly / after a backup change — not every push.
   SUITES=("${SUITES_ALL[@]}")
 else
   SUITES=()
-  for candidate in "${SUITES_ALL[@]}"; do
+  for candidate in "${SUITES_KNOWN[@]}"; do
     [[ "$candidate" == "$SUITE" ]] && SUITES=("$candidate")
   done
   if [[ ${#SUITES[@]} -eq 0 ]]; then
-    echo "run-tests: unknown suite '$SUITE' (have: ${SUITES_ALL[*]} all)" >&2
+    echo "run-tests: unknown suite '$SUITE' (have: ${SUITES_KNOWN[*]} all)" >&2
     exit 2
   fi
 fi

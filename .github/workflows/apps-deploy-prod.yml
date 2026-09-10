@@ -49,6 +49,13 @@ jobs:
         run: |
           ansible-playbook -i environments/prod/hosts.ini playbooks/deploy-core.yml
 
+      - name: Deploy NFS exports + backup timer
+        working-directory: ansible
+        env:
+          HOMELAB_ENV: prod
+        run: |
+          ansible-playbook -i environments/prod/hosts.ini playbooks/deploy-storage.yml
+
   # F7-C — a deploy is not done until its tests are green. Checks that need a
   # part of prod that is not online yet report SKIP, which is not a failure.
   post-deploy-tests:

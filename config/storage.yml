@@ -1,0 +1,64 @@
+---
+# Storage, NFS exports, backup streams (F5).
+# Values never include secrets. Disk by-id is filled on the physical PVE host.
+#
+# DEV has no SA500/Purple and no second VM (nested PVE is already at 6/8 GiB).
+# Exports live on the apps guest under export_root; NFS is loopback so the
+# same playbook is exercised.
+
+version: 1
+
+environments:
+  dev:
+    mode: local
+    nas_host: 192.168.122.50
+    apps_host: 192.168.122.50
+    export_root: /srv/homelab-export
+    # Timer runs on the apps guest — always the NFS *mount*, not the NAS path.
+    backup_root: /mnt/homelab/backups
+    mount_root: /mnt/homelab
+    export_clients: [192.168.122.0/24, 127.0.0.1]
+    rclone: false
+    ha_host: ""
+    passthrough: []
+  prod:
+    mode: nfs
+    nas_host: 192.168.20.12
+    apps_host: 192.168.50.30
+    export_root: /export
+    backup_root: /mnt/homelab/backups
+    mount_root: /mnt/homelab
+    export_clients: [192.168.50.0/26]
+    rclone: true
+    ha_host: 192.168.20.13
+    # Fill after `ls /dev/disk/by-id` on the Proxmox host, then:
+    #   ./utils/pve-attach-nas-disks.sh --env prod
+    passthrough:
+      - { name: sa500,  role: media,   mount: /export/media,   by_id: "" }
+      - { name: purple, role: backups, mount: /export/backups, by_id: "" }
+
+# Layout under export_root (created by ansible/playbooks/deploy-storage.yml).
+exports:
+  - { name: media-immich, path: media/immich, cap_gb: 60,  app: immich }
+  - { name: media-music,  path: media/music,  cap_gb: 150, app: navidrome }
+  - { name: media-video,  path: media/video,  cap_gb: 400, app: jellyfin }
+  - { name: sync,         path: sync,         cap_gb: 20,  app: syncthing }
+  - { name: backups,      path: backups,      cap_gb: null, app: backup }
+
+# A15: keep the 2 newest artefacts per stream; delete older.
+retention:
+  keep: 2
+
+streams:
+  - { name: postgres,     method: pg_dump,  dest: postgres }
+  - { name: volumes,      method: tar,      dest: volumes }
+  - { name: homeassistant, method: ha_tar, dest: homeassistant }
+  - { name: opnsense,     method: xml,      dest: opnsense }
+  - { name: repo-zip,     method: zip,      dest: repo-zip }
+  - { name: vzdump,       method: vzdump,   dest: vzdump }
+
+# Offsite is DR only — not Immich/Jellyfin/Navidrome libraries (already on pCloud).
+offsite:
+  remote: pcloud:homelab-backups
+  secret: RCLONE_CONFIG
+  include: [postgres, volumes, homeassistant, opnsense, repo-zip, vzdump]

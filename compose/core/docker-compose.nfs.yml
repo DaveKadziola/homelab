@@ -1,0 +1,27 @@
+# Prod-only override. DEV keeps named Docker volumes (Immich library lives
+# on the guest disk). deploy-core.yml adds `-f docker-compose.nfs.yml` when
+# HOMELAB_ENV=prod. Same target paths replace the named volumes on merge.
+#
+# Requires ansible/playbooks/deploy-storage.yml so /mnt/homelab is mounted.
+services:
+  immich-server:
+    volumes:
+      - /mnt/homelab/media/immich:/data
+      - /etc/localtime:/etc/localtime:ro
+
+  navidrome:
+    volumes:
+      - navidrome_data:/data
+      - /mnt/homelab/media/music:/music:ro
+      - ./navidrome/navidrome.toml:/etc/navidrome/navidrome.toml:ro
+
+  jellyfin:
+    volumes:
+      - jellyfin_config:/config
+      - jellyfin_cache:/cache
+      - /mnt/homelab/media/video:/media
+
+  syncthing:
+    volumes:
+      - syncthing_data:/var/syncthing
+      - /mnt/homelab/sync:/var/syncthing/HomelabSync

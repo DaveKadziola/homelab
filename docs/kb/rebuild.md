@@ -21,7 +21,7 @@ OPNsense config.xml
             → Ansible base (users, Docker)
                 → compose/core + grocery
                     → F7 bootstrap (accounts)
-                        → restore data (F5 — not implemented)
+                        → restore data (F5 dumps / volume tars)
                             → HAProxy / ACME (prod grocery)
                                 → utils/run-tests.sh --env <env>
 ```
@@ -50,7 +50,7 @@ Without the router, VLANs, DHCP statics, WireGuard, and HAProxy do not exist.
 - Prod: TFC workspace `homelab`, apply on `main` (approval).
 - Dev: `utils/dev-apply-local.sh` + local state.
 - Secrets: `UBUNTU_DOCKER_PASSWORD`, SSH key pair.
-- Data from backup: none yet. A1 SA500/Purple passthrough is still a gap.
+- Data from backup: none on first apply. Attach SA500/Purple after fill-in of `config/storage.yml` `passthrough[].by_id` (`utils/pve-attach-nas-disks.sh --env prod`). Do not invent by-id. Do not apply a NAS VM on nested DEV.
 - Verify: guests ping; **plan must not say `must be replaced`**.
 - Time: 15–30 min.
 - **Abort** if the plan destroys `ubuntu-apps`.
@@ -58,6 +58,7 @@ Without the router, VLANs, DHCP statics, WireGuard, and HAProxy do not exist.
 ## 4. Ansible base — **auto**
 
 - `ansible/playbooks/deploy-core.yml` (Docker, compose sync, `.env`).
+- Then `ansible/playbooks/deploy-storage.yml` (NFS + `homelab-backup.timer`). DEV = loopback on the same guest.
 - Secrets: everything in `config/identities.yml` + `service_secrets` via `~/.homelab-secrets/<env>/` or GH env.
 - Verify: `docker ps`, `.env` is `0640` `ubuntu-*:docker`.
 - Time: 10–20 min.
@@ -81,11 +82,19 @@ sudo env HOMELAB_SECRETS_DIR=/opt/homelab/secrets \
 - Verify: table in [`operations.md`](operations.md).
 - Time: 5–15 min.
 
-## 7. Restore data — **manual / missing**
+## 7. Restore data — **semi-auto** (F5)
 
-Blocked on F5. When jobs exist: `pg_dump` per DB → volumes → Immich/media from NFS/pCloud → HA `.tar`.
+On the apps guest, after NFS is mounted:
 
-Until then a rebuild gives **empty apps with known passwords**, not the old library.
+```bash
+# dumps live under /mnt/homelab/backups/
+./utils/backup/restore-pg.sh --env <env> --db linkwarden --file /mnt/homelab/backups/postgres/linkwarden-….sql.gz
+# volume tars: stop the app, untar into the named volume, start
+```
+
+DEV proof (throwaway DB only): `./utils/run-tests.sh --env dev --suite restore`.
+
+Still missing on a **prod** rebuild until metal exists: SA500 libraries, rclone pull, HA `.tar`, vzdump. A rebuild without those artefacts still gives empty media libraries with known passwords.
 
 ## 8. DNS / ACME / HAProxy — **manual** (prod)
 
@@ -105,7 +114,7 @@ Until then a rebuild gives **empty apps with known passwords**, not the old libr
 | Variant | What changes |
 |---------|----------------|
 | New hypervisor | Step 2 + 3. Keep OPNsense if the LAN is unchanged. |
-| New storage | TF A1 + Ansible NFS (not written). Re-point Immich/Jellyfin mounts. |
+| New storage | Fill `by_id`, `pve-attach-nas-disks.sh --env prod`, `deploy-storage.yml`, prod compose NFS override. |
 | Renumber network | **Do not**, unless you also move printer/Tuya/NPM. Edit `docs/network.md` first. |
 | Nested DEV on a new laptop | Steps 2-DEV → 3-DEV → 4 → 5 → 6 → 9. No OPNsense, no restore. |
 

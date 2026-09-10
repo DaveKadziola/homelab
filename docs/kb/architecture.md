@@ -25,14 +25,15 @@ Prod (physical — after sign-off)
 | Accounts and secret *names* | [`config/identities.yml`](../../config/identities.yml) |
 | Secret *values* | Bitwarden → GitHub Environment → `~/.homelab-secrets/<env>/` |
 | VM sizing / IPs | `terraform/environments/<env>/terraform.tfvars` |
+| NFS / backup streams | [`config/storage.yml`](../../config/storage.yml) |
 | Network map | [`docs/network.md`](../network.md) · this KB [`networking.md`](networking.md) |
 
 A port exists in `services.yml` first, then in compose. Never only in a markdown table.
 
 ## What is in scope vs not
 
-- **In scope on DEV today:** P0–P2 apps on `ubuntu-apps-dev`, Authelia, Immich (local volumes), F7 bootstrap + F7-C tests.
-- **Not built yet:** NAS disks / NFS / backup jobs (F5), Home Assistant rollout, public HAProxy/ACME on grocery, F9 audits, F10 monitoring.
+- **In scope on DEV today:** P0–P2 apps on `ubuntu-apps-dev`, Authelia, Immich (local volumes), F7 bootstrap + F7-C tests, F5 loopback NFS + backup timer + restore suite.
+- **Not built yet:** SA500/Purple passthrough, rclone OAuth, HAOS on the T620, public HAProxy/ACME on grocery, F9 merge-to-`main` wipe, F10 monitoring.
 
 ## Related
 

@@ -49,6 +49,13 @@ jobs:
         run: |
           ansible-playbook -i environments/dev/hosts.ini playbooks/deploy-core.yml
 
+      - name: Deploy NFS loopback + backup timer
+        working-directory: ansible
+        env:
+          HOMELAB_ENV: dev
+        run: |
+          ansible-playbook -i environments/dev/hosts.ini playbooks/deploy-storage.yml
+
   post-deploy-tests:
     needs: deploy-dev
     runs-on: [self-hosted, homelab-dev]

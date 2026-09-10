@@ -7,8 +7,8 @@ This directory is the operator entry. The repo README only links here.
 | [architecture.md](architecture.md) | Envs, source of truth, what is / is not built |
 | [infrastructure.md](infrastructure.md) | Proxmox, TF, runners, VM sizing |
 | [networking.md](networking.md) | Dev vs prod, Authelia hosts, exposure |
-| [storage.md](storage.md) | Volumes now; NFS later |
-| [backup.md](backup.md) | Target jobs — F5 not implemented |
+| [storage.md](storage.md) | DEV volumes + loopback NFS; prod SA500/Purple |
+| [backup.md](backup.md) | F5 jobs, timer, restore suite |
 | [dr.md](dr.md) | What you can and cannot recover today |
 | [security.md](security.md) | Identities, rotation, known edges |
 | [deployment.md](deployment.md) | Ansible, bootstrap order, grocery |

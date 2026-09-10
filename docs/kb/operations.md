@@ -8,6 +8,7 @@
 | Container health | `utils/run-tests.sh --env dev --suite smoke` |
 | Dashboard | Homarr `:7575` (board seeded from `services.yml`) |
 | Image updates | Diun (stdout / future mail) |
+| Backups | `homelab-backup.timer` 03:15; `journalctl -u homelab-backup` |
 
 ## Logins (DEV)
 
@@ -56,3 +57,9 @@ See [`security.md`](security.md) and the per-app page. Destructive volume wipes 
 ```
 
 `SKIP` is not a failure. Infra plan FAILs only if Terraform would **replace** a VM.
+
+F5 restore (scratch DB, not `--suite all`):
+
+```bash
+./utils/run-tests.sh --env dev --suite restore
+```

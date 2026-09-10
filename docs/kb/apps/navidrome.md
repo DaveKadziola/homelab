@@ -5,7 +5,7 @@
 | URL (dev) | http://192.168.122.50:4533 |
 | Login | username `admin` |
 | Secret | `NAVIDROME_ADMIN_PASSWORD` |
-| Music | `navidrome_music` volume (empty on DEV) |
+| Music | DEV: `navidrome_music` volume (empty). Prod: `/mnt/homelab/media/music` |
 | Config | `compose/core/navidrome/navidrome.toml` |
 | Bootstrap | `utils/bootstrap/navidrome.sh` |
 

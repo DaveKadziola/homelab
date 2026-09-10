@@ -22,7 +22,7 @@ Cloud-init is first-boot only. The VM resource `lifecycle { ignore_changes = [in
 | Piece | Detail |
 |-------|--------|
 | Proxmox host | `192.168.20.20` · node `proxmox` · NIC1 mgmt |
-| NAS | `ubuntu-nas` · `192.168.20.12` · 4 GiB · SA500 + Purple (A1 mount **not implemented**) |
+| NAS | `ubuntu-nas` · `192.168.20.12` · 4 GiB · SA500 + Purple (`by_id` empty until metal; `pve-attach-nas-disks.sh`) |
 | Apps | `ubuntu-apps` · `192.168.50.30` · 8192 MiB · 48G · `cpu_type=host` |
 | TF | HCP TFC workspace `homelab` via `terraform/cloud.tf` |
 | Do not apply | until physical PVE is online and you sign off DEV |

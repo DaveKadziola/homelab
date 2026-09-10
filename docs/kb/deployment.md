@@ -4,7 +4,7 @@
 
 1. Commit on `homelab-v2` (dev) or `main` (prod, approval).
 2. GHA on the matching self-hosted runner.
-3. Terraform (infra workflows) and/or Ansible `deploy-core.yml` (apps workflows).
+3. Terraform (infra workflows) and/or Ansible `deploy-core.yml` then `deploy-storage.yml` (apps workflows).
 4. Ansible syncs `compose/`, `config/`, `utils/bootstrap*` to `/opt/homelab/`, writes `.env` **without literal secret fallbacks**, copies secrets to `/opt/homelab/secrets/<env>/`, runs `utils/bootstrap-apps.sh` unless `HOMELAB_SKIP_BOOTSTRAP` is set.
 
 Manual DEV deploy from the laptop:
@@ -18,6 +18,7 @@ while IFS= read -r f; do
 done < <(find ~/.homelab-secrets/dev -type f)
 
 ansible-playbook -i ansible/environments/dev/hosts.ini ansible/playbooks/deploy-core.yml
+ansible-playbook -i ansible/environments/dev/hosts.ini ansible/playbooks/deploy-storage.yml
 ```
 
 Skip bootstrap (compose only): `HOMELAB_SKIP_BOOTSTRAP=1`.

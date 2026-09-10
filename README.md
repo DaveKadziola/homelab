@@ -119,7 +119,7 @@ Service endpoints (port, health path, expected status, container, priority) are 
 utils/run-tests.sh --env dev --suite all
 ```
 
-Suites (`smoke`, `infra`, `net`, `config`) are driven by `config/services.yml` — see [`tests/README.md`](tests/README.md). `SKIP` is not a failure, so the same command works while prod is still being built.
+Suites (`smoke`, `infra`, `net`, `config`) are driven by `config/services.yml` — see [`tests/README.md`](tests/README.md). `SKIP` is not a failure, so the same command works while prod is still being built. F5 restore (`--suite restore`) is opt-in and not part of `--suite all`.
 
 ## Network
 
@@ -132,7 +132,7 @@ WireGuard: [docs/wireguard.md](docs/wireguard.md). OPNsense F2: [docs/opnsense-b
 |-------|--------|
 | **F1–F8** | Done on `homelab-v2` (repo, DEV nested PVE, apps, identities, tests, KB) |
 | **F9** | Audits written 2026-09-10 — **merge to `main` still FAIL** ([rebuild drill](docs/kb/rebuild-drill-2026-09-10.md)) |
-| **F5** | NAS / NFS / backups — not started (blocks a real rebuild) |
+| **F5** | NAS / NFS / backups — DEV loopback + timer + restore suite ([f5-storage](docs/f5-storage.md)). Prod disks / rclone / HAOS / vzdump still blocked on metal |
 | **F3 metal / prod** | Physical Proxmox apply — not started |
 | **F10** | Monitoring / alerts — after prod |
 

@@ -45,6 +45,11 @@
     immich_db_password: "{{ resolved_secrets.IMMICH_DB_PASSWORD | default(postgres_password, true) }}"
     compose_profiles: "{{ lookup('env', 'COMPOSE_PROFILES') | default('auth,media', true) }}"
     run_bootstrap: "{{ lookup('env', 'HOMELAB_SKIP_BOOTSTRAP') | default('', true) | length == 0 }}"
+    # Prod binds Immich/Jellyfin/Navidrome libraries to NFS. Never on DEV —
+    # that would hide the existing named volumes (Immich photos).
+    compose_file_args: >-
+      -f {{ compose_dest }}/docker-compose.yml
+      {% if homelab_env == 'prod' %}-f {{ compose_dest }}/docker-compose.nfs.yml{% endif %}
   tasks:
     - name: Resolve secrets from the environment or the operator secret cache
       ansible.builtin.set_fact:
@@ -99,6 +104,14 @@
       ansible.builtin.copy:
         src: "{{ compose_src }}/docker-compose.yml"
         dest: "{{ compose_dest }}/docker-compose.yml"
+        owner: "{{ ansible_user }}"
+        group: docker
+        mode: "0644"
+
+    - name: Sync the prod NFS compose override
+      ansible.builtin.copy:
+        src: "{{ compose_src }}/docker-compose.nfs.yml"
+        dest: "{{ compose_dest }}/docker-compose.nfs.yml"
         owner: "{{ ansible_user }}"
         group: docker
         mode: "0644"
@@ -237,6 +250,7 @@
       loop:
         - services.yml
         - identities.yml
+        - storage.yml
 
     - name: Sync the bootstrap scripts
       ansible.builtin.copy:
@@ -248,6 +262,7 @@
       loop:
         - "{{ utils_src }}/bootstrap-apps.sh"
         - "{{ utils_src }}/bootstrap"
+        - "{{ utils_src }}/backup"
 
     - name: Ensure docker compose plugin / v2 and the bootstrap dependencies
       ansible.builtin.apt:
@@ -261,13 +276,13 @@
 
     - name: Pull/build and start core stack
       ansible.builtin.command:
-        cmd: docker compose -f {{ compose_dest }}/docker-compose.yml --env-file {{ compose_dest }}/.env up -d --build --remove-orphans
+        cmd: docker compose {{ compose_file_args }} --env-file {{ compose_dest }}/.env up -d --build --remove-orphans
         chdir: "{{ compose_dest }}"
       register: compose_up
       changed_when: "'Started' in compose_up.stderr or 'Created' in compose_up.stderr or 'Running' in compose_up.stderr or compose_up.rc == 0"
 
     - name: Show running containers
-      ansible.builtin.command: docker compose -f {{ compose_dest }}/docker-compose.yml --env-file {{ compose_dest }}/.env ps -a
+      ansible.builtin.command: docker compose {{ compose_file_args }} --env-file {{ compose_dest }}/.env ps -a
       register: compose_ps
       changed_when: false
 

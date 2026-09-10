@@ -15,4 +15,4 @@ DEV stores the library on **local Docker volumes**, not NFS. HTTP login returns 
 
 Machine-learning needs `cpu_type=host` on the VM. Immich Postgres `mem_limit` ≥ 768m.
 
-Prod target: NFS on SA500 (F5, not implemented).
+Prod target: NFS on SA500 via `compose/core/docker-compose.nfs.yml` (after `deploy-storage.yml`). DEV must keep the named volume.
