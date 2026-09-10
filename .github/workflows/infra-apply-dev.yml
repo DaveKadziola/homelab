@@ -29,7 +29,7 @@ jobs:
         working-directory: terraform
         env:
           TF_VAR_environment: dev
-          TF_VAR_proxmox_node_name: pve
+          TF_VAR_proxmox_node_name: dev
           TF_VAR_proxmox_api_url: ${{ vars.PROXMOX_API_URL }}
           TF_VAR_proxmox_api_token_id: ${{ vars.PROXMOX_API_TOKEN_ID }}
           TF_VAR_proxmox_api_token_secret: ${{ secrets.PROXMOX_API_TOKEN_SECRET }}

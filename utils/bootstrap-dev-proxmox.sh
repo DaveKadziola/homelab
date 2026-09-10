@@ -23,7 +23,7 @@ if [[ -z "$IP" ]]; then
 fi
 
 API_URL="https://${IP}:8006/api2/json"
-NODE="${PROXMOX_NODE_NAME:-pve}"
+NODE="${PROXMOX_NODE_NAME:-dev}"
 
 command -v gh >/dev/null || { echo "gh required"; exit 1; }
 

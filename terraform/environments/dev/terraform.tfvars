@@ -2,7 +2,8 @@
 # API: https://<nested-ip>:8006 — set via utils/bootstrap-dev-proxmox.sh
 # State: local (infra-*-dev.yml uses init -backend=false).
 
-proxmox_node_name   = "pve"
+# Nested PVE UI title is "dev" — hostname/node name, not "pve"
+proxmox_node_name   = "dev"
 manage_node_network = false
 
 node_config = {

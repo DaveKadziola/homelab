@@ -24,7 +24,7 @@ Same `terraform/` module as prod; different `environments/dev/terraform.tfvars` 
    ```bash
    ./utils/bootstrap-dev-proxmox.sh --set-token
    ```
-5. If node name ≠ `pve`, set `proxmox_node_name` in `terraform/environments/dev/terraform.tfvars`.
+5. Node name is **`dev`** (hostname in UI title). Override only if you renamed it.
 
 ## CI/CD
 
