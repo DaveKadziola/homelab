@@ -54,6 +54,8 @@ Without the router, VLANs, DHCP statics, WireGuard, and HAProxy do not exist.
 - Verify: guests ping; **plan must not say `must be replaced`**.
 - Time: 15–30 min.
 - **Abort** if the plan destroys `ubuntu-apps`.
+- A merge to `homelab-v2` starts `Infra Apply Dev` and, for `ansible/**` / `compose/**`, `Apps Deploy Dev` by itself; check the Actions tab before applying by hand, or the two runs race (drill 2026-10-19).
+- A recreated guest has a new SSH host key: `ssh-keygen -R <guest-ip>` on the laptop and the runner, or tests fail on the old `known_hosts` entry.
 
 ## 4. Ansible base — **auto**
 
@@ -62,11 +64,17 @@ Without the router, VLANs, DHCP statics, WireGuard, and HAProxy do not exist.
 - Secrets: everything in `config/identities.yml` + `service_secrets` via `~/.homelab-secrets/<env>/` or GH env.
 - Verify: `docker ps`, `.env` is `0640` `ubuntu-*:docker`.
 - Time: 10–20 min.
+- The first run on a fresh guest can fail while pulling images (`network is unreachable` on an IPv6 address, drill 2026-10-19); rerun `Apps Deploy Dev`. Do **not** run `docker compose up` by hand before step 6: Portainer only accepts its first admin for a few minutes after it starts.
 
 ## 5. Compose + grocery — **auto / Portainer**
 
 - Core: Ansible `docker compose up`.
-- Grocery: Portainer stack from `compose/grocery/` (see [`apps/grocery.md`](apps/grocery.md)).
+- Grocery: Portainer stack from `compose/grocery/` (see [`apps/grocery.md`](apps/grocery.md)). Not automated; on a fresh guest:
+  1. Build the image on the guest (it is never pushed to a registry):
+     `docker build -t easy-todo-grocery-nodb:latest -f docker/v1.0.0/no-db/Dockerfile "https://github.com/DaveKadziola/easytodo-grocery-list.git#main"`
+  2. Database prep in `homelab-core-postgres-1` as `homelab`: `CREATE ROLE prod_todo_grocery LOGIN PASSWORD '<GROCERY_DB_PASSWORD>'; CREATE DATABASE todo_grocery;` - pass the password through an environment variable (`docker exec -e PW` + psql `\getenv`), never on the command line. Then restore the `todo_grocery` dump (step 7) - the schema `prod` and its grants come from the dump.
+  3. The bootstrap reports the stack "present" even when its container could not start (missing image). In Portainer **redeploy** the stack without pulling; "start" tries to pull the local image and fails.
+  4. Verify: `curl http://<guest>:8101/` -> 200.
 - Time: 10 min + image pulls.
 
 ## 6. F7 bootstrap — **auto** (some SKIP)
@@ -94,6 +102,8 @@ On the apps guest, after NFS is mounted:
 
 DEV proof (throwaway DB only): `./utils/run-tests.sh --env dev --suite restore`.
 
+The dumps are plain SQL without `--clean`: they restore only into an **empty** database (`--create` for one that does not exist yet). A database the fresh deploy already created and filled (homelab, linkwarden, immich, ...) must be dropped and created again first, with its app stopped - not done in the 2026-10-19 drill. Copy `/mnt/homelab/backups` off a DEV guest before wiping it: the DEV NFS export lives on the same guest.
+
 Still missing on a **prod** rebuild until metal exists: SA500 libraries, rclone pull, HA `.tar`, vzdump. A rebuild without those artefacts still gives empty media libraries with known passwords.
 
 ## 8. DNS / ACME / HAProxy — **manual** (prod)
@@ -120,4 +130,4 @@ Still missing on a **prod** rebuild until metal exists: SA500 libraries, rclone 
 
 ## Related
 
-- [`architecture.md`](architecture.md) · [`dr.md`](dr.md) · [`lessons-learned.md`](lessons-learned.md)
+- [`architecture.md`](architecture.md) · [`dr.md`](dr.md) · [`lessons-learned.md`](lessons-learned.md) · drills: [`2026-09-10`](rebuild-drill-2026-09-10.md), [`2026-10-19`](rebuild-drill-2026-10-19.md)
