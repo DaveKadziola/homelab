@@ -53,25 +53,14 @@ fi
 
 cd terraform
 
-# Disable HCP Terraform cloud block for local state
-CLOUD_OFF=0
-if [[ -f cloud.tf ]]; then
-  mv cloud.tf cloud.tf.off
-  CLOUD_OFF=1
-fi
-restore_cloud() {
-  if [[ "$CLOUD_OFF" -eq 1 && -f cloud.tf.off ]]; then
-    mv cloud.tf.off cloud.tf
-  fi
-}
-trap restore_cloud EXIT
-
+# State lives in HCP Terraform (workspace homelab-dev, execution mode local); needs
+# `terraform login` once on this machine.
+export TF_WORKSPACE=homelab-dev
 rm -rf .terraform
-terraform init -reconfigure
+terraform init -input=false
 
-STATE="environments/dev/terraform.tfstate"
-terraform plan -state="$STATE" -var-file=environments/dev/terraform.tfvars -out=environments/dev/plan.tfplan
-terraform apply -state="$STATE" environments/dev/plan.tfplan
+terraform plan -input=false -var-file=environments/dev/terraform.tfvars -out=environments/dev/plan.tfplan
+terraform apply environments/dev/plan.tfplan
 
 echo "Done. SSH: ssh -i ~/.ssh/homelab_dev_ed25519 ubuntu-dev@192.168.122.50"
 echo "Password: cat ~/.homelab-ubuntu-apps-dev-pass"

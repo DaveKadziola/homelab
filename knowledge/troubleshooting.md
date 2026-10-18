@@ -7,7 +7,7 @@ Symptoms first. Root-cause write-ups go in [`lessons-learned.md`](lessons-learne
 | Symptom | Check |
 |---------|--------|
 | TF wants to replace `ubuntu-apps` | Stop. Cloud-init drift or state lag. Confirm `lifecycle.ignore_changes = [initialization]`. Do not apply a replace. |
-| `cloud {}` / TFC error on laptop | Use `utils/dev-apply-local.sh` (it moves `cloud.tf` aside). |
+| `cloud {}` / TFC error on laptop (`No workspace selected`, 401) | Set `TF_WORKSPACE=homelab-dev` (DEV) or `homelab` (prod); run `terraform login` once. `utils/dev-apply-local.sh` sets it. |
 | Wrong node | Nested PVE node is `dev`, not `pve`. |
 | Immich ML crash-loop / `Illegal instruction` | Guest `cpu_type` must be `host`. |
 | Disk full / image pull fails | DEV guest is 27G; `docker system df`. |

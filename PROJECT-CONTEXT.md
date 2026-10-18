@@ -24,7 +24,7 @@ Last reviewed: 2026-10-18
 | --- | --- | --- |
 | Languages | Bash (`utils/`, `tests/`), Python helpers (`tests/lib/hlconfig.py`, `utils/bootstrap/homarr_board.py`), HCL, YAML | repository tree |
 | Runtime / OS | Ubuntu VMs `ubuntu-apps`, `ubuntu-nas` on a physical Proxmox host; DEV: nested Proxmox in laptop libvirt. VMs run the Ubuntu 24.04 (noble) cloud image | `README.md` architecture; `docs/network.md:6-13`; `terraform/environments/dev/terraform.tfvars:41`; `terraform/environments/prod/terraform.tfvars:40,66` |
-| Infrastructure as code | Terraform `>= 1.8.0`, provider `bpg/proxmox` `0.77.1`; Terraform Cloud org `dkhomelabserver`, workspace `homelab` | `terraform/versions.tf:2,6-7`; `terraform/cloud.tf:6-8` |
+| Infrastructure as code | Terraform `>= 1.8.0`, provider `bpg/proxmox` `0.77.1`; Terraform Cloud org `dkhomelabserver`, workspaces `homelab` (prod) and `homelab-dev` (DEV), chosen by `TF_WORKSPACE`, execution mode local | `terraform/versions.tf:2,6-7`; `terraform/cloud.tf` |
 | Configuration | Ansible (`ansible/playbooks/`, inventories `ansible/environments/{dev,prod}/hosts.ini`), ansible-lint profile `production`. Ansible version: not pinned | `ansible/ansible.cfg`; `.ansible-lint` |
 | Applications | Docker Compose (`compose/core`, `compose/grocery`); services declared once in `config/services.yml`, accounts and secret names in `config/identities.yml` | `README.md` "Applications" |
 | CI | GitHub Actions on self-hosted runners `homelab-dev` (laptop) and `homelab-prod` (`ubuntu-apps`) | `.github/workflows/*.yml` `runs-on` |

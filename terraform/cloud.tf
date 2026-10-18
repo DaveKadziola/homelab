@@ -1,11 +1,10 @@
-# Prod CI uses HCP Terraform (workspace homelab).
-# Local / GHA dev apply: rename this file aside or use TF_DATA_DIR with
-# utils/dev-apply-local.sh which disables the cloud block temporarily.
+# HCP Terraform stores the state; Terraform itself runs locally (execution mode "local")
+# on the self-hosted runner or the laptop. TF_WORKSPACE picks the workspace:
+#   homelab      - prod (infra-plan.yml, infra-apply-prod.yml)
+#   homelab-dev  - DEV  (infra-plan-dev.yml, infra-apply-dev.yml, utils/dev-apply-local.sh,
+#                  tests/infra/run.sh)
 terraform {
   cloud {
     organization = "dkhomelabserver"
-    workspaces {
-      name = "homelab"
-    }
   }
 }

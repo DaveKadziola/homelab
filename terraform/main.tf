@@ -109,8 +109,14 @@ resource "proxmox_virtual_environment_vm" "vm" {
     file_id      = proxmox_virtual_environment_file.vm_image[each.key].id
     interface    = each.value.storage_interface
     size         = each.value.storage_size
-    file_format  = each.value.img_file_format
-    ssd          = each.value.ssd_enabled
+    # The disk on local-lvm (LVM-thin) is always raw; img_file_format describes the
+    # downloaded cloud image, not this disk. Declaring qcow2 here made every plan want
+    # an in-place format change.
+    file_format = "raw"
+    ssd         = each.value.ssd_enabled
+    # Return freed blocks to the LVM-thin pool. A full pool froze DEV twice
+    # (knowledge/lessons-learned.md, 2026-10-18).
+    discard = "on"
   }
 
   # cloud-init

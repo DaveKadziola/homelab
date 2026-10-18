@@ -251,7 +251,7 @@ EOF
 |------|--------------|
 | **TFC org** | **`dkhomelabserver`** (decision 2026-06-11) |
 | **Prod workspace** | **`homelab`** (org `dkhomelabserver`) |
-| **Dev workspace** | **none** — dev TF on laptop (libvirt), local state; TFC **prod only** |
+| **Dev workspace** | `homelab-dev` (added 2026-10-18, execution mode local) — dev TF on laptop / dev runner |
 | **Repo backend** | `cloud { ... }` in `terraform/versions.tf` — in **F1**, not now |
 | **GH secret** | `TF_API_TOKEN` → env **prod** (F1); **not** in repo |
 

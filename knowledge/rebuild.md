@@ -48,7 +48,7 @@ Without the router, VLANs, DHCP statics, WireGuard, and HAProxy do not exist.
 ## 3. Terraform VMs — **auto**
 
 - Prod: TFC workspace `homelab`, apply on `main` (approval).
-- Dev: `utils/dev-apply-local.sh` + local state.
+- Dev: `utils/dev-apply-local.sh`, state in HCP workspace `homelab-dev`.
 - Secrets: `UBUNTU_DOCKER_PASSWORD`, SSH key pair.
 - Data from backup: none on first apply. Attach SA500/Purple after fill-in of `config/storage.yml` `passthrough[].by_id` (`utils/pve-attach-nas-disks.sh --env prod`). Do not invent by-id. Do not apply a NAS VM on nested DEV.
 - Verify: guests ping; **plan must not say `must be replaced`**.

@@ -10,8 +10,8 @@
 | Apps guest | `ubuntu-apps-dev` VMID 101 · `192.168.122.50` |
 | Sizing | 6144 MiB RAM · 2 cores · `cpu_type=host` · 27G `local-lvm` |
 | SSH | `ubuntu-dev@192.168.122.50` · `~/.ssh/homelab_dev_ed25519` |
-| TF state | **local** `terraform/environments/dev/terraform.tfstate` (gitignored) |
-| Helper | `utils/dev-apply-local.sh` — moves `cloud.tf` aside (HCP block breaks local apply) |
+| TF state | HCP Terraform workspace **`homelab-dev`** (execution mode local; `TF_WORKSPACE`) |
+| Helper | `utils/dev-apply-local.sh` — plan + apply with `TF_WORKSPACE=homelab-dev` |
 
 `cpu_type=host` is required: Immich ML / NumPy needs x86-64-v2. `kvm64`/`qemu64` dies with `Illegal instruction`.
 
@@ -24,7 +24,7 @@ Cloud-init is first-boot only. The VM resource `lifecycle { ignore_changes = [in
 | Proxmox host | `192.168.20.20` · node `proxmox` · NIC1 mgmt |
 | NAS | `ubuntu-nas` · `192.168.20.12` · 4 GiB · SA500 + Purple (`by_id` empty until metal; `pve-attach-nas-disks.sh`) |
 | Apps | `ubuntu-apps` · `192.168.50.30` · 8192 MiB · 48G · `cpu_type=host` |
-| TF | HCP TFC workspace `homelab` via `terraform/cloud.tf` |
+| TF | HCP TFC workspace `homelab` via `terraform/cloud.tf` + `TF_WORKSPACE=homelab` |
 | Do not apply | until physical PVE is online and you sign off DEV |
 
 ## Runners
