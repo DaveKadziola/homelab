@@ -11,6 +11,7 @@ Symptoms first. Root-cause write-ups go in [`lessons-learned.md`](lessons-learne
 | Wrong node | Nested PVE node is `dev`, not `pve`. |
 | Immich ML crash-loop / `Illegal instruction` | Guest `cpu_type` must be `host`. |
 | Disk full / image pull fails | DEV guest is 27G; `docker system df`. |
+| Nested Proxmox and `ubuntu-apps-dev` stop answering, one vCPU at 100 %, journal just stops | LVM-thin pool `pve/data` full: `lvs pve/data` on the nested PVE. With `when full = queue` every write waits forever. Set `lvchange --errorwhenfull y pve/data`, free space, then `virsh destroy` + `utils/ensure-dev-proxmox.sh`. Test: `infra/storage/thin-pool`. |
 
 ## Compose / host
 
