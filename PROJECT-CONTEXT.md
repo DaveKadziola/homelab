@@ -3,7 +3,7 @@
 Facts of this project for the agent rules in `AGENTS.md`. Every filled field names its source.
 An empty field is unknown: the agent asks about it and assumes nothing.
 
-Status: draft (takeover 2026-10-18; fields marked `<ask>` wait for the operator)
+Status: draft (takeover 2026-10-18; operator answers recorded 2026-10-18)
 Last reviewed: 2026-10-18
 
 ## 1. Goal
@@ -14,7 +14,8 @@ Last reviewed: 2026-10-18
 - Plan and phases: `docs/plan/greenfield-plan.md` (phases F0-F10; copied from Cursor, its todo
   statuses are older than the code). Current status: `README.md` "Roadmap" table.
   <!-- source: docs/plan/greenfield-plan.md "Fazy / sprinty"; README.md "Roadmap" -->
-- Who uses it: <ask>
+- Who uses it: the operator (user and admin); later 1-2 occasional users of single apps such as
+  the photo gallery and the shopping list. <!-- source: operator, 2026-10-18 -->
 - What is out of scope: <ask>
 
 ## 2. Stack
@@ -22,7 +23,7 @@ Last reviewed: 2026-10-18
 | Area | Choice and version | Source |
 | --- | --- | --- |
 | Languages | Bash (`utils/`, `tests/`), Python helpers (`tests/lib/hlconfig.py`, `utils/bootstrap/homarr_board.py`), HCL, YAML | repository tree |
-| Runtime / OS | Ubuntu VMs `ubuntu-apps`, `ubuntu-nas` on a physical Proxmox host; DEV: nested Proxmox in laptop libvirt. OS versions: <ask> | `README.md` architecture; `docs/network.md:6-13` |
+| Runtime / OS | Ubuntu VMs `ubuntu-apps`, `ubuntu-nas` on a physical Proxmox host; DEV: nested Proxmox in laptop libvirt. VMs run the Ubuntu 24.04 (noble) cloud image | `README.md` architecture; `docs/network.md:6-13`; `terraform/environments/dev/terraform.tfvars:41`; `terraform/environments/prod/terraform.tfvars:40,66` |
 | Infrastructure as code | Terraform `>= 1.8.0`, provider `bpg/proxmox` `0.77.1`; Terraform Cloud org `dkhomelabserver`, workspace `homelab` | `terraform/versions.tf:2,6-7`; `terraform/cloud.tf:6-8` |
 | Configuration | Ansible (`ansible/playbooks/`, inventories `ansible/environments/{dev,prod}/hosts.ini`), ansible-lint profile `production`. Ansible version: not pinned | `ansible/ansible.cfg`; `.ansible-lint` |
 | Applications | Docker Compose (`compose/core`, `compose/grocery`); services declared once in `config/services.yml`, accounts and secret names in `config/identities.yml` | `README.md` "Applications" |
@@ -66,10 +67,10 @@ Last reviewed: 2026-10-18
 
 - Repository layout: `README.md` "Repository layout"; knowledge base in `knowledge/` (layout in
   `knowledge/README.md`); plan in `docs/plan/`; audits of the takeover in `docs/audit/`.
-- Naming: <ask>
-- Code style: <ask>
-- Scripting language for tooling: today Bash in `utils/` with Python helpers. Preference for new
-  tooling: <ask>
+- Naming: follow the existing code and files. <!-- source: operator, 2026-10-18 -->
+- Code style: follow the existing code of the file being changed. <!-- source: operator, 2026-10-18 -->
+- Scripting language for tooling: new tooling in Python; Bash only for thin wrappers and for
+  extending the existing scripts in `utils/`. <!-- source: operator, 2026-10-18 -->
 - Toolchain mangles non-ASCII characters: no evidence; the repository already uses UTF-8
   typography in docs and scripts.
 - Release notes / change log file: none.
@@ -89,7 +90,7 @@ Last reviewed: 2026-10-18
 
 | Name | Host / location | Purpose | Agent may change it? |
 | --- | --- | --- | --- |
-| dev | Laptop libvirt `192.168.122.0/24`; nested Proxmox; `ubuntu-apps-dev` `192.168.122.50` (SSH user `ubuntu-dev`, key `~/.ssh/homelab_dev_ed25519`) | DEV, branch `homelab-v2` | no - <ask> what is allowed (read-only tests? deploy?) |
+| dev | Laptop libvirt `192.168.122.0/24`; nested Proxmox; `ubuntu-apps-dev` `192.168.122.50` (SSH user `ubuntu-dev`, key `~/.ssh/homelab_dev_ed25519`) | DEV, branch `homelab-v2` | yes - tests, SSH, deploys (operator, 2026-10-18); deleting data or replacing a VM still asked each time (`AGENTS.md` section 11) |
 | prod | Proxmox host `192.168.20.20`; `ubuntu-apps` `192.168.50.30`; `ubuntu-nas` `192.168.20.12`; HA T620 `192.168.20.13` | prod, branch `main`; not built yet (F3 metal) | no |
 | router | OPNsense, VLAN gateways in `docs/network.md:23-28` | home network | no |
 
