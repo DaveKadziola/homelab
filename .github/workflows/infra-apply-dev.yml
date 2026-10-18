@@ -1,8 +1,9 @@
 name: Infra Apply Dev
 
+# TEMP: manual only until DEV state lives in Terraform Cloud (decision R2,
+# 2026-10-18). The runner's fresh checkout has no state, so a push-triggered
+# apply planned to create the existing VM again.
 on:
-  push:
-    branches: [homelab-v2]
   workflow_dispatch:
 
 jobs:
