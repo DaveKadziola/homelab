@@ -77,6 +77,8 @@ Generate locally → **Bitwarden** `homelab/<NAME>/<env>` → `gh secret set`. N
 
 App secrets: `utils/gen-app-credentials.sh` (not the older F1 `bootstrap-f1-secrets.sh`).
 
+New values straight into Bitwarden + GitHub + laptop cache, no staging file: `utils/rotate-secrets.py --env prod --generate` (dry run), then `--apply` with Bitwarden unlocked (`export BW_SESSION="$(bw unlock --raw)"`). Existing cache values into Bitwarden only: `--vault-from-cache`.
+
 Laptop cache → GitHub Environment: `utils/sync-secrets-to-github.py --env dev` (dry run, names only), then `--apply`. Never pass `--body -` to `gh secret set`: it stores the literal `-`.
 
 ## Quick start — dev
