@@ -1,0 +1,69 @@
+{
+  "permissions": {
+    "ask": [
+      "Bash(ssh *)",
+      "Bash(scp *)",
+      "Bash(sftp *)",
+      "Bash(rsync *)",
+
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(git reset *)",
+      "Bash(git clean *)",
+      "Bash(git rebase *)",
+      "Bash(git merge *)",
+      "Bash(git restore *)",
+      "Bash(git checkout -- *)",
+      "Bash(git branch -D *)",
+
+      "Bash(rm *)",
+      "Bash(rmdir *)",
+      "Bash(shred *)",
+      "Bash(truncate *)",
+      "Bash(dd *)",
+      "Bash(mkfs*)",
+      "Bash(chmod *)",
+      "Bash(chown *)",
+      "Bash(sudo *)",
+
+      "Bash(systemctl *)",
+      "Bash(service *)",
+      "Bash(reboot*)",
+      "Bash(shutdown*)",
+      "Bash(poweroff*)",
+      "Bash(halt*)",
+      "Bash(kill *)",
+      "Bash(pkill *)",
+      "Bash(killall *)",
+
+      "Bash(docker rm *)",
+      "Bash(docker stop *)",
+      "Bash(docker kill *)",
+      "Bash(docker restart *)",
+      "Bash(docker compose down*)",
+      "Bash(docker compose up*)",
+      "Bash(docker system prune*)",
+      "Bash(docker volume rm *)",
+
+      "Bash(apt *)",
+      "Bash(apt-get *)",
+      "Bash(dpkg -i *)",
+      "Bash(pip install *)",
+      "Bash(pip3 install *)",
+      "Bash(npm install *)",
+      "Bash(npm i *)",
+      "Bash(brew install *)",
+      "Bash(winget install *)",
+
+      "Bash(iptables *)",
+      "Bash(nft *)",
+      "Bash(pfctl *)",
+      "Bash(configctl *)",
+      "Bash(ifdown *)",
+      "Bash(ifup *)",
+
+      "Bash(curl *)",
+      "Bash(wget *)"
+    ]
+  }
+}

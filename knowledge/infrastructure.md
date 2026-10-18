@@ -38,6 +38,6 @@ Start the DEV runner: `sudo ./svc.sh start` in `~/actions-runner-homelab`. Witho
 
 ## Related
 
-- [`docs/dev-proxmox.md`](../dev-proxmox.md)
-- [`docs/f3-proxmox.md`](../f3-proxmox.md)
+- [`docs/dev-proxmox.md`](../docs/dev-proxmox.md)
+- [`docs/f3-proxmox.md`](../docs/f3-proxmox.md)
 - [`lessons-learned.md`](lessons-learned.md)

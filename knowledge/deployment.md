@@ -54,5 +54,5 @@ Do **not** `terraform apply` if the plan wants to **replace** `ubuntu-apps`. Tha
 
 ## Related
 
-- [`docs/f4-apps-dev.md`](../f4-apps-dev.md)
+- [`docs/f4-apps-dev.md`](../docs/f4-apps-dev.md)
 - [`operations.md`](operations.md)

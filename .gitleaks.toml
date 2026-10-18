@@ -1,5 +1,5 @@
 # Scan the git tree. Working-tree OPNsense XML is gitignored on purpose
-# (see docs/kb/security-audit-2026-09-10.md S9) and must not fail CI.
+# (see knowledge/security-audit-2026-09-10.md S9) and must not fail CI.
 title = "homelab"
 
 [allowlist]

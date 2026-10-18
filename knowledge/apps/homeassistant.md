@@ -9,4 +9,4 @@ Not a Docker service in `compose/core`. Hardware: Dell T620 at `192.168.20.13` (
 | Backup | `utils/backup/ha-pull.sh` (needs `HA_TOKEN`) |
 | DEV | skipped — no `ha_host` in `config/storage.yml` |
 
-See [`homeassistant/README.md`](../../../homeassistant/README.md).
+See [`homeassistant/README.md`](../../homeassistant/README.md).

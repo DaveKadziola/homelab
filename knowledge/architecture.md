@@ -21,12 +21,12 @@ Prod (physical — after sign-off)
 
 | What | Where |
 |------|--------|
-| Service ports, health, compose profiles | [`config/services.yml`](../../config/services.yml) |
-| Accounts and secret *names* | [`config/identities.yml`](../../config/identities.yml) |
+| Service ports, health, compose profiles | [`config/services.yml`](../config/services.yml) |
+| Accounts and secret *names* | [`config/identities.yml`](../config/identities.yml) |
 | Secret *values* | Bitwarden → GitHub Environment → `~/.homelab-secrets/<env>/` |
 | VM sizing / IPs | `terraform/environments/<env>/terraform.tfvars` |
-| NFS / backup streams | [`config/storage.yml`](../../config/storage.yml) |
-| Network map | [`docs/network.md`](../network.md) · this KB [`networking.md`](networking.md) |
+| NFS / backup streams | [`config/storage.yml`](../config/storage.yml) |
+| Network map | [`docs/network.md`](../docs/network.md) · this KB [`networking.md`](networking.md) |
 
 A port exists in `services.yml` first, then in compose. Never only in a markdown table.
 

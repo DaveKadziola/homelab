@@ -7,7 +7,7 @@
 #      (current Syncthing dropped HTTP basic auth for the GUI)
 #
 # Peers and folders are not touched — device IDs are created on first start and
-# pairing stays a deliberate action (docs/kb/apps/syncthing.md).
+# pairing stays a deliberate action (knowledge/apps/syncthing.md).
 #
 # Usage:
 #   ./utils/bootstrap/syncthing.sh --env dev [--host 127.0.0.1]

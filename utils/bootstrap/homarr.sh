@@ -66,7 +66,7 @@ ensure_admin() {
   if ! grep -qE "[[:space:]]${USERNAME}([[:space:]]|$)" <<<"$users"; then
     hl_log "no ${USERNAME} user — recreating it"
     homarr_cli recreate-admin -u "$USERNAME" >/dev/null ||
-      hl_die "homarr-cli recreate-admin failed — see docs/kb/apps/homarr.md"
+      hl_die "homarr-cli recreate-admin failed — see knowledge/apps/homarr.md"
   fi
   hl_log "setting the password of ${USERNAME}"
   # The value is expanded inside the container, not on this host's argv.

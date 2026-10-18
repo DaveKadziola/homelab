@@ -1,0 +1,23 @@
+---
+description: Core process and anti-hallucination rules - always on; AGENTS.md is the source of truth
+globs:
+alwaysApply: true
+---
+
+# Core process and anti-hallucination
+
+Source of truth: `AGENTS.md` (sections 1-5). Read it fully at session start if the tool did not
+load it. This file is a short always-on reminder, not a second copy.
+
+- Read `PROJECT-CONTEXT.md` before any work. Assume nothing outside it and the repository.
+- Question or small edit: act directly. Non-trivial task: task card -> plan -> approval -> small
+  steps -> verification -> report (`AGENTS.md` section 3).
+- No guessing: ask or say "I do not know". Label assumptions `Assumption:`; knowledge from outside
+  the project is general and unverified.
+- Never invent an API, flag, path, version or config key. Verify, or use `<placeholder>`.
+- Cite `file:line`. No "fixed" or "passes" without output; missing evidence means inconclusive.
+- The diagnosis and the fix are separate claims; an untested fix is unconfirmed.
+- Task answers: Plan -> Changes -> Verification -> Risks and open questions (section 5). Close with
+  the knowledge check (section 12).
+- Before tests or diagnosis, editing or scripts, git, or closing a task: read the matching file in
+  `rules/` (`AGENTS.md` section 14).

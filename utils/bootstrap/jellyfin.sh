@@ -106,7 +106,7 @@ fi
 
 TOKEN="$(login)"
 if [[ -z "$TOKEN" ]]; then
-  hl_skip "wizard already completed with an unknown password — reset on DEV via docs/kb/apps/jellyfin.md"
+  hl_skip "wizard already completed with an unknown password — reset on DEV via knowledge/apps/jellyfin.md"
 fi
 hl_log "admin ${USERNAME} authenticated"
 

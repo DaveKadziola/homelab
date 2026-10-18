@@ -341,6 +341,6 @@ services:
     port: 4381
     config_as_code: no
     login: none
-    manual_steps: docs/kb/apps/zotify.md
+    manual_steps: knowledge/apps/zotify.md
     dashboard: { group: media, hidden: true }
     notes: Spotify OAuth is interactive; the port is only used during that login.
