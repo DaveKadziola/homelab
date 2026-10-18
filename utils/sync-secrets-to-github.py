@@ -15,6 +15,7 @@ Values go to `gh secret set NAME --env ENV --repo REPO` on standard input. Never
 Exit code: 0 ok, 1 a write failed, 2 usage or environment error.
 """
 import argparse
+import base64
 import hashlib
 import json
 import re
@@ -38,7 +39,10 @@ DERIVED_SOURCES = {
         # password always gives the same hash and cloud-init does not look changed.
         "UBUNTU_DOCKER_PASSWORD": ("sha512-crypt", HOME / ".homelab-ubuntu-apps-dev-pass"),
     },
-    "prod": {},
+    "prod": {
+        # GitHub holds the whole rclone.conf as one base64 line (docs/manual-setup.md, F5).
+        "RCLONE_CONFIG": ("base64", HOME / ".homelab-secrets" / "prod" / "RCLONE_CONFIG"),
+    },
 }
 
 
@@ -95,6 +99,8 @@ def read_value(source):
     value = value[:-1] if value.endswith("\n") else value
     if isinstance(source, tuple) and source[0] == "sha512-crypt":
         value = sha512_crypt(value)
+    if isinstance(source, tuple) and source[0] == "base64":
+        value = base64.b64encode(path.read_bytes()).decode()
     return value
 
 
