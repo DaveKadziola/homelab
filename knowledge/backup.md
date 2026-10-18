@@ -44,7 +44,7 @@ Restore one gzip SQL dump:
 ./utils/backup/restore-pg.sh --env dev --db scratch --file /mnt/homelab/backups/postgres/linkwarden-….sql.gz --create
 ```
 
-Do not restore over a live app database without stopping that app.
+Over an existing database: `--replace` (drop + create), with `--owner ROLE` when the app owns its tables, and `--container/--user/--password-secret` for Immich's own Postgres. Stop the app first. Per-database commands: `rebuild.md` step 7.
 
 ## What is still not automatic
 
