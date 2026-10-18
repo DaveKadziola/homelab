@@ -1,6 +1,6 @@
 # Networking
 
-Canonical map and “do not renumber” list: [`docs/network.md`](../network.md). This page is the operator view.
+Canonical map and “do not renumber” list: [`docs/network.md`](../docs/network.md). This page is the operator view.
 
 ## Dev
 
@@ -38,5 +38,5 @@ Postgres `:5432` is published on the apps host — intended for grocery/`host.do
 
 ## Related
 
-- [`docs/opnsense-baseline.md`](../opnsense-baseline.md)
-- [`docs/wireguard.md`](../wireguard.md)
+- [`docs/opnsense-baseline.md`](../docs/opnsense-baseline.md)
+- [`docs/wireguard.md`](../docs/wireguard.md)

@@ -43,7 +43,7 @@ Authelia: accept the self-signed cert; use the **name**, not the IP. See [`netwo
 1. Declare it in `config/services.yml` (port, check, dashboard group).
 2. Add the compose service (no secret fallbacks).
 3. If it has an admin: account in `identities.yml` + `utils/bootstrap/<app>.sh`.
-4. `docs/kb/apps/<app>.md`.
+4. `knowledge/apps/<app>.md`.
 5. Smoke picks it up from `services.yml`.
 
 ## Rotate / recover

@@ -4,7 +4,7 @@
 
 ## Layout
 
-Declared in [`config/storage.yml`](../../config/storage.yml). The timer always writes to `backup_root` on the **apps** guest (`/mnt/homelab/backups`), which is the NFS mount of the NAS export.
+Declared in [`config/storage.yml`](../config/storage.yml). The timer always writes to `backup_root` on the **apps** guest (`/mnt/homelab/backups`), which is the NFS mount of the NAS export.
 
 | Stream | Script | DEV | Prod |
 |--------|--------|-----|------|
@@ -55,4 +55,4 @@ Do not restore over a live app database without stopping that app.
 
 ## Related
 
-- [`storage.md`](storage.md) · [`dr.md`](dr.md) · [`rebuild.md`](rebuild.md) · [`docs/f5-storage.md`](../f5-storage.md)
+- [`storage.md`](storage.md) · [`dr.md`](dr.md) · [`rebuild.md`](rebuild.md) · [`docs/f5-storage.md`](../docs/f5-storage.md)

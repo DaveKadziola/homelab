@@ -11,4 +11,4 @@
 
 Deploy as Portainer stack `easytodo-grocery`. **Bridge** + `8101:8101` + `DB_HOST=host.docker.internal`. Upstream `network_mode: host` hides published ports in Portainer.
 
-Env reference: [`docs/f4-apps-dev.md`](../../f4-apps-dev.md).
+Env reference: [`docs/f4-apps-dev.md`](../../docs/f4-apps-dev.md).

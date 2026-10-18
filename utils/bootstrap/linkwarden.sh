@@ -72,7 +72,7 @@ reset_password_in_db() {
   local hash
   hash="$(docker exec -e HL_PW="$PASSWORD" "$CONTAINER" \
     node -e 'process.stdout.write(require("bcrypt").hashSync(process.env.HL_PW, 10))' 2>/dev/null || true)"
-  [[ "$hash" == \$2* ]] || hl_die "cannot compute a bcrypt hash inside ${CONTAINER} — reset the password manually, see docs/kb/apps/linkwarden.md"
+  [[ "$hash" == \$2* ]] || hl_die "cannot compute a bcrypt hash inside ${CONTAINER} — reset the password manually, see knowledge/apps/linkwarden.md"
   hl_container_running "$POSTGRES_CONTAINER" || hl_die "Postgres container ${POSTGRES_CONTAINER} is not running"
   # A bcrypt hash and an e-mail never contain a quote, so inlining them is safe.
   printf 'UPDATE "User" SET password = %s, email = %s, username = %s WHERE id = (SELECT id FROM "User" ORDER BY id LIMIT 1);\n' \

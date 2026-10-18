@@ -1,6 +1,6 @@
 # Storage
 
-Layout and env modes live in [`config/storage.yml`](../../config/storage.yml). Ansible: `ansible/playbooks/deploy-storage.yml`.
+Layout and env modes live in [`config/storage.yml`](../config/storage.yml). Ansible: `ansible/playbooks/deploy-storage.yml`.
 
 ## Dev (`ubuntu-apps-dev`)
 
@@ -32,9 +32,9 @@ Wiping a volume is a DEV-only recovery tool (see [`apps/jellyfin.md`](apps/jelly
 | Purple | backup target (`/export/backups`) | same script, role `backups` |
 | apps 48G | images + small state | TF sized, not applied yet |
 
-`ubuntu-nas` `.20.12` exports `/export`. `ubuntu-apps` `.50.30` mounts it at `/mnt/homelab`. Compose then uses [`compose/core/docker-compose.nfs.yml`](../../compose/core/docker-compose.nfs.yml).
+`ubuntu-nas` `.20.12` exports `/export`. `ubuntu-apps` `.50.30` mounts it at `/mnt/homelab`. Compose then uses [`compose/core/docker-compose.nfs.yml`](../compose/core/docker-compose.nfs.yml).
 
-Firewall APP → NAS `:2049` / `:111` is an F2 rule — see [`docs/network.md`](../network.md).
+Firewall APP → NAS `:2049` / `:111` is an F2 rule — see [`docs/network.md`](../docs/network.md).
 
 ## Why Ubuntu, not a NAS distro
 
@@ -63,4 +63,4 @@ If you switch: replace the **guest OS** only. Keep IP **`192.168.20.12`**, VLAN 
 
 ## Related
 
-- [`backup.md`](backup.md) · [`dr.md`](dr.md) · [`docs/f5-storage.md`](../f5-storage.md)
+- [`backup.md`](backup.md) · [`dr.md`](dr.md) · [`docs/f5-storage.md`](../docs/f5-storage.md)

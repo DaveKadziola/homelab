@@ -32,7 +32,7 @@ identities:
 
 # inject: env       — password reaches the app through compose environment
 #         bootstrap — utils/bootstrap/<app>.sh creates the account through API/CLI
-#         manual    — interactive only; must be documented under docs/kb/apps/
+#         manual    — interactive only; must be documented under knowledge/apps/
 accounts:
   - app: portainer
     identity: homelab-admin
@@ -111,7 +111,7 @@ accounts:
     login: none
     inject: manual
     envs: [dev, prod]
-    notes: Interactive Spotify OAuth — see docs/kb/apps/zotify.md.
+    notes: Interactive Spotify OAuth — see knowledge/apps/zotify.md.
 
 # Secrets that are not login credentials but must exist per environment.
 service_secrets:

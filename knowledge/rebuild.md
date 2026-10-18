@@ -30,7 +30,7 @@ OPNsense config.xml
 
 Without the router, VLANs, DHCP statics, WireGuard, and HAProxy do not exist.
 
-- Restore `config.xml` (or replay [`docs/opnsense-baseline.md`](../opnsense-baseline.md)).
+- Restore `config.xml` (or replay [`docs/opnsense-baseline.md`](../docs/opnsense-baseline.md)).
 - Secrets: OPNsense admin (Bitwarden), WG keys.
 - Verify: gateways `.20.1` / `.50.50`, WG `10.10.10.1`, occupied IPs unchanged.
 - Time: 30–90 min.

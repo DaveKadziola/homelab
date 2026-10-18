@@ -1,7 +1,7 @@
 # F5 — NAS / NFS / backups
 
 > **Status:** implemented on DEV (loopback NFS + timer + C4 restore suite). Prod disks, rclone OAuth, HAOS, and vzdump are not runnable from this laptop.  
-> **Related:** [`kb/storage.md`](kb/storage.md), [`kb/backup.md`](kb/backup.md), [`config/storage.yml`](../config/storage.yml)
+> **Related:** [`knowledge/storage.md`](../knowledge/storage.md), [`knowledge/backup.md`](../knowledge/backup.md), [`config/storage.yml`](../config/storage.yml)
 
 ## What landed
 
@@ -14,13 +14,13 @@
 | Timer | `homelab-backup.timer` 03:15 | deploy-storage.yml |
 | Prod compose binds | Immich / Jellyfin / Navidrome / Syncthing → NFS | `compose/core/docker-compose.nfs.yml` (**not** used on DEV) |
 | C4 | scratch dump→restore | `tests/restore/` — `utils/run-tests.sh --env dev --suite restore` |
-| HA T620 | docs only — cannot flash HAOS from the laptop | `homeassistant/README.md`, `docs/kb/apps/homeassistant.md` |
+| HA T620 | docs only — cannot flash HAOS from the laptop | `homeassistant/README.md`, `knowledge/apps/homeassistant.md` |
 
 ## DEV vs prod
 
 Nested PVE is ~8 GiB and `ubuntu-apps-dev` is already 6144 MiB. **Do not** Terraform-apply a 4 GiB NAS VM on nested DEV. `ubuntu_nas` in the DEV inventory is the same guest.
 
-Ubuntu (not OMV/TrueNAS) is deliberate — see [`kb/storage.md`](kb/storage.md#why-ubuntu-not-a-nas-distro).
+Ubuntu (not OMV/TrueNAS) is deliberate — see [`knowledge/storage.md`](../knowledge/storage.md#why-ubuntu-not-a-nas-distro).
 
 ## Operator (DEV)
 
