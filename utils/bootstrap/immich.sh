@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Configure Immich headlessly (F7-B).
 #
-#   1. reconcile the admin account to the identity declared in config/identities.yml
+#   1. create the first admin on a fresh install (POST /auth/admin-sign-up), or
+#      reconcile the admin account to the identity declared in config/identities.yml
 #      (the DEV instance was created by hand as admin@admin.com — it gets renamed)
 #   2. set the admin password from the secret cache, clearing "must change password"
 #   3. apply compose/core/immich/system-config.json on top of the running config
@@ -129,9 +130,32 @@ PY
   [[ "$code" == "200" ]] || hl_warn "system config rejected (HTTP ${code}) — left unchanged"
 }
 
+is_initialized() {
+  hl_curl "${BASE}/server/config" |
+    python3 -c 'import json,sys; print(str(json.load(sys.stdin).get("isInitialized", True)).lower())'
+}
+
+# Fresh install: no user exists yet; the sign-up endpoint only answers while
+# isInitialized is false (Immich v3: Authenticated({ public, setup })).
+if [[ "$(is_initialized)" == "false" ]]; then
+  hl_log "fresh install - creating the admin ${EMAIL}"
+  code="$(printf '%s' "{\"email\":$(hl_json_escape "$EMAIL"),\"password\":$(hl_json_escape "$PASSWORD"),\"name\":$(hl_json_escape "$NAME")}" |
+    curl -s -o /dev/null -w '%{http_code}' --max-time 30 -X POST "${BASE}/auth/admin-sign-up" \
+      -H 'Content-Type: application/json' --data @-)"
+  [[ "$code" =~ ^(200|201)$ ]] || hl_die "admin sign-up rejected (HTTP ${code})"
+fi
+
 TOKEN="$(login "$EMAIL")"
 if [[ -n "$TOKEN" ]]; then
   hl_log "admin ${EMAIL} already matches the declared credential"
+  # admin-sign-up creates the account with shouldChangePassword=true.
+  must_change="$(hl_curl -H "Authorization: Bearer ${TOKEN}" "${BASE}/users/me" |
+    python3 -c 'import json,sys; print(str(json.load(sys.stdin).get("shouldChangePassword", False)).lower())')"
+  if [[ "$must_change" == "true" ]]; then
+    code="$(update_me "$TOKEN" "{\"password\":$(hl_json_escape "$PASSWORD")}")"
+    [[ "$code" == "200" ]] || hl_warn "could not clear shouldChangePassword (HTTP ${code})"
+    hl_log "cleared shouldChangePassword"
+  fi
 else
   CURRENT_EMAIL="$(current_admin_email)"
   [[ -n "$CURRENT_EMAIL" ]] || hl_die "no admin user found in Immich"

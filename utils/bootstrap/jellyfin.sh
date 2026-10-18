@@ -62,12 +62,17 @@ run_wizard() {
     '{"UICulture":"en-US","MetadataCountryCode":"PL","PreferredMetadataLanguage":"en"}')"
   [[ "$code" =~ ^(200|204)$ ]] || hl_die "/Startup/Configuration returned ${code}"
 
+  # Jellyfin 12 creates the first user lazily on GET /Startup/User (log: "No users,
+  # creating one with username root"); POST /Startup/User answers 404 until then.
+  code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 "${BASE}/Startup/User" -H "$AUTH_HEADER")"
+  [[ "$code" == "200" ]] || hl_die "GET /Startup/User returned ${code}"
+
   code="$(post_json /Startup/User \
     "{\"Name\":$(hl_json_escape "$USERNAME"),\"Password\":$(hl_json_escape "$PASSWORD")}")"
   [[ "$code" =~ ^(200|204)$ ]] || hl_die "/Startup/User returned ${code}"
 
   code="$(post_json /Startup/RemoteAccess \
-    '{"EnableRemoteAccess":true,"EnableAutomaticPortMapping":false}')"
+    '{"EnableRemoteAccess":true}')"
   [[ "$code" =~ ^(200|204)$ ]] || hl_warn "/Startup/RemoteAccess returned ${code}"
 
   code="$(post_json /Startup/Complete '{}')"
