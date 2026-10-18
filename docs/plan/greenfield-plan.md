@@ -33,8 +33,8 @@ todos:
     content: "F0/A0: wyczyszczone legacy GH secrets/variables (2026-06-11)"
     status: completed
   - id: gha-pipelines
-    content: "F1: GHA dual runner; homelab-v2→dev, main→prod; workflowy v2 (ci-validate, deploy-dev, …) — zaimplementowane; CI nie działa od 2026-07-01 (brak runnera) → R1"
-    status: in_progress
+    content: "F1: GHA dual runner; homelab-v2→dev, main→prod; workflowy v2 (ci-validate, deploy-dev, …) — zaimplementowane; CI nie działa od 2026-07-01 (brak runnera) → R1 — ✅ 2026-10-18: CI Validate, Infra Plan/Apply Dev, Apps Deploy Dev i Tests Dev działają na runnerze homelab-dev"
+    status: completed
   - id: gha-runner-bootstrap
     content: "F1: setup-github-runner.sh — prod runner ubuntu-apps; dev runner laptop (homelab-dev) — dev runner zarejestrowany raz, na GitHub obecnie 0 runnerów → R1; prod po F3"
     status: in_progress
@@ -72,14 +72,14 @@ todos:
     content: "Iter. #3: audyt bezpieczeństwa + audyt repo + gate „czy da się odtworzyć?” — F9 — audyty 2026-09-10 są; bramka merge FAIL → R3"
     status: in_progress
   - id: restore-ci
-    content: "Iter. #4 R1: ponowna rejestracja runnera homelab-dev jako usługa; CI Validate + Infra Plan Dev zielone, Tests Dev się uruchamia"
-    status: pending
+    content: "Iter. #4 R1: ponowna rejestracja runnera homelab-dev jako usługa; CI Validate + Infra Plan Dev zielone, Tests Dev się uruchamia — ✅ 2026-10-18: runner jako usługa systemd; CI Validate i Infra Plan Dev zielone; Tests Dev uruchamia się (#9–#13)"
+    status: completed
   - id: restore-dev
-    content: "Iter. #4 R2: nested Proxmox z IP (utils/ensure-dev-proxmox.sh) + ubuntu-apps-dev; run-tests --env dev --suite all bez FAIL"
-    status: pending
+    content: "Iter. #4 R2: nested Proxmox z IP (utils/ensure-dev-proxmox.sh) + ubuntu-apps-dev; run-tests --env dev --suite all bez FAIL — ✅ 2026-10-18: przyczyna zawieszeń = pełna pula LVM-thin; stan w HCP homelab-dev; run-tests 161 PASS / 0 FAIL"
+    status: completed
   - id: f9-gate-dev
-    content: "Iter. #4 R3: rebuild DEV tylko z repo + vault, deploy GHA z pełnym zestawem sekretów, ponownie restore suite — przed F3 metal"
-    status: pending
+    content: "Iter. #4 R3: rebuild DEV tylko z repo + vault, deploy GHA z pełnym zestawem sekretów, ponownie restore suite — przed F3 metal — 2026-10-18: deploy GHA z prawdziwymi sekretami ✅ (bootstrap jellyfin/navidrome → #14); rebuild z repo i restore suite otwarte"
+    status: in_progress
   - id: monitoring-alerts
     content: "F10-A: config/monitoring.yml — progi (dysk >80%, RAM, restart-loop, backup miss) + alerty na skrzynkę env"
     status: pending
@@ -103,10 +103,12 @@ Szczegóły i dowody: `docs/audit/2026-10-18-plan-audit.md`. Kolejność: `knowl
 |----|--------|------------|
 | `gha-cleanup-secrets`, `apps-*`, `backup-dr`, `phases`, `manual-setup-f0`, `preflight`, `secrets-*`, `security`, `branch-v2` | ✅ | — |
 | `readme-docs`, `identities`, `knowledge-base` | ✅ | — |
-| `gha-pipelines`, `gha-runner-bootstrap` | 🔄 | CI nie działa od 2026-07-01 (brak runnera) → **R1** |
+| `gha-pipelines` | ✅ | — |
+| `gha-runner-bootstrap` | 🔄 | dev ✅ (usługa systemd); prod po F3 |
 | `config-as-code`, `tests-auto` | 🔄 | weryfikacja na działającym DEV → **R2** |
 | `rebuild-runbook`, `audit-final` | 🔄 | drill i bramka F9 po stronie DEV → **R3** |
-| `restore-ci`, `restore-dev`, `f9-gate-dev` | ⏳ | iteracja #4 — przed F3 metal |
+| `restore-ci`, `restore-dev` | ✅ | iteracja #4 (2026-10-18) |
+| `f9-gate-dev` | 🔄 | rebuild DEV z repo + vault, ponownie `--suite restore`; bootstrap 2 appek → #14 |
 | `hardware`, `implement` | 🔄 | F3 metal, F5 prod |
 | `monitoring-alerts`, `ai-log-analysis` | ⏳ | F10, po prod |
 
