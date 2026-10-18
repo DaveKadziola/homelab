@@ -32,7 +32,7 @@ Helper scripts:
 | Name | GH env | Type | Bitwarden | Status | Notes |
 |------|--------|------|-----------|--------|-------|
 | `POSTGRES_PASSWORD` | dev | secret | `homelab/POSTGRES_PASSWORD/dev` | set | F1 2026-06-29 |
-| `POSTGRES_PASSWORD` | prod | secret | `homelab/POSTGRES_PASSWORD/prod` | set | F1 2026-06-29rotated 2026-10-18 |
+| `POSTGRES_PASSWORD` | prod | secret | `homelab/POSTGRES_PASSWORD/prod` | set | F1 2026-06-29; rotated 2026-10-18 |
 | `PROXMOX_API_TOKEN_SECRET` | dev | secret | `homelab/PROXMOX_API_TOKEN_SECRET/dev` | set | placeholder — update at F3 |
 | `PROXMOX_API_TOKEN_SECRET` | prod | secret | `homelab/PROXMOX_API_TOKEN_SECRET/prod` | set | placeholder — update at F3 |
 | `PROXMOX_SSH_PASSWORD` | dev | secret | `homelab/PROXMOX_SSH_PASSWORD/dev` | set | placeholder |
