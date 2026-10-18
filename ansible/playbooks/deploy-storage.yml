@@ -110,16 +110,23 @@
           {{ st.mount_root }}/backups is missing — NFS export
           {{ st.nas_host }}:{{ st.export_root }} did not mount.
 
-    - name: Ensure homelab dirs on the apps host
+    # Same owner as deploy-core.yml sets for /opt/homelab/config; with root:root here
+    # every full deploy flipped the owner back and ansible --check reported drift.
+    - name: Ensure the homelab config dir on the apps host
       ansible.builtin.file:
-        path: "{{ item }}"
+        path: /opt/homelab/config
+        state: directory
+        owner: "{{ ansible_user }}"
+        group: docker
+        mode: "0755"
+
+    - name: Ensure the backup scripts dir on the apps host
+      ansible.builtin.file:
+        path: /opt/homelab/utils/backup
         state: directory
         owner: root
         group: root
         mode: "0755"
-      loop:
-        - /opt/homelab/config
-        - /opt/homelab/utils/backup
 
     - name: Sync storage config
       ansible.builtin.copy:
