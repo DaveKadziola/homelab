@@ -33,11 +33,11 @@ todos:
     content: "F0/A0: wyczyszczone legacy GH secrets/variables (2026-06-11)"
     status: completed
   - id: gha-pipelines
-    content: "F1: GHA dual runner; homelab-v2→dev, main→prod; workflowy v2 (ci-validate, deploy-dev, …)"
-    status: pending
+    content: "F1: GHA dual runner; homelab-v2→dev, main→prod; workflowy v2 (ci-validate, deploy-dev, …) — zaimplementowane; CI nie działa od 2026-07-01 (brak runnera) → R1"
+    status: in_progress
   - id: gha-runner-bootstrap
-    content: "F1: setup-github-runner.sh — prod runner ubuntu-apps; dev runner laptop (homelab-dev)"
-    status: pending
+    content: "F1: setup-github-runner.sh — prod runner ubuntu-apps; dev runner laptop (homelab-dev) — dev runner zarejestrowany raz, na GitHub obecnie 0 runnerów → R1; prod po F3"
+    status: in_progress
   - id: branch-v2
     content: "F0-09/10 ✅ homelab-v2 + docs commit 4d0ab71"
     status: completed
@@ -45,8 +45,8 @@ todos:
     content: "Sprint F0 ✅ F0-01…F0-12 complete (gate 2026-06-11); docs English cdc77f7"
     status: completed
   - id: readme-docs
-    content: README.md — pełna dokumentacja projektu (architektura, setup, deploy, DR, sekrety)
-    status: pending
+    content: README.md — pełna dokumentacja projektu (architektura, setup, deploy, DR, sekrety) — ✅ README + knowledge/ (audyt 2026-10-18)
+    status: completed
   - id: preflight
     content: "Gate F0→F1 ✅ 2026-06-11; A9 rclone OAuth → F5; A5 MAC → F3"
     status: completed
@@ -54,22 +54,31 @@ todos:
     content: "F1 ✅ skeleton CI; F2 docs OPNsense baseline — configure router manually"
     status: in_progress
   - id: identities
-    content: "Iter. #3: config/identities.yml + generator credentiali (admin/prod/dev/notification) — F7"
-    status: pending
+    content: "Iter. #3: config/identities.yml + generator credentiali (admin/prod/dev/notification) — F7 — ✅ e28840f, 5f37cd4; config suite PASS 2026-10-18"
+    status: completed
   - id: config-as-code
-    content: "Iter. #3: macierz TAK/CZĘŚCIOWO/NIE per app + bootstrap/ skrypty idempotentne — F7"
-    status: pending
+    content: "Iter. #3: macierz TAK/CZĘŚCIOWO/NIE per app + bootstrap/ skrypty idempotentne — F7 — zaimplementowane (9f8afe2); weryfikacja po R2"
+    status: in_progress
   - id: tests-auto
-    content: "Iter. #3: tests/ (smoke, infra drift, net, restore) + config/services.yml jako źródło prawdy — F7"
-    status: pending
+    content: "Iter. #3: tests/ (smoke, infra drift, net, restore) + config/services.yml jako źródło prawdy — F7 — zaimplementowane (4c4cada); w CI nigdy nie przeszło → R1/R2"
+    status: in_progress
   - id: knowledge-base
-    content: "Iter. #3: docs/kb/ + lessons-learned (append-only, wpisy z F3/F4 dev) — F8"
-    status: pending
+    content: "Iter. #3: docs/kb/ + lessons-learned (append-only, wpisy z F3/F4 dev) — F8 — ✅ 151d4e4; od 2026-10-18 w knowledge/"
+    status: completed
   - id: rebuild-runbook
-    content: "Iter. #3: docs/kb/rebuild.md — runbook migracji/odtworzenia + drill na nested dev — F8"
-    status: pending
+    content: "Iter. #3: docs/kb/rebuild.md — runbook migracji/odtworzenia + drill na nested dev — F8 — runbook knowledge/rebuild.md jest; drill → R3"
+    status: in_progress
   - id: audit-final
-    content: "Iter. #3: audyt bezpieczeństwa + audyt repo + gate „czy da się odtworzyć?” — F9"
+    content: "Iter. #3: audyt bezpieczeństwa + audyt repo + gate „czy da się odtworzyć?” — F9 — audyty 2026-09-10 są; bramka merge FAIL → R3"
+    status: in_progress
+  - id: restore-ci
+    content: "Iter. #4 R1: ponowna rejestracja runnera homelab-dev jako usługa; CI Validate + Infra Plan Dev zielone, Tests Dev się uruchamia"
+    status: pending
+  - id: restore-dev
+    content: "Iter. #4 R2: nested Proxmox z IP (utils/ensure-dev-proxmox.sh) + ubuntu-apps-dev; run-tests --env dev --suite all bez FAIL"
+    status: pending
+  - id: f9-gate-dev
+    content: "Iter. #4 R3: rebuild DEV tylko z repo + vault, deploy GHA z pełnym zestawem sekretów, ponownie restore suite — przed F3 metal"
     status: pending
   - id: monitoring-alerts
     content: "F10-A: config/monitoring.yml — progi (dysk >80%, RAM, restart-loop, backup miss) + alerty na skrzynkę env"
@@ -86,20 +95,20 @@ isProject: false
 > **Backlog:** todos w **frontmatter** tego pliku = jedyne źródło prawdy (nie duplikować w osobnych planach).  
 > **Gałąź robocza:** `homelab-v2` — **całkowicie nowy, czysty kod**. Do merge `main` zostaje legacy (tylko odczyt); po merge **`main` = wyłącznie zawartość v2** — stary kod znika z domyślnej gałęzi (historia pod tagiem `legacy-pre-v2`).
 
-### Todos — stan (2026-06-11)
+### Todos — stan (2026-10-18, audyt przejęcia)
+
+Szczegóły i dowody: `docs/audit/2026-10-18-plan-audit.md`. Kolejność: `knowledge/decisions/0001-restore-ci-and-dev-before-f3-metal.md`.
 
 | ID | Status | Co zostało |
 |----|--------|------------|
-| `gha-cleanup-secrets` | ✅ | A0/A7 — legacy GH wyczyszczone |
-| `apps-decisions`, `apps-inventory`, `apps-repo-verify` | ✅ | P0/P1/P2, A16 20/20 |
-| `backup-dr`, `phases` | ✅ | A15 sizing, retention |
-| `manual-setup-f0`, `preflight` | ✅ | F0-12 gate closed 2026-06-11 |
-| `secrets-gh`, `secrets-vault` | ✅ | F0-10 + A10 |
-| `hardware` | 🔄 | A5 as-built ✅ 2026-06-30; MAC placeholder → F3; Proxmox cleanup |
-| `security` | ✅ | `grocery.dkhomelabserver.xyz` |
-| `branch-v2` | ✅ | `homelab-v2` @ `4d0ab71` |
-| `gha-pipelines`, `gha-runner-bootstrap`, `implement` | ⏳ | **F1** — po zamknięciu preflight |
-| `readme-docs` | ⏳ | Greenfield README (F1 szkielet → F6) |
+| `gha-cleanup-secrets`, `apps-*`, `backup-dr`, `phases`, `manual-setup-f0`, `preflight`, `secrets-*`, `security`, `branch-v2` | ✅ | — |
+| `readme-docs`, `identities`, `knowledge-base` | ✅ | — |
+| `gha-pipelines`, `gha-runner-bootstrap` | 🔄 | CI nie działa od 2026-07-01 (brak runnera) → **R1** |
+| `config-as-code`, `tests-auto` | 🔄 | weryfikacja na działającym DEV → **R2** |
+| `rebuild-runbook`, `audit-final` | 🔄 | drill i bramka F9 po stronie DEV → **R3** |
+| `restore-ci`, `restore-dev`, `f9-gate-dev` | ⏳ | iteracja #4 — przed F3 metal |
+| `hardware`, `implement` | 🔄 | F3 metal, F5 prod |
+| `monitoring-alerts`, `ai-log-analysis` | ⏳ | F10, po prod |
 
 ---
 
@@ -1537,10 +1546,11 @@ Szczegółowa tabela secretów per app — uzupełnij w miarę wdrożeń.
 | **F3** | Proxmox TF: NAS VM + apps VM                                                            |             |
 | **F4** | Postgres + **P0 apps** (Homarr, Grocery, pgAdmin, Trillium, Actual, …)                  | Immich → P1 |
 | **F5** | HA **T620**, NAS backup jobs (Purple 4 TB), pCloud                                      |             |
-| **F6** | P1/P2 apps, Diun, Dozzle, audyty, Grafana/Beszel + **domknięcie README** przed merge    |             |
+| **F6** | P1/P2 apps, Diun, Dozzle, audyty, Grafana/Beszel + **domknięcie README** przed merge    | w dużej mierze wchłonięta przez F4/F7 (2026-10-18); zostaje Grafana — decyzja później |
 | **F7** | Iter. #3: tożsamości + credentiale jako kod, prekonfiguracja apps jako kod, `tests/`    | odtwarzalność |
 | **F8** | Iter. #3: baza wiedzy `docs/kb/` + lessons learned + rebuild/migration runbook          | dokumentacja |
 | **F9** | Iter. #3: audyt bezpieczeństwa + audyt repo + drill „odtworzenie z zera”                 | gate merge → `main` |
+| **R1–R3** | Iter. #4: przywrócenie CI, odtworzenie DEV, bramka F9 po stronie DEV                     | **przed F3 metal** (decyzja 0001) |
 | **F10** | Monitoring + progi alertów; analiza logów agentem AI (z sanityzacją)                    | **po uruchomieniu prod** |
 
 
@@ -1960,6 +1970,23 @@ Zamiast czterech adresów na własnej domenie: **jedna realna skrzynka per środ
 - Tożsamości `homelab-admin` i `homelab-notification` rozwiązują e-mail **z środowiska** (`email: environment` w `config/identities.yml`); różni je `username` (`admin` / `homelab-notification`) tam, gdzie app loguje po nazwie
 - **Usunięte:** `admin@dkhomelabserver.xyz`, `homelab-notification@dkhomelabserver.xyz`, `homelab-prod@…`, `homelab-dev@…` — pokryte przez powyższe
 - Separacja dev/prod zostaje: inne skrzynki **i** inne hasła; `<APP>_<KONTO>_PASSWORD` per env bez zmian
+
+---
+
+# Iteracja #4 — przejęcie projektu (2026-10-18)
+
+> **Decyzja:** `knowledge/decisions/0001-restore-ci-and-dev-before-f3-metal.md` — najpierw CI i DEV, potem F3 metal.
+> **Dowody:** `docs/audit/2026-10-18-plan-audit.md`.
+
+Stan wejściowy: kod F1–F9 jest na `homelab-v2`, ale CI nie uruchomiło się od 2026-07-01 (runner `homelab-dev-laptop` nie działa, na GitHub 0 zarejestrowanych runnerów), a DEV jest nieosiągalny (nested Proxmox bez IP; smoke/infra/net FAIL na „host unreachable”).
+
+| Krok | Zakres | Gotowe, gdy |
+|------|--------|-------------|
+| **R1** — `restore-ci` | Ponowna rejestracja runnera `homelab-dev` (`utils/setup-github-runner.sh`), uruchamianego jako usługa | `CI Validate` i `Infra Plan Dev` zielone na `homelab-v2`; `Tests Dev` się uruchamia |
+| **R2** — `restore-dev` | Sieć/IP nested Proxmoxa (`utils/ensure-dev-proxmox.sh`), `ubuntu-apps-dev` w górze | `utils/run-tests.sh --env dev --suite all` bez FAIL |
+| **R3** — `f9-gate-dev` | Rebuild DEV wyłącznie z repo + vault (`knowledge/rebuild.md`), deploy GHA z pełnym zestawem sekretów, ponownie `--suite restore` | punkty bramki F9 możliwe na DEV zamknięte |
+
+Potem bez zmian: F3 metal → F5 prod → nmap z VLAN-ów (ostatni punkt bramki) → merge do `main` → F10.
 
 ---
 
