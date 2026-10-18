@@ -159,7 +159,7 @@ for record in "${RECORDS[@]}"; do
   fi
 
   value="$(gen_value "$format")"
-  printf '%s' "$value" | gh secret set "$name" --env "$ENVIRONMENT" --repo "$REPO" --body -
+  printf '%s' "$value" | gh secret set "$name" --env "$ENVIRONMENT" --repo "$REPO"
   printf '%s' "$value" > "${CACHE_DIR}/${name}"
   chmod 600 "${CACHE_DIR}/${name}"
 

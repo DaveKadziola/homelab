@@ -35,7 +35,7 @@ echo "set PROXMOX_API_URL + PROXMOX_NODE_NAME (dev)"
 if $SET_TOKEN; then
   echo "Paste API token secret for nested PVE:"
   read -rs TOKEN
-  printf '%s' "$TOKEN" | gh secret set PROXMOX_API_TOKEN_SECRET --env dev --repo "$REPO" --body -
+  printf '%s' "$TOKEN" | gh secret set PROXMOX_API_TOKEN_SECRET --env dev --repo "$REPO"
   unset TOKEN
   echo "set PROXMOX_API_TOKEN_SECRET (dev)"
 fi

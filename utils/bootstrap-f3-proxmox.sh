@@ -25,7 +25,7 @@ echo "set variable PROXMOX_API_URL (prod)"
 if $SET_TOKEN; then
   echo "Paste API token secret (input hidden):"
   read -rs TOKEN
-  printf '%s' "$TOKEN" | gh secret set PROXMOX_API_TOKEN_SECRET --env prod --repo "$REPO" --body -
+  printf '%s' "$TOKEN" | gh secret set PROXMOX_API_TOKEN_SECRET --env prod --repo "$REPO"
   unset TOKEN
   echo "set secret PROXMOX_API_TOKEN_SECRET (prod)"
 fi
