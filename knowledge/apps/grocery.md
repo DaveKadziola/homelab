@@ -9,6 +9,8 @@
 | Compose | `compose/grocery/` (not `compose/core`) |
 | Upstream | `DaveKadziola/easytodo-grocery-list` |
 
-Deploy as Portainer stack `easytodo-grocery`. **Bridge** + `8101:8101` + `DB_HOST=host.docker.internal`. Upstream `network_mode: host` hides published ports in Portainer.
+Deployed automatically: `deploy-core.yml` builds the image (pinned `grocery_ref`), creates role, database and schema when missing; `utils/bootstrap/portainer.sh` creates the Portainer stack `easytodo-grocery`, or redeploys it without pulling when its container is not running.
+
+Portainer stack `easytodo-grocery`. **Bridge** + `8101:8101` + `DB_HOST=host.docker.internal`. Upstream `network_mode: host` hides published ports in Portainer.
 
 Env reference: [`docs/f4-apps-dev.md`](../../docs/f4-apps-dev.md).

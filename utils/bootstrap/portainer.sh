@@ -121,12 +121,45 @@ ensure_local_endpoint() {
   [[ "$code" == "200" ]] || hl_die "endpoint creation failed (HTTP ${code})"
 }
 
+redeploy_stack() {
+  local jwt="$1" name="$2"
+  HL_JWT="$jwt" HL_NAME="$name" HL_BASE="$BASE" python3 <<'PY'
+import json, os, sys, urllib.request
+
+base, jwt, name = os.environ["HL_BASE"], os.environ["HL_JWT"], os.environ["HL_NAME"]
+
+
+def call(method, path, body=None):
+    req = urllib.request.Request(base + "/api" + path, method=method,
+                                 data=json.dumps(body).encode() if body is not None else None,
+                                 headers={"Authorization": "Bearer " + jwt, "Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=180) as r:
+        raw = r.read()
+        return json.loads(raw) if raw else None
+
+
+stack = next((s for s in call("GET", "/stacks") if s["Name"] == name), None)
+if not stack:
+    sys.exit(1)
+content = call("GET", f"/stacks/{stack['Id']}/file")["StackFileContent"]
+call("PUT", f"/stacks/{stack['Id']}?endpointId={stack['EndpointId']}",
+     {"stackFileContent": content, "env": stack.get("Env") or [], "prune": False, "pullImage": False})
+PY
+}
+
 ensure_grocery_stack() {
   local jwt="$1" stacks compose_file endpoint_id code
   stacks="$(hl_curl -H "Authorization: Bearer ${jwt}" "${BASE}/api/stacks" |
     python3 -c 'import json,sys; print(" ".join(s["Name"] for s in json.load(sys.stdin)))')"
   if [[ " ${stacks} " == *" ${GROCERY_STACK} "* ]]; then
-    hl_log "stack ${GROCERY_STACK} present"
+    if docker ps --format '{{.Names}}' | grep -q "^${GROCERY_STACK}-"; then
+      hl_log "stack ${GROCERY_STACK} present and running"
+      return 0
+    fi
+    # A stack can exist while its container never started (e.g. the image was missing on a
+    # fresh guest). "start" would try to pull the local-only image; redeploy without pulling.
+    hl_log "stack ${GROCERY_STACK} present but not running — redeploying without pull"
+    redeploy_stack "$jwt" "$GROCERY_STACK" || hl_die "redeploy of ${GROCERY_STACK} failed"
     return 0
   fi
   compose_file="$(hl_compose_dir)/grocery/docker-compose.yml"

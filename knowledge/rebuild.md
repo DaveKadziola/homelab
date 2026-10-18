@@ -10,7 +10,7 @@ Do this in order. A later step will fail if an earlier one is skipped.
 
 **DEV Authelia:** add `192.168.122.50 authelia.homelab.local homelab.local` on the **client**. Nested PVE itself is not created by this repo — `ensure-dev-proxmox.sh` only starts an existing libvirt domain named `Proxmox`.
 
-**Grocery:** image `easy-todo-grocery-nodb:latest` is built from `DaveKadziola/easytodo-grocery-list`, not this repo. DB `todo_grocery` is not created by `postgres-init`.
+**Grocery:** image `easy-todo-grocery-nodb:latest` is built from `DaveKadziola/easytodo-grocery-list` (pinned `grocery_ref` in `deploy-core.yml`), not this repo. DB `todo_grocery`, its role and schema are created by `deploy-core.yml`, not by `postgres-init` (step 5).
 
 ## Dependency graph
 
@@ -69,12 +69,12 @@ Without the router, VLANs, DHCP statics, WireGuard, and HAProxy do not exist.
 ## 5. Compose + grocery — **auto / Portainer**
 
 - Core: Ansible `docker compose up`.
-- Grocery: Portainer stack from `compose/grocery/` (see [`apps/grocery.md`](apps/grocery.md)). Not automated; on a fresh guest:
-  1. Build the image on the guest (it is never pushed to a registry):
-     `docker build -t easy-todo-grocery-nodb:latest -f docker/v1.0.0/no-db/Dockerfile "https://github.com/DaveKadziola/easytodo-grocery-list.git#main"`
-  2. Database prep in `homelab-core-postgres-1` as `homelab`: `CREATE ROLE prod_todo_grocery LOGIN PASSWORD '<GROCERY_DB_PASSWORD>'; CREATE DATABASE todo_grocery;` - pass the password through an environment variable (`docker exec -e PW` + psql `\getenv`), never on the command line. Then restore the `todo_grocery` dump (step 7) - the schema `prod` and its grants come from the dump.
-  3. The bootstrap reports the stack "present" even when its container could not start (missing image). In Portainer **redeploy** the stack without pulling; "start" tries to pull the local image and fails.
-  4. Verify: `curl http://<guest>:8101/` -> 200.
+- Grocery: automated since 2026-10-19 (`deploy-core.yml` + `portainer.sh`):
+  - the image `easy-todo-grocery-nodb:latest` is built on the guest from the app repo at the pinned `grocery_ref` when it is missing (it is never pushed to a registry);
+  - role `prod_todo_grocery` (password `GROCERY_DB_PASSWORD`) and database `todo_grocery` are created when missing;
+  - schema `prod` comes from the app repo's `ddl/3_3-ddl_prod.sql` at the same ref when the schema is missing (role `postgres` in that file is mapped to `homelab`);
+  - the Portainer bootstrap redeploys the stack without pulling when it exists but its container is not running.
+  - Verify: `curl http://<guest>:8101/` -> 200. Restoring a `todo_grocery` dump on top of the created schema needs the database emptied first (step 7).
 - Time: 10 min + image pulls.
 
 ## 6. F7 bootstrap — **auto** (some SKIP)
