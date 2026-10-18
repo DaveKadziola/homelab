@@ -39,23 +39,38 @@ admin_exists() {
   [[ "$(hl_http_code "${BASE}/api/users/admin/check")" == "204" ]]
 }
 
+# Newer Portainer CE prints a one-time setup token at startup and refuses the
+# first admin (HTTP 403) without it in the X-Setup-Token header. Read the token
+# of the current start from the container log; never print it.
+setup_token() {
+  local started
+  started="$(docker inspect -f '{{.State.StartedAt}}' "$CONTAINER" 2>/dev/null)"
+  docker logs --since "$started" "$CONTAINER" 2>&1 |
+    sed -n -E 's/^setup_token=([0-9a-fA-F]+).*/\1/p' | tail -n1
+}
+
+init_admin() {
+  local body="$1" token
+  local -a headers=(-H 'Content-Type: application/json')
+  token="$(setup_token)"
+  [[ -n "$token" ]] && headers+=(-H "X-Setup-Token: ${token}")
+  printf '%s' "$body" |
+    curl -s -o /dev/null -w '%{http_code}' --max-time 20 \
+      -X POST "${BASE}/api/users/admin/init" "${headers[@]}" --data @-
+}
+
 # Portainer refuses to create the first admin long after startup; restart it so
 # the security timeout window is open again.
 create_admin() {
   hl_log "no admin yet — creating ${USERNAME}"
-  local body
+  local body code
   body="{\"Username\":$(hl_json_escape "$USERNAME"),\"Password\":$(hl_json_escape "$PASSWORD")}"
-  local code
-  code="$(printf '%s' "$body" |
-    curl -s -o /dev/null -w '%{http_code}' --max-time 20 \
-      -X POST "${BASE}/api/users/admin/init" -H 'Content-Type: application/json' --data @-)"
+  code="$(init_admin "$body")"
   if [[ "$code" != "200" ]]; then
     hl_log "admin init returned ${code}, restarting Portainer to reopen the init window"
     docker restart "$CONTAINER" >/dev/null
     hl_wait_http "${BASE}/api/status" "200" 60 || hl_die "Portainer did not come back after restart"
-    code="$(printf '%s' "$body" |
-      curl -s -o /dev/null -w '%{http_code}' --max-time 20 \
-        -X POST "${BASE}/api/users/admin/init" -H 'Content-Type: application/json' --data @-)"
+    code="$(init_admin "$body")"
   fi
   [[ "$code" == "200" ]] || hl_die "admin init failed (HTTP ${code})"
 }
