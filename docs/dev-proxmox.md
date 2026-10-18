@@ -10,7 +10,7 @@ Laptop (runner homelab-dev)
     └── TF: ubuntu-apps-dev @ 192.168.122.50
 ```
 
-Same `terraform/` module as prod; different `environments/dev/terraform.tfvars` and **local state** (`environments/dev/terraform.tfstate`, gitignored).
+Same `terraform/` module as prod; different `environments/dev/terraform.tfvars` and its own state in HCP Terraform workspace **`homelab-dev`** (execution mode local, set by `TF_WORKSPACE`).
 
 ## One-time setup
 
@@ -30,7 +30,7 @@ Same `terraform/` module as prod; different `environments/dev/terraform.tfvars` 
 
 | Workflow | Trigger | Action |
 |----------|---------|--------|
-| `infra-plan-dev.yml` | push `homelab-v2` | `terraform plan` (local state) |
+| `infra-plan-dev.yml` | push `homelab-v2` | `terraform plan` (HCP workspace `homelab-dev`) |
 | `infra-apply-dev.yml` | manual (temporarily; was push `homelab-v2`) | `terraform apply` |
 | `apps-deploy-dev.yml` | push `homelab-v2` | Ansible → deploy `compose/core` |
 
@@ -40,11 +40,7 @@ Apps stack details + test/prod checklist: [`docs/f4-apps-dev.md`](f4-apps-dev.md
 
 ```bash
 ./utils/ensure-dev-proxmox.sh
-cd terraform
-terraform init -backend=false -reconfigure
-export TF_VAR_environment=dev
-# export TF_VAR_proxmox_* from Bitwarden / gh
-terraform apply -state=environments/dev/terraform.tfstate -var-file=environments/dev/terraform.tfvars
+./utils/dev-apply-local.sh   # TF_WORKSPACE=homelab-dev, plan then apply; needs `terraform login` once
 ```
 
 ## Migrate from old homelab-dev (libvirt Ubuntu)

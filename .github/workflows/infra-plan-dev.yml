@@ -10,6 +10,8 @@ jobs:
   plan:
     runs-on: [self-hosted, homelab-dev]
     environment: dev
+    env:
+      TF_WORKSPACE: homelab-dev
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -20,9 +22,11 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.15.6
+          # Same version as the laptop (utils/dev-apply-local.sh, tests) - one state, one version.
+          terraform_version: 1.16.3
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
-      - name: Terraform plan (local state, cloud block off)
+      - name: Terraform plan (state in HCP Terraform workspace homelab-dev)
         working-directory: terraform
         env:
           TF_VAR_environment: dev
@@ -35,10 +39,7 @@ jobs:
           TF_VAR_ubuntu_docker_password: ${{ secrets.UBUNTU_DOCKER_PASSWORD }}
           TF_VAR_ubuntu_docker_ssh_pub: ${{ vars.UBUNTU_DOCKER_SSH_PUB }}
         run: |
-          mv cloud.tf cloud.tf.off
-          terraform init -reconfigure
-          terraform plan \
-            -state=environments/dev/terraform.tfstate \
+          terraform init -input=false
+          terraform plan -input=false \
             -var-file=environments/dev/terraform.tfvars \
             -out=environments/dev/plan.tfplan
-          mv cloud.tf.off cloud.tf

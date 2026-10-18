@@ -42,5 +42,5 @@ fi
 
 echo ""
 echo "Next: infra-plan-dev.yml on push homelab-v2, or locally:"
-echo "  cd terraform && terraform init -backend=false"
-echo "  terraform plan -state=environments/dev/terraform.tfstate -var-file=environments/dev/terraform.tfvars"
+echo "  cd terraform && TF_WORKSPACE=homelab-dev terraform init"
+echo "  TF_WORKSPACE=homelab-dev terraform plan -var-file=environments/dev/terraform.tfvars"

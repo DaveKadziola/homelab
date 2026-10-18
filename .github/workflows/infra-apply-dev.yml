@@ -1,8 +1,7 @@
 name: Infra Apply Dev
 
-# TEMP: manual only until DEV state lives in Terraform Cloud (decision R2,
-# 2026-10-18). The runner's fresh checkout has no state, so a push-triggered
-# apply planned to create the existing VM again.
+# TEMP: manual until a CI plan against the HCP Terraform state (workspace
+# homelab-dev, decision R2 2026-10-18) has shown no unexpected changes.
 on:
   workflow_dispatch:
 
@@ -10,6 +9,8 @@ jobs:
   apply:
     runs-on: [self-hosted, homelab-dev]
     environment: dev
+    env:
+      TF_WORKSPACE: homelab-dev
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -20,9 +21,11 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.15.6
+          # Same version as the laptop (utils/dev-apply-local.sh, tests) - one state, one version.
+          terraform_version: 1.16.3
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
-      - name: Terraform apply (local state, cloud block off)
+      - name: Terraform apply (state in HCP Terraform workspace homelab-dev)
         working-directory: terraform
         env:
           TF_VAR_environment: dev
@@ -35,9 +38,6 @@ jobs:
           TF_VAR_ubuntu_docker_password: ${{ secrets.UBUNTU_DOCKER_PASSWORD }}
           TF_VAR_ubuntu_docker_ssh_pub: ${{ vars.UBUNTU_DOCKER_SSH_PUB }}
         run: |
-          mv cloud.tf cloud.tf.off
-          terraform init -reconfigure
-          terraform apply -auto-approve \
-            -state=environments/dev/terraform.tfstate \
+          terraform init -input=false
+          terraform apply -auto-approve -input=false \
             -var-file=environments/dev/terraform.tfvars
-          mv cloud.tf.off cloud.tf

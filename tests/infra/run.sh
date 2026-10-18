@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Infra suite (F7-C / C2) — is the running infrastructure still what the code says?
 #
-#   terraform/plan        `terraform plan` reports no changes (dev: local state,
-#                         cloud block moved aside like utils/dev-apply-local.sh)
+#   terraform/plan        `terraform plan` reports no changes (dev: HCP Terraform
+#                         workspace homelab-dev, like utils/dev-apply-local.sh)
 #   terraform/state       terraform state matches environments/<env>/terraform.tfvars
 #   ansible/check         `ansible-playbook --check` changes nothing
 #   vm/ram|cpu|disk|ip    the guest really has what tfvars asks for
@@ -39,9 +39,14 @@ done < <(hl_config check-network "$HL_ENV")
 # --------------------------------------------------------------------------
 # terraform state vs tfvars — works without any Proxmox access
 # --------------------------------------------------------------------------
-STATE="$HL_REPO_ROOT/terraform/environments/$HL_ENV/terraform.tfstate"
-if [[ ! -f "$STATE" ]]; then
-  report SKIP "terraform/state" "no local state at terraform/environments/$HL_ENV/terraform.tfstate (env uses HCP Terraform)"
+# DEV state lives in HCP Terraform (workspace homelab-dev); pull a read-only copy.
+STATE="$HL_TMP/terraform-state-$HL_ENV.json"
+if [[ "$HL_ENV" == "dev" ]] && command -v terraform >/dev/null 2>&1; then
+  (cd "$HL_REPO_ROOT/terraform" && TF_WORKSPACE=homelab-dev terraform init -input=false >"$HL_ARTIFACTS/terraform-init-state-$HL_ENV.log" 2>&1 &&
+    TF_WORKSPACE=homelab-dev terraform state pull >"$STATE" 2>>"$HL_ARTIFACTS/terraform-init-state-$HL_ENV.log") || rm -f "$STATE"
+fi
+if [[ ! -s "$STATE" ]]; then
+  report SKIP "terraform/state" "no state readable for $HL_ENV (dev: HCP Terraform workspace homelab-dev; prod: see infra-plan.yml)"
 elif ! command -v jq >/dev/null 2>&1; then
   report SKIP "terraform/state" "jq is not installed"
 else
@@ -54,7 +59,7 @@ else
         (.initialization[0].ip_config[0].ipv4[0].address // "?") ]
     | @tsv' "$STATE" 2>/dev/null | head -1)"
   if [[ -z "$state_vm" ]]; then
-    report SKIP "terraform/state" "no proxmox_virtual_environment_vm for '$TF_VM_NAME' in the local state"
+    report SKIP "terraform/state" "no proxmox_virtual_environment_vm for '$TF_VM_NAME' in the state"
   else
     IFS=$'\t' read -r s_ram s_cores s_cputype s_disk s_ip <<<"$state_vm"
     mismatch=()
@@ -115,15 +120,8 @@ terraform_plan_dev() {
   terraform_plan_run
 }
 
-# Runs plan with the HCP Terraform cloud block moved aside, exactly like
-# utils/dev-apply-local.sh and infra-plan-dev.yml do, and always puts it back.
-restore_cloud_tf() {
-  if [[ "${CLOUD_TF_MOVED:-0}" -eq 1 && -f "$HL_REPO_ROOT/terraform/cloud.tf.off" ]]; then
-    mv "$HL_REPO_ROOT/terraform/cloud.tf.off" "$HL_REPO_ROOT/terraform/cloud.tf"
-    CLOUD_TF_MOVED=0
-  fi
-}
-trap restore_cloud_tf EXIT
+# Runs plan against the HCP Terraform workspace, exactly like utils/dev-apply-local.sh
+# and infra-plan-dev.yml do (execution mode local: Terraform runs here).
 
 terraform_plan_run() {
   local log="$HL_ARTIFACTS/terraform-plan-$HL_ENV.log"
@@ -131,20 +129,17 @@ terraform_plan_run() {
   local rc=0 summary=""
 
   cd "$HL_REPO_ROOT/terraform" || return
-  if [[ -f cloud.tf ]]; then
-    mv cloud.tf cloud.tf.off && CLOUD_TF_MOVED=1
-  fi
+  export TF_WORKSPACE=homelab-dev
 
-  if terraform init -reconfigure -input=false >"$init_log" 2>&1; then
+  if terraform init -input=false >"$init_log" 2>&1; then
     terraform plan -input=false -lock=false -no-color -detailed-exitcode \
-      -state="environments/$HL_ENV/terraform.tfstate" \
       -var-file="environments/$HL_ENV/terraform.tfvars" >"$log" 2>&1
     rc=$?
     summary="$(grep -aoE 'Plan: [0-9]+ to add, [0-9]+ to change, [0-9]+ to destroy' "$log" | tail -1)"
   else
     rc=99
   fi
-  restore_cloud_tf
+  unset TF_WORKSPACE
   cd "$HL_REPO_ROOT" || return
 
   case "$rc" in

@@ -8,6 +8,8 @@ jobs:
   plan:
     runs-on: [self-hosted, homelab-prod]
     environment: prod
+    env:
+      TF_WORKSPACE: homelab
     steps:
       - name: Checkout
         uses: actions/checkout@v4
