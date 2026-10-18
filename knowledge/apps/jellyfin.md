@@ -15,6 +15,8 @@ On this DEV guest the first wizard created user **`root`**. It was renamed to `a
 
 Libraries declared in `config/services.yml` (`Movies` / `Shows` / `Music` under `/media/…`) are created by bootstrap when login works.
 
+Since 12.0.0 the API rejects the legacy `X-Emby-Token` header and the `api_key` query with 401 and an empty body; send the token as `Authorization: MediaBrowser ..., Token="<token>"` (verified on DEV 2026-10-18).
+
 ## Recover on DEV (destructive)
 
 ```bash
