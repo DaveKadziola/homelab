@@ -30,7 +30,7 @@ Same `terraform/` module as prod; different `environments/dev/terraform.tfvars` 
 
 | Workflow | Trigger | Action |
 |----------|---------|--------|
-| `infra-plan-dev.yml` | PR/push `homelab-v2` | `terraform plan` (local state) |
+| `infra-plan-dev.yml` | push `homelab-v2` | `terraform plan` (local state) |
 | `infra-apply-dev.yml` | push `homelab-v2` / manual | `terraform apply` |
 | `apps-deploy-dev.yml` | push `homelab-v2` | Ansible → deploy `compose/core` |
 

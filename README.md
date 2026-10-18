@@ -97,7 +97,7 @@ Order (after F2–F3): OPNsense → Proxmox TF apply → Ansible → Compose. Pr
 | Workflow | Trigger | Runner |
 |----------|---------|--------|
 | `ci-validate.yml` | push/PR `homelab-v2` | `homelab-dev` |
-| `infra-plan-dev.yml` | PR/push `homelab-v2` | `homelab-dev` |
+| `infra-plan-dev.yml` | push `homelab-v2` | `homelab-dev` |
 | `infra-apply-dev.yml` | push `homelab-v2` | `homelab-dev` |
 | `apps-deploy-dev.yml` | push `homelab-v2` | `homelab-dev` |
 | `infra-plan.yml` | PR → `main` | `homelab-prod` |
