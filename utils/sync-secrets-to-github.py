@@ -15,6 +15,8 @@ Values go to `gh secret set NAME --env ENV --repo REPO` on standard input. Never
 Exit code: 0 ok, 1 a write failed, 2 usage or environment error.
 """
 import argparse
+import base64
+import hashlib
 import json
 import re
 import subprocess
@@ -29,6 +31,18 @@ EXTRA_SOURCES = {
         "PROXMOX_SSH_PASSWORD": HOME / ".homelab-pve-dev-root-pass",
     },
     "prod": {},
+}
+# Secrets computed from a local file, exactly as utils/dev-apply-local.sh computes them.
+DERIVED_SOURCES = {
+    "dev": {
+        # SHA-512 crypt of the ubuntu-dev password with a salt derived from it, so the same
+        # password always gives the same hash and cloud-init does not look changed.
+        "UBUNTU_DOCKER_PASSWORD": ("sha512-crypt", HOME / ".homelab-ubuntu-apps-dev-pass"),
+    },
+    "prod": {
+        # GitHub holds the whole rclone.conf as one base64 line (docs/manual-setup.md, F5).
+        "RCLONE_CONFIG": ("base64", HOME / ".homelab-secrets" / "prod" / "RCLONE_CONFIG"),
+    },
 }
 
 
@@ -51,7 +65,23 @@ def local_sources(env):
     for name, path in EXTRA_SOURCES.get(env, {}).items():
         if path.is_file():
             sources[name] = path
+    for name, (kind, path) in DERIVED_SOURCES.get(env, {}).items():
+        if path.is_file():
+            sources[name] = (kind, path)
     return sources
+
+
+def describe(source):
+    return f"{source[0]} of {source[1]}" if isinstance(source, tuple) else str(source)
+
+
+def sha512_crypt(plain):
+    salt = hashlib.sha256(plain.encode()).hexdigest()[:16]
+    res = subprocess.run(["openssl", "passwd", "-6", "-salt", salt, "-stdin"],
+                         input=plain, capture_output=True, text=True)
+    if res.returncode != 0:
+        raise RuntimeError("openssl passwd failed")
+    return res.stdout.strip()
 
 
 def github_secrets(env, repo):
@@ -62,10 +92,16 @@ def github_secrets(env, repo):
     return {item["name"]: item["updatedAt"] for item in json.loads(res.stdout or "[]")}
 
 
-def read_value(path):
+def read_value(source):
+    path = source[1] if isinstance(source, tuple) else source
     value = path.read_text(encoding="utf-8")
     # Several files are written with a trailing newline (printf '%s\n'); a secret never ends with one.
-    return value[:-1] if value.endswith("\n") else value
+    value = value[:-1] if value.endswith("\n") else value
+    if isinstance(source, tuple) and source[0] == "sha512-crypt":
+        value = sha512_crypt(value)
+    if isinstance(source, tuple) and source[0] == "base64":
+        value = base64.b64encode(path.read_bytes()).decode()
+    return value
 
 
 def main():
@@ -97,7 +133,7 @@ def main():
     for name in selected:
         action = "overwrite" if name in remote else "create"
         updated = remote.get(name, "-")
-        print(f"{name:<28} {action:<10} {updated:<22} {sources[name]}")
+        print(f"{name:<28} {action:<10} {updated:<22} {describe(sources[name])}")
     untouched = sorted(set(remote) - set(sources))
     if untouched:
         print(f"no local source, left untouched on GitHub: {', '.join(untouched)}")

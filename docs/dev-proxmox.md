@@ -31,7 +31,7 @@ Same `terraform/` module as prod; different `environments/dev/terraform.tfvars` 
 | Workflow | Trigger | Action |
 |----------|---------|--------|
 | `infra-plan-dev.yml` | push `homelab-v2` | `terraform plan` (HCP workspace `homelab-dev`) |
-| `infra-apply-dev.yml` | manual (temporarily; was push `homelab-v2`) | `terraform apply` |
+| `infra-apply-dev.yml` | push `homelab-v2` / manual | `terraform apply` |
 | `apps-deploy-dev.yml` | push `homelab-v2` | Ansible → deploy `compose/core` |
 
 Apps stack details + test/prod checklist: [`docs/f4-apps-dev.md`](f4-apps-dev.md).

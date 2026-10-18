@@ -77,13 +77,15 @@ Generate locally → **Bitwarden** `homelab/<NAME>/<env>` → `gh secret set`. N
 
 App secrets: `utils/gen-app-credentials.sh` (not the older F1 `bootstrap-f1-secrets.sh`).
 
+New values straight into Bitwarden + GitHub + laptop cache, no staging file: `utils/rotate-secrets.py --env prod --generate` (dry run), then `--apply` with Bitwarden unlocked (`export BW_SESSION="$(bw unlock --raw)"`). Existing cache values into Bitwarden only: `--vault-from-cache`.
+
 Laptop cache → GitHub Environment: `utils/sync-secrets-to-github.py --env dev` (dry run, names only), then `--apply`. Never pass `--body -` to `gh secret set`: it stores the literal `-`.
 
 ## Quick start — dev
 
 1. Register dev runner: `utils/setup-github-runner.sh --label homelab-dev`
 2. Nested Proxmox: [`docs/dev-proxmox.md`](docs/dev-proxmox.md) — `ensure-dev-proxmox.sh` + `bootstrap-dev-proxmox.sh`
-3. Push to `homelab-v2` → `infra-plan-dev.yml`; `infra-apply-dev.yml` is manual for now (Terraform IaC)
+3. Push to `homelab-v2` → `infra-plan-dev.yml` / `infra-apply-dev.yml` (Terraform IaC, state in HCP workspace `homelab-dev`)
 4. Apps: `apps-deploy-dev.yml` → `ubuntu-apps-dev` @ `192.168.122.50`
 
 ## Quick start — prod
@@ -100,7 +102,7 @@ Order (after F2–F3): OPNsense → Proxmox TF apply → Ansible → Compose. Pr
 |----------|---------|--------|
 | `ci-validate.yml` | push/PR `homelab-v2` | `homelab-dev` |
 | `infra-plan-dev.yml` | push `homelab-v2` | `homelab-dev` |
-| `infra-apply-dev.yml` | manual (temporarily) | `homelab-dev` |
+| `infra-apply-dev.yml` | push `homelab-v2` / manual | `homelab-dev` |
 | `apps-deploy-dev.yml` | push `homelab-v2` | `homelab-dev` |
 | `infra-plan.yml` | PR → `main` | `homelab-prod` |
 | `infra-apply-prod.yml` | push `main` | `homelab-prod` |

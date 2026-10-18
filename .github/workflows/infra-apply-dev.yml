@@ -1,8 +1,8 @@
 name: Infra Apply Dev
 
-# TEMP: manual until a CI plan against the HCP Terraform state (workspace
-# homelab-dev, decision R2 2026-10-18) has shown no unexpected changes.
 on:
+  push:
+    branches: [homelab-v2]
   workflow_dispatch:
 
 jobs:
