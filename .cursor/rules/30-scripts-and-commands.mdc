@@ -1,0 +1,26 @@
+---
+description: Rules for scripts and command execution - fail fast, idempotent, dry-run, no secrets, script files over one-liners
+globs: ["**/*.sh", "**/*.bash", "**/*.py", "**/*.ps1", "**/Makefile", "**/*.service", "**/*.timer"]
+alwaysApply: false
+---
+
+# Scripts and commands
+
+Source of truth: `AGENTS.md` sections 8 and 9; details in `rules/editing-and-scripts.md`.
+
+- Fail fast and return non-zero on failure.
+- Idempotent: a second run changes nothing.
+- Destructive operations get a dry-run mode that prints what would happen.
+- Never print, log or commit a secret.
+- Thin wrappers; logic in a testable script or module.
+- Preserve encoding and line endings; check `git diff --stat` after editing.
+- Long or quoting-heavy commands go into a script file run with a timeout; remote commands run a
+  copied script instead of nested quotes.
+- Tooling in the scripting language set in `PROJECT-CONTEXT.md`; shell wrappers stay thin.
+- Files that are not UTF-8 are edited by a script that keeps their encoding and newlines.
+- When exact bytes matter, capture output byte-safely instead of through shell redirection; know
+  whether the shell writes a byte-order mark.
+- A slow command is checked for progress before it is killed; locks and indexes in use are not
+  deleted.
+- Temporary workarounds carry a one-line comment naming the reason.
+- Temporary files go to the system temp area and are removed after verification.

@@ -1,6 +1,8 @@
 # Homelab knowledge base
 
-This directory is the operator entry. The repo README only links here.
+This directory is the operator entry. The repo README only links here. It is also the knowledge
+base the agent rules in `AGENTS.md` (section 12) refer to: what an agent reads instead of guessing,
+so a wrong entry costs more than a missing one.
 
 | Page | What |
 |------|------|
@@ -20,3 +22,70 @@ This directory is the operator entry. The repo README only links here.
 | [security-audit-2026-09-10.md](security-audit-2026-09-10.md) | F9-F1 — DEV nmap / inspect / gitleaks |
 | [repo-audit-2026-09-10.md](repo-audit-2026-09-10.md) | F9-F2 — stranger readability |
 | [rebuild-drill-2026-09-10.md](rebuild-drill-2026-09-10.md) | F9-F3 — tabletop; merge gate **FAIL** |
+| [templates/](templates/) | Templates for new decision, how-to, runbook, troubleshooting and glossary documents |
+
+## What goes in, what does not
+
+| Goes in | Stays out |
+| --- | --- |
+| Facts confirmed by the operator or by a run | Guesses, one-off observations, "probably" |
+| Decisions and their reasons | Status of a single task or a branch |
+| Procedures that were actually executed | Procedures nobody has run |
+| Known symptoms with cause and fix | Secrets, tokens, passwords, personal data |
+| Project terms | Machine-local paths and personal aliases |
+
+Private tool memory is not a substitute: it is invisible to other tools, other machines and other
+people. If a fact would still be true on another machine, it belongs here.
+
+## Document kinds in this directory
+
+| Kind | Where | Notes |
+| --- | --- | --- |
+| Topic page | `<topic>.md` (flat) | One subject each, listed in the table above |
+| App page | `apps/<app>.md` | One page per service in `config/services.yml` |
+| Dated report | `<name>-YYYY-MM-DD.md` | Audits and drills; a snapshot, not edited afterwards except to mark it superseded |
+| Lessons learned | `lessons-learned.md` | Append-only; earlier rows are never rewritten |
+| Decision (ADR) | `decisions/NNNN-short-title.md` | From `templates/decision.md`; numbered, never renumbered |
+| How-to | `howto/<verb>-<object>.md` | From `templates/howto.md` |
+| Runbook | `rebuild.md`, or `runbooks/<service>-<operation>.md` | From `templates/runbook.md` |
+| Troubleshooting | `troubleshooting.md` | Entries shaped like `templates/troubleshooting.md` |
+
+Lower-case file names, words separated by `-`.
+
+## Header for new documents
+
+A document created from now on starts with:
+
+```
+Status: draft | verified | superseded by <file>
+Last reviewed: YYYY-MM-DD
+Scope: <what this covers, one line>
+```
+
+Existing pages do not have it yet; add it when a page is next edited.
+
+## Marking certainty
+
+- A statement without a marker is verified.
+- An unverified statement is marked inline: `(unverified: <why it is still open>)`.
+- A diagnosis can be verified while the fix is not: write them as separate statements and mark
+  the fix `(unverified: no confirming run yet)` until a run confirms it.
+
+## Citing sources
+
+Each verified fact names what verified it, at the end of the entry or in a `Sources` section:
+
+- code: `path/to/file:line` (and the commit if the line may move);
+- a run: the command, the date and the relevant output line;
+- a person: "confirmed by the operator, YYYY-MM-DD".
+
+Never paste secrets or full logs; quote the one line that matters.
+
+## Changing the knowledge base
+
+1. Find the most specific existing document. Create a new one only when none fits, and add it to
+   the table above.
+2. Make the smallest edit. Do not reformat or reorder surrounding content.
+3. One topic per commit, message saying what was verified and how.
+4. When a document turns out to be wrong, correct it in the same task and say so in the report.
+5. A superseded document is marked `Status: superseded by <file>`, not deleted.
