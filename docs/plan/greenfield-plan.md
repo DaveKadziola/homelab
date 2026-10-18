@@ -78,7 +78,7 @@ todos:
     content: "Iter. #4 R2: nested Proxmox z IP (utils/ensure-dev-proxmox.sh) + ubuntu-apps-dev; run-tests --env dev --suite all bez FAIL — ✅ 2026-10-18: przyczyna zawieszeń = pełna pula LVM-thin; stan w HCP homelab-dev; run-tests 161 PASS / 0 FAIL"
     status: completed
   - id: f9-gate-dev
-    content: "Iter. #4 R3: rebuild DEV tylko z repo + vault, deploy GHA z pełnym zestawem sekretów, ponownie restore suite — przed F3 metal — 2026-10-18: deploy GHA z prawdziwymi sekretami ✅ (bootstrap jellyfin/navidrome → #14); rebuild z repo i restore suite otwarte"
+    content: "Iter. #4 R3: rebuild DEV tylko z repo + vault, deploy GHA z pełnym zestawem sekretów, ponownie restore suite — przed F3 metal — 2026-10-18: deploy GHA z prawdziwymi sekretami ✅ (bootstrap jellyfin/navidrome → #14); rebuild z repo i restore suite otwarte — 2026-10-19: restore suite ✅; drill z prawdziwym wymazaniem DEV ✅ działa, 9 luk (#16–#19 + rebuild.md), wymaga powtórki bez poprawek (knowledge/rebuild-drill-2026-10-19.md)"
     status: in_progress
   - id: monitoring-alerts
     content: "F10-A: config/monitoring.yml — progi (dysk >80%, RAM, restart-loop, backup miss) + alerty na skrzynkę env"

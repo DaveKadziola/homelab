@@ -22,6 +22,7 @@ so a wrong entry costs more than a missing one.
 | [security-audit-2026-09-10.md](security-audit-2026-09-10.md) | F9-F1 — DEV nmap / inspect / gitleaks |
 | [repo-audit-2026-09-10.md](repo-audit-2026-09-10.md) | F9-F2 — stranger readability |
 | [rebuild-drill-2026-09-10.md](rebuild-drill-2026-09-10.md) | F9-F3 — tabletop; merge gate **FAIL** |
+| [rebuild-drill-2026-10-19.md](rebuild-drill-2026-10-19.md) | F9-F3 — real wipe + rebuild of DEV; works, 9 gaps found; repeat needed |
 | [decisions/](decisions/) | Decision records (ADR); 0001 - restore CI and DEV before F3 metal |
 | [templates/](templates/) | Templates for new decision, how-to, runbook, troubleshooting and glossary documents |
 
