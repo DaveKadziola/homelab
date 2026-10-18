@@ -23,7 +23,8 @@ USERNAME="$(hl_account navidrome username)"
 PASSWORD="$(hl_secret "$(hl_account navidrome secret)")"
 
 hl_require_container "$CONTAINER"
-hl_wait_http "${BASE}/" "200" 60 || hl_die "Navidrome not answering on ${BASE}"
+# /ping is the health endpoint; `/` answers 302 -> /app/ in current releases.
+hl_wait_http "${BASE}/ping" "200" 60 || hl_die "Navidrome not answering on ${BASE}"
 
 login_works() {
   local code
