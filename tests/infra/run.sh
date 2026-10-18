@@ -7,6 +7,8 @@
 #   ansible/check         `ansible-playbook --check` changes nothing
 #   vm/ram|cpu|disk|ip    the guest really has what tfvars asks for
 #   network/*             IP, gateway, VLAN and prefix agree with docs/network.md
+#   storage/thin-pool     the Proxmox LVM-thin pool is below HL_THIN_POOL_MAX_PCT
+#                         and errors (instead of freezing) when it fills up
 #
 # Read-only: plan without -out, ansible in check mode, everything else is a
 # fact query over SSH.
@@ -222,6 +224,41 @@ ansible_check() {
 }
 
 (cd "$HL_REPO_ROOT/ansible" && ansible_check)
+
+# --------------------------------------------------------------------------
+# Proxmox LVM-thin pool — a full pool in "queue" mode freezes every guest
+# without a single log line (DEV, 2026-09-11 and 2026-10-18)
+# --------------------------------------------------------------------------
+thin_pool_check() {
+  local max_pct="${HL_THIN_POOL_MAX_PCT:-85}"
+  local pve_ip="${DEV_PROXMOX_IP:-192.168.122.219}"
+  local key="${HOME}/.ssh/homelab_dev_ed25519"
+  local line name pct when_full
+
+  if [[ "$HL_ENV" != "dev" ]]; then
+    report SKIP "storage/thin-pool" "only wired for the nested DEV Proxmox so far"
+    return
+  fi
+  if ! line="$(ssh -o BatchMode=yes -o ConnectTimeout=5 -i "$key" "root@${pve_ip}" \
+      'LC_ALL=C lvs --noheadings -o lv_name,data_percent,lv_when_full pve/data' 2>/dev/null)"; then
+    report "$(hl_unreachable_status)" "storage/thin-pool" "cannot read pve/data over SSH as root@${pve_ip} (key ${key})"
+    return
+  fi
+  read -r name pct when_full <<<"$line"
+  if [[ -z "$pct" ]]; then
+    report SKIP "storage/thin-pool" "pve/data reported no data_percent"
+    return
+  fi
+  if [[ "$when_full" != "error" ]]; then
+    report FAIL "storage/thin-pool" "pve/data is ${pct}% full and set to '${when_full}' when full — a full pool freezes all guests; run: lvchange --errorwhenfull y pve/data"
+  elif awk -v p="$pct" -v m="$max_pct" 'BEGIN { exit !(p >= m) }'; then
+    report FAIL "storage/thin-pool" "pve/data is ${pct}% full (limit ${max_pct}%) — free space or grow the pool before the next deploy"
+  else
+    report PASS "storage/thin-pool" "pve/data is ${pct}% full (limit ${max_pct}%), errors when full"
+  fi
+}
+
+thin_pool_check
 
 # --------------------------------------------------------------------------
 # the guest really has what tfvars asks for
