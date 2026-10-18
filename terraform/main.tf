@@ -48,6 +48,7 @@ resource "proxmox_virtual_environment_file" "cloud_config" {
   source_raw {
     data = templatefile("${path.module}/cloud-init-user-data.yaml.tpl", {
       environment     = var.environment
+      hostname        = each.value.vm_name
       ubuntu_password = var.ubuntu_docker_password
       ubuntu_ssh_pub  = trimspace(var.ubuntu_docker_ssh_pub)
       docker_enabled  = try(each.value.docker_enabled, true)

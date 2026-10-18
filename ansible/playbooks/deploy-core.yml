@@ -51,6 +51,15 @@
       -f {{ compose_dest }}/docker-compose.yml
       {% if homelab_env == 'prod' %}-f {{ compose_dest }}/docker-compose.nfs.yml{% endif %}
   tasks:
+    # Guests built before cloud-init set a hostname keep the image default without an
+    # /etc/hosts entry; sudo then waits on name resolution longer than become allows.
+    - name: Ensure the guest hostname resolves locally
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        regexp: '^127\.0\.1\.1\s'
+        line: "127.0.1.1 {{ ansible_hostname }}"
+        insertafter: '^127\.0\.0\.1'
+
     - name: Resolve secrets from the environment or the operator secret cache
       ansible.builtin.set_fact:
         resolved_secrets: >-

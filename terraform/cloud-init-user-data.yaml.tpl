@@ -1,4 +1,8 @@
 #cloud-config
+# Name the guest and keep it in /etc/hosts: with the image default "ubuntu" missing
+# from /etc/hosts every sudo waited 5-10 s on name resolution (rebuild drill 2026-10-19).
+hostname: ${hostname}
+manage_etc_hosts: true
 users:
   - name: ubuntu-${environment}
     sudo: ALL=(ALL) NOPASSWD:ALL
