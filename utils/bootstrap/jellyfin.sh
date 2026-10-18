@@ -25,6 +25,12 @@ USERNAME="$(hl_account jellyfin username)"
 PASSWORD="$(hl_secret "$(hl_account jellyfin secret)")"
 AUTH_HEADER='Authorization: MediaBrowser Client="homelab-bootstrap", Device="ansible", DeviceId="homelab-bootstrap", Version="1.0.0"'
 
+# Jellyfin 12 rejects the legacy X-Emby-Token header and api_key query (401,
+# empty body); the token goes into the MediaBrowser Authorization header.
+token_header() {
+  printf '%s, Token="%s"' "$AUTH_HEADER" "$1"
+}
+
 hl_require_container "$CONTAINER"
 hl_wait_http "${BASE}/System/Info/Public" "200" 120 || hl_die "Jellyfin not answering on ${BASE}"
 
@@ -81,7 +87,7 @@ PY
 
 ensure_libraries() {
   local token="$1" existing record name type path code
-  existing="$(hl_curl -H "X-Emby-Token: ${token}" "${BASE}/Library/VirtualFolders" |
+  existing="$(hl_curl -H "$(token_header "$token")" "${BASE}/Library/VirtualFolders" |
     python3 -c 'import json,sys; print("|".join(f["Name"] for f in json.load(sys.stdin)))')"
   while IFS='|' read -r name type path; do
     [[ -n "$name" ]] || continue
@@ -94,7 +100,7 @@ ensure_libraries() {
     code="$(printf '%s' "{\"LibraryOptions\":{\"PathInfos\":[{\"Path\":\"${path}\"}],\"EnableRealtimeMonitor\":false}}" |
       curl -s -o /dev/null -w '%{http_code}' --max-time 60 -X POST \
         "${BASE}/Library/VirtualFolders?name=${name}&collectionType=${type}&refreshLibrary=false" \
-        -H "X-Emby-Token: ${token}" -H 'Content-Type: application/json' --data @-)"
+        -H "$(token_header "$token")" -H 'Content-Type: application/json' --data @-)"
     [[ "$code" =~ ^(200|204)$ ]] || hl_warn "library ${name} rejected (HTTP ${code})"
   done < <(declared_libraries)
 }
