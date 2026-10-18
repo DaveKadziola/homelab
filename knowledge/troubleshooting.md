@@ -18,6 +18,7 @@ Symptoms first. Root-cause write-ups go in [`lessons-learned.md`](lessons-learne
 | Symptom | Check |
 |---------|--------|
 | `docker compose` permission denied on `.env` | File must be `ubuntu-dev:docker` `0640`, not `root:root` `0600`. |
+| Deploy from GitHub Actions breaks auth (`password authentication failed`, `postgres-init` exit 2) but a local deploy works | GitHub secret holds a wrong value. Secrets once set with `gh secret set … --body -` are the literal `-`. Re-sync: `utils/sync-secrets-to-github.py --env <env> --apply`. |
 | `docker compose` command missing | `docker-compose-v2` package (Ansible installs it). |
 | pgAdmin `:5050` hung | mem_limit must be ≥ 512m (384m OOM-kills gunicorn). |
 | Immich postgres restart | mem_limit ≥ 768m. |

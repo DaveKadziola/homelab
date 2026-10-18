@@ -71,6 +71,6 @@ echo "copied rclone.conf → ~/.homelab-secrets/prod/RCLONE_CONFIG (for Bitwarde
 if $PUSH_GH; then
   command -v gh >/dev/null || { echo "gh CLI required for --push-gh" >&2; exit 1; }
   gh auth status >/dev/null 2>&1 || { echo "gh is not authenticated" >&2; exit 1; }
-  base64 -w0 "$CONF" | gh secret set RCLONE_CONFIG --env prod --repo "$REPO" --body -
+  base64 -w0 "$CONF" | gh secret set RCLONE_CONFIG --env prod --repo "$REPO"
   echo "set GitHub environment secret RCLONE_CONFIG (prod)"
 fi

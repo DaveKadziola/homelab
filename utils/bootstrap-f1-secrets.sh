@@ -13,7 +13,7 @@ rand() { openssl rand -base64 32; }
 
 set_secret() {
   local name="$1" env="$2" value="$3"
-  printf '%s' "$value" | gh secret set "$name" --env "$env" --repo "$REPO" --body -
+  printf '%s' "$value" | gh secret set "$name" --env "$env" --repo "$REPO"
   echo "set secret ${name} (${env})"
 }
 
