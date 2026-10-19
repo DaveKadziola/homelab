@@ -23,7 +23,7 @@ Dev is **isolated** from prod VLANs.
 | VLAN | Tag | OPNsense interface | Gateway | Notes |
 |------|-----|-------------------|---------|-------|
 | IOT | 20 | vlan03 | `192.168.20.1/24` | Proxmox mgmt, NAS, HA T620 |
-| APP | 51 | qinq01 (QinQ on vlan06) | **`192.168.50.50/26`** | Docker; DHCP `.30`–`.62` |
+| APP | 51 | qinq01 (QinQ on vlan06) | **`192.168.50.50/26`** | Docker; DHCP **off** (range `.30`–`.62` configured but disabled; VMs use static IPs from cloud-init) |
 | WireGuard | — | wg0 | **`10.10.10.1/24`** | port `51820`; not `10.0.0.0` |
 | VPN (legacy VLAN) | 40 | vlan05 | `10.0.0.1/28` | separate from WG |
 
@@ -46,6 +46,8 @@ Dev is **isolated** from prod VLANs.
 | HP T620 HAOS | IOT | 20 | **`192.168.20.13`** | T620 NIC — set at F5 |
 | `ubuntu-apps` | APP | 51 | **`192.168.50.30`** | VM NIC — set at F3 |
 
+**Open (2026-10-19):** DMZ `192.168.50.1/28` (`.0`–`.15`, NPM `.50.2`) lies inside APP `192.168.50.50/26` (`.0`–`.63`). The two interfaces overlap; fixing it means renumbering one of them - decision pending.
+
 ---
 
 ## Proxmox — 3× NIC (one host IP, traffic separation)
@@ -66,7 +68,8 @@ Host has **one** management IP. NIC2/NIC3 offload storage and app traffic from N
 
 | Source | Destination | Ports | Purpose |
 |--------|-------------|-------|---------|
-| APP `192.168.50.48/26` (qinq subnet) | `192.168.20.12` | TCP 2049, 111 | NFS apps → NAS |
+| APP net `192.168.50.0/26` (`opt6`) | `192.168.20.12` | TCP 2049, 111 | NFS apps → NAS |
+| IOT (`opt3`) | everything except HOME OFFICE + GUEST (`!NotForIOT`) | any | DNS to `opt3ip`; the old IOT `pass any -> any` is disabled since 2026-10-19 (`utils/f2-opnsense-iot.sh`) |
 | WireGuard `10.10.10.0/24` | IOT / APP / LAN | per rule | VPN |
 | WAN | WAN address | 443 | HAProxy → Grocery (F2-05 / F4) |
 
