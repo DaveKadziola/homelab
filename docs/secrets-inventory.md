@@ -20,7 +20,7 @@ Helper scripts:
 
 | Column | Meaning |
 |--------|---------|
-| **GH env** | `dev` \| `prod` \| `repo` \| — (not in GH) |
+| **GH env** | `dev` \| `prod` \| `prod-plan` (PR plan only, [f3-proxmox.md](f3-proxmox.md) "PR plan") \| `repo` \| — (not in GH) |
 | **Type** | `secret` \| `variable` |
 | **Status** | `planned` \| `set` \| `N/A` |
 | **Bitwarden** | path in Password Manager |
@@ -35,13 +35,16 @@ Helper scripts:
 | `POSTGRES_PASSWORD` | prod | secret | `homelab/POSTGRES_PASSWORD/prod` | set | F1 2026-06-29; rotated 2026-10-18 |
 | `PROXMOX_API_TOKEN_SECRET` | dev | secret | `homelab/PROXMOX_API_TOKEN_SECRET/dev` | set | placeholder — update at F3 |
 | `PROXMOX_API_TOKEN_SECRET` | prod | secret | `homelab/PROXMOX_API_TOKEN_SECRET/prod` | set | placeholder — update at F3 |
+| `PROXMOX_API_TOKEN_SECRET` | prod-plan | secret | `homelab/PROXMOX_API_TOKEN_SECRET/prod-plan` | planned | read-only token `homelab-prod@pam!plan` (`PVEAuditor`); `~/.homelab-secrets/prod-plan/` |
 | `PROXMOX_SSH_PASSWORD` | dev | secret | `homelab/PROXMOX_SSH_PASSWORD/dev` | set | placeholder |
 | `PROXMOX_SSH_PASSWORD` | prod | secret | `homelab/PROXMOX_SSH_PASSWORD/prod` | set | placeholder |
 | `UBUNTU_DOCKER_PASSWORD` | dev | secret | `homelab/UBUNTU_DOCKER_PASSWORD/dev` | set | F1 |
 | `UBUNTU_DOCKER_PASSWORD` | prod | secret | `homelab/UBUNTU_DOCKER_PASSWORD/prod` | set 2026-10-19 | SHA-512 hash in GH; plain text in `~/.homelab-secrets/prod/UBUNTU_DOCKER_PASSWORD` + Bitwarden |
+| `UBUNTU_DOCKER_PASSWORD` | prod-plan | secret | `homelab/UBUNTU_DOCKER_PASSWORD/prod` | planned | the same SHA-512 hash as prod, or the plan shows the snippet as changed |
 | `UBUNTU_DOCKER_SSH_PRIV` | dev | secret | `homelab/UBUNTU_DOCKER_SSH_PRIV/dev` | set | `~/.ssh/homelab_dev_ed25519` |
 | `UBUNTU_DOCKER_SSH_PRIV` | prod | secret | `homelab/UBUNTU_DOCKER_SSH_PRIV/prod` | set 2026-10-19 | `~/.ssh/homelab_prod_ed25519` (own prod key, `homelab-prod`); the prod deploy installs it on the runner |
 | `TF_API_TOKEN` | prod | secret | `homelab/TF_API_TOKEN/prod` | set | F1 |
+| `TF_API_TOKEN` | prod-plan | secret | `homelab/TF_API_TOKEN/prod` | planned | HCP token with access to workspace `homelab` |
 | `SSL_CERT` | prod | secret | `homelab/SSL_CERT/prod` | planned | optional; legacy backup |
 | `SSL_CHAIN` | prod | secret | `homelab/SSL_CHAIN/prod` | planned | optional |
 | `SSL_PKEY` | prod | secret | `homelab/SSL_PKEY/prod` | planned | optional |
@@ -92,12 +95,16 @@ Helper scripts:
 |------|--------|------|-----------|--------|-------|
 | `PROXMOX_API_URL` | dev | variable | — | set | placeholder URL — F3 |
 | `PROXMOX_API_URL` | prod | variable | — | set | placeholder URL — F3 |
+| `PROXMOX_API_URL` | prod-plan | variable | — | planned | copy of prod |
 | `PROXMOX_API_TOKEN_ID` | dev | variable | — | set | F1 |
 | `PROXMOX_API_TOKEN_ID` | prod | variable | — | set | F1 |
+| `PROXMOX_API_TOKEN_ID` | prod-plan | variable | — | planned | `homelab-prod@pam!plan` |
 | `PROXMOX_SSH_USERNAME` | dev | variable | — | set | F1 |
 | `PROXMOX_SSH_USERNAME` | prod | variable | — | set | F1 |
+| `PROXMOX_SSH_USERNAME` | prod-plan | variable | — | planned | copy of prod; no `PROXMOX_SSH_PASSWORD` here, the workflow passes a dummy |
 | `UBUNTU_DOCKER_SSH_PUB` | dev | variable | — | set | F1 |
 | `UBUNTU_DOCKER_SSH_PUB` | prod | variable | — | set 2026-10-19 | `~/.ssh/homelab_prod_ed25519.pub` |
+| `UBUNTU_DOCKER_SSH_PUB` | prod-plan | variable | — | planned | copy of prod |
 
 ---
 
