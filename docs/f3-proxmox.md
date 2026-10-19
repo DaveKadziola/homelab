@@ -81,6 +81,12 @@ what a plan reads. Because every branch can use it, its Proxmox token is read-on
 workflow: plan does not connect over SSH. `Infra Apply Prod` and `Apps Deploy Prod` stay in `prod`
 with the approval.
 
+The plan runs with `-refresh=false`. With refresh the read-only token failed on PR #42:
+`Permission check failed (/vms/101, VM.Config.Disk)` for the VM disks, and both cloud-init snippets
+showed as "will be created". Without refresh it compares the configuration with the state (local
+check 2026-10-20: "No changes"), so it shows what the PR changes; drift on the host shows only in the
+plan of `Infra Apply Prod`, which uses the full token.
+
 One-time setup from the laptop (no value is printed):
 
 ```bash
