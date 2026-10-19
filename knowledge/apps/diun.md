@@ -1,0 +1,11 @@
+# Diun
+
+| | |
+|--|--|
+| UI | none |
+| Login | none |
+| Config-as-code | yes |
+
+Image-update watcher. Logs to stdout (Dozzle). Notification mailbox is the env identity (`homelab-notification`) once F10 wiring exists.
+
+`compose/core/docker-compose.yml` pins an exact version per image (S5). Diun's `defaults.watchRepo` lists up to 5 newer release tags per repo (`x.y.z`, optional `v`, Jellyfin's `x.y.date-time`). Upgrading = change the tag in compose, PR, `Apps Deploy Dev`, tests, then prod. Exceptions: `omni-tools` publishes no tag for its current build, so it is pinned by digest (`latest@sha256:…`) and Diun reports only a new digest; `dumbwhois` has only `build-N` tags; the Postgres/Valkey images stay on a major (`16-alpine`, `8-alpine`, Immich's `14-vectorchord…`). The locally built `homelab-zotify:local` and `easy-todo-grocery-nodb` log "Cannot list tags" every run - expected, they are in no registry.

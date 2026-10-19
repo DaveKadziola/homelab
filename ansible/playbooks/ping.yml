@@ -1,0 +1,7 @@
+---
+- name: Ping the docker and NAS hosts
+  hosts: ubuntu_docker:ubuntu_nas
+  gather_facts: false
+  tasks:
+    - name: Ping
+      ansible.builtin.ping:

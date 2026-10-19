@@ -1,0 +1,17 @@
+---
+description: Documentation and knowledge base - docs follow code, confirmed facts only, templates and citation rules
+globs: ["knowledge/**", "**/README.md", "docs/**"]
+alwaysApply: false
+---
+
+# Documentation and knowledge
+
+Source of truth: `AGENTS.md` sections 8 and 12, `rules/knowledge-closing-check.md` and
+`knowledge/README.md`.
+
+- Read the code before documenting it; names, defaults and options are taken verbatim.
+- Unknown facts stay `<placeholder>` and are asked about.
+- A behaviour change updates its documentation in the same commit.
+- Durable knowledge goes into `knowledge/`, never into private tool memory.
+- Record only confirmed facts; mark everything else as unverified or leave it out.
+- New knowledge documents start from a template in `knowledge/templates/`.

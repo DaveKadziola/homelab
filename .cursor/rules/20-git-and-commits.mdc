@@ -1,0 +1,17 @@
+---
+description: Git and commit rules - branch checks, what never happens without asking, commit message format
+globs:
+alwaysApply: false
+---
+
+# Git and commits
+
+Source of truth: `AGENTS.md` sections 10 and 11; details in `rules/git.md`. Apply when committing,
+branching, merging or preparing a pull request.
+
+- Check branch and `git status` before editing; stop and ask if the branch is not the agreed one.
+- New branches start from a freshly fetched remote default branch.
+- Leave the repository on the branch it was found on.
+- Never commit, push, force-push, reset, rewrite history or resolve a conflict without being asked.
+- One topic per commit. Subject: imperative, about 70 characters, says what changed. Body only for
+  why / what was verified / what was left alone. No headings, file lists, emoji or tool mentions.

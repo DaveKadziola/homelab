@@ -1,0 +1,158 @@
+---
+# Declared identities and application accounts (F7-A).
+#
+# This file says WHICH accounts must exist and where their secret lives.
+# It never contains secret values.
+#
+#   values live in:  Bitwarden  ->  GitHub Environment secret  ->  .env / API on host
+#   generator:       utils/gen-app-credentials.sh
+#   inventory:       docs/secrets-inventory.md (names + rotation dates only)
+#
+# Rule: an account created by hand in a web UI is a bug, not a deployment step.
+
+version: 1
+
+# One real mailbox per environment — these actually receive mail, so app
+# notifications and password resets work. Logins are derived from them.
+# Never use a reserved TLD such as .local: pgAdmin refuses to start with it.
+environment_email:
+  dev: dev-homelabnotifications@pm.me
+  prod: prod-homelabnotifications@pm.me
+
+# email: environment  ->  resolved from environment_email for the target env
+identities:
+  homelab-admin:
+    email: environment
+    username: admin
+    role: Human administrator — SSO and app admin panels.
+  homelab-notification:
+    email: environment
+    username: homelab-notification
+    role: Sender identity for notifications (Diun, Beszel, alerts).
+
+# inject: env       — password reaches the app through compose environment
+#         bootstrap — utils/bootstrap/<app>.sh creates the account through API/CLI
+#         manual    — interactive only; must be documented under knowledge/apps/
+#         ansible   — a playbook sets it on the target host (Samba on the NAS: deploy-storage.yml)
+accounts:
+  - app: portainer
+    identity: homelab-admin
+    login: username
+    secret: PORTAINER_ADMIN_PASSWORD
+    inject: bootstrap
+    envs: [dev, prod]
+
+  - app: pgadmin
+    identity: homelab-admin
+    login: email
+    secret: PGADMIN_PASSWORD
+    inject: env
+    envs: [dev, prod]
+
+  - app: homarr
+    identity: homelab-admin
+    login: username
+    secret: HOMARR_ADMIN_PASSWORD
+    inject: bootstrap
+    envs: [dev, prod]
+
+  - app: authelia
+    identity: homelab-admin
+    login: username
+    secret: AUTHELIA_ADMIN_PASSWORD
+    inject: bootstrap
+    envs: [dev, prod]
+    notes: Bootstrap regenerates the argon2 hash in compose/core/authelia/users_database.yml.
+
+  - app: linkwarden
+    identity: homelab-admin
+    login: email
+    secret: LINKWARDEN_ADMIN_PASSWORD
+    inject: bootstrap
+    envs: [dev, prod]
+
+  - app: immich
+    identity: homelab-admin
+    login: email
+    secret: IMMICH_ADMIN_PASSWORD
+    inject: bootstrap
+    envs: [dev, prod]
+
+  - app: jellyfin
+    identity: homelab-admin
+    login: username
+    secret: JELLYFIN_ADMIN_PASSWORD
+    inject: bootstrap
+    envs: [dev, prod]
+
+  - app: navidrome
+    identity: homelab-admin
+    login: username
+    secret: NAVIDROME_ADMIN_PASSWORD
+    inject: bootstrap
+    envs: [dev, prod]
+    notes: First start uses ND_DEVAUTOCREATEADMINPASSWORD; later resets go through navidrome.sh.
+
+  - app: syncthing
+    identity: homelab-admin
+    login: username
+    secret: SYNCTHING_ADMIN_PASSWORD
+    inject: bootstrap
+    envs: [dev, prod]
+
+  - app: samba
+    identity: homelab-admin
+    login: username
+    secret: SAMBA_ADMIN_PASSWORD
+    inject: ansible
+    envs: [dev, prod]
+    notes: >-
+      Shares share + media on the NAS. The login maps to the Unix account homelab-smb
+      (a Unix user named admin would get sudo through Ubuntu's %admin group).
+
+  - app: beszel
+    identity: homelab-notification
+    login: email
+    secret: BESZEL_ADMIN_PASSWORD
+    inject: bootstrap
+    envs: [dev, prod]
+
+  - app: zotify
+    identity: homelab-admin
+    login: none
+    inject: manual
+    envs: [dev, prod]
+    notes: Interactive Spotify OAuth — see knowledge/apps/zotify.md.
+
+# Secrets that are not login credentials but must exist per environment.
+service_secrets:
+  - name: POSTGRES_PASSWORD
+    used_by: [postgres, linkwarden, actual, trilium, grafana]
+    envs: [dev, prod]
+  - name: IMMICH_DB_PASSWORD
+    used_by: [immich]
+    envs: [dev, prod]
+  - name: GROCERY_DB_PASSWORD
+    used_by: [grocery]
+    envs: [dev, prod]
+  - name: HOMARR_SECRET_KEY
+    used_by: [homarr]
+    envs: [dev, prod]
+    format: hex64
+  - name: LINKWARDEN_SECRET
+    used_by: [linkwarden]
+    envs: [dev, prod]
+  - name: AUTHELIA_JWT_SECRET
+    used_by: [authelia]
+    envs: [dev, prod]
+  - name: AUTHELIA_SESSION_SECRET
+    used_by: [authelia]
+    envs: [dev, prod]
+  - name: AUTHELIA_STORAGE_KEY
+    used_by: [authelia]
+    envs: [dev, prod]
+  - name: BESZEL_KEY
+    used_by: [beszel-agent]
+    envs: [dev, prod]
+    issued_by: beszel
+    notes: Issued by the hub — bootstrap reads it from the Beszel API, not generated locally.

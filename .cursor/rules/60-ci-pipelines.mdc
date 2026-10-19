@@ -1,0 +1,22 @@
+---
+description: CI pipeline definitions - isolated builds, reports kept on failure, collision-free generated branches, idempotent status, explicit blocking states
+globs: [".github/workflows/**", ".gitea/workflows/**", ".forgejo/workflows/**", ".woodpecker/**", ".woodpecker.yml", ".gitlab-ci.yml", ".drone.yml"]
+alwaysApply: false
+---
+
+# CI pipelines
+
+Applies on top of `AGENTS.md` sections 6, 9 and 11.
+
+- Each build works in its own workspace; nothing is shared between concurrent builds. Cleanup is
+  best effort with a timeout and never fails the build.
+- Scripts called by the pipeline fail fast; the pipeline itself keeps logs and reports even when a
+  step fails, so the evidence survives the failure.
+- Branches the pipeline generates have collision-free names (for example with a timestamp).
+- Status messages (commit status, comments, notifications) are published as early as possible and
+  idempotently, with a final catch-up step, so a late failure does not erase earlier feedback.
+- Notify the person who started the run by default; wider recipient lists only with a reason.
+- State explicitly which degraded results are acceptable and which block publishing or merging.
+- Risky or destructive steps have a dry-run switch.
+- Validate the pipeline definition with the platform's linter before committing, when one exists.
+- A green status is read together with how the run was triggered and which checks it skipped.

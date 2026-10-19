@@ -44,7 +44,19 @@ variable "ubuntu_docker_password" {
 
 variable "environment" {
   type        = string
-  description = "Deployment environment"
+  description = "Deployment environment (dev/prod) — used in VM names, not Proxmox node name"
+}
+
+variable "proxmox_node_name" {
+  type        = string
+  default     = "proxmox"
+  description = "Proxmox cluster node name (e.g. proxmox), not GH environment"
+}
+
+variable "manage_node_network" {
+  type        = bool
+  default     = false
+  description = "Manage vmbr0/vlan via TF — false on as-built prod host"
 }
 
 variable "ssl_cert" {
@@ -91,9 +103,11 @@ variable "vm_config" {
     bios               = string
     ram                = number
     cpu_cores          = number
+    cpu_type           = optional(string, "host")
     net_dev_type       = string
     vlan_tag           = optional(number)
     enable_cloud_init  = optional(bool)
+    docker_enabled     = optional(bool, true)
     cloud_init_cidr    = optional(string)
     cloud_init_gateway = optional(string)
     cloud_init_dns     = optional(string)

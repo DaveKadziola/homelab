@@ -1,0 +1,107 @@
+name: Apps Deploy Prod
+
+# After Infra Apply Prod, never next to it: on a push to main both used to start at once and
+# the deploy raced the VMs it needs.
+on:
+  workflow_run:
+    workflows: ["Infra Apply Prod"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy-prod:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: [self-hosted, homelab-prod]
+    environment: prod
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install the prod SSH key
+        # Inventory and tests use ~/.ssh/homelab_prod_ed25519 (user ubuntu-prod, made by Terraform).
+        env:
+          KEY: ${{ secrets.UBUNTU_DOCKER_SSH_PRIV }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/homelab_prod_ed25519
+          chmod 600 ~/.ssh/homelab_prod_ed25519
+
+      - name: Ping ubuntu-apps and ubuntu-nas
+        working-directory: ansible
+        run: ansible-playbook -i environments/prod/hosts.ini playbooks/ping.yml
+
+      # Storage first: NFS must be mounted before compose binds the media libraries.
+      - name: Deploy NFS exports + backup timer
+        working-directory: ansible
+        env:
+          HOMELAB_ENV: prod
+          SAMBA_ADMIN_PASSWORD: ${{ secrets.SAMBA_ADMIN_PASSWORD }}
+        run: |
+          ansible-playbook -i environments/prod/hosts.ini playbooks/deploy-storage.yml
+
+      - name: Deploy compose/core
+        working-directory: ansible
+        env:
+          HOMELAB_ENV: prod
+          LINKWARDEN_URL: http://192.168.50.30:3001
+          JELLYFIN_URL: http://192.168.50.30:8096
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          IMMICH_DB_PASSWORD: ${{ secrets.IMMICH_DB_PASSWORD }}
+          GROCERY_DB_PASSWORD: ${{ secrets.GROCERY_DB_PASSWORD }}
+          PGADMIN_PASSWORD: ${{ secrets.PGADMIN_PASSWORD }}
+          PORTAINER_ADMIN_PASSWORD: ${{ secrets.PORTAINER_ADMIN_PASSWORD }}
+          HOMARR_ADMIN_PASSWORD: ${{ secrets.HOMARR_ADMIN_PASSWORD }}
+          HOMARR_SECRET_KEY: ${{ secrets.HOMARR_SECRET_KEY }}
+          AUTHELIA_ADMIN_PASSWORD: ${{ secrets.AUTHELIA_ADMIN_PASSWORD }}
+          AUTHELIA_JWT_SECRET: ${{ secrets.AUTHELIA_JWT_SECRET }}
+          AUTHELIA_SESSION_SECRET: ${{ secrets.AUTHELIA_SESSION_SECRET }}
+          AUTHELIA_STORAGE_KEY: ${{ secrets.AUTHELIA_STORAGE_KEY }}
+          LINKWARDEN_ADMIN_PASSWORD: ${{ secrets.LINKWARDEN_ADMIN_PASSWORD }}
+          LINKWARDEN_SECRET: ${{ secrets.LINKWARDEN_SECRET }}
+          IMMICH_ADMIN_PASSWORD: ${{ secrets.IMMICH_ADMIN_PASSWORD }}
+          JELLYFIN_ADMIN_PASSWORD: ${{ secrets.JELLYFIN_ADMIN_PASSWORD }}
+          NAVIDROME_ADMIN_PASSWORD: ${{ secrets.NAVIDROME_ADMIN_PASSWORD }}
+          SYNCTHING_ADMIN_PASSWORD: ${{ secrets.SYNCTHING_ADMIN_PASSWORD }}
+          BESZEL_ADMIN_PASSWORD: ${{ secrets.BESZEL_ADMIN_PASSWORD }}
+          BESZEL_KEY: ${{ secrets.BESZEL_KEY }}
+        run: |
+          ansible-playbook -i environments/prod/hosts.ini playbooks/deploy-core.yml
+
+  # F7-C — a deploy is not done until its tests are green. Checks that need a
+  # part of prod that is not online yet report SKIP, which is not a failure.
+  post-deploy-tests:
+    needs: deploy-prod
+    runs-on: [self-hosted, homelab-prod]
+    environment: prod
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install the prod SSH key
+        # Inventory and tests use ~/.ssh/homelab_prod_ed25519 (user ubuntu-prod, made by Terraform).
+        env:
+          KEY: ${{ secrets.UBUNTU_DOCKER_SSH_PRIV }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/homelab_prod_ed25519
+          chmod 600 ~/.ssh/homelab_prod_ed25519
+
+      - name: Run test suites
+        env:
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          IMMICH_DB_PASSWORD: ${{ secrets.IMMICH_DB_PASSWORD }}
+          SAMBA_ADMIN_PASSWORD: ${{ secrets.SAMBA_ADMIN_PASSWORD }}
+          LINKWARDEN_URL: http://192.168.50.30:3001
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NO_COLOR: "1"
+        run: |
+          ./utils/run-tests.sh --env prod --suite all --json-out tests-prod-report.json
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tests-prod-report
+          path: tests-prod-report.json
+          if-no-files-found: ignore

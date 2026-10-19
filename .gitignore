@@ -1,2 +1,14 @@
 terraform/providers/
 terraform/.terraform/
+*.tfstate
+*.tfstate.*
+terraform/environments/dev/plan.tfplan
+.env
+.env.*
+!.env.example
+actions-runner*/
+.cache/
+*.qcow2
+opnsense/backups/
+opnsense/backups/*.xml
+__pycache__/

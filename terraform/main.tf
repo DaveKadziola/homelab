@@ -1,20 +1,22 @@
 #Config node
 resource "proxmox_virtual_environment_certificate" "node_ssl_setup" {
   count             = var.node_config.cert_setup_enabled ? 1 : 0
-  node_name         = var.environment
+  node_name         = var.proxmox_node_name
   certificate       = var.ssl_cert
   certificate_chain = var.ssl_cert_chain
   private_key       = var.ssl_cert_pkey
 }
 
 resource "proxmox_virtual_environment_dns" "node_dns_setup" {
-  node_name = var.environment
+  count     = var.manage_node_network ? 1 : 0
+  node_name = var.proxmox_node_name
   domain    = var.node_config.dns_domain
   servers   = var.node_config.dns_servers
 }
 
 resource "proxmox_virtual_environment_network_linux_bridge" "vmbr0" {
-  node_name = var.environment
+  count     = var.manage_node_network ? 1 : 0
+  node_name = var.proxmox_node_name
 
   depends_on = [
     proxmox_virtual_environment_network_linux_vlan.vlan20
@@ -28,7 +30,8 @@ resource "proxmox_virtual_environment_network_linux_bridge" "vmbr0" {
 }
 
 resource "proxmox_virtual_environment_network_linux_vlan" "vlan20" {
-  node_name = var.environment
+  count     = var.manage_node_network ? 1 : 0
+  node_name = var.proxmox_node_name
   name      = var.node_config.vlan_name
   address   = var.node_config.vlan_address
   gateway   = var.node_config.vlan_gateway
@@ -41,37 +44,17 @@ resource "proxmox_virtual_environment_file" "cloud_config" {
 
   content_type = "snippets"
   datastore_id = "local"
-  node_name    = var.environment
+  node_name    = var.proxmox_node_name
   source_raw {
-    data = <<-EOF
-    #cloud-config
-    #password id an output from mkpasswd --method=SHA-512 --rounds=4096
-    users:
-      - name: ubuntu-${var.environment}
-        sudo: [ "ALL=(ALL) ALL" ] 
-        groups: [ "sudo" ]
-        shell: /bin/bash
-        lock_passwd: false
-        passwd: "${var.ubuntu_docker_password}"
-        ssh_authorized_keys:
-          - "${var.ubuntu_docker_ssh_pub}"
+    data = templatefile("${path.module}/cloud-init-user-data.yaml.tpl", {
+      environment     = var.environment
+      hostname        = each.value.vm_name
+      ubuntu_password = var.ubuntu_docker_password
+      ubuntu_ssh_pub  = trimspace(var.ubuntu_docker_ssh_pub)
+      docker_enabled  = try(each.value.docker_enabled, true)
+    })
 
-    package_update: true
-    package_upgrade: true
-    packages:
-      - docker.io
-      - docker-compose
-      - git
-      - curl
-
-    runcmd:
-      - systemctl enable docker
-      - systemctl start docker
-      - usermod -aG docker ubuntu
-      - curl -L https://downloads.portainer.io/ce2-20/portainer-agent-stack.yml -o /home/ubuntu/portainer-agent-stack.yml
-    EOF
-
-    file_name = "ubuntu-cloud-init-user-data.yaml"
+    file_name = "ubuntu-cloud-init-${each.key}-user-data.yaml"
   }
 }
 
@@ -79,7 +62,7 @@ resource "proxmox_virtual_environment_file" "vm_image" {
   for_each     = var.vm_config
   content_type = "iso"
   datastore_id = each.value.img_storage_type
-  node_name    = var.environment
+  node_name    = var.proxmox_node_name
 
   source_file {
     path = each.value.image_url
@@ -93,15 +76,18 @@ resource "proxmox_virtual_environment_vm" "vm" {
 
   name        = "${each.value.vm_name}-${var.environment}"
   description = each.value.vm_description
-  node_name   = var.environment
+  node_name   = var.proxmox_node_name
   vm_id       = each.value.vm_id
   tags        = each.value.vm_tags
 
   bios = each.value.bios
 
   boot_order = each.value.boot_order
+  # "host" is required by Immich machine-learning (NumPy needs x86-64-v2);
+  # the provider default kvm64 makes it crash with "Illegal instruction".
   cpu {
     cores = each.value.cpu_cores
+    type  = try(each.value.cpu_type, "host")
   }
 
   memory {
@@ -113,16 +99,25 @@ resource "proxmox_virtual_environment_vm" "vm" {
     vlan_id = each.value.vlan_tag
   }
 
-  efi_disk {
-    type = each.value.efi_disk_size
+  dynamic "efi_disk" {
+    for_each = try(each.value.efi_disk_size, null) != null ? [1] : []
+    content {
+      type = each.value.efi_disk_size
+    }
   }
   disk {
     datastore_id = each.value.storage_type
     file_id      = proxmox_virtual_environment_file.vm_image[each.key].id
     interface    = each.value.storage_interface
     size         = each.value.storage_size
-    file_format  = each.value.img_file_format
-    ssd          = each.value.ssd_enabled
+    # The disk on local-lvm (LVM-thin) is always raw; img_file_format describes the
+    # downloaded cloud image, not this disk. Declaring qcow2 here made every plan want
+    # an in-place format change.
+    file_format = "raw"
+    ssd         = each.value.ssd_enabled
+    # Return freed blocks to the LVM-thin pool. A full pool froze DEV twice
+    # (knowledge/lessons-learned.md, 2026-10-18).
+    discard = "on"
   }
 
   # cloud-init
@@ -147,5 +142,11 @@ resource "proxmox_virtual_environment_vm" "vm" {
 
       user_data_file_id = proxmox_virtual_environment_file.cloud_config[each.key].id
     }
+  }
+
+  # Cloud-init is first-boot only. Re-hashing the password or editing the
+  # snippet must not destroy a running VM (Immich data, Docker volumes).
+  lifecycle {
+    ignore_changes = [initialization]
   }
 }

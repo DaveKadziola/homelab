@@ -1,0 +1,17 @@
+---
+description: Verification and testing - evidence of the right scope, valid runs, attributing failures, positive control
+globs:
+alwaysApply: false
+---
+
+# Verification and testing
+
+Source of truth: `AGENTS.md` sections 6 and 7; details in `rules/verification-and-diagnosis.md`.
+Apply when running tests, judging a result or diagnosing a failure.
+
+- Evidence must match the claim; always state what the check does not prove.
+- Prove the run was valid (target, input, own output, no early infrastructure failure) before
+  calling pass or fail.
+- Runs sharing a resource are compared one after another, in the same order.
+- Failure attribution: change surface first, existing control run, normalized trace diff,
+  quantities as evidence, then a positive control. Say whether you have proof or correlation.

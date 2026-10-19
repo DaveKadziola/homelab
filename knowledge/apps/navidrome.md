@@ -1,0 +1,14 @@
+# Navidrome
+
+| | |
+|--|--|
+| URL (dev) | http://192.168.122.50:4533 |
+| Login | username `admin` |
+| Secret | `NAVIDROME_ADMIN_PASSWORD` |
+| Music | DEV: `navidrome_music` volume (empty). Prod: `/mnt/homelab/media/music` |
+| Config | `compose/core/navidrome/navidrome.toml` |
+| Bootstrap | `utils/bootstrap/navidrome.sh` |
+
+`ND_DEVAUTOCREATEADMINPASSWORD` creates `admin` **only on first start**. Later resets: `navidrome user edit --set-password` needs a TTY (`docker exec -t` + pexpect). A pipe fails with `inappropriate ioctl for device`. Copying `navidrome.db` while the process is up loses the change to WAL.
+
+Health check: `GET /ping` returns 200; `/` answers 302 -> `/app/` (0.63.2, verified on DEV 2026-10-18).
