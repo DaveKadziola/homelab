@@ -17,6 +17,8 @@ and `knowledge/rebuild.md` (order of steps).
 | Proxmox VE 9.2.2 | Pentium J4205 (4 cores), 15 GiB RAM; system on Crucial MX500 250 GB (`local` 66 GiB, `local-lvm` 137 GiB thin) | `192.168.20.20`, `proxmox.dkhomelabserver.xyz` | live host |
 | HP t620 | Home Assistant OS (to install) | `192.168.20.13`, `hass.dkhomelabserver.xyz` | DHCP map, AdGuard rewrite |
 
+SMART 2026-10-19: SA500 PASSED, 37 h; Purple PASSED, 50 733 h (~5.8 years), no reallocated or pending sectors. Both still carry NTFS partitions (to be wiped, owner's decision).
+
 Proxmox network: `vmbr0` VLAN-aware on `bond0` (active-backup `nic1` + `nic0`, MAC `3c:49:37:19:71:ae`), management `vmbr0.20`; `vmbr1` VLAN-aware on `nic2` for APP. Disks not yet given to anything: WD Red SA500 2 TB (`ata-WD_Red_SA500_2.5_2TB_2525GTD00073`), WD Purple 4 TB (`ata-WDC_WD40PURZ-85TTDY0_WD-WCC7K3KZKJKX`).
 
 ## 2. Virtual machines (Terraform)
@@ -32,17 +34,17 @@ Totals: 4 of 4 vCPU, 12 of 15 GiB RAM, 80 of 137 GiB thin pool. Proxmox itself k
 
 ## 3. NAS (`ubuntu-nas`, Ansible `deploy-storage.yml`)
 
-Source: `config/storage.yml`. NFS server, exports under `/export`, clients `192.168.50.0/26` only.
+Decided 2026-10-19 (owner): layout by data type, not by quotas - media total is ~300-400 GB.
 
-| Export | Path | Cap | Used by | Disk (`passthrough`) |
-|--------|------|-----|---------|----------------------|
-| media-immich | `media/immich` | 60 GB | Immich | SA500 -> `/export/media` |
-| media-music | `media/music` | 150 GB | Navidrome | SA500 |
-| media-video | `media/video` | 400 GB | Jellyfin | SA500 |
-| sync | `sync` | 20 GB | Syncthing | SA500 |
-| backups | `backups` | - | backup timer | Purple -> `/export/backups` |
+| Disk | Holds | Why |
+|------|-------|-----|
+| SA500 2 TB SSD | all media: Immich, music, video, Syncthing sync | hot data, read often; 4-5x headroom |
+| Purple 4 TB HDD | backups + Samba share `share` (installers) | cold, large, sequential |
 
-`ubuntu-apps` mounts it at `/mnt/homelab`. Firewall: APP -> `192.168.20.12` TCP 2049/111 (exists).
+- NFS: exports for `ubuntu-apps` only (`192.168.50.0/26`); `ubuntu-apps` mounts at `/mnt/homelab`; firewall APP -> `.20.12` TCP 2049/111 (exists). Paths in `compose/core/docker-compose.nfs.yml` stay.
+- Samba on `ubuntu-nas`: share `share` on the Purple; the owner's admin account has access to everything, more users later; clients LAN `192.168.1.0/24` and WireGuard `10.10.10.0/24` only (`hosts allow` - IOT devices sit in the NAS subnet). Name `nas.dkhomelabserver.xyz` (AdGuard rewrite).
+- `share` is not backed up (installers can be downloaded again). Media backup to pCloud is deferred until prod runs (media already exists on pCloud).
+- Not implemented yet: formatting/mounting the passed disks inside the NAS VM (today `deploy-storage.yml` would create the exports on the 32 GiB root disk), Samba, the by-id values in `config/storage.yml`.
 
 ## 4. Applications (`ubuntu-apps`, Ansible `deploy-core.yml` + Docker Compose)
 
@@ -108,7 +110,7 @@ Beszel hub (host metrics; agent off until keyed), Dozzle (logs), Diun (image upd
 1. **HAProxy backend points at `192.168.50.30:8080`** - that is Dozzle, not Grocery (`8101`). Fix before apps start, or Dozzle is public.
 2. **SSH user mismatch:** Terraform creates `ubuntu-prod`; `ansible/environments/prod/hosts.ini` and `services.yml` say `ubuntu`. Ansible would not log in.
 3. **Prod reuses the DEV key:** GH `prod` `UBUNTU_DOCKER_SSH_PUB` is the `homelab-dev` key; `UBUNTU_DOCKER_PASSWORD` prod dates from 2026-06-29 (before the `--body -` fix, may be `-`). Regenerate both for prod.
-4. **`passthrough[].by_id` empty** in `config/storage.yml`; the values are now known (section 1).
+4. **NAS disks:** `passthrough[].by_id` empty in `config/storage.yml` (values known, section 1), and nothing formats or mounts the passed disks inside the VM; `cap_gb` is read by no code. Wipe of the existing NTFS must be an explicit one-time opt-in.
 5. **Backups that cannot run from `ubuntu-apps`:** `vzdump.sh` needs a Proxmox host (timer on apps -> SKIP); `opnsense.sh` and `ha-pull.sh` need APP -> router SSH and APP -> `.20.13`, which the APP firewall blocks (private networks closed); `opnsense.sh` also needs a key on the router.
 6. **Authelia is configured for `homelab.local`** (DEV) only; prod needs a domain under `dkhomelabserver.xyz` plus AdGuard rewrites for the app names.
 7. **Monitoring alerts:** no notifier for Diun/Beszel; F10 not built.
