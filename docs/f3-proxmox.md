@@ -22,7 +22,7 @@ Host mgmt stays **`192.168.20.20`** (existing DHCP on OPNsense).
 | ID | Task | Tool |
 |----|------|------|
 | F3-01 | Proxmox reachable (SSH/API) | `./utils/f3-verify.sh` |
-| F3-02 | API token `terraform-prov@pam!terraform` | Proxmox UI → Datacenter → Permissions |
+| F3-02 | API token `homelab-prod@pam!terraform` (done 2026-10-19) | `pveum` on the host, see below |
 | F3-03 | GH prod variables → real `PROXMOX_API_URL` | `./utils/bootstrap-f3-proxmox.sh` |
 | F3-04 | `terraform plan` | `./utils/f3-proxmox-preflight.sh` then plan |
 | F3-05 | `terraform apply` on `main` | `infra-apply-prod.yml` (needs prod runner — chicken/egg) |
@@ -65,12 +65,15 @@ Then merge `homelab-v2` → `main` for CI-driven applies.
 
 ## Proxmox API token (F3-02)
 
-1. `https://192.168.20.20:8006` → Datacenter → Permissions → API Tokens  
-2. User: `terraform-prov@pam` (or `root@pam` for bootstrap only)  
-3. Token ID: `terraform` → full ID `terraform-prov@pam!terraform`  
-4. Uncheck **Privilege Separation** if using broad TF role  
-5. Role: `Administrator` or custom TF role  
-6. Store secret in Bitwarden → `gh secret set PROXMOX_API_TOKEN_SECRET --env prod`
+Full ID `homelab-prod@pam!terraform` (matches the GH `prod` variable `PROXMOX_API_TOKEN_ID`), role `Administrator` on `/`, privilege separation off:
+
+```bash
+pveum user add homelab-prod@pam --comment "Terraform homelab-v2 (prod)"
+pveum acl modify / --users homelab-prod@pam --roles Administrator
+pveum user token add homelab-prod@pam terraform --privsep 0 --output-format json   # "value" = secret, shown once
+```
+
+The secret goes to `~/.homelab-secrets/prod/PROXMOX_API_TOKEN_SECRET` (mode 600), Bitwarden `homelab/PROXMOX_API_TOKEN_SECRET/prod` and `gh secret set PROXMOX_API_TOKEN_SECRET --env prod < file`. Never print it.
 
 ---
 

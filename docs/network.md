@@ -33,7 +33,7 @@ Dev is **isolated** from prod VLANs.
 |----|--------|
 | `192.168.20.10` | Canon printer |
 | `192.168.20.11` | E1 Zoom |
-| `192.168.20.20` | **Proxmox host** (NIC1 mgmt) |
+| `192.168.20.20` | **Proxmox host** (mgmt `vmbr0.20`) |
 | `192.168.20.50`–`.58` | Tuya / IoT |
 
 ### Homelab v2 slots (new DHCP static mappings at F3/F5)
@@ -49,21 +49,19 @@ Dev is **isolated** from prod VLANs.
 
 ---
 
-## Proxmox — 3× NIC (one host IP, traffic separation)
+## Proxmox — 3× NIC (one host IP)
 
-| NIC | Layer-3 on host | Role |
-|-----|-----------------|------|
-| **NIC1** | **`192.168.20.20`** (IOT) | Proxmox API/SSH; trunk VLAN 20 → `ubuntu-nas` `.20.12` |
-| **NIC2** | none | PCI passthrough SA500 + Purple → NAS VM disks only |
-| **NIC3** | none on host | Trunk VLAN 51 → `ubuntu-apps` `.50.30` |
+As-built 2026-10-19 (PVE 9.2.2, `proxmox.dkhomelabserver.xyz`, interface names pinned):
+
+| NIC | MAC | Role |
+|-----|-----|------|
+| `nic1` Intel igb | `3c:49:37:19:71:ae` | `bond0` primary -> `vmbr0` (VLAN-aware) |
+| `nic0` Realtek r8169 | `70:85:c2:53:e0:ac` | `bond0` backup (active-backup, takes over when `nic1` loses link; failover tested) |
+| `nic2` Intel igb | `3c:49:37:19:71:af` | reserved for APP (VLAN 51 -> `ubuntu-apps` `.50.30`) |
+
+Management is `vmbr0.20` = **`192.168.20.20/24`**, gateway `.20.1`. The switch ports deliver IOT as **VLAN 20 tagged**: untagged, the host got no ARP replies (and the installer no DHCP ACK). `nic2` was probed with temporary sub-interfaces: VLAN 20 tagged answers; VLAN 51, VLAN 50 and QinQ 50/51 (0x8100 and 0x88a8) do not - the switch port needs APP/DMZ before `ubuntu-apps` can run. SA500 + Purple go to the NAS VM as disks (by-id), not through a NIC.
 
 Host names come from **AdGuard Home rewrites** on OPNsense (`/usr/local/AdGuardHome/AdGuardHome.yaml`, `filtering.rewrites`): `proxmox.dkhomelabserver.xyz` -> `.20.20`, `hass.dkhomelabserver.xyz` -> `.20.13` (moved from `.20.20` on 2026-10-19), `adguard.` -> `192.168.1.1`, `ap.` -> `.1.3`, `switch.` -> `.1.2`; `npm.` disabled (NPM removed).
-
-As-built NICs (installer, 2026-10-19; names pinned): `nic0` `70:85:c2:53:e0:ac` Realtek r8169, `nic1` `3c:49:37:19:71:ae` Intel igb (management), `nic2` `3c:49:37:19:71:af` Intel igb. All three switch ports deliver IOT (VLAN 20) untagged; tagged VLANs not yet checked.
-
-Host has **one** management IP. NIC2/NIC3 offload storage and app traffic from NIC1 — not multiple host IPs.
-
-**F3 Terraform:** `vmbr0` vlan-aware on NIC1; APP VM on tag 51 (NIC3 trunk per cabling).
 
 ---
 
