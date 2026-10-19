@@ -27,7 +27,7 @@ Generator: `utils/gen-app-credentials.sh` → GH Environment secret + `~/.homela
 |-------|--------|
 | Authelia | DEV only (profile `auth`), off on prod ([decision 0003](decisions/0003-prod-without-authelia.md)). Cookie domain `homelab.local`. No proxy puts it in front of any app yet. |
 | App admins | Converged by `utils/bootstrap/*.sh` where the app has an API/CLI |
-| SSH | Key-only to the apps guest |
+| SSH | Key-only to the apps guest. Root on the prod Proxmox host: own laptop key `~/.ssh/homelab_prod_pve_ed25519` since 2026-10-20; the DEV key `~/.ssh/homelab_dev_ed25519` (also GH `dev` `UBUNTU_DOCKER_SSH_PRIV`, an environment without reviewer) no longer logs in there. Lost key: console login with the root password |
 | TLS | Authelia self-signed on `:9091`. Public grocery ACME is a prod HAProxy job. |
 
 ## Known sharp edges (will be in F9)

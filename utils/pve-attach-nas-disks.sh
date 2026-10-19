@@ -20,7 +20,7 @@ DRY_RUN=false
 PVE_HOST="${PVE_HOST:-192.168.20.20}"
 PVE_USER="${PVE_USER:-root}"
 VMID="${NAS_VMID:-102}"
-PVE_KEY="${PVE_KEY:-}"   # e.g. ~/.ssh/homelab_dev_ed25519 (root key on the PVE host)
+PVE_KEY="${PVE_KEY:-}"   # e.g. ~/.ssh/homelab_prod_pve_ed25519 (root key on the prod PVE host)
 
 usage() { sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
 
