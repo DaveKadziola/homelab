@@ -1,26 +1,217 @@
 ---
-# F5 — NFS export layout + client mounts + backup timer.
+# F5 — NFS export layout + client mounts + backup timer, Samba on the NAS.
 #
 # DEV (mode: local): ubuntu_nas and ubuntu_docker are the same guest.
 #   export_root = /srv/homelab-export, NFS loopback to /mnt/homelab.
 # PROD: ubuntu-nas exports /export; ubuntu-apps mounts 192.168.20.12:/export.
 #
-# Does not format SA500/Purple. Passthrough is utils/pve-attach-nas-disks.sh;
-# if those block devices are absent the directories are created on the root fs
-# (DEV, or prod before disks are attached).
-- name: Homelab storage — NFS server
+# PROD passthrough disks (config/storage.yml): found by serial, given an ext4
+# filesystem with a LABEL once, mounted by LABEL. Formatting a disk that already
+# holds data needs a one-time opt-in naming its serial and current fs type:
+#   ansible-playbook ... deploy-storage.yml -e '{"nas_wipe": ["2525GTD00073:ntfs"]}'
+# Never pass nas_wipe in CI or a DR rebuild: a disk that already carries its label
+# is never touched. nfs-server requires every mount, so a missing disk stops NFS
+# instead of exporting empty root-disk directories. DEV has no passthrough disks;
+# its exports live on the root fs.
+# Samba (st.samba): shares `share` and `media` for the homelab-admin login only.
+- name: Homelab storage — NFS server + Samba
   hosts: ubuntu_nas
   become: true
   vars:
     homelab_env: "{{ lookup('env', 'HOMELAB_ENV') | default('dev', true) }}"
     storage: "{{ lookup('file', playbook_dir + '/../../config/storage.yml') | from_yaml }}"
     st: "{{ storage.environments[homelab_env] }}"
+    passthrough: "{{ st.passthrough | default([]) }}"
+    binds: "{{ st.binds | default([]) }}"
+    # Every mount nfs-server must wait for, and the [path, label] marker of each
+    # filesystem that NFS shows (checked through NFS by the client play).
+    nas_mounts: "{{ (passthrough | map(attribute='mount') | list) + (binds | map(attribute='to') | list) }}"
+    fs_markers: >-
+      {{ (passthrough | selectattr('mount', 'match', st.export_root ~ '/') | map(attribute='mount')
+          | zip(passthrough | selectattr('mount', 'match', st.export_root ~ '/') | map(attribute='label')) | list)
+         + (binds | map(attribute='from') | zip(binds | map(attribute='label')) | list) }}
+    nas_wipe: []
+    # Same resolution as deploy-core.yml: environment first, else the operator cache.
+    secret_cache: "{{ lookup('env', 'HOME') }}/.homelab-secrets/{{ homelab_env }}"
+    identities: "{{ lookup('file', playbook_dir + '/../../config/identities.yml') | from_yaml }}"
+    samba_account: "{{ identities.accounts | selectattr('app', 'equalto', 'samba') | first }}"
+    samba_login: "{{ identities.identities[samba_account.identity].username }}"
+    # Not the login itself: a Unix user named admin gets sudo through Ubuntu's %admin group.
+    samba_unix_user: homelab-smb
   tasks:
-    - name: Install NFS server
+    - name: Refuse a run whose HOMELAB_ENV does not match the inventory
+      ansible.builtin.assert:
+        that:
+          - inventory_dir | basename == homelab_env
+        fail_msg: >-
+          HOMELAB_ENV={{ homelab_env }} but the inventory is {{ inventory_dir }};
+          export HOMELAB_ENV to match, or one environment's values land on another.
+
+    - name: Install NFS server and Samba
       ansible.builtin.apt:
-        name: [nfs-kernel-server, nfs-common]
+        name: "{{ ['nfs-kernel-server', 'nfs-common'] + (['samba', 'smbclient'] if st.samba is defined else []) }}"
         state: present
         update_cache: true
+
+    - name: Passthrough disks
+      when: passthrough | length > 0
+      block:
+        - name: List block devices with serials
+          ansible.builtin.command: lsblk -dnpo NAME,SERIAL
+          register: lsblk_serials
+          changed_when: false
+          check_mode: false
+
+        - name: Map each passthrough disk to its device
+          ansible.builtin.set_fact:
+            disk_dev: >-
+              {{ disk_dev | default({}) | combine({item.serial: (lsblk_serials.stdout_lines
+                 | select('search', '\s' ~ (item.serial | regex_escape) ~ '$')
+                 | map('split') | map('first') | first | default(''))}) }}
+          loop: "{{ passthrough }}"
+
+        - name: Require every passthrough disk to be attached
+          ansible.builtin.assert:
+            that:
+              - disk_dev[item.serial] | length > 0
+            fail_msg: >-
+              No disk with serial {{ item.serial }} ({{ item.name }}) in the guest.
+              Run utils/pve-attach-nas-disks.sh --env {{ homelab_env }} and reboot the NAS.
+          loop: "{{ passthrough }}"
+
+        # Two lines per disk: label=<LABEL of the whole disk> and types=<every signature on
+        # the disk and its partitions, e.g. "gpt ntfs">; empty types = blank disk.
+        - name: Read filesystem label and signatures per disk
+          ansible.builtin.shell: |
+            set -o pipefail
+            dev={{ disk_dev[item.serial] | quote }}
+            printf 'label=%s\n' "$(blkid -o value -s LABEL "$dev" || true)"
+            printf 'types=%s\n' "$( { wipefs -n -O TYPE --noheadings "$dev"; lsblk -nro FSTYPE "$dev"; } | sort -u | tr '\n' ' ')"
+          args:
+            executable: /bin/bash
+          loop: "{{ passthrough }}"
+          loop_control:
+            label: "{{ item.name }}"
+          register: disk_state
+          changed_when: false
+          check_mode: false
+
+        # A blank disk formats without opt-in; one with any signature needs nas_wipe.
+        - name: Stop on a disk that holds data without a matching wipe opt-in
+          ansible.builtin.assert:
+            that:
+              - (item.item.serial ~ ':' ~ wipe_type) in nas_wipe
+              - wipe_type in found_types
+            fail_msg: >-
+              {{ item.item.name }} (serial {{ item.item.serial }}, {{ disk_dev[item.item.serial] }})
+              is not labelled {{ item.item.label }}; it holds: {{ found_types | join(' ') }}.
+              To erase it once, re-run with -e '{"nas_wipe": ["{{ item.item.serial }}:<type>"]}'
+              naming one of those types.
+          vars:
+            found_types: "{{ item.stdout_lines[1].split('=', 1)[1].split() }}"
+            wipe_type: "{{ ((nas_wipe | select('match', (item.item.serial | regex_escape) ~ ':') | first | default(':')).split(':'))[1] }}"
+          when:
+            - item.stdout_lines[0] != 'label=' ~ item.item.label
+            - found_types | length > 0
+          loop: "{{ disk_state.results }}"
+          loop_control:
+            label: "{{ item.item.name }}"
+
+        - name: Erase and format opted-in disks (ext4, LABEL)
+          ansible.builtin.shell: |
+            set -euo pipefail
+            wipefs -a {{ disk_dev[item.item.serial] | quote }}
+            mkfs.ext4 -q -F -m 1 -L {{ item.item.label | quote }} {{ disk_dev[item.item.serial] | quote }}
+            # Make the kernel forget the erased partitions (whole-disk filesystem now).
+            blockdev --rereadpt {{ disk_dev[item.item.serial] | quote }} || true
+          args:
+            executable: /bin/bash
+          when: item.stdout_lines[0] != 'label=' ~ item.item.label
+          loop: "{{ disk_state.results }}"
+          loop_control:
+            label: "{{ item.item.name }}"
+          changed_when: true
+
+        - name: Create mount points
+          ansible.builtin.file:
+            path: "{{ item }}"
+            state: directory
+            mode: "0755"
+          loop: "{{ nas_mounts }}"
+
+        # nofail: a missing disk must not drop the NAS into emergency mode (no SSH);
+        # the nfs-server drop-in below keeps NFS down instead.
+        - name: Record passthrough mounts in fstab
+          ansible.builtin.lineinfile:
+            path: /etc/fstab
+            regexp: '^\S+\s+{{ item.mount | regex_escape }}\s'
+            line: "LABEL={{ item.label }} {{ item.mount }} ext4 defaults,noatime,nofail,x-systemd.device-timeout=30s 0 2"
+          loop: "{{ passthrough }}"
+          loop_control:
+            label: "{{ item.name }}"
+
+        # mountpoint first: mount(8) would stack a second bind on every run.
+        - name: Mount passthrough filesystems  # noqa: command-instead-of-module
+          ansible.builtin.shell: mountpoint -q {{ item.mount | quote }} && echo already || mount {{ item.mount | quote }}
+          loop: "{{ passthrough }}"
+          loop_control:
+            label: "{{ item.name }}"
+          register: disk_mount
+          changed_when: disk_mount.stdout != 'already'
+
+        - name: Create bind sources on their filesystem
+          ansible.builtin.file:
+            path: "{{ item.from }}"
+            state: directory
+            owner: "{{ ansible_user }}"
+            group: "{{ ansible_user }}"
+            mode: "0755"
+          loop: "{{ binds }}"
+
+        - name: Record bind mounts in fstab
+          ansible.builtin.lineinfile:
+            path: /etc/fstab
+            regexp: '^\S+\s+{{ item.to | regex_escape }}\s'
+            line: "{{ item.from }} {{ item.to }} none bind,nofail,x-systemd.requires-mounts-for={{ item.from }} 0 0"
+          loop: "{{ binds }}"
+
+        - name: Mount binds  # noqa: command-instead-of-module
+          ansible.builtin.shell: mountpoint -q {{ item.to | quote }} && echo already || mount {{ item.to | quote }}
+          loop: "{{ binds }}"
+          register: bind_mount
+          changed_when: bind_mount.stdout != 'already'
+
+        - name: Require every mount to be a mount point
+          ansible.builtin.command: mountpoint -q {{ item | quote }}
+          loop: "{{ nas_mounts }}"
+          changed_when: false
+          check_mode: false
+
+        - name: Create the nfs-server drop-in directory
+          ansible.builtin.file:
+            path: /etc/systemd/system/nfs-server.service.d
+            state: directory
+            mode: "0755"
+
+        - name: Keep nfs-server down while a passthrough mount is missing
+          ansible.builtin.copy:
+            dest: /etc/systemd/system/nfs-server.service.d/homelab-mounts.conf
+            mode: "0644"
+            content: |
+              # Generated by deploy-storage.yml: exporting the root-disk directories under a
+              # missing mount would let the apps host fill the NAS root disk.
+              [Unit]
+              RequiresMountsFor={{ nas_mounts | join(' ') }}
+          notify: Reload systemd
+
+        # The apps host looks for these through NFS (client play): proof that crossmnt
+        # shows the real filesystem and not the root-disk directory under the mount.
+        - name: Mark each NFS-visible filesystem
+          ansible.builtin.copy:
+            dest: "{{ item.0 }}/.homelab-fs-{{ item.1 }}"
+            content: "{{ item.1 }}\n"
+            mode: "0644"
+          loop: "{{ fs_markers }}"
 
     - name: Create export directories
       ansible.builtin.file:
@@ -31,6 +222,7 @@
         mode: "0755"
       loop: "{{ storage.exports }}"
 
+    # crossmnt: the passthrough filesystems and binds are mounted below export_root.
     - name: Write /etc/exports
       ansible.builtin.copy:
         dest: /etc/exports
@@ -38,7 +230,7 @@
         content: |
           # Generated by deploy-storage.yml — do not edit.
           {% for client in st.export_clients %}
-          {{ st.export_root }} {{ client }}(rw,sync,no_subtree_check,no_root_squash)
+          {{ st.export_root }} {{ client }}(rw,sync,no_subtree_check,no_root_squash,crossmnt)
           {% endfor %}
       notify: Reload nfs
 
@@ -52,12 +244,138 @@
       ansible.builtin.command: exportfs -ra
       changed_when: false
 
+    - name: Samba
+      when: st.samba is defined
+      block:
+        - name: Resolve the Samba password from the environment or the operator secret cache
+          ansible.builtin.set_fact:
+            samba_password: >-
+              {{ lookup('env', samba_account.secret)
+                 | default(lookup('file', secret_cache ~ '/' ~ samba_account.secret, errors='ignore'), true)
+                 | default('', true) }}
+          no_log: true
+
+        - name: Require the Samba password
+          ansible.builtin.assert:
+            that:
+              - samba_password | length > 0
+            fail_msg: >-
+              Set {{ samba_account.secret }} in the environment, or generate it with
+              utils/gen-app-credentials.sh --env {{ homelab_env }} --app samba
+
+        - name: Create the Unix account behind the Samba login
+          ansible.builtin.user:
+            name: "{{ samba_unix_user }}"
+            system: true
+            shell: /usr/sbin/nologin
+            create_home: false
+
+        - name: Create the share directory
+          ansible.builtin.file:
+            path: "{{ st.samba.share_path }}"
+            state: directory
+            owner: "{{ ansible_user }}"
+            group: "{{ ansible_user }}"
+            mode: "0755"
+
+        - name: Map the Samba login to its Unix account
+          ansible.builtin.copy:
+            dest: /etc/samba/homelab-users.map
+            mode: "0644"
+            content: |
+              # Generated by deploy-storage.yml: unix_user = login
+              {{ samba_unix_user }} = {{ samba_login }}
+          notify: Restart smbd
+
+        # Writes run as ansible_user (force user), the owner of the export tree, so files
+        # stay readable by the containers and writable by the next deploy.
+        - name: Write smb.conf
+          ansible.builtin.copy:
+            dest: /etc/samba/smb.conf
+            mode: "0644"
+            validate: testparm -s %s
+            content: |
+              # Generated by deploy-storage.yml — do not edit.
+              [global]
+                 server role = standalone server
+                 workgroup = WORKGROUP
+                 server min protocol = SMB3
+                 smb ports = 445
+                 disable netbios = yes
+                 map to guest = Never
+                 restrict anonymous = 2
+                 username map = /etc/samba/homelab-users.map
+                 # Only these clients; IOT devices share the NAS subnet and the router cannot filter them.
+                 hosts allow = {{ st.samba.hosts_allow | join(' ') }}
+                 hosts deny = ALL
+                 load printers = no
+                 printing = bsd
+                 printcap name = /dev/null
+                 disable spoolss = yes
+                 log file = /var/log/samba/log.%m
+                 max log size = 1000
+
+              [share]
+                 comment = Installers and misc files (not backed up)
+                 path = {{ st.samba.share_path }}
+                 valid users = {{ samba_unix_user }}
+                 force user = {{ ansible_user }}
+                 read only = no
+
+              [media]
+                 comment = Music and video libraries (Immich is managed by Immich)
+                 path = {{ st.export_root }}/media
+                 valid users = {{ samba_unix_user }}
+                 force user = {{ ansible_user }}
+                 read only = no
+                 veto files = /immich/.homelab-fs-*/lost+found/
+          notify: Restart smbd
+
+        - name: Start smbd, keep nmbd off
+          ansible.builtin.service:
+            name: "{{ item.name }}"
+            state: "{{ item.state }}"
+            enabled: "{{ item.enabled }}"
+          loop:
+            - { name: smbd, state: started, enabled: true }
+            - { name: nmbd, state: stopped, enabled: false }
+
+        - name: Flush handlers so the login check sees the current config
+          ansible.builtin.meta: flush_handlers
+
+        - name: Check whether the Samba login already works
+          ansible.builtin.command: smbclient -L //127.0.0.1 -U {{ samba_login | quote }} -m SMB3
+          environment:
+            PASSWD: "{{ samba_password }}"
+          register: samba_login_check
+          changed_when: false
+          failed_when: false
+          check_mode: false
+          no_log: true
+
+        - name: Set the Samba password
+          ansible.builtin.command: smbpasswd -s -a {{ samba_unix_user | quote }}
+          args:
+            stdin: "{{ samba_password }}\n{{ samba_password }}"
+          when: samba_login_check.rc != 0
+          changed_when: true
+          no_log: true
+
   handlers:
+    - name: Reload systemd
+      ansible.builtin.systemd:
+        daemon_reload: true
+
     - name: Reload nfs
       ansible.builtin.service:
         name: nfs-kernel-server
         state: reloaded
         enabled: true
+
+    - name: Restart smbd
+      ansible.builtin.service:
+        name: smbd
+        state: restarted
 
 - name: Homelab storage — NFS client + backup timer
   hosts: ubuntu_docker
@@ -68,6 +386,15 @@
     st: "{{ storage.environments[homelab_env] }}"
     utils_src: "{{ playbook_dir }}/../../utils"
     config_src: "{{ playbook_dir }}/../../config"
+    # Marker files the NAS play writes, as seen through the NFS mount.
+    client_markers: >-
+      {{ ((st.passthrough | default([]) | selectattr('mount', 'match', st.export_root ~ '/')
+           | map(attribute='mount') | list)
+          + (st.binds | default([]) | map(attribute='to') | list))
+         | zip((st.passthrough | default([]) | selectattr('mount', 'match', st.export_root ~ '/')
+                | map(attribute='label') | list)
+               + (st.binds | default([]) | map(attribute='label') | list))
+         | list }}
   tasks:
     - name: Install NFS client and backup tools
       ansible.builtin.apt:
@@ -81,10 +408,11 @@
         state: directory
         mode: "0755"
 
+    # Anchored on the mount-point field: on DEV the NAS and client fstab are one file.
     - name: Record the NFS mount in fstab
       ansible.builtin.lineinfile:
         path: /etc/fstab
-        regexp: "{{ st.mount_root | regex_escape }}"
+        regexp: '^\S+\s+{{ st.mount_root | regex_escape }}\s'
         line: "{{ st.nas_host }}:{{ st.export_root }} {{ st.mount_root }} nfs rw,hard,noatime,_netdev 0 0"
 
     # ansible-lint's isolated syntax-check cannot see ansible.posix.mount.
@@ -109,6 +437,57 @@
         fail_msg: >-
           {{ st.mount_root }}/backups is missing — NFS export
           {{ st.nas_host }}:{{ st.export_root }} did not mount.
+
+    - name: Look for each NAS filesystem marker through NFS
+      ansible.builtin.stat:
+        path: "{{ st.mount_root }}{{ item.0[st.export_root | length:] }}/.homelab-fs-{{ item.1 }}"
+      loop: "{{ client_markers }}"
+      register: marker_stat
+
+    # A directory the client listed before the NAS mounted a filesystem over it stays
+    # cached as the old directory (seen on DEV, 2026-10-19); dropping the dentry cache
+    # makes the client cross into the new mount.
+    - name: Drop the client dentry cache when a marker is not visible yet
+      ansible.builtin.shell: sync && echo 2 > /proc/sys/vm/drop_caches
+      when: marker_stat.results | rejectattr('stat.exists') | list | length > 0
+      changed_when: false
+
+    - name: Look again after the cache drop
+      ansible.builtin.stat:
+        path: "{{ st.mount_root }}{{ item.0[st.export_root | length:] }}/.homelab-fs-{{ item.1 }}"
+      loop: "{{ client_markers }}"
+      register: marker_stat
+
+    - name: Fail if NFS shows a root-disk directory instead of a NAS filesystem
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+        fail_msg: >-
+          {{ item.stat.path | default(item.item) }} is not visible: the NAS filesystem
+          {{ item.item.1 }} is not mounted there or not exported (crossmnt).
+      loop: "{{ marker_stat.results }}"
+      loop_control:
+        label: "{{ item.item.1 }}"
+
+    # Prod binds the media libraries from NFS; Docker must not start containers
+    # (and create bind dirs on the local disk) before the mount is up.
+    - name: Create the Docker drop-in directory
+      when: st.mode == 'nfs'
+      ansible.builtin.file:
+        path: /etc/systemd/system/docker.service.d
+        state: directory
+        mode: "0755"
+
+    - name: Make Docker wait for the NFS mount
+      when: st.mode == 'nfs'
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/docker.service.d/homelab-nfs.conf
+        mode: "0644"
+        content: |
+          # Generated by deploy-storage.yml
+          [Unit]
+          RequiresMountsFor={{ st.mount_root }}
+      notify: Reload systemd
 
     # Same owner as deploy-core.yml sets for /opt/homelab/config; with root:root here
     # every full deploy flipped the owner back and ansible --check reported drift.
@@ -176,6 +555,10 @@
       notify: Enable backup timer
 
   handlers:
+    - name: Reload systemd
+      ansible.builtin.systemd:
+        daemon_reload: true
+
     - name: Enable backup timer
       ansible.builtin.systemd:
         name: homelab-backup.timer

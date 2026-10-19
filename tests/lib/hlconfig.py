@@ -32,6 +32,7 @@ REPO = os.environ.get("HL_REPO_ROOT") or os.path.dirname(
 
 SERVICES_YML = os.path.join(REPO, "config", "services.yml")
 IDENTITIES_YML = os.path.join(REPO, "config", "identities.yml")
+STORAGE_YML = os.path.join(REPO, "config", "storage.yml")
 
 # project name -> compose file, used to rebuild the container names compose
 # would create (<project>-<service>-1) without talking to a Docker daemon.
@@ -83,15 +84,19 @@ def fail_hard(message):
 # --------------------------------------------------------------------------
 # env / services
 # --------------------------------------------------------------------------
-def inventory_facts(inventory_path):
-    """Pull ansible_host/user/key for the first ubuntu_docker host."""
+def inventory_facts(inventory_path, group=None):
+    """Pull ansible_host/user/key for the first host (of `group`, when given)."""
     facts = {}
     if not os.path.isfile(inventory_path):
         return facts
+    current = None
     with open(inventory_path, "r", encoding="utf-8") as fh:
         for line in fh:
             line = line.strip()
-            if not line or line.startswith("#") or line.startswith("["):
+            if line.startswith("["):
+                current = line.strip("[]")
+                continue
+            if not line or line.startswith("#") or (group and current != group):
                 continue
             for token in line.split():
                 if "=" in token:
@@ -120,6 +125,44 @@ def cmd_env(env):
     print(f"HL_INVENTORY={inventory}")
     print(f"HL_INVENTORY_HOST={facts.get('ansible_host', '')}")
     print(f"HL_IDENTITY={spec.get('identity', '')}")
+
+
+def cmd_storage(env):
+    """NAS facts for tests/storage: KEY=VALUE lines, then one line per check target.
+
+    MOUNT=<path>|<label>     a passthrough filesystem or bind on the NAS
+    MARKER=<path>|<label>    the marker of that filesystem as the apps host sees it via NFS
+    """
+    storage = load_yaml(STORAGE_YML)
+    st = (storage.get("environments") or {}).get(env)
+    if st is None:
+        fail_hard(f"unknown environment '{env}' in config/storage.yml")
+    spec = (services_doc().get("environments") or {}).get(env) or {}
+    inventory = spec.get("inventory", "")
+    facts = inventory_facts(os.path.join(REPO, inventory), group="ubuntu_nas") if inventory else {}
+    key = facts.get("ansible_ssh_private_key_file", "")
+    print(f"HL_NAS_HOST={st.get('nas_host', '')}")
+    print(f"HL_NAS_USER={facts.get('ansible_user', '')}")
+    print(f"HL_NAS_KEY={os.path.expanduser(key) if key else ''}")
+    print(f"HL_NAS_PASSTHROUGH={len(st.get('passthrough') or [])}")
+    export_root, mount_root = st.get("export_root", ""), st.get("mount_root", "")
+    nfs_visible = []
+    for disk in st.get("passthrough") or []:
+        print(f"MOUNT={disk['mount']}|{disk['label']}")
+        if disk["mount"].startswith(export_root + "/"):
+            nfs_visible.append((disk["mount"], disk["label"]))
+    for bind in st.get("binds") or []:
+        print(f"MOUNT={bind['to']}|{bind['label']}")
+        nfs_visible.append((bind["to"], bind["label"]))
+    for path, label in nfs_visible:
+        print(f"MARKER={mount_root}{path[len(export_root):]}/.homelab-fs-{label}|{label}")
+    samba = st.get("samba")
+    if samba:
+        account = next((a for a in identities_doc().get("accounts") or [] if a.get("app") == "samba"), {})
+        ident = (identities_doc().get("identities") or {}).get(account.get("identity"), {})
+        print(f"HL_SMB_ALLOW={' '.join(samba.get('hosts_allow') or [])}")
+        print(f"HL_SMB_LOGIN={ident.get('username', '')}")
+        print(f"HL_SMB_SECRET={account.get('secret', '')}")
 
 
 def service_rows():
@@ -815,6 +858,7 @@ COMMANDS = {
     "scan-secrets": cmd_scan_secrets,
     "tfvars": cmd_tfvars,
     "ansible-changed": cmd_ansible_changed,
+    "storage": cmd_storage,
 }
 
 

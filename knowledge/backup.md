@@ -4,7 +4,7 @@
 
 ## Layout
 
-Declared in [`config/storage.yml`](../config/storage.yml). The timer always writes to `backup_root` on the **apps** guest (`/mnt/homelab/backups`), which is the NFS mount of the NAS export.
+Declared in [`config/storage.yml`](../config/storage.yml). The timer always writes to `backup_root` on the **apps** guest (`/mnt/homelab/backups`), which is the NFS mount of the NAS export (prod: `/srv/purple/backups` on Purple, bind-mounted to `/export/backups`).
 
 | Stream | Script | DEV | Prod |
 |--------|--------|-----|------|
@@ -18,7 +18,9 @@ Declared in [`config/storage.yml`](../config/storage.yml). The timer always writ
 
 Retention **A15 = 2 newest** artefacts **per name prefix** (`linkwarden-*.sql.gz`, not “2 files in the whole folder”). `hl_prune` in `utils/backup/lib.sh`.
 
-Offsite is **DR only** — not Immich / Jellyfin / Navidrome libraries (those already live on pCloud separately). Media on prod is the NFS share on SA500, not a second copy in this job.
+Offsite is **DR only** — not Immich / Jellyfin / Navidrome libraries (those already live on pCloud separately). Media on prod is the NFS share on SA500, not a second copy in this job. A homelab backup of the media to pCloud is deferred until prod runs; the owner will adjust the pCloud targets ([decision 0002](decisions/0002-nas-layout-and-samba.md)).
+
+The Samba share `share` (`/srv/purple/share`) is **not backed up**: it is outside the NFS tree, so neither the timer nor offsite sees it.
 
 ## Operator
 
@@ -48,7 +50,7 @@ Over an existing database: `--replace` (drop + create), with `--owner ROLE` when
 
 ## What is still not automatic
 
-- Filling `passthrough[].by_id` and `utils/pve-attach-nas-disks.sh --env prod`
+- Attaching SA500/Purple (`utils/pve-attach-nas-disks.sh --env prod`) and their one-time format (`nas_wipe`, [`storage.md`](storage.md#attach-and-format-run-order))
 - Interactive rclone OAuth → `rclone config create pcloud pcloud` then `utils/setup-rclone-pcloud.sh --push-gh` (see [`security.md`](security.md))
 - Flashing HAOS on the T620 and a long-lived `HA_TOKEN`
 - Running `vzdump` on physical PVE (the script no-ops on the apps VM)

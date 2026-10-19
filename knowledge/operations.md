@@ -35,6 +35,7 @@ cat ~/.homelab-secrets/dev/IMMICH_ADMIN_PASSWORD
 | Syncthing | http://192.168.122.50:8384 | `admin` | `SYNCTHING_ADMIN_PASSWORD` |
 | Beszel | http://192.168.122.50:8090 | env mailbox | `BESZEL_ADMIN_PASSWORD` |
 | Grocery | http://192.168.122.50:8101 | none (app users) | `GROCERY_DB_PASSWORD` for the DB role |
+| Samba | `\\192.168.122.50\share`, `\\192.168.122.50\media` | `admin` | `SAMBA_ADMIN_PASSWORD` |
 
 Authelia: accept the self-signed cert; use the **name**, not the IP. See [`networking.md`](networking.md).
 

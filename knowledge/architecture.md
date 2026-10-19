@@ -11,7 +11,7 @@ Laptop (dev)
 
 Prod (physical — after sign-off)
   OPNsense  →  Proxmox host 192.168.20.20 (node `proxmox`)
-    ubuntu-nas   192.168.20.12   IOT VLAN 20   NFS exporter (not OMV/TrueNAS — see storage.md)
+    ubuntu-nas   192.168.20.12   IOT VLAN 20   NFS + Samba (not OMV/TrueNAS — see storage.md)
     ubuntu-apps  192.168.50.30   APP VLAN 51   Docker + runner `homelab-prod`
     HA T620      192.168.20.13   IOT VLAN 20   Home Assistant
   WireGuard 10.10.10.0/24
@@ -25,14 +25,14 @@ Prod (physical — after sign-off)
 | Accounts and secret *names* | [`config/identities.yml`](../config/identities.yml) |
 | Secret *values* | Bitwarden → GitHub Environment → `~/.homelab-secrets/<env>/` |
 | VM sizing / IPs | `terraform/environments/<env>/terraform.tfvars` |
-| NFS / backup streams | [`config/storage.yml`](../config/storage.yml) |
+| NAS disks / NFS / Samba / backup streams | [`config/storage.yml`](../config/storage.yml) |
 | Network map | [`docs/network.md`](../docs/network.md) · this KB [`networking.md`](networking.md) |
 
 A port exists in `services.yml` first, then in compose. Never only in a markdown table.
 
 ## What is in scope vs not
 
-- **In scope on DEV today:** P0–P2 apps on `ubuntu-apps-dev`, Authelia, Immich (local volumes), F7 bootstrap + F7-C tests, F5 loopback NFS + backup timer + restore suite.
+- **In scope on DEV today:** P0–P2 apps on `ubuntu-apps-dev`, Authelia, Immich (local volumes), F7 bootstrap + F7-C tests, F5 loopback NFS + Samba + backup timer + restore and storage suites.
 - **Not built yet:** SA500/Purple passthrough, rclone OAuth, HAOS on the T620, public HAProxy/ACME on grocery, F9 merge-to-`main` wipe, F10 monitoring.
 
 ## Related

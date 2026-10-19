@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Single entrypoint for the homelab test suites (F7-C).
 #
-#   utils/run-tests.sh --env dev|prod [--suite smoke|infra|net|config|restore|all] [--json]
+#   utils/run-tests.sh --env dev|prod [--suite smoke|infra|net|config|storage|restore|all] [--json]
 #
 # Every suite is driven by config/services.yml and config/identities.yml, so
 # adding a service means editing that file, not this script.
@@ -13,7 +13,7 @@
 set -uo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SUITES_ALL=(smoke infra net config)
+SUITES_ALL=(smoke infra net config storage)
 
 ENVIRONMENT=""
 SUITE="all"
@@ -26,7 +26,7 @@ Usage: utils/run-tests.sh --env dev|prod [options]
 
 Options:
   --env <dev|prod>       Environment from config/services.yml (required)
-  --suite <name>         smoke | infra | net | config | restore | all
+  --suite <name>         smoke | infra | net | config | storage | restore | all
                          (default: all — restore is opt-in, not in all)
   --json                 Print a JSON report on stdout instead of the table
   --json-out <file>      Also write the JSON report to <file> (keeps the table)

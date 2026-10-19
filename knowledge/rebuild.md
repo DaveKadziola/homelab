@@ -50,7 +50,7 @@ Without the router, VLANs, DHCP statics, WireGuard, and HAProxy do not exist.
 - Prod: TFC workspace `homelab`, apply on `main` (approval).
 - Dev: `utils/dev-apply-local.sh`, state in HCP workspace `homelab-dev`.
 - Secrets: `UBUNTU_DOCKER_PASSWORD`, SSH key pair.
-- Data from backup: none on first apply. Attach SA500/Purple after fill-in of `config/storage.yml` `passthrough[].by_id` (`utils/pve-attach-nas-disks.sh --env prod`). Do not invent by-id. Do not apply a NAS VM on nested DEV.
+- Data from backup: none on first apply. Prod: after the apply and a clean `terraform plan`, attach SA500/Purple with `utils/pve-attach-nas-disks.sh --env prod --dry-run`, then without `--dry-run` (slot, serial and by-id from `config/storage.yml` `passthrough[]`); `terraform plan` again must show no changes. New disks: update `passthrough[]` first, do not invent by-id. Do not apply a NAS VM on nested DEV.
 - Verify: guests ping; **plan must not say `must be replaced`**.
 - Time: 15–30 min.
 - **Abort** if the plan destroys `ubuntu-apps`.
@@ -59,8 +59,9 @@ Without the router, VLANs, DHCP statics, WireGuard, and HAProxy do not exist.
 
 ## 4. Ansible base — **auto**
 
-- `ansible/playbooks/deploy-core.yml` (Docker, compose sync, `.env`).
-- Then `ansible/playbooks/deploy-storage.yml` (NFS + `homelab-backup.timer`). DEV = loopback on the same guest.
+- `ansible/playbooks/deploy-storage.yml` first, as the deploy workflows do: NFS must be up before compose binds the media libraries. Prod NAS: finds SA500/Purple by serial, formats only a blank disk, mounts them by LABEL; then NFS, Samba (`share`, `media`) and `homelab-backup.timer`. DEV = loopback NFS and Samba on the same guest.
+- **A DR rebuild never passes `nas_wipe`.** A disk that carries its LABEL is mounted as it is; `nas_wipe` erases a disk and is only for the first format ([`storage.md`](storage.md#attach-and-format-run-order)).
+- Then `ansible/playbooks/deploy-core.yml` (Docker, compose sync, `.env`).
 - Secrets: everything in `config/identities.yml` + `service_secrets` via `~/.homelab-secrets/<env>/` or GH env.
 - Verify: `docker ps`, `.env` is `0640` `ubuntu-*:docker`.
 - Time: 10–20 min.
@@ -124,6 +125,8 @@ DEV proof: `./utils/run-tests.sh --env dev --suite restore` (throwaway DB). On 2
 
 Still missing on a **prod** rebuild until metal exists: SA500 libraries, rclone pull, HA `.tar`, vzdump. A rebuild without those artefacts still gives empty media libraries with known passwords.
 
+The Samba share on Purple (`/srv/purple/share`) is in no backup and no offsite copy: if Purple is lost, the share is not recoverable. The media on SA500 has no homelab copy yet either (pCloud media backup deferred, [decision 0002](decisions/0002-nas-layout-and-samba.md)).
+
 ## 8. DNS / ACME / HAProxy — **manual** (prod)
 
 - Backend `192.168.50.30:8101` for `grocery.dkhomelabserver.xyz`.
@@ -142,7 +145,7 @@ Still missing on a **prod** rebuild until metal exists: SA500 libraries, rclone 
 | Variant | What changes |
 |---------|----------------|
 | New hypervisor | Step 2 + 3. Keep OPNsense if the LAN is unchanged. |
-| New storage | Fill `by_id`, `pve-attach-nas-disks.sh --env prod`, `deploy-storage.yml`, prod compose NFS override. |
+| New storage | Update `passthrough[]` (by-id, serial, slot, label), `pve-attach-nas-disks.sh --env prod --dry-run` then the real run, `deploy-storage.yml` (a blank disk is formatted; `nas_wipe` only for a new disk that still holds foreign data), prod compose NFS override. |
 | Renumber network | **Do not**, unless you also move printer/Tuya. Edit `docs/network.md` first. |
 | Nested DEV on a new laptop | Steps 2-DEV → 3-DEV → 4 → 5 → 6 → 9. No OPNsense, no restore. |
 
