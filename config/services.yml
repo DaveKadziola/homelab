@@ -21,7 +21,7 @@ environments:
   prod:
     host: 192.168.50.30
     inventory: ansible/environments/prod/hosts.ini
-    ssh_user: ubuntu
+    ssh_user: ubuntu-prod
     identity: homelab-prod
 
 # dashboard:        group / hidden / icon — drives the generated Homarr board

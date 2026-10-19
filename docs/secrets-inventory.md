@@ -38,9 +38,9 @@ Helper scripts:
 | `PROXMOX_SSH_PASSWORD` | dev | secret | `homelab/PROXMOX_SSH_PASSWORD/dev` | set | placeholder |
 | `PROXMOX_SSH_PASSWORD` | prod | secret | `homelab/PROXMOX_SSH_PASSWORD/prod` | set | placeholder |
 | `UBUNTU_DOCKER_PASSWORD` | dev | secret | `homelab/UBUNTU_DOCKER_PASSWORD/dev` | set | F1 |
-| `UBUNTU_DOCKER_PASSWORD` | prod | secret | `homelab/UBUNTU_DOCKER_PASSWORD/prod` | set | F1 |
+| `UBUNTU_DOCKER_PASSWORD` | prod | secret | `homelab/UBUNTU_DOCKER_PASSWORD/prod` | set 2026-10-19 | SHA-512 hash in GH; plain text in `~/.homelab-secrets/prod/UBUNTU_DOCKER_PASSWORD` + Bitwarden |
 | `UBUNTU_DOCKER_SSH_PRIV` | dev | secret | `homelab/UBUNTU_DOCKER_SSH_PRIV/dev` | set | `~/.ssh/homelab_dev_ed25519` |
-| `UBUNTU_DOCKER_SSH_PRIV` | prod | secret | `homelab/UBUNTU_DOCKER_SSH_PRIV/prod` | set | placeholder — replace at F3 |
+| `UBUNTU_DOCKER_SSH_PRIV` | prod | secret | `homelab/UBUNTU_DOCKER_SSH_PRIV/prod` | set 2026-10-19 | `~/.ssh/homelab_prod_ed25519` (own prod key, `homelab-prod`); the prod deploy installs it on the runner |
 | `TF_API_TOKEN` | prod | secret | `homelab/TF_API_TOKEN/prod` | set | F1 |
 | `SSL_CERT` | prod | secret | `homelab/SSL_CERT/prod` | planned | optional; legacy backup |
 | `SSL_CHAIN` | prod | secret | `homelab/SSL_CHAIN/prod` | planned | optional |
@@ -95,7 +95,7 @@ Helper scripts:
 | `PROXMOX_SSH_USERNAME` | dev | variable | — | set | F1 |
 | `PROXMOX_SSH_USERNAME` | prod | variable | — | set | F1 |
 | `UBUNTU_DOCKER_SSH_PUB` | dev | variable | — | set | F1 |
-| `UBUNTU_DOCKER_SSH_PUB` | prod | variable | — | set | placeholder — F3 |
+| `UBUNTU_DOCKER_SSH_PUB` | prod | variable | — | set 2026-10-19 | `~/.ssh/homelab_prod_ed25519.pub` |
 
 ---
 
