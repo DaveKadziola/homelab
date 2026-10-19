@@ -20,12 +20,12 @@ Canonical map and “do not renumber” list: [`docs/network.md`](../docs/networ
 | VLAN | Gateway | Homelab slots |
 |------|---------|----------------|
 | IOT 20 | `192.168.20.1` | PVE `.20.20` · NAS `.20.12` · HA `.20.13` |
-| APP 51 (QinQ) | `192.168.50.50/26` | apps `.50.30` |
+| APP 51 (`vlan07`, 802.1Q) | `192.168.50.50/26` | apps `.50.30` |
 | WireGuard | `10.10.10.1/24` | port `51820` |
 
 Occupied forever: printer `.20.10`, Zoom `.20.11`, Tuya `.20.50–.58`. Legacy NPM `.50.2` is gone (2026-10-19, `docs/network.md`).
 
-PVE has **one** host IP on NIC1. NIC2 = disk passthrough to NAS. NIC3 = APP trunk.
+PVE has **one** host IP: `vmbr0.20` on `bond0` (nic1 + nic0 backup); nic2 reserved for APP. Switch ports deliver IOT as VLAN 20 **tagged** (`docs/network.md`).
 
 ## Exposure
 

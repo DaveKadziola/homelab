@@ -1,5 +1,6 @@
 # Proxmox prod — homelab v2 (as-built: host .20.20, NAS .20.12, apps .50.30)
-# NIC1: vmbr0 vlan-aware (IOT mgmt + tag 20). NIC2: disk passthrough to NAS VM. NIC3: APP trunk tag 51.
+# vmbr0 vlan-aware on bond0 (active-backup nic1 Intel + nic0 Realtek); mgmt on vmbr0.20 (switch delivers IOT tagged 20).
+# vmbr1 vlan-aware on nic2 (Intel) for APP: VLAN 51 tagged on the switch port (ARP-tested 2026-10-19).
 # Network is as-built — TF does not recreate vmbr0/vlan (manage_node_network = false).
 
 proxmox_node_name   = "proxmox"
@@ -11,7 +12,7 @@ node_config = {
   vlan_address       = "192.168.20.20/24"
   vlan_gateway       = "192.168.20.1"
   bridge_name        = "vmbr0"
-  bridge_ports       = ["enp1s0"]
+  bridge_ports       = ["bond0"]
   bridge_vlan_aware  = true
   dns_domain         = "router.dkhomelabserver.xyz"
   dns_servers        = ["192.168.20.1"]
@@ -21,7 +22,7 @@ vm_config = {
   nas = {
     vm_id              = 102
     vm_name            = "ubuntu-nas"
-    vm_description     = "NAS VM — NFS, SA500/Purple passthrough (NIC2)"
+    vm_description     = "NAS VM — NFS, SA500/Purple disk passthrough (by-id)"
     vm_tags            = ["nas", "ubuntu-server", "cloud-init", "terraform"]
     bios               = "seabios"
     ram                = 4096
@@ -52,7 +53,7 @@ vm_config = {
     cpu_cores      = 2
     # Immich machine-learning needs x86-64-v2 (NumPy) — kvm64 crashes.
     cpu_type           = "host"
-    net_dev_type       = "vmbr0"
+    net_dev_type       = "vmbr1"
     vlan_tag           = 51
     enable_cloud_init  = true
     cloud_init_cidr    = "192.168.50.30/26"
