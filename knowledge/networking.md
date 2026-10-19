@@ -25,7 +25,7 @@ Canonical map and “do not renumber” list: [`docs/network.md`](../docs/networ
 
 Occupied forever: printer `.20.10`, Zoom `.20.11`, Tuya `.20.50–.58`. Legacy NPM `.50.2` is gone (2026-10-19, `docs/network.md`).
 
-PVE has **one** host IP: `vmbr0.20` on `bond0` (nic1 + nic0 backup); nic2 reserved for APP. Switch ports deliver IOT as VLAN 20 **tagged** (`docs/network.md`).
+PVE has **one** host IP: `vmbr0.20` on `bond0` (nic1 + nic0 backup); nic2 reserved for APP. Switch ports deliver IOT as VLAN 20 **tagged** (`docs/network.md`). Exception: the T620 port is untagged VLAN 20, PVID 20 (2026-10-20); its Realtek `r8169` NIC stalled with `NETDEV WATCHDOG: transmit queue 0 timed out` as soon as HAOS ran a VLAN 20 interface.
 
 ## Exposure
 

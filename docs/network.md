@@ -42,7 +42,7 @@ Dev is **isolated** from prod VLANs.
 |------|------|-----|-----|-----|
 | Proxmox host (`proxmox.dkhomelabserver.xyz`) | IOT | 20 | **`192.168.20.20`** | `3c:49:37:19:71:ae` (nic1, Intel igb; on router since 2026-10-19) |
 | `ubuntu-nas` | IOT | 20 | **`192.168.20.12`** | VM NIC — set at F3 |
-| HP T620 HAOS | IOT | 20 | **`192.168.20.13`** | `7c:d3:0a:1a:f5:10` (on router; was mapped to `.20.20` as "Proxmox" but is on none of the Proxmox PC's NICs - t620 by elimination, confirm when it boots) |
+| HP T620 HAOS | IOT | 20 | **`192.168.20.13`** | `7c:d3:0a:1a:f5:10` (on router; confirmed 2026-10-20: HAOS `network info` on the T620 shows it and DHCP gives `.20.13`) |
 | `ubuntu-apps` | APP | 51 | **`192.168.50.30`** | VM NIC — set at F3 |
 
 **DMZ** (VLAN 50, `vlan06`, plain 802.1Q since APP left QinQ): `192.168.50.65/28` (`.64`–`.79`) since 2026-10-19, moved out of APP `192.168.50.0/26` (`utils/f2-opnsense-dmz.sh`). Unused; DHCP off. The dead legacy NPM `.50.2` (no ARP) lost its static map and its LAN/DMZ rules and its WAN port-forward (disabled).
@@ -59,7 +59,7 @@ As-built 2026-10-19 (PVE 9.2.2, `proxmox.dkhomelabserver.xyz`, interface names p
 | `nic0` Realtek r8169 | `70:85:c2:53:e0:ac` | `bond0` backup (active-backup, takes over when `nic1` loses link; failover tested) |
 | `nic2` Intel igb | `3c:49:37:19:71:af` | `vmbr1` (VLAN-aware, no host IP) -> APP VLAN 51 -> `ubuntu-apps` `.50.30` |
 
-Management is `vmbr0.20` = **`192.168.20.20/24`**, gateway `.20.1`. The switch ports deliver IOT as **VLAN 20 tagged**: untagged, the host got no ARP replies (and the installer no DHCP ACK). `bond0` has a fixed MAC `3c:49:37:19:71:ae` (`hwaddress`; otherwise it takes the first enslaved NIC's MAC, which changed after an `ifreload`). APP is a plain **VLAN 51** on the router trunk (`vlan07` on `igc2`, 802.1Q) since 2026-10-19, no longer QinQ inside VLAN 50 (`utils/f2-opnsense-app-vlan.sh`); the GS308EP carries VLAN 51 tagged to the router and `nic2` ports. Probe with ARP, not ping: DMZ/APP have no rule that passes ICMP to the router. SA500 + Purple go to the NAS VM as disks (by-id), not through a NIC.
+Management is `vmbr0.20` = **`192.168.20.20/24`**, gateway `.20.1`. The switch ports deliver IOT as **VLAN 20 tagged**: untagged, the host got no ARP replies (and the installer no DHCP ACK). Exception: the T620 port is **untagged** VLAN 20, PVID 20 (2026-10-20); its Realtek `r8169` NIC stalled with `NETDEV WATCHDOG: transmit queue 0 timed out` as soon as HAOS ran a VLAN 20 interface. `bond0` has a fixed MAC `3c:49:37:19:71:ae` (`hwaddress`; otherwise it takes the first enslaved NIC's MAC, which changed after an `ifreload`). APP is a plain **VLAN 51** on the router trunk (`vlan07` on `igc2`, 802.1Q) since 2026-10-19, no longer QinQ inside VLAN 50 (`utils/f2-opnsense-app-vlan.sh`); the GS308EP carries VLAN 51 tagged to the router and `nic2` ports. Probe with ARP, not ping: DMZ/APP have no rule that passes ICMP to the router. SA500 + Purple go to the NAS VM as disks (by-id), not through a NIC.
 
 Host names come from **AdGuard Home rewrites** on OPNsense (`/usr/local/AdGuardHome/AdGuardHome.yaml`, `filtering.rewrites`): `proxmox.dkhomelabserver.xyz` -> `.20.20`, `hass.dkhomelabserver.xyz` -> `.20.13` (moved from `.20.20` on 2026-10-19), `adguard.` -> `192.168.1.1`, `ap.` -> `.1.3`, `switch.` -> `.1.2`; `npm.` disabled (NPM removed); `nas.dkhomelabserver.xyz` -> `192.168.20.12` (Samba clients, `\\nas.dkhomelabserver.xyz\share`, added 2026-10-19).
 
