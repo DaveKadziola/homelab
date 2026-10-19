@@ -1,6 +1,6 @@
 # Home Assistant
 
-Not a Docker service in `compose/core`. Hardware: Dell T620 at `192.168.20.13` (IOT VLAN), greenfield HAOS — flashed on the box, not from this laptop.
+Not a Docker service in `compose/core`. Hardware: HP t620 thin client at `192.168.20.13` (IOT VLAN), greenfield HAOS — flashed on the box, not from this laptop.
 
 | | |
 |--|--|
