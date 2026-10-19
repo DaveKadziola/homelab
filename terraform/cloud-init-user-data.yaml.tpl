@@ -23,8 +23,8 @@ packages:
   - git
   - curl
 
-runcmd:
 %{ if docker_enabled ~}
+runcmd:
   - systemctl enable docker
   - systemctl start docker
   - usermod -aG docker ubuntu-${environment}

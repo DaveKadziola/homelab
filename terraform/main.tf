@@ -83,6 +83,16 @@ resource "proxmox_virtual_environment_vm" "vm" {
   bios = each.value.bios
 
   boot_order = each.value.boot_order
+
+  # The NAS starts first and stops last: the apps VM mounts its NFS export at boot, and Docker
+  # there waits for that mount (deploy-storage.yml).
+  dynamic "startup" {
+    for_each = try(each.value.startup_order, null) != null ? [1] : []
+    content {
+      order    = each.value.startup_order
+      up_delay = each.value.startup_up_delay
+    }
+  }
   # "host" is required by Immich machine-learning (NumPy needs x86-64-v2);
   # the provider default kvm64 makes it crash with "Illegal instruction".
   cpu {

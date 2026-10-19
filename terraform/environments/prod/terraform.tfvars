@@ -1,7 +1,7 @@
 # Proxmox prod — homelab v2 (as-built: host .20.20, NAS .20.12, apps .50.30)
 # vmbr0 vlan-aware on bond0 (active-backup nic1 Intel + nic0 Realtek); mgmt on vmbr0.20 (switch delivers IOT tagged 20).
 # vmbr1 vlan-aware on nic2 (Intel) for APP: VLAN 51 tagged on the switch port (ARP-tested 2026-10-19).
-# Network is as-built — TF does not recreate vmbr0/vlan (manage_node_network = false).
+# Host network: config/pve/interfaces.prod, written by utils/pve-network.py - TF does not manage it (manage_node_network = false).
 
 proxmox_node_name   = "proxmox"
 manage_node_network = false
@@ -22,6 +22,8 @@ vm_config = {
   nas = {
     vm_id              = 102
     vm_name            = "ubuntu-nas"
+    startup_order      = 1
+    startup_up_delay   = 60
     vm_description     = "NAS VM — NFS, SA500/Purple disk passthrough (by-id)"
     vm_tags            = ["nas", "ubuntu-server", "cloud-init", "terraform"]
     bios               = "seabios"
@@ -46,6 +48,7 @@ vm_config = {
   apps = {
     vm_id          = 101
     vm_name        = "ubuntu-apps"
+    startup_order  = 2
     vm_description = "Docker / core stack — APP VLAN 51"
     vm_tags        = ["docker", "ubuntu-server", "cloud-init", "terraform"]
     bios           = "seabios"
