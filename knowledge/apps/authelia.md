@@ -8,7 +8,7 @@
 | Also | `AUTHELIA_JWT_SECRET`, `AUTHELIA_SESSION_SECRET`, `AUTHELIA_STORAGE_KEY` |
 | Users file | `compose/core/authelia/users_database.yml` (argon2id hash, committable) |
 | Bootstrap | `utils/bootstrap/authelia.sh` |
-| Profile | `auth` |
+| Profile | `auth` (DEV only; prod runs without Authelia, [decision 0003](../decisions/0003-prod-without-authelia.md)) |
 
 Cookie domain is `homelab.local`. First-factor against a raw IP fails or does not keep a session. Client `/etc/hosts`:
 

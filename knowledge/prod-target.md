@@ -59,7 +59,7 @@ Source: `config/services.yml`, `compose/core/docker-compose.yml` (versions pinne
 | P0 | Trilium | 8082 | |
 | P0 | Actual | 5006 | |
 | P0 | Linkwarden | 3001 | |
-| P0 | Authelia | 9091 | profile `auth` |
+| P0 | Authelia | 9091 | profile `auth`; DEV only ([0003](decisions/0003-prod-without-authelia.md)) |
 | P0 | Omni-tools / DumbWhois / BentoPDF | 8083 / 8084 / 8085 | |
 | P0 | Grocery | 8101 | built on the guest from its repo at pinned `grocery_ref`; DB/role/schema by `deploy-core.yml`; **public** via HAProxy |
 | P1 | Syncthing | 8384 (+22000, 21027) | peers by hand |
@@ -102,7 +102,7 @@ Beszel hub (host metrics; agent off until keyed), Dozzle (logs), Diun (image upd
 1. Terraform from the laptop the first time (`TF_WORKSPACE=homelab`, `TF_VAR_*` from GH `prod` / Bitwarden): the prod runner lives on `ubuntu-apps`, so it cannot run its own first apply (`docs/f3-proxmox.md`).
 2. Disks: `utils/pve-attach-nas-disks.sh --env prod` after `by_id` is filled.
 3. GitHub runner `homelab-prod` on `ubuntu-apps` (`setup-github-runner.sh`).
-4. From then on, merge to `main`: `infra-plan` / `infra-apply-prod` (Terraform) and `apps-deploy-prod` (Ansible `deploy-core` + `deploy-storage`, then tests) on `[self-hosted, homelab-prod]`, environment `prod`.
+4. From then on, merge to `main`: `infra-plan` / `infra-apply-prod` (Terraform) and `apps-deploy-prod` (Ansible `deploy-core` + `deploy-storage`, then tests) on `[self-hosted, homelab-prod]`, environment `prod`; the PR plan `infra-plan` uses `prod-plan` (`docs/f3-proxmox.md` "PR plan").
 5. Restore data (step 7 of `rebuild.md`), HAProxy check, `run-tests.sh --env prod`.
 
 ## 9. Gaps found while writing this (2026-10-19)
@@ -112,7 +112,7 @@ Beszel hub (host metrics; agent off until keyed), Dozzle (logs), Diun (image upd
 3. ~~Prod reused the DEV key and a June password~~ - fixed: own key `homelab_prod_ed25519`, new password hash, the prod deploy installs the key on the runner (#35).
 4. ~~NAS disks: no by-id, nothing formats or mounts them~~ - fixed in #35: serials, one-time wipe opt-in, LABEL mounts, `crossmnt`, nfs-server guard, Samba; tested on DEV with two test disks. Still to run on prod after `terraform apply`: attach, then the opt-in format.
 5. **Backups that cannot run from `ubuntu-apps`:** `vzdump.sh` needs a Proxmox host (timer on apps -> SKIP); `opnsense.sh` and `ha-pull.sh` need APP -> router SSH and APP -> `.20.13`, which the APP firewall blocks; `opnsense.sh` also needs a key on the router.
-6. **Authelia is configured for `homelab.local`** (DEV) only; prod needs a domain under `dkhomelabserver.xyz` plus AdGuard rewrites for the app names.
+6. ~~Authelia is configured for `homelab.local` (DEV) only~~ - prod runs without it until a proxy with forward-auth exists ([decision 0003](decisions/0003-prod-without-authelia.md)).
 7. **Monitoring alerts:** no notifier for Diun/Beszel; F10 not built.
 8. ~~Workflow Terraform version prod `1.15.6` vs DEV `1.16.3`~~ - all workflows and the HCP workspace `homelab` on 1.16.3 since 2026-10-19, before the first prod state.
 9. ~~APP -> NAS rules passed every TCP port~~ (port in a top-level `<destinationport>` that pf ignores) - fixed on the router: NFS 2049/111 plus SSH 22 from `.50.30` only (`utils/f2-opnsense-nas-ports.sh`, #35).

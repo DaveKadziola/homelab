@@ -47,7 +47,9 @@
       - BESZEL_KEY
     postgres_password: "{{ resolved_secrets.POSTGRES_PASSWORD }}"
     immich_db_password: "{{ resolved_secrets.IMMICH_DB_PASSWORD | default(postgres_password, true) }}"
-    compose_profiles: "{{ lookup('env', 'COMPOSE_PROFILES') | default('auth,media', true) }}"
+    # Prod runs without Authelia until a proxy with forward-auth sits in front of the apps
+    # (knowledge/decisions/0003); its config is DEV-only (homelab.local).
+    compose_profiles: "{{ lookup('env', 'COMPOSE_PROFILES') | default('media' if homelab_env == 'prod' else 'auth,media', true) }}"
     run_bootstrap: "{{ lookup('env', 'HOMELAB_SKIP_BOOTSTRAP') | default('', true) | length == 0 }}"
     # Prod binds Immich/Jellyfin/Navidrome libraries to NFS. Never on DEV —
     # that would hide the existing named volumes (Immich photos).
@@ -129,41 +131,44 @@
         group: docker
         mode: "0644"
 
-    - name: Sync Authelia config
-      ansible.builtin.copy:
-        src: "{{ compose_src }}/authelia/"
-        dest: "{{ compose_dest }}/authelia/"
-        owner: "{{ ansible_user }}"
-        group: docker
-        mode: "0644"
+    - name: Authelia config and DEV certificate
+      when: "'auth' in compose_profiles.split(',')"
+      block:
+        - name: Sync Authelia config
+          ansible.builtin.copy:
+            src: "{{ compose_src }}/authelia/"
+            dest: "{{ compose_dest }}/authelia/"
+            owner: "{{ ansible_user }}"
+            group: docker
+            mode: "0644"
 
-    - name: Ensure Authelia certs directory
-      ansible.builtin.file:
-        path: "{{ compose_dest }}/authelia/certs"
-        state: directory
-        owner: "{{ ansible_user }}"
-        group: docker
-        mode: "0750"
+        - name: Ensure Authelia certs directory
+          ansible.builtin.file:
+            path: "{{ compose_dest }}/authelia/certs"
+            state: directory
+            owner: "{{ ansible_user }}"
+            group: docker
+            mode: "0750"
 
-    - name: Generate DEV Authelia self-signed TLS cert
-      ansible.builtin.command:
-        cmd: >
-          openssl req -x509 -nodes -newkey rsa:2048 -days 825
-          -keyout {{ compose_dest }}/authelia/certs/key.pem
-          -out {{ compose_dest }}/authelia/certs/cert.pem
-          -subj /CN=authelia.homelab.local
-          -addext subjectAltName=DNS:authelia.homelab.local,DNS:homelab.local,DNS:*.homelab.local,IP:192.168.122.50
-        creates: "{{ compose_dest }}/authelia/certs/cert.pem"
+        - name: Generate DEV Authelia self-signed TLS cert
+          ansible.builtin.command:
+            cmd: >
+              openssl req -x509 -nodes -newkey rsa:2048 -days 825
+              -keyout {{ compose_dest }}/authelia/certs/key.pem
+              -out {{ compose_dest }}/authelia/certs/cert.pem
+              -subj /CN=authelia.homelab.local
+              -addext subjectAltName=DNS:authelia.homelab.local,DNS:homelab.local,DNS:*.homelab.local,IP:192.168.122.50
+            creates: "{{ compose_dest }}/authelia/certs/cert.pem"
 
-    - name: Fix Authelia cert permissions
-      ansible.builtin.file:
-        path: "{{ item }}"
-        owner: "{{ ansible_user }}"
-        group: docker
-        mode: "0644"
-      loop:
-        - "{{ compose_dest }}/authelia/certs/cert.pem"
-        - "{{ compose_dest }}/authelia/certs/key.pem"
+        - name: Fix Authelia cert permissions
+          ansible.builtin.file:
+            path: "{{ item }}"
+            owner: "{{ ansible_user }}"
+            group: docker
+            mode: "0644"
+          loop:
+            - "{{ compose_dest }}/authelia/certs/cert.pem"
+            - "{{ compose_dest }}/authelia/certs/key.pem"
 
     - name: Sync Zotify Dockerfile
       ansible.builtin.copy:

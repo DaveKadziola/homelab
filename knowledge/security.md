@@ -21,7 +21,7 @@ Generator: `utils/gen-app-credentials.sh` → GH Environment secret + Bitwarden 
 
 | Layer | Today |
 |-------|--------|
-| Authelia | Deployed (profile `auth`). Cookie domain `homelab.local`. Not yet in front of every app. |
+| Authelia | DEV only (profile `auth`), off on prod ([decision 0003](decisions/0003-prod-without-authelia.md)). Cookie domain `homelab.local`. No proxy puts it in front of any app yet. |
 | App admins | Converged by `utils/bootstrap/*.sh` where the app has an API/CLI |
 | SSH | Key-only to the apps guest |
 | TLS | Authelia self-signed on `:9091`. Public grocery ACME is a prod HAProxy job. |

@@ -20,6 +20,8 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 hl_parse_args "$@"
 
 CONTAINER="$(hl_service authelia container)"
+# First, so an environment without Authelia (prod, decision 0003) SKIPs without its secrets.
+hl_require_container "$CONTAINER"
 PORT="$(hl_service authelia port)"
 BASE="https://${HOMELAB_HOST}:${PORT}"
 USERNAME="$(hl_account authelia username)"
@@ -28,7 +30,6 @@ PASSWORD="$(hl_secret "$(hl_account authelia secret)")"
 USERS_FILE="$(hl_compose_dir)/core/authelia/users_database.yml"
 REPO_USERS_FILE="${HL_REPO_ROOT}/compose/core/authelia/users_database.yml"
 
-hl_require_container "$CONTAINER"
 
 first_factor_ok() {
   local body response

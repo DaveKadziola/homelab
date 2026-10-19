@@ -1,5 +1,8 @@
 name: Infra Plan Prod
 
+# Environment prod-plan, not prod: prod allows only main and needs an approval, so it rejects
+# pull request refs (refs/pull/N/merge). prod-plan has no reviewers, allows every ref and holds a
+# read-only (PVEAuditor) Proxmox token - docs/f3-proxmox.md "PR plan".
 on:
   pull_request:
     branches: [main]
@@ -7,7 +10,7 @@ on:
 jobs:
   plan:
     runs-on: [self-hosted, homelab-prod]
-    environment: prod
+    environment: prod-plan
     env:
       TF_WORKSPACE: homelab
     steps:
@@ -33,7 +36,9 @@ jobs:
           TF_VAR_proxmox_api_token_id: ${{ vars.PROXMOX_API_TOKEN_ID }}
           TF_VAR_proxmox_api_token_secret: ${{ secrets.PROXMOX_API_TOKEN_SECRET }}
           TF_VAR_proxmox_ssh_username: ${{ vars.PROXMOX_SSH_USERNAME }}
-          TF_VAR_proxmox_ssh_password: ${{ secrets.PROXMOX_SSH_PASSWORD }}
+          # Plan does not connect over SSH, but the provider rejects an empty password.
+          TF_VAR_proxmox_ssh_password: unused-by-plan
           TF_VAR_ubuntu_docker_password: ${{ secrets.UBUNTU_DOCKER_PASSWORD }}
           TF_VAR_ubuntu_docker_ssh_pub: ${{ vars.UBUNTU_DOCKER_SSH_PUB }}
-        run: terraform plan -var-file=environments/prod/terraform.tfvars
+        # No state lock: a plan writes no state and must never block Infra Apply Prod.
+        run: terraform plan -lock=false -var-file=environments/prod/terraform.tfvars
