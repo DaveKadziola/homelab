@@ -70,6 +70,59 @@ The secret goes to `~/.homelab-secrets/prod/PROXMOX_API_TOKEN_SECRET` (mode 600)
 
 ---
 
+## PR plan (environment `prod-plan`)
+
+`Infra Plan Prod` (`.github/workflows/infra-plan.yml`) runs `terraform plan` for workspace `homelab`
+on every PR to `main`: no apply, no state lock. It cannot use the environment `prod`, which allows
+only the branch `main`: GitHub rejected the job on PR #38 with `Branch "refs/pull/38/merge" is not
+allowed to deploy to prod`. It uses `prod-plan` instead: no reviewers, every branch allowed, and only
+what a plan reads. Because every branch can use it, its Proxmox token is read-only (`PVEAuditor`);
+`TF_API_TOKEN` is the only value in it that can write (HCP state). The SSH password is a dummy in the
+workflow: plan does not connect over SSH. `Infra Apply Prod` and `Apps Deploy Prod` stay in `prod`
+with the approval.
+
+One-time setup from the laptop (no value is printed):
+
+```bash
+# 1. Read-only token on the existing user: privilege separation on, PVEAuditor on /.
+install -d -m 700 ~/.homelab-secrets/prod-plan
+ssh root@192.168.20.20 'pveum user token add homelab-prod@pam plan --privsep 1 --output-format json' \
+  | jq -r .value > ~/.homelab-secrets/prod-plan/PROXMOX_API_TOKEN_SECRET
+chmod 600 ~/.homelab-secrets/prod-plan/PROXMOX_API_TOKEN_SECRET
+ssh root@192.168.20.20 'pveum acl modify / --tokens "homelab-prod@pam!plan" --roles PVEAuditor'
+
+# 2. Environment without reviewers and without a branch policy.
+gh api -X PUT repos/DaveKadziola/homelab/environments/prod-plan
+
+# 3. Variables: the plan token ID, the rest copied from prod.
+gh variable set PROXMOX_API_TOKEN_ID --env prod-plan --body 'homelab-prod@pam!plan'
+for v in PROXMOX_API_URL PROXMOX_SSH_USERNAME UBUNTU_DOCKER_SSH_PUB; do
+  gh variable set "$v" --env prod-plan \
+    --body "$(gh api "repos/DaveKadziola/homelab/environments/prod/variables/$v" --jq .value)"
+done
+
+# 4. Secrets. TF_API_TOKEN: the laptop's `terraform login` token (or Bitwarden homelab/TF_API_TOKEN/prod).
+gh secret set PROXMOX_API_TOKEN_SECRET --env prod-plan < ~/.homelab-secrets/prod-plan/PROXMOX_API_TOKEN_SECRET
+jq -r '.credentials["app.terraform.io"].token' ~/.terraform.d/credentials.tfrc.json \
+  | gh secret set TF_API_TOKEN --env prod-plan
+plain="$(cat ~/.homelab-secrets/prod/UBUNTU_DOCKER_PASSWORD)"
+printf '%s\n' "$plain" \
+  | openssl passwd -6 -salt "$(printf '%s' "$plain" | sha256sum | cut -c1-16)" -stdin \
+  | gh secret set UBUNTU_DOCKER_PASSWORD --env prod-plan
+unset plain
+```
+
+`UBUNTU_DOCKER_PASSWORD` must be the same hash as in `prod`: the cloud-init snippet embeds it
+(`terraform/main.tf:52`). Step 4 hashes it with the fixed salt of `utils/sync-secrets-to-github.py`.
+If the PR plan shows `proxmox_virtual_environment_file.cloud_config` replaced while nothing changed,
+`prod` was hashed with another salt: set the same value in `prod` too (repeat the last command with
+`--env prod`). The VMs ignore cloud-init changes (`terraform/main.tf:149-151`), so the next apply
+only rewrites the snippet.
+
+Check: the next PR to `main` shows `Infra Plan Prod` green with the plan in its log.
+
+---
+
 ## OPNsense after F3
 
 Add DHCP static mappings (Services → DHCPv4):
