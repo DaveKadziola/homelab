@@ -86,6 +86,24 @@ todos:
   - id: ai-log-analysis
     content: "F10-B: analiza logów agentem AI z sanityzacją (allowlist, agregacja) — po prod i po audycie F9"
     status: pending
+  - id: project-cleanup
+    content: "Później (operator 2026-10-20): porządek w projekcie — stare worktree i zmergowane gałęzie, nieaktualne dokumenty, skrypty legacy"
+    status: pending
+  - id: docs-readme
+    content: "Później (operator 2026-10-20): README i opis projektu od nowa — co to jest, jak jest zbudowane, od czego zacząć"
+    status: pending
+  - id: docs-diagrams
+    content: "Później (operator 2026-10-20): schematy draw.io — flow zmian (homelab-v2 → DEV, main → prod, approvals), sieć (VLAN-y, firewall, porty), backupy"
+    status: pending
+  - id: security-public-repo
+    content: "Później (operator 2026-10-20): bezpieczeństwo publicznego repo — runnery self-hosted na laptopie (fork PR: approval tylko dla first-time contributors), środowisko dev bez reviewera, co repo ujawnia (adresy, MAC, nazwy)"
+    status: pending
+  - id: security-audit-hosts
+    content: "Później (operator 2026-10-20): audyt bezpieczeństwa Proxmox (prod), OPNsense i całego homelabu"
+    status: pending
+  - id: app-network-access
+    content: "Później (operator 2026-10-20): dostęp aplikacji do podsieci (APP → NAS/IOT/LAN) i poza sieć (egress per aplikacja zamiast całego internetu)"
+    status: pending
 isProject: false
 ---
 
