@@ -23,7 +23,7 @@ Dev is **isolated** from prod VLANs.
 | VLAN | Tag | OPNsense interface | Gateway | Notes |
 |------|-----|-------------------|---------|-------|
 | IOT | 20 | vlan03 | `192.168.20.1/24` | Proxmox mgmt, NAS, HA T620 |
-| APP | 51 | qinq01 (QinQ on vlan06) | **`192.168.50.50/26`** | Docker; DHCP **off** (range `.30`–`.62` configured but disabled; VMs use static IPs from cloud-init) |
+| APP | 51 | vlan07 (802.1Q on igc2; was QinQ `qinq01` on vlan06 until 2026-10-19) | **`192.168.50.50/26`** | Docker; DHCP **off** (range `.30`–`.62` configured but disabled; VMs use static IPs from cloud-init) |
 | WireGuard | — | wg0 | **`10.10.10.1/24`** | port `51820`; not `10.0.0.0` |
 | VPN (legacy VLAN) | 40 | vlan05 | `10.0.0.1/28` | separate from WG |
 
@@ -45,7 +45,7 @@ Dev is **isolated** from prod VLANs.
 | HP T620 HAOS | IOT | 20 | **`192.168.20.13`** | `7c:d3:0a:1a:f5:10` (on router; was mapped to `.20.20` as "Proxmox" but is on none of the Proxmox PC's NICs - t620 by elimination, confirm when it boots) |
 | `ubuntu-apps` | APP | 51 | **`192.168.50.30`** | VM NIC — set at F3 |
 
-**DMZ** (VLAN 50, `vlan06`, parent of the APP QinQ): `192.168.50.65/28` (`.64`–`.79`) since 2026-10-19, moved out of APP `192.168.50.0/26` (`utils/f2-opnsense-dmz.sh`). Unused; DHCP off. The dead legacy NPM `.50.2` (no ARP) lost its static map and its LAN/DMZ rules and its WAN port-forward (disabled).
+**DMZ** (VLAN 50, `vlan06`, plain 802.1Q since APP left QinQ): `192.168.50.65/28` (`.64`–`.79`) since 2026-10-19, moved out of APP `192.168.50.0/26` (`utils/f2-opnsense-dmz.sh`). Unused; DHCP off. The dead legacy NPM `.50.2` (no ARP) lost its static map and its LAN/DMZ rules and its WAN port-forward (disabled).
 
 ---
 
@@ -57,9 +57,9 @@ As-built 2026-10-19 (PVE 9.2.2, `proxmox.dkhomelabserver.xyz`, interface names p
 |-----|-----|------|
 | `nic1` Intel igb | `3c:49:37:19:71:ae` | `bond0` primary -> `vmbr0` (VLAN-aware) |
 | `nic0` Realtek r8169 | `70:85:c2:53:e0:ac` | `bond0` backup (active-backup, takes over when `nic1` loses link; failover tested) |
-| `nic2` Intel igb | `3c:49:37:19:71:af` | reserved for APP (VLAN 51 -> `ubuntu-apps` `.50.30`) |
+| `nic2` Intel igb | `3c:49:37:19:71:af` | `vmbr1` (VLAN-aware, no host IP) -> APP VLAN 51 -> `ubuntu-apps` `.50.30` |
 
-Management is `vmbr0.20` = **`192.168.20.20/24`**, gateway `.20.1`. The switch ports deliver IOT as **VLAN 20 tagged**: untagged, the host got no ARP replies (and the installer no DHCP ACK). `nic2` was probed with temporary sub-interfaces: VLAN 20 tagged answers; VLAN 51, VLAN 50 and QinQ 50/51 (0x8100 and 0x88a8) do not - the switch port needs APP/DMZ before `ubuntu-apps` can run. SA500 + Purple go to the NAS VM as disks (by-id), not through a NIC.
+Management is `vmbr0.20` = **`192.168.20.20/24`**, gateway `.20.1`. The switch ports deliver IOT as **VLAN 20 tagged**: untagged, the host got no ARP replies (and the installer no DHCP ACK). `bond0` has a fixed MAC `3c:49:37:19:71:ae` (`hwaddress`; otherwise it takes the first enslaved NIC's MAC, which changed after an `ifreload`). APP is a plain **VLAN 51** on the router trunk (`vlan07` on `igc2`, 802.1Q) since 2026-10-19, no longer QinQ inside VLAN 50 (`utils/f2-opnsense-app-vlan.sh`); the GS308EP carries VLAN 51 tagged to the router and `nic2` ports. Probe with ARP, not ping: DMZ/APP have no rule that passes ICMP to the router. SA500 + Purple go to the NAS VM as disks (by-id), not through a NIC.
 
 Host names come from **AdGuard Home rewrites** on OPNsense (`/usr/local/AdGuardHome/AdGuardHome.yaml`, `filtering.rewrites`): `proxmox.dkhomelabserver.xyz` -> `.20.20`, `hass.dkhomelabserver.xyz` -> `.20.13` (moved from `.20.20` on 2026-10-19), `adguard.` -> `192.168.1.1`, `ap.` -> `.1.3`, `switch.` -> `.1.2`; `npm.` disabled (NPM removed).
 
@@ -92,7 +92,7 @@ Zone: **`dkhomelabserver.xyz`**
 
 | | Dev | Prod |
 |---|-----|------|
-| Network | `192.168.122.0/24` | IOT 20 + APP 51 (QinQ) |
+| Network | `192.168.122.0/24` | IOT 20 + APP 51 (802.1Q) |
 | VMs | libvirt `Proxmox` → `ubuntu-apps-dev` | `ubuntu-nas`, `ubuntu-apps` |
 | Branch / GH | `homelab-v2` / dev | `main` / prod |
 

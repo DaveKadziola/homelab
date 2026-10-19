@@ -1,6 +1,6 @@
 # Proxmox prod — homelab v2 (as-built: host .20.20, NAS .20.12, apps .50.30)
 # vmbr0 vlan-aware on bond0 (active-backup nic1 Intel + nic0 Realtek); mgmt on vmbr0.20 (switch delivers IOT tagged 20).
-# nic2 (Intel) reserved for APP - its switch port does not carry VLAN 50/51 yet (tested 2026-10-19).
+# vmbr1 vlan-aware on nic2 (Intel) for APP: VLAN 51 tagged on the switch port (ARP-tested 2026-10-19).
 # Network is as-built — TF does not recreate vmbr0/vlan (manage_node_network = false).
 
 proxmox_node_name   = "proxmox"
@@ -53,7 +53,7 @@ vm_config = {
     cpu_cores      = 2
     # Immich machine-learning needs x86-64-v2 (NumPy) — kvm64 crashes.
     cpu_type           = "host"
-    net_dev_type       = "vmbr0"
+    net_dev_type       = "vmbr1"
     vlan_tag           = 51
     enable_cloud_init  = true
     cloud_init_cidr    = "192.168.50.30/26"

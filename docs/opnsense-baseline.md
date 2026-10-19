@@ -12,7 +12,7 @@
 
 | ID | Task | Blocks F3? | Status |
 |----|------|------------|--------|
-| F2-01 | VLAN interfaces (IOT 20, APP 51) | yes | [x] as-built: IOT `.20.1`, APP QinQ gw `.50.50` |
+| F2-01 | VLAN interfaces (IOT 20, APP 51) | yes | [x] as-built: IOT `.20.1`, APP gw `.50.50` (QinQ until 2026-10-19, now plain VLAN 51 `vlan07`) |
 | F2-02 | DHCP reservations (see [network.md](network.md)) | yes | [~] Proxmox `.20.20` on router; NAS/apps/HA at F3/F5 |
 | F2-03 | Firewall: APP → NAS NFS | yes | [x] `opt6` → `.20.12` :2049/:111 (SSH 2026-07-01) |
 | F2-04 | WireGuard VPN | recommended | [x] `wg0` `10.10.10.0/24` :51820 (as-built) |
@@ -29,7 +29,7 @@
 | VLAN tag | Name | IPv4 | Role |
 |----------|------|------|------|
 | 20 | IOT | 192.168.20.1/24 | Proxmox mgmt, HA, NAS |
-| 51 | APP | **192.168.50.50/26** (QinQ) | Docker / `ubuntu-apps`; DHCP `.30`–`.62` |
+| 51 | APP | **192.168.50.50/26** (`vlan07`, 802.1Q) | Docker / `ubuntu-apps`; DHCP off |
 
 Enable both interfaces; ensure trunk from switch carries tags 20 and 51 to Proxmox NIC1/NIC3.
 
