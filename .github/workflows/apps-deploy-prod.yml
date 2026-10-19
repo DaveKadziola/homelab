@@ -17,6 +17,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install the prod SSH key
+        # Inventory and tests use ~/.ssh/homelab_prod_ed25519 (user ubuntu-prod, made by Terraform).
+        env:
+          KEY: ${{ secrets.UBUNTU_DOCKER_SSH_PRIV }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/homelab_prod_ed25519
+          chmod 600 ~/.ssh/homelab_prod_ed25519
+
       - name: Ping ubuntu-apps
         working-directory: ansible
         run: ansible-playbook -i environments/prod/hosts.ini playbooks/ping.yml
@@ -65,6 +74,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Install the prod SSH key
+        # Inventory and tests use ~/.ssh/homelab_prod_ed25519 (user ubuntu-prod, made by Terraform).
+        env:
+          KEY: ${{ secrets.UBUNTU_DOCKER_SSH_PRIV }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/homelab_prod_ed25519
+          chmod 600 ~/.ssh/homelab_prod_ed25519
 
       - name: Run test suites
         env:
