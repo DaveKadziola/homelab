@@ -70,6 +70,7 @@ Host has **one** management IP. NIC2/NIC3 offload storage and app traffic from N
 | APP net `192.168.50.0/26` (`opt6`) | `192.168.20.12` | TCP 2049, 111 | NFS apps → NAS |
 | IOT (`opt3`) | everything except HOME OFFICE + GUEST (`!NotForIOT`) | any | DNS to `opt3ip`; the old IOT `pass any -> any` is disabled since 2026-10-19 (`utils/f2-opnsense-iot.sh`) |
 | WireGuard `10.10.10.0/24` | IOT / APP / LAN | per rule | VPN |
+| any CommonDNS member (LAN, IOT, GUEST, VPN, DMZ, APP) | a DNS server outside them | 53 | redirected to the router's own address on that interface (AdGuard); one rdr per interface since 2026-10-19 (`utils/f2-opnsense-dns.sh`) - AdGuard answers redirected UDP from the interface address, so a single rdr to `127.0.0.1` never got its replies back |
 | WAN | WAN address | 443 | HAProxy → Grocery (F2-05 / F4) |
 
 ---
