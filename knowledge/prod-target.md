@@ -114,5 +114,5 @@ Beszel hub (host metrics; agent off until keyed), Dozzle (logs), Diun (image upd
 5. **Backups that cannot run from `ubuntu-apps`:** `vzdump.sh` needs a Proxmox host (timer on apps -> SKIP); `opnsense.sh` and `ha-pull.sh` need APP -> router SSH and APP -> `.20.13`, which the APP firewall blocks; `opnsense.sh` also needs a key on the router.
 6. **Authelia is configured for `homelab.local`** (DEV) only; prod needs a domain under `dkhomelabserver.xyz` plus AdGuard rewrites for the app names.
 7. **Monitoring alerts:** no notifier for Diun/Beszel; F10 not built.
-8. Workflow Terraform version prod `1.15.6` vs DEV `1.16.3`; pick one before the first prod state is written.
+8. ~~Workflow Terraform version prod `1.15.6` vs DEV `1.16.3`~~ - all workflows and the HCP workspace `homelab` on 1.16.3 since 2026-10-19, before the first prod state.
 9. ~~APP -> NAS rules passed every TCP port~~ (port in a top-level `<destinationport>` that pf ignores) - fixed on the router: NFS 2049/111 plus SSH 22 from `.50.30` only (`utils/f2-opnsense-nas-ports.sh`, #35).

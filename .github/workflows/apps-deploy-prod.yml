@@ -1,18 +1,17 @@
 name: Apps Deploy Prod
 
+# After Infra Apply Prod, never next to it: on a push to main both used to start at once and
+# the deploy raced the VMs it needs.
 on:
-  push:
+  workflow_run:
+    workflows: ["Infra Apply Prod"]
+    types: [completed]
     branches: [main]
-    paths:
-      - "compose/**"
-      - "ansible/**"
-      - "config/storage.yml"
-      - "config/identities.yml"
-      - ".github/workflows/apps-deploy-prod.yml"
   workflow_dispatch:
 
 jobs:
   deploy-prod:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: [self-hosted, homelab-prod]
     environment: prod
     steps:

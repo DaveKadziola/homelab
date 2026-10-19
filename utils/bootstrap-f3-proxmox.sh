@@ -4,7 +4,7 @@
 # Prerequisites: Proxmox online, API token created (docs/f3-proxmox.md F3-02).
 #
 # Usage:
-#   PROXMOX_IP=192.168.20.20 ./utils/bootstrap-f3-proxmox.sh
+#   PROXMOX_IP=192.168.20.20 [PVE_KEY=~/.ssh/<root key>] ./utils/bootstrap-f3-proxmox.sh
 #   ./utils/bootstrap-f3-proxmox.sh --set-token   # also prompt for token secret via gh
 
 set -euo pipefail
@@ -17,6 +17,16 @@ SET_TOKEN=false
 [[ "${1:-}" == "--set-token" ]] && SET_TOKEN=true
 
 command -v gh >/dev/null || { echo "gh required"; exit 1; }
+
+# Terraform uploads the cloud-init user data as a snippet to datastore `local`; a fresh PVE
+# install does not allow that content type there.
+ssh -o BatchMode=yes ${PVE_KEY:+-i "$PVE_KEY"} "root@${PROXMOX_IP}" 'sh -s' <<'REMOTE'
+cur=$(awk '/^dir: local$/{f=1;next} f&&/^\tcontent /{print $2; exit}' /etc/pve/storage.cfg)
+case ",$cur," in
+  *,snippets,*) echo "local already allows snippets" ;;
+  *) pvesm set local --content "$cur,snippets" && echo "local: snippets enabled" ;;
+esac
+REMOTE
 
 echo "Proxmox API URL: $API_URL"
 gh variable set PROXMOX_API_URL --env prod --repo "$REPO" --body "$API_URL"
