@@ -55,3 +55,9 @@ Symptoms first. Root-cause write-ups go in [`lessons-learned.md`](lessons-learne
 |---------|--------|
 | Workflows queued forever | Runner `homelab-dev` offline → `sudo ./svc.sh start`. |
 | Config tests fail on `BESZEL_KEY` | It is `issued_by: beszel` — not required in GH until hub bootstrap. |
+
+## Network
+
+| Symptom | Check |
+|---------|--------|
+| Host on IOT gets a DHCP lease, but the gateway stays `INCOMPLETE` in `ip neigh` and ping says `Destination Host Unreachable` | The switch port delivers VLAN 20 tagged. Use a VLAN 20 interface on the host, or make the port untagged VLAN 20 / PVID 20 (T620, 2026-10-20). |
