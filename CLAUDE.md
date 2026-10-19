@@ -22,3 +22,18 @@
   match command text, so they are a safety net, not a security boundary.
 - Permission prompts are not a substitute for `AGENTS.md` section 11: an action on that list is
   asked about in the conversation even when the tool would allow it without a prompt.
+
+## Ponytail plugin
+
+The ponytail plugin, when enabled, adds its own rules at session start, after compaction and to
+every subagent. In this repository:
+
+- `AGENTS.md` and `rules/` win over ponytail; ponytail applies only where they are silent.
+- The script rules in `rules/editing-and-scripts.md` (fail fast, idempotent, dry-run mode) and
+  documentation and `knowledge/` updates (`AGENTS.md` sections 8 and 12) count as asked for.
+- Mark a workaround with `# TEMP: <reason, when it can go>` (`AGENTS.md` section 9), never with
+  ponytail's `shortcut:`.
+- A vague request is clarified as `AGENTS.md` section 3.4 says; ponytail's smallest version can be
+  one of the suggested options.
+- Ponytail's skipped/risk line goes under "Risks and open questions" (`AGENTS.md` section 5). The
+  knowledge closing check (section 12) always comes last.
