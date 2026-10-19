@@ -14,6 +14,7 @@ Helper scripts:
 | `utils/sync-cache-to-bitwarden.sh` | Push `~/.homelab-secrets/<env>/` into Bitwarden (needs `BW_SESSION`) |
 | `utils/setup-rclone-pcloud.sh` | After OAuth: pCloud folders, optional `RCLONE_CONFIG` in GH prod |
 | `utils/bootstrap-f1-secrets.sh` | Push secrets/variables to GitHub (values not printed) |
+| `utils/sync-secrets-to-github.py` | Push `~/.homelab-secrets/<env>/` to a GitHub Environment (dry run unless `--apply`); `UBUNTU_DOCKER_PASSWORD` goes as its SHA-512 crypt hash, `RCLONE_CONFIG` (prod) as base64 |
 
 
 ## Legend

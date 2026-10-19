@@ -40,6 +40,8 @@ DERIVED_SOURCES = {
         "UBUNTU_DOCKER_PASSWORD": ("sha512-crypt", HOME / ".homelab-ubuntu-apps-dev-pass"),
     },
     "prod": {
+        # The cache holds the plain password; GitHub must hold the hash (same rule as dev).
+        "UBUNTU_DOCKER_PASSWORD": ("sha512-crypt", HOME / ".homelab-secrets" / "prod" / "UBUNTU_DOCKER_PASSWORD"),
         # GitHub holds the whole rclone.conf as one base64 line (docs/manual-setup.md, F5).
         "RCLONE_CONFIG": ("base64", HOME / ".homelab-secrets" / "prod" / "RCLONE_CONFIG"),
     },
