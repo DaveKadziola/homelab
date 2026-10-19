@@ -91,7 +91,7 @@ rm -f "$KEEP"
 /usr/local/sbin/configctl interface reconfigure opt5
 /usr/local/sbin/configctl filter reload
 echo "opt5 reconfigured, filter reloaded"
-daemon -f sh -c "sleep ${REVERT_AFTER}; [ -f ${KEEP} ] || { cp ${BACKUP} ${CONFIG}; /usr/local/sbin/configctl interface reconfigure opt5; /usr/local/sbin/configctl filter reload; echo reverted > /tmp/homelab-dmz-reverted; }"
+daemon -f -P /tmp/homelab-dmz-revert.pid sh -c "sleep ${REVERT_AFTER}; [ -f ${KEEP} ] || { cp ${BACKUP} ${CONFIG}; /usr/local/sbin/configctl interface reconfigure opt5; /usr/local/sbin/configctl filter reload; echo reverted > /tmp/homelab-dmz-reverted; }"
 echo "auto-revert armed: ${REVERT_AFTER}s, cancel with: touch ${KEEP}"
 echo "manual revert: cp ${BACKUP} ${CONFIG} && configctl interface reconfigure opt5 && configctl filter reload"
 ifconfig vlan06 | grep "inet "

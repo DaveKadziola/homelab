@@ -64,6 +64,6 @@ rm -f "$KEEP"
 /usr/local/sbin/configctl filter reload
 echo "filter reload OK"
 # Dead-man switch: restore the backup unless the laptop confirms the checks passed.
-daemon -f sh -c "sleep ${REVERT_AFTER}; [ -f ${KEEP} ] || { cp ${BACKUP} ${CONFIG}; /usr/local/sbin/configctl filter reload; echo reverted > /tmp/homelab-iot-reverted; }"
+daemon -f -P /tmp/homelab-iot-revert.pid sh -c "sleep ${REVERT_AFTER}; [ -f ${KEEP} ] || { cp ${BACKUP} ${CONFIG}; /usr/local/sbin/configctl filter reload; echo reverted > /tmp/homelab-iot-reverted; }"
 echo "auto-revert armed: ${REVERT_AFTER}s, cancel with: touch ${KEEP}"
 echo "manual revert: cp ${BACKUP} ${CONFIG} && configctl filter reload"

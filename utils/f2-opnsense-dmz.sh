@@ -34,7 +34,7 @@ check "IOT -> internet" ping -c2 -W2 -I wlan0 1.1.1.1
 check "root ssh over LAN" "${R[@]}" -o BatchMode=yes true
 
 if [[ $fail == 0 ]]; then
-  "${R[@]}" -o BatchMode=yes 'touch /tmp/homelab-dmz-keep'
+  "${R[@]}" -o BatchMode=yes 'touch /tmp/homelab-dmz-keep; pkill -F /tmp/homelab-dmz-revert.pid'
   echo "all checks passed - change kept"
   out="${REPO_ROOT}/opnsense/backups/config-$(date +%Y%m%d-%H%M%S).xml"
   "${R[@]}" -o BatchMode=yes 'cat /conf/config.xml' > "$out"
