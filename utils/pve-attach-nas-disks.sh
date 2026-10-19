@@ -7,9 +7,10 @@
 #
 #   ./utils/pve-attach-nas-disks.sh --env prod --dry-run
 #   ./utils/pve-attach-nas-disks.sh --env prod
+#   ./utils/pve-attach-nas-disks.sh --self-test     # the slot comparison only, no host
 #
 # Checks first on the host: the by-id path exists, the disk is not mounted or an
-# LVM PV there, and the slot is free or already holds the same line (then skip).
+# LVM PV there, and the slot is free or holds the same disk and options (then skip).
 # Never formats. Never run against nested PVE.
 
 set -euo pipefail
@@ -19,15 +20,36 @@ DRY_RUN=false
 PVE_HOST="${PVE_HOST:-192.168.20.20}"
 PVE_USER="${PVE_USER:-root}"
 VMID="${NAS_VMID:-102}"
-PVE_KEY="${PVE_KEY:-}"   # e.g. ~/.ssh/homelab_dev_ed25519 (root key on the PVE host)
+PVE_KEY="${PVE_KEY:-}"   # e.g. ~/.ssh/homelab_prod_pve_ed25519 (root key on the prod PVE host)
 
-usage() { sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
+usage() { sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
+
+# PVE stores a drive line with its options sorted and size= added, so compare the
+# device path and options as a set, without size=.
+drive_key() { tr ',' '\n' <<<"$1" | sed '/^size=/d' | LC_ALL=C sort | paste -sd, -; }
+
+self_test() {
+  local want='/dev/disk/by-id/ata-A_1,backup=0,replicate=0,serial=S1,ssd=1,discard=on' expect line got
+  while IFS='|' read -r expect line; do
+    got=differ
+    [[ "$(drive_key "$line")" == "$(drive_key "$want")" ]] && got=same
+    [[ "$got" == "$expect" ]] || { echo "self-test FAIL: '$line' is $got, expected $expect" >&2; exit 1; }
+  done <<'EOF'
+same|/dev/disk/by-id/ata-A_1,backup=0,discard=on,replicate=0,serial=S1,size=1953514584K,ssd=1
+same|/dev/disk/by-id/ata-A_1,backup=0,replicate=0,serial=S1,ssd=1,discard=on
+differ|/dev/disk/by-id/ata-A_1,backup=0,replicate=0,serial=S1,size=1953514584K
+differ|/dev/disk/by-id/ata-B_2,backup=0,discard=on,replicate=0,serial=S1,size=1953514584K,ssd=1
+differ|/dev/disk/by-id/ata-A_1,backup=0,discard=on,replicate=0,serial=S2,size=1953514584K,ssd=1
+EOF
+  echo "self-test ok"
+}
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --env) ENVIRONMENT="$2"; shift 2 ;;
     --host) PVE_HOST="$2"; shift 2 ;;
     --dry-run) DRY_RUN=true; shift ;;
+    --self-test) self_test; exit 0 ;;
     -h|--help) usage 0 ;;
     *) echo "unknown option: $1" >&2; usage 1 ;;
   esac
@@ -78,11 +100,13 @@ cur=\$(qm config ${VMID} | sed -n 's/^scsi${slot}: //p')
 other=\$(qm config ${VMID} | grep -E '^(scsi|sata|virtio|ide)[0-9]+: ${by_id}(,|\$)' | grep -v '^scsi${slot}:' || true)
 [ -n "\$other" ] && { echo "busy: already attached as \${other%%:*}"; exit 0; }
 [ -z "\$cur" ] && { echo "free"; exit 0; }
-[ "\$cur" = "${want}" ] && { echo "same"; exit 0; }
 echo "taken: scsi${slot} holds \$cur"
 EOF
 )"
   verdict="${verdict##*$'\n'}"
+  # The host reports what the slot holds; whether that is this disk is decided here.
+  cur="${verdict#"taken: scsi${slot} holds "}"
+  if [[ "$cur" != "$verdict" && "$(drive_key "$cur")" == "$(drive_key "$want")" ]]; then verdict=same; fi
   case "$verdict" in
     same) echo "skip   ${name}: scsi${slot} already ${want}" ;;
     free)

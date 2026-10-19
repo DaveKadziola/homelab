@@ -1,13 +1,11 @@
 name: Tests Dev
 
 # F7-C — automated verification of the dev environment.
-# Runs after Apps Deploy Dev finishes (a red run here means the deploy failed,
-# even if the deploy job itself was green), and on demand.
+# Runs when tests or config change, and on demand. After a deploy the tests run in the
+# post-deploy-tests job of Apps Deploy Dev; a workflow_run trigger here ran on the default
+# branch main, which environment dev rejects.
 
 on:
-  workflow_run:
-    workflows: ["Apps Deploy Dev"]
-    types: [completed]
   push:
     branches: [homelab-v2]
     paths:

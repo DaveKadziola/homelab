@@ -1,0 +1,44 @@
+auto lo
+iface lo inet loopback
+
+iface nic0 inet manual
+
+iface nic1 inet manual
+
+iface nic2 inet manual
+
+# active-backup: nic1 (Intel) carries traffic, nic0 (Realtek) takes over if nic1 loses link.
+# Both switch ports deliver IOT as VLAN 20 tagged.
+auto bond0
+iface bond0 inet manual
+	bond-slaves nic1 nic0
+	bond-mode active-backup
+	bond-primary nic1
+	bond-miimon 100
+	# fixed MAC (nic1): otherwise the bond takes whichever slave is enslaved first
+	hwaddress 3c:49:37:19:71:ae
+
+auto vmbr0
+iface vmbr0 inet manual
+	bridge-ports bond0
+	bridge-stp off
+	bridge-fd 0
+	bridge-vlan-aware yes
+	bridge-vids 2-4094
+
+# management: proxmox.dkhomelabserver.xyz
+auto vmbr0.20
+iface vmbr0.20 inet static
+	address 192.168.20.20/24
+	gateway 192.168.20.1
+
+# nic2 (Intel) - APP: switch port carries VLAN 51 tagged; VMs set the tag, no host IP
+auto vmbr1
+iface vmbr1 inet manual
+	bridge-ports nic2
+	bridge-stp off
+	bridge-fd 0
+	bridge-vlan-aware yes
+	bridge-vids 2-4094
+
+source /etc/network/interfaces.d/*

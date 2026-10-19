@@ -41,4 +41,6 @@ jobs:
           TF_VAR_ubuntu_docker_password: ${{ secrets.UBUNTU_DOCKER_PASSWORD }}
           TF_VAR_ubuntu_docker_ssh_pub: ${{ vars.UBUNTU_DOCKER_SSH_PUB }}
         # No state lock: a plan writes no state and must never block Infra Apply Prod.
-        run: terraform plan -lock=false -var-file=environments/prod/terraform.tfvars
+        # No refresh: the read-only token cannot read VM disks (VM.Config.Disk) or the snippets, so
+        # this plan shows what the PR changes against the state; drift shows in Infra Apply Prod.
+        run: terraform plan -lock=false -refresh=false -var-file=environments/prod/terraform.tfvars

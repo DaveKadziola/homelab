@@ -3,8 +3,9 @@
 #
 # Values are written to:
 #   - GitHub Environment secret (write-only, used by CI)
-#   - a staging file for Bitwarden import (chmod 600, delete after import)
 #   - a local cache under ~/.homelab-secrets/<env>/ for local Ansible runs
+#   - Bitwarden homelab/<NAME>/<env> through utils/bw-store.py when BW_SESSION is
+#     unlocked; otherwise the names are queued for utils/bw-store.py --pending
 #
 # Values are never printed to stdout.
 #
@@ -30,7 +31,6 @@ TARGET_SECRET=""
 ALL=false
 ROTATE=false
 DRY_RUN=false
-OUTPUT=""
 
 usage() {
   sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'
@@ -45,7 +45,6 @@ while [[ $# -gt 0 ]]; do
     --all) ALL=true; shift ;;
     --rotate) ROTATE=true; shift ;;
     --dry-run) DRY_RUN=true; shift ;;
-    -o|--output) OUTPUT="$2"; shift 2 ;;
     -h|--help) usage 0 ;;
     *) echo "Unknown option: $1" >&2; usage 1 ;;
   esac
@@ -120,11 +119,10 @@ PY
 
 [[ ${#RECORDS[@]} -gt 0 ]] || { echo "No matching secrets in config/identities.yml" >&2; exit 1; }
 
-OUTPUT="${OUTPUT:-${HOME}/homelab-bitwarden-${ENVIRONMENT}-$(date +%Y%m%d-%H%M%S).txt}"
 CACHE_DIR="${CACHE_ROOT}/${ENVIRONMENT}"
 
 umask 077
-$DRY_RUN || mkdir -p "$CACHE_DIR" "$(dirname "$OUTPUT")"
+$DRY_RUN || mkdir -p "$CACHE_DIR"
 
 gen_value() {
   case "$1" in
@@ -141,6 +139,9 @@ created=0
 rotated=0
 skipped=0
 declare -a STAGED=()
+# On exit, also after a failed gh call: a value already in the cache must reach Bitwarden or the
+# queue, because a re-run skips it as "already set".
+trap '[[ ${#STAGED[@]} -eq 0 ]] || "${ROOT}/utils/bw-store.py" --env "$ENVIRONMENT" "${STAGED[@]}"' EXIT
 
 for record in "${RECORDS[@]}"; do
   IFS='|' read -r name app login identity email username format inject <<< "$record"
@@ -162,14 +163,7 @@ for record in "${RECORDS[@]}"; do
   printf '%s' "$value" | gh secret set "$name" --env "$ENVIRONMENT" --repo "$REPO"
   printf '%s' "$value" > "${CACHE_DIR}/${name}"
   chmod 600 "${CACHE_DIR}/${name}"
-
-  login_hint="n/a"
-  case "$login" in
-    email) login_hint="$email" ;;
-    username) login_hint="$username" ;;
-  esac
-
-  STAGED+=("homelab/${name}/${ENVIRONMENT}|${value}|app=${app:-–} login=${login_hint} inject=${inject}")
+  STAGED+=("$name")
   unset value
 
   if [[ "$action" == "rotate" ]]; then
@@ -185,33 +179,9 @@ if $DRY_RUN; then
 fi
 
 if [[ ${#STAGED[@]} -gt 0 ]]; then
-  {
-    echo "Homelab credentials — environment: ${ENVIRONMENT}"
-    echo "Generated: $(date -Iseconds)"
-    echo "Repo: ${REPO}"
-    echo ""
-    echo "Paste each block as a Bitwarden Secure Note in folder: homelab"
-    echo ""
-    for entry in "${STAGED[@]}"; do
-      IFS='|' read -r bw_path value meta <<< "$entry"
-      echo "========================================"
-      echo "${bw_path}"
-      echo "Context: ${meta}"
-      echo "----------------------------------------"
-      echo "${value}"
-      echo ""
-    done
-    echo "========================================"
-    echo "END — delete after Bitwarden import:  shred -u '${OUTPUT}'"
-  } > "$OUTPUT"
-  chmod 600 "$OUTPUT"
-
   # Inventory keeps names and dates only, never values.
   today="$(date +%F)"
-  for entry in "${STAGED[@]}"; do
-    IFS='|' read -r bw_path _ _ <<< "$entry"
-    name="${bw_path#homelab/}"
-    name="${name%%/*}"
+  for name in "${STAGED[@]}"; do
     if grep -q "| \`${name}\` | ${ENVIRONMENT} |" "$INVENTORY" 2>/dev/null; then
       python3 - "$INVENTORY" "$name" "$ENVIRONMENT" "$today" <<'PY'
 import re, sys
@@ -247,7 +217,6 @@ fi
 echo "Environment: ${ENVIRONMENT}"
 echo "Created: ${created}  Rotated: ${rotated}  Skipped (already set): ${skipped}"
 if [[ ${#STAGED[@]} -gt 0 ]]; then
-  echo "Bitwarden staging file: ${OUTPUT}  (shred it after import)"
   echo "Local cache for Ansible: ${CACHE_DIR}"
   echo "Inventory updated: docs/secrets-inventory.md"
   echo ""

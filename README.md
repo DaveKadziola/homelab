@@ -79,6 +79,8 @@ App secrets: `utils/gen-app-credentials.sh` (not the older F1 `bootstrap-f1-secr
 
 New values straight into Bitwarden + GitHub + laptop cache, no staging file: `utils/rotate-secrets.py --env prod --generate` (dry run), then `--apply` with Bitwarden unlocked (`export BW_SESSION="$(bw unlock --raw)"`). Existing cache values into Bitwarden only: `--vault-from-cache`.
 
+Scripts that create a secret store it in Bitwarden in the same run through `utils/bw-store.py`; while the vault is locked the names (never the values) are queued, flush with `utils/bw-store.py --pending` after unlocking. Whole cache: `utils/bw-store.py --env all --dry-run`, then without `--dry-run`.
+
 Laptop cache → GitHub Environment: `utils/sync-secrets-to-github.py --env dev` (dry run, names only), then `--apply`. Never pass `--body -` to `gh secret set`: it stores the literal `-`.
 
 ## Quick start — dev
@@ -106,8 +108,8 @@ Order (after F2–F3): OPNsense → Proxmox TF apply → Ansible → Compose. Pr
 | `apps-deploy-dev.yml` | push `homelab-v2` | `homelab-dev` |
 | `infra-plan.yml` | PR → `main` | `homelab-prod` |
 | `infra-apply-prod.yml` | push `main` | `homelab-prod` |
-| `apps-deploy-prod.yml` | push `main` | `homelab-prod` |
-| `tests-dev.yml` | after `apps-deploy-dev` / manual | `homelab-dev` |
+| `apps-deploy-prod.yml` | after `infra-apply-prod` / manual | `homelab-prod` |
+| `tests-dev.yml` | push `homelab-v2` (tests, config) / manual; after a deploy: job in `apps-deploy-dev.yml` | `homelab-dev` |
 
 Bootstrap: [`utils/setup-github-runner.sh`](utils/setup-github-runner.sh)
 
@@ -145,7 +147,7 @@ WireGuard: [docs/wireguard.md](docs/wireguard.md). OPNsense F2: [docs/opnsense-b
 See [`knowledge/operations.md`](knowledge/operations.md). Short version:
 
 - Add an app: `config/services.yml` first, then compose, then `knowledge/apps/<app>.md`
-- Rotate a secret: `utils/gen-app-credentials.sh` → Bitwarden → bootstrap
+- Rotate a secret: `utils/gen-app-credentials.sh` (stores Bitwarden itself) → bootstrap
 - Logs: Dozzle `:8080`
 - Logins: `~/.homelab-secrets/<env>/` — never the legacy `~/.homelab-*-dev-pass` files
 

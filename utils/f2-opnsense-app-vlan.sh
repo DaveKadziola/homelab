@@ -10,7 +10,7 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 LAN_HOST="${OPNSENSE_HOST:-192.168.1.1}"
 KEY="${OPNSENSE_KEY:-$HOME/.ssh/daveadmin}"
-PVE=(ssh -o BatchMode=yes -i "${PVE_KEY:-$HOME/.ssh/homelab_dev_ed25519}" root@192.168.20.20)
+PVE=(ssh -o BatchMode=yes -i "${PVE_KEY:-$HOME/.ssh/homelab_prod_pve_ed25519}" root@192.168.20.20)
 REVERT_AFTER="${REVERT_AFTER:-300}"
 DRY_RUN=0
 [[ "${1:-}" == "--dry-run" ]] && DRY_RUN=1

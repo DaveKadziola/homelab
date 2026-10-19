@@ -58,7 +58,7 @@ Last reviewed: 2026-10-18
 | Build | - | nothing to build |
 | Test (all) | `utils/run-tests.sh --env dev --suite all` | `README.md:119`; `restore` is opt-in and not in `all` |
 | Test (single) | `utils/run-tests.sh --env dev --suite <smoke\|infra\|net\|config\|restore>` | `utils/run-tests.sh:4`. Only `config` is static; the others reach DEV hosts over SSH |
-| Lint / format | `terraform fmt -check -recursive`; `terraform validate`; `ansible-lint ansible/playbooks/`; `docker compose --profile auth --profile media config` (in `compose/core`, needs placeholder env values) | `.github/workflows/ci-validate.yml:23,31,34,50` |
+| Lint / format | `terraform fmt -check -recursive`; `terraform validate`; `ansible-lint ansible/playbooks/`; `docker compose --profile auth --profile media config` (in `compose/core`, needs placeholder env values); `./utils/pve-attach-nas-disks.sh --self-test`; `python3 utils/pve-network.py --self-test`; `python3 utils/bw-store.py --self-test` | `.github/workflows/ci-validate.yml:23,31,34,50,59-61` |
 | Kit check | `python3 scripts/validate_kit.py` | agent kit |
 | Run locally | - | |
 | Deploy | through GitHub Actions on push | Never run by the agent without an explicit request |
@@ -110,8 +110,10 @@ Last reviewed: 2026-10-18
 
 - APP network CIDR is written three ways; not to be guessed - fix at F3 metal.
   <!-- source: knowledge/repo-audit-2026-09-10.md:158 -->
-- Three Proxmox token IDs appear in docs and scripts; one name to be chosen at F3.
-  <!-- source: knowledge/repo-audit-2026-09-10.md:159 -->
+- DEV Proxmox token ID: `utils/dev-apply-local.sh:21` and `tests/infra/run.sh:103` default to
+  `root@pam!terraform`, `utils/bootstrap-f1-secrets.sh:40` sets `homelab-dev@pam!terraform`;
+  which one nested DEV uses is unknown. Prod is `homelab-prod@pam!terraform`.
+  <!-- source: knowledge/repo-audit-2026-09-10.md:159, docs/f3-proxmox.md:25 -->
 - Whether a DNS redirect discussed in a Cursor session on 2026-10-11 was applied on the router
   (operator: unknown). If it was, the router differs from `docs/opnsense-baseline.md`.
 - Plan todo statuses in `docs/plan/greenfield-plan.md` lag the code; to be reconciled in the plan

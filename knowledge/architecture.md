@@ -33,7 +33,8 @@ A port exists in `services.yml` first, then in compose. Never only in a markdown
 ## What is in scope vs not
 
 - **In scope on DEV today:** P0–P2 apps on `ubuntu-apps-dev`, Authelia, Immich (local volumes), F7 bootstrap + F7-C tests, F5 loopback NFS + Samba + backup timer + restore and storage suites.
-- **Not built yet:** SA500/Purple passthrough, rclone OAuth, HAOS on the T620, public HAProxy/ACME on grocery, F9 merge-to-`main` wipe, F10 monitoring.
+- **Not built yet:** SA500/Purple passthrough, rclone OAuth, public HAProxy/ACME on grocery, F9 merge-to-`main` wipe, F10 monitoring.
+- **T620:** HAOS is installed (2026-10-20); onboarding, `HA_TOKEN` and the backup pull are not done.
 
 ## Related
 

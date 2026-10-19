@@ -66,7 +66,8 @@ umask 077
 mkdir -p "${HOME}/.homelab-secrets/prod"
 cp "$CONF" "${HOME}/.homelab-secrets/prod/RCLONE_CONFIG"
 chmod 600 "${HOME}/.homelab-secrets/prod/RCLONE_CONFIG"
-echo "copied rclone.conf → ~/.homelab-secrets/prod/RCLONE_CONFIG (for Bitwarden sync)"
+echo "copied rclone.conf → ~/.homelab-secrets/prod/RCLONE_CONFIG"
+"$(dirname "${BASH_SOURCE[0]}")/bw-store.py" --env prod RCLONE_CONFIG
 
 if $PUSH_GH; then
   command -v gh >/dev/null || { echo "gh CLI required for --push-gh" >&2; exit 1; }
