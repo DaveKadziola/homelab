@@ -56,5 +56,5 @@ host. Host scripts were identical to the repo, file by file. CI checkouts are cl
 - [x] Bitwarden holds the secrets - real values since 2026-10-18 (`utils/rotate-secrets.py`)
 - [x] `tests/restore/` PASS on DEV (2026-10-18 and after the rebuild)
 - [x] GHA deploy injects the full secret set and the DEV test workflow runs
-- [ ] Nested rebuild using only repo + vault + `rebuild.md` - **repeat the drill**; this run needed fixes
+- [x] Nested rebuild using only repo + vault + `rebuild.md` - repeat drill passed, see `rebuild-drill-2026-10-19b.md`
 - [ ] nmap from WG/IOT/APP (S7) - needs prod
