@@ -110,8 +110,10 @@ Last reviewed: 2026-10-18
 
 - APP network CIDR is written three ways; not to be guessed - fix at F3 metal.
   <!-- source: knowledge/repo-audit-2026-09-10.md:158 -->
-- Three Proxmox token IDs appear in docs and scripts; one name to be chosen at F3.
-  <!-- source: knowledge/repo-audit-2026-09-10.md:159 -->
+- DEV Proxmox token ID: `utils/dev-apply-local.sh:21` and `tests/infra/run.sh:103` default to
+  `root@pam!terraform`, `utils/bootstrap-f1-secrets.sh:40` sets `homelab-dev@pam!terraform`;
+  which one nested DEV uses is unknown. Prod is `homelab-prod@pam!terraform`.
+  <!-- source: knowledge/repo-audit-2026-09-10.md:159, docs/f3-proxmox.md:25 -->
 - Whether a DNS redirect discussed in a Cursor session on 2026-10-11 was applied on the router
   (operator: unknown). If it was, the router differs from `docs/opnsense-baseline.md`.
 - Plan todo statuses in `docs/plan/greenfield-plan.md` lag the code; to be reconciled in the plan
