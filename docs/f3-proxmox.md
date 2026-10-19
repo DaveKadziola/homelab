@@ -42,24 +42,17 @@ Legacy VMs on Proxmox with the same **vmid** or names must be **stopped and dest
 
 ## Bootstrap order (first prod apply)
 
-Prod runner lives **on** `ubuntu-apps`, so the **first** apply is usually from **laptop**:
+Prod is built from `main` only (owner, 2026-10-19): `Infra Apply Prod` on a push to `main`, then
+`Apps Deploy Prod` after it (`workflow_run`), both in the GitHub environment `prod` that needs the
+owner's approval. The prod runner lives on `ubuntu-apps`, which does not exist before the first
+apply, so the first run uses a temporary runner on the laptop:
 
-```bash
-cd terraform
-export TF_VAR_environment=prod
-# load TF_VAR_* from gh / Bitwarden
-terraform init
-terraform plan -var-file=environments/prod/terraform.tfvars
-terraform apply -var-file=environments/prod/terraform.tfvars
-```
-
-After VMs exist:
-
-```bash
-./utils/setup-github-runner.sh --label homelab-prod --url https://github.com/DaveKadziola/homelab
-```
-
-Then merge `homelab-v2` → `main` for CI-driven applies.
+1. `./utils/bootstrap-f3-proxmox.sh` (API URL, `snippets` on datastore `local`).
+2. Temporary runner: `RUNNER_INSTALL_DIR=~/actions-runner-homelab-prod ./utils/setup-github-runner.sh --label homelab-prod --name homelab-prod-laptop-bootstrap`, started with `./run.sh`.
+3. Tag the old `main` as `legacy-pre-v2`, open the PR `homelab-v2` -> `main` (`Infra Plan Prod` runs the plan), merge, approve `Infra Apply Prod`.
+4. Attach and format the NAS disks by hand (`knowledge/storage.md`), never in CI.
+5. Approve `Apps Deploy Prod` (or re-run it with workflow_dispatch after step 4).
+6. Permanent runner on `ubuntu-apps` (`setup-github-runner.sh --label homelab-prod`), then remove the laptop runner (`./config.sh remove`).
 
 ---
 
