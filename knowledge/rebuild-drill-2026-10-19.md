@@ -39,12 +39,11 @@ repeat drill passes without fixes.
 | 4 | cloud-init never set a hostname; `ubuntu` not in `/etc/hosts`; every sudo waited 5-10 s | #19 |
 | 5 | `deploy-storage.yml` reset `/opt/homelab/config` to root after `deploy-core.yml` | #16 |
 | 6 | Grocery: image only ever built by hand; DB "prep once" had no commands; Portainer reported the stack "present" while its container could not start; Portainer "start" tried to pull the local image | `rebuild.md` step 5 now has the commands; automating it is open |
-| 7 | Dumps are plain SQL without `--clean`: they restore only into an empty database, not into one the fresh deploy already created | `rebuild.md` step 7 says so; a replace mode for `restore-pg.sh` is open |
+| 7 | Dumps are plain SQL without `--clean`: they restore only into an empty database, not into one the fresh deploy already created | `restore-pg.sh --replace [--owner]`; linkwarden and immich restored over a fresh deploy |
 | 8 | New guest = new SSH host key; the old `known_hosts` entry breaks tests | `rebuild.md` step 3 |
 | 9 | A merge to `homelab-v2` starts `Infra Apply Dev` / `Apps Deploy Dev` by itself; a parallel manual run would race | `rebuild.md` step 3 |
 
-Not exercised: volume-tar restore (Immich uploads, app config volumes), restore into databases the
-fresh deploy created, Homarr password (SKIP as always), Zotify OAuth, Syncthing peers.
+Not exercised: volume-tar restore (Immich uploads, app config volumes), Homarr password (SKIP as always), Zotify OAuth, Syncthing peers.
 
 ## Local-run artefact
 

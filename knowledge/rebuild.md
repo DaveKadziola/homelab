@@ -92,17 +92,28 @@ sudo env HOMELAB_SECRETS_DIR=/opt/homelab/secrets \
 
 ## 7. Restore data — **semi-auto** (F5)
 
-On the apps guest, after NFS is mounted:
+On the apps guest, after NFS is mounted. The dumps are plain SQL without `--clean`, so they load only into an **empty** database; the fresh deploy has already created and filled most of them, so use `--replace` (drop `WITH (FORCE)` + create). Stop the app first, or it reconnects to a half-restored database:
 
 ```bash
-# dumps live under /mnt/homelab/backups/
-./utils/backup/restore-pg.sh --env <env> --db linkwarden --file /mnt/homelab/backups/postgres/linkwarden-….sql.gz
+B=/mnt/homelab/backups/postgres
+R="./utils/backup/restore-pg.sh --env <env>"
+
+docker stop homelab-core-linkwarden-1
+$R --db linkwarden --file $B/linkwarden-….sql.gz --replace --owner linkwarden
+docker start homelab-core-linkwarden-1
+
+docker stop homelab-core-immich-server-1 homelab-core-immich-machine-learning-1
+$R --db immich --file $B/immich-….sql.gz --replace \
+   --container homelab-core-immich-postgres-1 --user postgres --password-secret IMMICH_DB_PASSWORD
+docker start homelab-core-immich-machine-learning-1 homelab-core-immich-server-1
+
+$R --db todo_grocery --file $B/todo_grocery-….sql.gz --replace   # grocery stack stopped in Portainer
 # volume tars: stop the app, untar into the named volume, start
 ```
 
-DEV proof (throwaway DB only): `./utils/run-tests.sh --env dev --suite restore`.
+`--owner` matters for linkwarden: the app connects as `linkwarden` and must own its tables; without it they would belong to `homelab`, the user the script connects as. Immich has its own Postgres container and superuser.
 
-The dumps are plain SQL without `--clean`: they restore only into an **empty** database (`--create` for one that does not exist yet). A database the fresh deploy already created and filled (homelab, linkwarden, immich, ...) must be dropped and created again first, with its app stopped - not done in the 2026-10-19 drill. Copy `/mnt/homelab/backups` off a DEV guest before wiping it: the DEV NFS export lives on the same guest.
+DEV proof: `./utils/run-tests.sh --env dev --suite restore` (throwaway DB). On 2026-10-19 the commands above restored linkwarden (18 tables, owner `linkwarden`, app 200) and immich (row counts equal to the dump, `isInitialized` true) over the databases of a fresh deploy. Copy `/mnt/homelab/backups` off a DEV guest before wiping it: the DEV NFS export lives on the same guest.
 
 Still missing on a **prod** rebuild until metal exists: SA500 libraries, rclone pull, HA `.tar`, vzdump. A rebuild without those artefacts still gives empty media libraries with known passwords.
 
