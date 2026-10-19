@@ -200,6 +200,18 @@
         group: docker
         mode: "0644"
 
+    # Authelia's entrypoint chowns /config to PUID:PGID on every start (root when unset), which
+    # undid the owner set above after each recreate.
+    - name: Look up the ansible user
+      ansible.builtin.getent:
+        database: passwd
+        key: "{{ ansible_user }}"
+
+    - name: Look up the docker group
+      ansible.builtin.getent:
+        database: group
+        key: docker
+
     - name: Write .env
       ansible.builtin.copy:
         dest: "{{ compose_dest }}/.env"
@@ -217,6 +229,8 @@
           AUTHELIA_JWT_SECRET={{ resolved_secrets.AUTHELIA_JWT_SECRET | default(postgres_password, true) }}
           AUTHELIA_SESSION_SECRET={{ resolved_secrets.AUTHELIA_SESSION_SECRET | default(postgres_password, true) }}
           AUTHELIA_STORAGE_KEY={{ resolved_secrets.AUTHELIA_STORAGE_KEY | default(postgres_password, true) }}
+          AUTHELIA_PUID={{ ansible_facts.getent_passwd[ansible_user][1] }}
+          AUTHELIA_PGID={{ ansible_facts.getent_group.docker[1] }}
           COMPOSE_PROFILES={{ compose_profiles }}
           IMMICH_DB_PASSWORD={{ immich_db_password }}
           IMMICH_VERSION={{ lookup('env', 'IMMICH_VERSION') | default('v3', true) }}
