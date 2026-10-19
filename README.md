@@ -106,8 +106,8 @@ Order (after F2–F3): OPNsense → Proxmox TF apply → Ansible → Compose. Pr
 | `apps-deploy-dev.yml` | push `homelab-v2` | `homelab-dev` |
 | `infra-plan.yml` | PR → `main` | `homelab-prod` |
 | `infra-apply-prod.yml` | push `main` | `homelab-prod` |
-| `apps-deploy-prod.yml` | push `main` | `homelab-prod` |
-| `tests-dev.yml` | after `apps-deploy-dev` / manual | `homelab-dev` |
+| `apps-deploy-prod.yml` | after `infra-apply-prod` / manual | `homelab-prod` |
+| `tests-dev.yml` | push `homelab-v2` (tests, config) / manual; after a deploy: job in `apps-deploy-dev.yml` | `homelab-dev` |
 
 Bootstrap: [`utils/setup-github-runner.sh`](utils/setup-github-runner.sh)
 
