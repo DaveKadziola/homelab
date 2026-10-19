@@ -40,9 +40,9 @@ Dev is **isolated** from prod VLANs.
 
 | Role | VLAN | Tag | IP | MAC |
 |------|------|-----|-----|-----|
-| Proxmox host | IOT | 20 | **`192.168.20.20`** | `7c:d3:0a:1a:f5:10` (on router) |
+| Proxmox host (`proxmox.dkhomelabserver.xyz`) | IOT | 20 | **`192.168.20.20`** | `3c:49:37:19:71:ae` (nic1, Intel igb; on router since 2026-10-19) |
 | `ubuntu-nas` | IOT | 20 | **`192.168.20.12`** | VM NIC — set at F3 |
-| HP T620 HAOS | IOT | 20 | **`192.168.20.13`** | T620 NIC — set at F5 |
+| HP T620 HAOS | IOT | 20 | **`192.168.20.13`** | `7c:d3:0a:1a:f5:10` (on router; was mapped to `.20.20` as "Proxmox" but is on none of the Proxmox PC's NICs - t620 by elimination, confirm when it boots) |
 | `ubuntu-apps` | APP | 51 | **`192.168.50.30`** | VM NIC — set at F3 |
 
 **DMZ** (VLAN 50, `vlan06`, parent of the APP QinQ): `192.168.50.65/28` (`.64`–`.79`) since 2026-10-19, moved out of APP `192.168.50.0/26` (`utils/f2-opnsense-dmz.sh`). Unused; DHCP off. The dead legacy NPM `.50.2` (no ARP) lost its static map and its LAN/DMZ rules and its WAN port-forward (disabled).
@@ -56,6 +56,8 @@ Dev is **isolated** from prod VLANs.
 | **NIC1** | **`192.168.20.20`** (IOT) | Proxmox API/SSH; trunk VLAN 20 → `ubuntu-nas` `.20.12` |
 | **NIC2** | none | PCI passthrough SA500 + Purple → NAS VM disks only |
 | **NIC3** | none on host | Trunk VLAN 51 → `ubuntu-apps` `.50.30` |
+
+As-built NICs (installer, 2026-10-19; names pinned): `nic0` `70:85:c2:53:e0:ac` Realtek r8169, `nic1` `3c:49:37:19:71:ae` Intel igb (management), `nic2` `3c:49:37:19:71:af` Intel igb. All three switch ports deliver IOT (VLAN 20) untagged; tagged VLANs not yet checked.
 
 Host has **one** management IP. NIC2/NIC3 offload storage and app traffic from NIC1 — not multiple host IPs.
 
