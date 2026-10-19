@@ -4,7 +4,7 @@
 set -euo pipefail
 
 REPO="${GITHUB_REPO:-DaveKadziola/homelab}"
-RUNNER_VERSION="${RUNNER_VERSION:-2.325.0}"
+RUNNER_VERSION="${RUNNER_VERSION:-2.337.0}"  # GitHub refuses registration below 2.329.0 (2026)
 INSTALL_DIR="${RUNNER_INSTALL_DIR:-$HOME/actions-runner-homelab}"
 LABELS=""
 RUNNER_NAME=""
