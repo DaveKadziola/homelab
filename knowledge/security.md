@@ -30,7 +30,6 @@ Generator: `utils/gen-app-credentials.sh` → GH Environment secret + Bitwarden 
 
 - Postgres `:5432` published on the apps host
 - Docker socket mounted into Portainer and Dozzle
-- Most images are `:latest`
 - Homarr CLI hung and once leaked a password on the host `ps` line — **rotated**. Never pass Homarr’s password on `docker exec` argv.
 
 ## Rotate a login

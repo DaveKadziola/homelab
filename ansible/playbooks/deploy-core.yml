@@ -233,7 +233,7 @@
           AUTHELIA_PGID={{ ansible_facts.getent_group.docker[1] }}
           COMPOSE_PROFILES={{ compose_profiles }}
           IMMICH_DB_PASSWORD={{ immich_db_password }}
-          IMMICH_VERSION={{ lookup('env', 'IMMICH_VERSION') | default('v3', true) }}
+          IMMICH_VERSION={{ lookup('env', 'IMMICH_VERSION') | default('v3.3.3', true) }}
           JELLYFIN_URL={{ lookup('env', 'JELLYFIN_URL') | default('http://192.168.122.50:8096', true) }}
           BESZEL_HUB_URL={{ lookup('env', 'BESZEL_HUB_URL') | default('http://127.0.0.1:8090', true) }}
           BESZEL_KEY={{ resolved_secrets.BESZEL_KEY | default('', true) }}

@@ -99,7 +99,7 @@ DEV has **no host firewall** (`ufw` inactive, `INPUT` policy ACCEPT). That is ac
 | Severity | **medium** (reproducibility + surprise break) |
 | Evidence | `docker images` — Immich is the exception (`v3` / pinned postgres). Diun `latest` is 3 months old; DumbWhois 7 months. |
 | Rec | Pin digest or a moving-but-explicit tag per service in compose; let Diun report newer tags. F10 can alert. |
-| Status | **open** |
+| Status | **fixed 2026-10-19** - exact versions in compose (the ones running on DEV, checked against the registry digests); Diun `defaults.watchRepo` reports newer tags. See `apps/diun.md`. |
 
 ### S6 — Guest has no firewall
 

@@ -45,7 +45,7 @@ services:
     restart: "no"
 
   portainer:
-    image: portainer/portainer-ce:latest
+    image: portainer/portainer-ce:2.45.2
     restart: unless-stopped
     ports:
       - "9000:9000"
@@ -56,7 +56,7 @@ services:
     mem_limit: 256m
 
   pgadmin:
-    image: dpage/pgadmin4:latest
+    image: dpage/pgadmin4:9.18.0
     restart: unless-stopped
     ports:
       - "5050:80"
@@ -73,7 +73,7 @@ services:
     mem_limit: 512m
 
   homarr:
-    image: ghcr.io/homarr-labs/homarr:latest
+    image: ghcr.io/homarr-labs/homarr:v2.6.0
     restart: unless-stopped
     ports:
       - "7575:7575"
@@ -84,7 +84,7 @@ services:
     mem_limit: 512m
 
   dozzle:
-    image: amir20/dozzle:latest
+    image: amir20/dozzle:v11.3.2
     restart: unless-stopped
     ports:
       - "8080:8080"
@@ -93,7 +93,7 @@ services:
     mem_limit: 128m
 
   trilium:
-    image: triliumnext/trilium:latest
+    image: triliumnext/trilium:v0.106.0
     restart: unless-stopped
     ports:
       - "8082:8080"
@@ -104,7 +104,7 @@ services:
     mem_limit: 512m
 
   actual:
-    image: actualbudget/actual-server:latest
+    image: actualbudget/actual-server:26.10.0
     restart: unless-stopped
     ports:
       - "5006:5006"
@@ -113,7 +113,7 @@ services:
     mem_limit: 512m
 
   linkwarden:
-    image: ghcr.io/linkwarden/linkwarden:latest
+    image: ghcr.io/linkwarden/linkwarden:v2.16.3
     restart: unless-stopped
     depends_on:
       postgres:
@@ -135,7 +135,7 @@ services:
   # The admin hash in authelia/users_database.yml is written by
   # utils/bootstrap/authelia.sh.
   authelia:
-    image: authelia/authelia:latest
+    image: authelia/authelia:4.39.28
     restart: unless-stopped
     ports:
       - "9091:9091"
@@ -152,21 +152,21 @@ services:
     profiles: ["auth"]
 
   omni-tools:
-    image: iib0011/omni-tools:latest
+    image: iib0011/omni-tools:latest@sha256:ec5c71c92215ca20b5e7e613941ac603d43625604d02ff07c8e27b7a237980ac
     restart: unless-stopped
     ports:
       - "8083:80"
     mem_limit: 256m
 
   dumbwhois:
-    image: dumbwareio/dumbwhois:latest
+    image: dumbwareio/dumbwhois:build-25
     restart: unless-stopped
     ports:
       - "8084:3000"
     mem_limit: 128m
 
   bentopdf:
-    image: ghcr.io/alam00000/bentopdf:latest
+    image: ghcr.io/alam00000/bentopdf:v2.8.8
     restart: unless-stopped
     ports:
       - "8085:8080"
@@ -174,7 +174,7 @@ services:
 
   # --- P1 ---
   syncthing:
-    image: syncthing/syncthing:latest
+    image: syncthing/syncthing:2.1.6
     restart: unless-stopped
     hostname: syncthing-dev
     ports:
@@ -190,7 +190,7 @@ services:
     mem_limit: 256m
 
   navidrome:
-    image: deluan/navidrome:latest
+    image: deluan/navidrome:0.64.2
     restart: unless-stopped
     ports:
       - "4533:4533"
@@ -205,7 +205,7 @@ services:
     mem_limit: 256m
 
   jellyfin:
-    image: jellyfin/jellyfin:latest
+    image: jellyfin/jellyfin:12.2.20261005-225228
     restart: unless-stopped
     ports:
       - "8096:8096"
@@ -221,7 +221,7 @@ services:
 
   # Immich — own Postgres + Valkey; DEV uses local Docker volumes (not NFS SA500)
   immich-server:
-    image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-v3}
+    image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-v3.3.3}
     restart: unless-stopped
     ports:
       - "2283:2283"
@@ -246,7 +246,7 @@ services:
     profiles: ["media"]
 
   immich-machine-learning:
-    image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-v3}
+    image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-v3.3.3}
     restart: unless-stopped
     volumes:
       - immich_model_cache:/cache
@@ -295,7 +295,7 @@ services:
 
   # --- P2 ---
   beszel:
-    image: henrygd/beszel:latest
+    image: henrygd/beszel:0.21.0
     restart: unless-stopped
     ports:
       - "8090:8090"
@@ -304,7 +304,7 @@ services:
     mem_limit: 128m
 
   beszel-agent:
-    image: henrygd/beszel-agent:latest
+    image: henrygd/beszel-agent:0.21.0
     # Exits without KEY — enable only after hub UI: COMPOSE_PROFILES=auth,media,beszel-agent + BESZEL_KEY=
     restart: unless-stopped
     network_mode: host
@@ -319,7 +319,7 @@ services:
     profiles: ["beszel-agent"]
 
   diun:
-    image: crazymax/diun:latest
+    image: crazymax/diun:4.33.0
     restart: unless-stopped
     command: serve
     volumes:
