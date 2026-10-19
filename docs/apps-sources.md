@@ -26,10 +26,10 @@ Verification: repositories exist, `archived=false`. Deploy: mostly via Docker Hu
 
 | Application | GitHub | Last push | Deploy / image | Notes |
 |-------------|--------|-----------|----------------|-------|
-| Immich | [immich-app/immich](https://github.com/immich-app/immich) | 2026-06-11 | GHCR | NFS SA500; cap 60 GB prod |
+| Immich | [immich-app/immich](https://github.com/immich-app/immich) | 2026-06-11 | GHCR | NFS SA500; ~~cap 60 GB prod~~ no cap (2026-10-19) |
 | Syncthing | [syncthing/syncthing](https://github.com/syncthing/syncthing) | 2026-06-11 | Docker Hub `syncthing/syncthing` | LAN sync |
-| Navidrome | [navidrome/navidrome](https://github.com/navidrome/navidrome) | 2026-06-11 | Docker Hub `deluan/navidrome` | cap 150 GB prod |
-| Jellyfin | [jellyfin/jellyfin](https://github.com/jellyfin/jellyfin) | 2026-06-11 | GHCR | Direct play only; cap 400 GB prod |
+| Navidrome | [navidrome/navidrome](https://github.com/navidrome/navidrome) | 2026-06-11 | Docker Hub `deluan/navidrome` | ~~cap 150 GB prod~~ no cap (2026-10-19) |
+| Jellyfin | [jellyfin/jellyfin](https://github.com/jellyfin/jellyfin) | 2026-06-11 | GHCR | Direct play only; ~~cap 400 GB prod~~ no cap (2026-10-19) |
 
 ## P2
 

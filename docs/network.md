@@ -61,7 +61,7 @@ As-built 2026-10-19 (PVE 9.2.2, `proxmox.dkhomelabserver.xyz`, interface names p
 
 Management is `vmbr0.20` = **`192.168.20.20/24`**, gateway `.20.1`. The switch ports deliver IOT as **VLAN 20 tagged**: untagged, the host got no ARP replies (and the installer no DHCP ACK). `bond0` has a fixed MAC `3c:49:37:19:71:ae` (`hwaddress`; otherwise it takes the first enslaved NIC's MAC, which changed after an `ifreload`). APP is a plain **VLAN 51** on the router trunk (`vlan07` on `igc2`, 802.1Q) since 2026-10-19, no longer QinQ inside VLAN 50 (`utils/f2-opnsense-app-vlan.sh`); the GS308EP carries VLAN 51 tagged to the router and `nic2` ports. Probe with ARP, not ping: DMZ/APP have no rule that passes ICMP to the router. SA500 + Purple go to the NAS VM as disks (by-id), not through a NIC.
 
-Host names come from **AdGuard Home rewrites** on OPNsense (`/usr/local/AdGuardHome/AdGuardHome.yaml`, `filtering.rewrites`): `proxmox.dkhomelabserver.xyz` -> `.20.20`, `hass.dkhomelabserver.xyz` -> `.20.13` (moved from `.20.20` on 2026-10-19), `adguard.` -> `192.168.1.1`, `ap.` -> `.1.3`, `switch.` -> `.1.2`; `npm.` disabled (NPM removed).
+Host names come from **AdGuard Home rewrites** on OPNsense (`/usr/local/AdGuardHome/AdGuardHome.yaml`, `filtering.rewrites`): `proxmox.dkhomelabserver.xyz` -> `.20.20`, `hass.dkhomelabserver.xyz` -> `.20.13` (moved from `.20.20` on 2026-10-19), `adguard.` -> `192.168.1.1`, `ap.` -> `.1.3`, `switch.` -> `.1.2`; `npm.` disabled (NPM removed); `nas.dkhomelabserver.xyz` -> `192.168.20.12` (Samba clients, `\\nas.dkhomelabserver.xyz\share`, added 2026-10-19).
 
 ---
 
@@ -69,10 +69,12 @@ Host names come from **AdGuard Home rewrites** on OPNsense (`/usr/local/AdGuardH
 
 | Source | Destination | Ports | Purpose |
 |--------|-------------|-------|---------|
-| APP net `192.168.50.0/26` (`opt6`) | `192.168.20.12` | TCP 2049, 111 | NFS apps → NAS |
+| APP net `192.168.50.0/26` (`opt6`) | `192.168.20.12` | TCP 2049, 111 | NFS apps → NAS. Until 2026-10-19 both rules carried the port in a top-level `<destinationport>`, which pf ignores, so APP reached every TCP port of the NAS (`pfctl -sr`: `pass ... to 192.168.20.12` with no port). Fixed on the router by `utils/f2-opnsense-nas-ports.sh` (port in `<destination><port>`; pf now shows `port = nfsd` / `port = sunrpc`); the generator `utils/f2-opnsense-apply-remote.sh` is fixed the same way |
+| `192.168.50.30/32` (`opt6`) | `192.168.20.12` | TCP 22 | SSH from the prod runner on `ubuntu-apps`, which deploys the NAS; added by `utils/f2-opnsense-nas-ports.sh` on 2026-10-19 |
+| LAN `192.168.1.0/24`, WireGuard `10.10.10.0/24` | `192.168.20.12` | TCP 445 | Samba on the NAS. Enforced by Samba `hosts allow` (`config/storage.yml`): IOT devices share the NAS subnet and the router cannot filter them |
 | IOT (`opt3`) | everything except HOME OFFICE + GUEST (`!NotForIOT`) | any | DNS to `opt3ip`; the old IOT `pass any -> any` is disabled since 2026-10-19 (`utils/f2-opnsense-iot.sh`) |
 | WireGuard `10.10.10.0/24` | IOT / APP / LAN | per rule | VPN |
-| APP net (`opt6`) | everything except `PrivateNetworks` | any | internet for `ubuntu-apps` (images, apt, runner, rclone) since 2026-10-19 (`utils/f2-opnsense-app-egress.sh`); private networks stay closed except NFS above |
+| APP net (`opt6`) | everything except `PrivateNetworks` | any | internet for `ubuntu-apps` (images, apt, runner, rclone) since 2026-10-19 (`utils/f2-opnsense-app-egress.sh`); private networks stay closed except the NAS rules above |
 | any CommonDNS member (LAN, IOT, GUEST, VPN, DMZ, APP) | a DNS server outside them | 53 | redirected to the router's own address on that interface (AdGuard); one rdr per interface since 2026-10-19 (`utils/f2-opnsense-dns.sh`) - AdGuard answers redirected UDP from the interface address, so a single rdr to `127.0.0.1` never got its replies back |
 
 **DNS rule of thumb:** a client must use the router address **on its own VLAN** as resolver (APP: `192.168.50.50`, IOT: `.20.1`, LAN: `.1.1`). AdGuard answers a UDP query sent to another VLAN's router address from its own VLAN's address, and the client drops it.

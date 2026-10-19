@@ -24,4 +24,4 @@ services:
   syncthing:
     volumes:
       - syncthing_data:/var/syncthing
-      - /mnt/homelab/sync:/var/syncthing/HomelabSync
+      - /mnt/homelab/media/sync:/var/syncthing/HomelabSync

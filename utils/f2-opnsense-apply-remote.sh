@@ -69,8 +69,10 @@ else:
         ET.SubElement(src, "network").text = app_if
         dst = ET.SubElement(rule, "destination")
         ET.SubElement(dst, "address").text = f"{NAS_IP}/32"
+        # pf reads the port from <destination><port>; a top-level <destinationport>
+        # is ignored and the rule then passes every TCP port (utils/f2-opnsense-nas-ports.sh).
+        ET.SubElement(dst, "port").text = port
         ET.SubElement(rule, "protocol").text = "TCP"
-        ET.SubElement(rule, "destinationport").text = port
         print(f"Added rule: {app_if} -> {NAS_IP}:{port}")
 
 tree.write(CONFIG, encoding="UTF-8", xml_declaration=True)

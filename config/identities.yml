@@ -33,6 +33,7 @@ identities:
 # inject: env       — password reaches the app through compose environment
 #         bootstrap — utils/bootstrap/<app>.sh creates the account through API/CLI
 #         manual    — interactive only; must be documented under knowledge/apps/
+#         ansible   — a playbook sets it on the target host (Samba on the NAS: deploy-storage.yml)
 accounts:
   - app: portainer
     identity: homelab-admin
@@ -98,6 +99,16 @@ accounts:
     secret: SYNCTHING_ADMIN_PASSWORD
     inject: bootstrap
     envs: [dev, prod]
+
+  - app: samba
+    identity: homelab-admin
+    login: username
+    secret: SAMBA_ADMIN_PASSWORD
+    inject: ansible
+    envs: [dev, prod]
+    notes: >-
+      Shares share + media on the NAS. The login maps to the Unix account homelab-smb
+      (a Unix user named admin would get sudo through Ubuntu's %admin group).
 
   - app: beszel
     identity: homelab-notification

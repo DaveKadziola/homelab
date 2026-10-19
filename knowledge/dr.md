@@ -18,7 +18,8 @@ DR here means “the building burned / the disk died / I bought new hardware”,
 
 ## What you cannot recover yet
 
-- Prod NAS contents — SA500/Purple are not attached (`by_id` empty)
+- Prod NAS contents — SA500/Purple are known (`config/storage.yml`: serial, by-id, slot, label) but not attached or formatted yet
+- Samba share and media — no homelab copy yet: the share (Purple) is never backed up, the media (SA500) pCloud backup is deferred ([decision 0002](decisions/0002-nas-layout-and-samba.md))
 - Offsite pCloud copy — `RCLONE_CONFIG` is not in GH prod
 - Home Assistant — T620 is not HAOS from this repo; `HA_TOKEN` unset
 - vzdump of prod VMs — script skips unless it runs on physical PVE
@@ -27,6 +28,8 @@ DR here means “the building burned / the disk died / I bought new hardware”,
 ## Order after a total loss
 
 Follow [`rebuild.md`](rebuild.md). After F7 bootstrap: restore Postgres dumps, then volume tars, then media from NFS/pCloud, then HA `.tar` if you have one. Then HAProxy and `utils/run-tests.sh`.
+
+Never pass `nas_wipe` to `deploy-storage.yml` in a rebuild: a surviving disk that carries its LABEL is mounted as it is.
 
 A nested-PVE **wipe** on the laptop is still the F9 merge gate. F5 on DEV is not that wipe.
 

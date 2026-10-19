@@ -64,6 +64,7 @@ Helper scripts:
 | `AUTHELIA_STORAGE_KEY` | dev | secret | `homelab/AUTHELIA_STORAGE_KEY/dev` | set | generated 2026-09-10 |
 | `GROCERY_DB_PASSWORD` | dev | secret | `homelab/GROCERY_DB_PASSWORD/dev` | set | F4/F7 |
 | `IMMICH_DB_PASSWORD` | dev | secret | `homelab/IMMICH_DB_PASSWORD/dev` | set | F4/F7 |
+| `SAMBA_ADMIN_PASSWORD` | dev | secret | `homelab/SAMBA_ADMIN_PASSWORD/dev` | set 2026-10-19 | Samba login `admin` (`inject: ansible`, `deploy-storage.yml`); also in `~/.homelab-secrets/dev/`; Bitwarden copy by the operator |
 | `PORTAINER_ADMIN_PASSWORD` | prod | secret | `homelab/PORTAINER_ADMIN_PASSWORD/prod` | set | generated 2026-09-11 |
 | `PGADMIN_PASSWORD` | prod | secret | `homelab/PGADMIN_PASSWORD/prod` | set | generated 2026-09-11 |
 | `HOMARR_ADMIN_PASSWORD` | prod | secret | `homelab/HOMARR_ADMIN_PASSWORD/prod` | set | generated 2026-09-11 |
@@ -81,6 +82,7 @@ Helper scripts:
 | `AUTHELIA_JWT_SECRET` | prod | secret | `homelab/AUTHELIA_JWT_SECRET/prod` | set | generated 2026-09-11 |
 | `AUTHELIA_SESSION_SECRET` | prod | secret | `homelab/AUTHELIA_SESSION_SECRET/prod` | set | generated 2026-09-11 |
 | `AUTHELIA_STORAGE_KEY` | prod | secret | `homelab/AUTHELIA_STORAGE_KEY/prod` | set | generated 2026-09-11 |
+| `SAMBA_ADMIN_PASSWORD` | prod | secret | `homelab/SAMBA_ADMIN_PASSWORD/prod` | set 2026-10-19 | Samba login `admin` (`inject: ansible`, `deploy-storage.yml`); also in `~/.homelab-secrets/prod/`; Bitwarden copy by the operator |
 
 ---
 

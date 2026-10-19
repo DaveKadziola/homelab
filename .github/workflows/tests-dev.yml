@@ -15,6 +15,7 @@ on:
       - "utils/run-tests.sh"
       - "config/services.yml"
       - "config/identities.yml"
+      - "config/storage.yml"
       - ".github/workflows/tests-dev.yml"
   workflow_dispatch:
     inputs:
@@ -22,7 +23,7 @@ on:
         description: "Suite to run"
         type: choice
         default: all
-        options: [all, smoke, infra, net, config]
+        options: [all, smoke, infra, net, config, storage]
 
 concurrency:
   group: tests-dev
@@ -47,6 +48,7 @@ jobs:
           # needs the same secrets the deploy uses.
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           IMMICH_DB_PASSWORD: ${{ secrets.IMMICH_DB_PASSWORD }}
+          SAMBA_ADMIN_PASSWORD: ${{ secrets.SAMBA_ADMIN_PASSWORD }}
           TF_VAR_proxmox_api_url: ${{ vars.PROXMOX_API_URL }}
           TF_VAR_proxmox_api_token_id: ${{ vars.PROXMOX_API_TOKEN_ID }}
           TF_VAR_proxmox_api_token_secret: ${{ secrets.PROXMOX_API_TOKEN_SECRET }}

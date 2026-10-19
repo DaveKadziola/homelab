@@ -6,6 +6,8 @@ on:
     paths:
       - "compose/**"
       - "ansible/**"
+      - "config/storage.yml"
+      - "config/identities.yml"
       - ".github/workflows/apps-deploy-prod.yml"
   workflow_dispatch:
 
@@ -26,9 +28,18 @@ jobs:
           printf '%s\n' "$KEY" > ~/.ssh/homelab_prod_ed25519
           chmod 600 ~/.ssh/homelab_prod_ed25519
 
-      - name: Ping ubuntu-apps
+      - name: Ping ubuntu-apps and ubuntu-nas
         working-directory: ansible
         run: ansible-playbook -i environments/prod/hosts.ini playbooks/ping.yml
+
+      # Storage first: NFS must be mounted before compose binds the media libraries.
+      - name: Deploy NFS exports + backup timer
+        working-directory: ansible
+        env:
+          HOMELAB_ENV: prod
+          SAMBA_ADMIN_PASSWORD: ${{ secrets.SAMBA_ADMIN_PASSWORD }}
+        run: |
+          ansible-playbook -i environments/prod/hosts.ini playbooks/deploy-storage.yml
 
       - name: Deploy compose/core
         working-directory: ansible
@@ -58,13 +69,6 @@ jobs:
         run: |
           ansible-playbook -i environments/prod/hosts.ini playbooks/deploy-core.yml
 
-      - name: Deploy NFS exports + backup timer
-        working-directory: ansible
-        env:
-          HOMELAB_ENV: prod
-        run: |
-          ansible-playbook -i environments/prod/hosts.ini playbooks/deploy-storage.yml
-
   # F7-C — a deploy is not done until its tests are green. Checks that need a
   # part of prod that is not online yet report SKIP, which is not a failure.
   post-deploy-tests:
@@ -88,6 +92,7 @@ jobs:
         env:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           IMMICH_DB_PASSWORD: ${{ secrets.IMMICH_DB_PASSWORD }}
+          SAMBA_ADMIN_PASSWORD: ${{ secrets.SAMBA_ADMIN_PASSWORD }}
           LINKWARDEN_URL: http://192.168.50.30:3001
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NO_COLOR: "1"

@@ -749,6 +749,8 @@ unset SECRET
 
 ### Prod caps (user 2026-06-11)
 
+> **2026-10-19:** the caps were never enforced (no code read `cap_gb`) and are removed from `config/storage.yml`. The NAS layout is by data type, not quotas: SA500 = all media (~300-400 GB), Purple = backups + Samba share (decision [`0002`](../knowledge/decisions/0002-nas-layout-and-samba.md)). The cap-based sums below are history.
+
 | Media | Prod cap | Current (before import) |
 |-------|----------|-------------------------|
 | Immich (photos) | **60 GB** → 69 GB with thumbnails | 35 GB |
@@ -763,7 +765,7 @@ unset SECRET
 |------|----------|------|
 | System SSD | 256 GB | Proxmox + root VM (`ubuntu-apps`, `ubuntu-nas`) |
 | **SA500** | **2 TB** | Hot: Immich, music (Navidrome), Jellyfin/Syncthing (NFS) |
-| **Purple** | **4 TB** | Local backups (vzdump, dumps) — **not** full SA500 copy |
+| **Purple** | **4 TB** | Local backups (vzdump, dumps) — **not** full SA500 copy; since 2026-10-19 also the Samba share (installers, not backed up, not in the estimate below) |
 
 ### Estimate table (prod)
 

@@ -9,7 +9,7 @@ so a wrong entry costs more than a missing one.
 | [architecture.md](architecture.md) | Envs, source of truth, what is / is not built |
 | [infrastructure.md](infrastructure.md) | Proxmox, TF, runners, VM sizing |
 | [networking.md](networking.md) | Dev vs prod, Authelia hosts, exposure |
-| [storage.md](storage.md) | DEV volumes + loopback NFS; prod SA500/Purple; why Ubuntu not OMV/TrueNAS |
+| [storage.md](storage.md) | DEV volumes + loopback NFS; prod SA500 (media) / Purple (backups + share), attach order, one-time wipe; Samba; why Ubuntu not OMV/TrueNAS |
 | [backup.md](backup.md) | F5 jobs, timer, restore suite |
 | [dr.md](dr.md) | What you can and cannot recover today |
 | [security.md](security.md) | Identities, rotation, known edges |
@@ -23,7 +23,7 @@ so a wrong entry costs more than a missing one.
 | [repo-audit-2026-09-10.md](repo-audit-2026-09-10.md) | F9-F2 — stranger readability |
 | [rebuild-drill-2026-09-10.md](rebuild-drill-2026-09-10.md) | F9-F3 — tabletop; merge gate **FAIL** |
 | [rebuild-drill-2026-10-19.md](rebuild-drill-2026-10-19.md) | F9-F3 — real wipe + rebuild of DEV; works, 9 gaps found; repeat needed |
-| [decisions/](decisions/) | Decision records (ADR); 0001 - restore CI and DEV before F3 metal |
+| [decisions/](decisions/) | Decision records (ADR); 0001 - restore CI and DEV before F3 metal; [0002](decisions/0002-nas-layout-and-samba.md) - NAS layout by data type, Samba on the Ubuntu NAS |
 | [templates/](templates/) | Templates for new decision, how-to, runbook, troubleshooting and glossary documents |
 
 ## What goes in, what does not

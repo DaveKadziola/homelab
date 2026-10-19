@@ -21,6 +21,10 @@ environments:
     rclone: false
     ha_host: ""
     passthrough: []
+    # Samba runs on the NAS guest; DEV reaches it from the libvirt network only.
+    samba:
+      share_path: /srv/homelab-share
+      hosts_allow: [192.168.122.0/24, 127.0.0.1]
   prod:
     mode: nfs
     nas_host: 192.168.20.12
@@ -31,19 +35,32 @@ environments:
     export_clients: [192.168.50.0/26]
     rclone: true
     ha_host: 192.168.20.13
-    # Fill after `ls /dev/disk/by-id` on the Proxmox host, then:
-    #   ./utils/pve-attach-nas-disks.sh --env prod
+    # Whole disks passed to ubuntu-nas (utils/pve-attach-nas-disks.sh --env prod). `serial` is
+    # handed to the guest (qm serial=) so the playbook finds each disk by it; `label` names the
+    # ext4 filesystem it gets once (one-time wipe opt-in, knowledge/storage.md) and fstab mounts
+    # it by LABEL. SSD = all media (export_root/media); Purple = backups + the Samba share,
+    # mounted outside the NFS tree so the share is neither NFS-visible nor in backups/offsite.
     passthrough:
-      - { name: sa500,  role: media,   mount: /export/media,   by_id: "" }
-      - { name: purple, role: backups, mount: /export/backups, by_id: "" }
+      - { name: sa500, scsi: 1, ssd: true, serial: 2525GTD00073, label: hl-media, mount: /export/media,
+          by_id: /dev/disk/by-id/ata-WD_Red_SA500_2.5_2TB_2525GTD00073 }
+      - { name: purple, scsi: 2, ssd: false, serial: WD-WCC7K3KZKJKX, label: hl-purple, mount: /srv/purple,
+          by_id: /dev/disk/by-id/ata-WDC_WD40PURZ-85TTDY0_WD-WCC7K3KZKJKX }
+    # Bind mounts that place part of a passthrough fs into the NFS tree.
+    binds:
+      - { from: /srv/purple/backups, to: /export/backups, label: hl-purple }
+    samba:
+      share_path: /srv/purple/share
+      # LAN + WireGuard. IOT devices sit in the NAS subnet, the router cannot filter them.
+      hosts_allow: [192.168.1.0/24, 10.10.10.0/24, 127.0.0.1]
 
-# Layout under export_root (created by ansible/playbooks/deploy-storage.yml).
+# Layout under export_root (created by ansible/playbooks/deploy-storage.yml). No size caps:
+# media totals ~300-400 GB on a 2 TB SSD (owner, 2026-10-19).
 exports:
-  - { name: media-immich, path: media/immich, cap_gb: 60,  app: immich }
-  - { name: media-music,  path: media/music,  cap_gb: 150, app: navidrome }
-  - { name: media-video,  path: media/video,  cap_gb: 400, app: jellyfin }
-  - { name: sync,         path: sync,         cap_gb: 20,  app: syncthing }
-  - { name: backups,      path: backups,      cap_gb: null, app: backup }
+  - { name: media-immich, path: media/immich, app: immich }
+  - { name: media-music,  path: media/music,  app: navidrome }
+  - { name: media-video,  path: media/video,  app: jellyfin }
+  - { name: sync,         path: media/sync,   app: syncthing }
+  - { name: backups,      path: backups,      app: backup }
 
 # A15: keep the 2 newest artefacts per stream; delete older.
 retention:

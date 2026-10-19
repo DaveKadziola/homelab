@@ -33,6 +33,7 @@ in `/tmp/homelab-tests-<env>/` and referenced from the failure message.
 | `infra/` | `terraform plan` reports no changes; terraform state matches the tfvars it was applied with; `ansible-playbook --check` changes nothing; the guest really has the RAM/CPU/disk/IP from `terraform.tfvars`; IP, gateway, VLAN and prefix match `docs/network.md`; the Proxmox LVM-thin pool is below 85 % (`HL_THIN_POOL_MAX_PCT`) and set to error when full (DEV only) | terraform, ansible, Proxmox API token, deploy secrets, root SSH key on the nested Proxmox |
 | `net/` | public and host-side DNS resolve; a WireGuard peer has a recent handshake; the public HAProxy endpoint from `public_url` answers and its TLS certificate is not about to expire; APP→NAS `2049/111` is open and other APP→IOT paths are blocked | prod network for the firewall and HAProxy checks |
 | `config/` | every secret named in `config/identities.yml` exists in the matching GitHub environment; no secret value is committed; no deployed file carries a literal fallback secret; `config/services.yml` agrees with `compose/` and with the port tables in `docs/` | `gh` authenticated; nothing else |
+| `storage/` | from `config/storage.yml`: each NAS passthrough filesystem and bind is mounted with its LABEL (`disk/<label>@<path>`); the apps host sees each filesystem's marker through NFS, not the empty root-disk directory under the mount (`nfs/marker-<label>`); nfs-server requires every NAS mount (`nfs/guard`); smbd runs, `hosts allow` matches the config and the admin login lists `share` and `media` (`samba/smbd`, `samba/hosts-allow`, `samba/login`, run on the NAS itself with `smbclient`, password over stdin). Read-only. DEV: 3 PASS 3 SKIP; with two test disks on DEV 9 PASS (2026-10-19) | SSH to the NAS (on DEV the apps guest), `SAMBA_ADMIN_PASSWORD` in the environment or `~/.homelab-secrets/<env>/` |
 | `restore/` | NFS mount + backup timer + one `run-all.sh` + scratch Postgres dump→restore. rclone/HA/vzdump SKIP on DEV with reasons | SSH, `sudo -n`, F5 deployed |
 
 ### Test ids
@@ -56,6 +57,10 @@ A skip always carries its reason. The ones that are expected today:
 | `<service>/port`, `<service>/endpoint` for `check: container` | Diun, Zotify and the Beszel agent have no HTTP listener to probe |
 | a service whose `profile` is not in `COMPOSE_PROFILES` | it is intentionally not deployed |
 | a service with `optional: true` that is missing | it needs a manual step first (Beszel agent needs a hub key) |
+| `storage/disk/all`, `storage/nfs/markers`, `storage/nfs/guard` on `--env dev` | `passthrough` is empty for DEV in `config/storage.yml`: no SA500/Purple there |
+| `storage/nas/reachable` on `--env prod` | `ubuntu-nas` `192.168.20.12` is not reachable yet |
+| `storage/samba/all` | the environment has no `samba` block in `config/storage.yml` |
+| `storage/samba/login` | `SAMBA_ADMIN_PASSWORD` is not in the environment or `~/.homelab-secrets/<env>/` |
 
 ## Add a service — one edit
 

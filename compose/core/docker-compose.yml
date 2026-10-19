@@ -332,7 +332,9 @@ services:
       DIUN_WATCH_WORKERS: "5"
       DIUN_PROVIDERS_DOCKER: "true"
       DIUN_PROVIDERS_DOCKER_WATCHBYDEFAULT: "true"
-    mem_limit: 128m
+    # watchRepo lists every tag of each repo (immich-ml has thousands): 128m was OOM-killed
+    # mid-scan on DEV (2026-10-19).
+    mem_limit: 256m
 
   # Zotify — Spotify downloader helper (CLI). Stay-up container; exec in to use.
   # First login: docker exec -it homelab-core-zotify-1 zotify …
