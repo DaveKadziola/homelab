@@ -46,7 +46,8 @@ report PASS "host/docker" "$(wc -l <"$DOCKER_FACTS") container(s) inspected"
 # Enabled compose profiles decide whether a profiled service must be up.
 ENABLED_PROFILES="$(hl_ssh 'grep -h "^COMPOSE_PROFILES=" /opt/homelab/compose/core/.env 2>/dev/null | tail -1 | cut -d= -f2-' 2>/dev/null || true)"
 if [[ -z "$ENABLED_PROFILES" ]]; then
-  ENABLED_PROFILES="${HL_COMPOSE_PROFILES:-auth,media}"
+  # Same defaults as deploy-core.yml (prod without auth, decision 0003).
+  ENABLED_PROFILES="${HL_COMPOSE_PROFILES:-$([[ "$HL_ENV" == prod ]] && echo media || echo auth,media)}"
   hl_note "  (COMPOSE_PROFILES not readable on host, assuming '$ENABLED_PROFILES')"
 fi
 

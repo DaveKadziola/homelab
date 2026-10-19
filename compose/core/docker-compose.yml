@@ -3,7 +3,7 @@
 # Prod: ubuntu-apps @ 192.168.50.30 (after F3)
 #
 # Grocery (public) is separate: compose/grocery via Portainer — see docs/f4-apps-dev.md
-# Profiles: `auth` (Authelia), `media` (Immich + Jellyfin). Deploy enables both by default.
+# Profiles: `auth` (Authelia), `media` (Immich + Jellyfin). Deploy enables both on DEV, only `media` on prod.
 
 name: homelab-core
 
@@ -130,7 +130,7 @@ services:
       - linkwarden_data:/data/data
     mem_limit: 512m
 
-  # Authelia — COMPOSE_PROFILES=auth (default on deploy)
+  # Authelia — COMPOSE_PROFILES=auth (deploy default on DEV; off on prod, decision 0003)
   # Secrets come from the environment; configuration.yml holds no key material.
   # The admin hash in authelia/users_database.yml is written by
   # utils/bootstrap/authelia.sh.
@@ -305,7 +305,7 @@ services:
 
   beszel-agent:
     image: henrygd/beszel-agent:0.21.0
-    # Exits without KEY — enable only after hub UI: COMPOSE_PROFILES=auth,media,beszel-agent + BESZEL_KEY=
+    # Exits without KEY — enable only after hub UI: COMPOSE_PROFILES=<current profiles>,beszel-agent + BESZEL_KEY=
     restart: unless-stopped
     network_mode: host
     volumes:
