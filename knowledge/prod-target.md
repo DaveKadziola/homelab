@@ -107,11 +107,12 @@ Beszel hub (host metrics; agent off until keyed), Dozzle (logs), Diun (image upd
 
 ## 9. Gaps found while writing this (2026-10-19)
 
-1. **HAProxy backend points at `192.168.50.30:8080`** - that is Dozzle, not Grocery (`8101`). Fix before apps start, or Dozzle is public.
-2. **SSH user mismatch:** Terraform creates `ubuntu-prod`; `ansible/environments/prod/hosts.ini` and `services.yml` say `ubuntu`. Ansible would not log in.
-3. **Prod reuses the DEV key:** GH `prod` `UBUNTU_DOCKER_SSH_PUB` is the `homelab-dev` key; `UBUNTU_DOCKER_PASSWORD` prod dates from 2026-06-29 (before the `--body -` fix, may be `-`). Regenerate both for prod.
-4. **NAS disks:** `passthrough[].by_id` empty in `config/storage.yml` (values known, section 1), and nothing formats or mounts the passed disks inside the VM; `cap_gb` is read by no code. Wipe of the existing NTFS must be an explicit one-time opt-in.
-5. **Backups that cannot run from `ubuntu-apps`:** `vzdump.sh` needs a Proxmox host (timer on apps -> SKIP); `opnsense.sh` and `ha-pull.sh` need APP -> router SSH and APP -> `.20.13`, which the APP firewall blocks (private networks closed); `opnsense.sh` also needs a key on the router.
+1. ~~HAProxy backend pointed at `192.168.50.30:8080` (Dozzle)~~ - fixed on the router: `8101` (`utils/f2-opnsense-haproxy.sh`, #35).
+2. ~~SSH user mismatch `ubuntu` vs `ubuntu-prod`~~ - fixed: inventory and `services.yml` use `ubuntu-prod` (#35).
+3. ~~Prod reused the DEV key and a June password~~ - fixed: own key `homelab_prod_ed25519`, new password hash, the prod deploy installs the key on the runner (#35).
+4. ~~NAS disks: no by-id, nothing formats or mounts them~~ - fixed in #35: serials, one-time wipe opt-in, LABEL mounts, `crossmnt`, nfs-server guard, Samba; tested on DEV with two test disks. Still to run on prod after `terraform apply`: attach, then the opt-in format.
+5. **Backups that cannot run from `ubuntu-apps`:** `vzdump.sh` needs a Proxmox host (timer on apps -> SKIP); `opnsense.sh` and `ha-pull.sh` need APP -> router SSH and APP -> `.20.13`, which the APP firewall blocks; `opnsense.sh` also needs a key on the router.
 6. **Authelia is configured for `homelab.local`** (DEV) only; prod needs a domain under `dkhomelabserver.xyz` plus AdGuard rewrites for the app names.
 7. **Monitoring alerts:** no notifier for Diun/Beszel; F10 not built.
 8. Workflow Terraform version prod `1.15.6` vs DEV `1.16.3`; pick one before the first prod state is written.
+9. ~~APP -> NAS rules passed every TCP port~~ (port in a top-level `<destinationport>` that pf ignores) - fixed on the router: NFS 2049/111 plus SSH 22 from `.50.30` only (`utils/f2-opnsense-nas-ports.sh`, #35).
