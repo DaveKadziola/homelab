@@ -37,7 +37,7 @@ check "IOT -/-> HOME OFFICE 192.168.10.1" bash -c "! ping -c2 -W2 -I $IOT_IF 192
 check "IOT -/-> GUEST 192.168.30.1" bash -c "! ping -c2 -W2 -I $IOT_IF 192.168.30.1 >/dev/null 2>&1"
 
 if [[ $fail == 0 ]]; then
-  ssh -o BatchMode=yes -b "$IOT_SRC" -i "$KEY" daveadmin@192.168.20.1 'touch /tmp/homelab-iot-keep'
+  ssh -o BatchMode=yes -b "$IOT_SRC" -i "$KEY" daveadmin@192.168.20.1 'touch /tmp/homelab-iot-keep; pkill -F /tmp/homelab-iot-revert.pid'
   echo "all checks passed - change kept"
   out="${REPO_ROOT}/opnsense/backups/config-$(date +%Y%m%d-%H%M%S).xml"
   ssh -o BatchMode=yes -b "$IOT_SRC" -i "$KEY" daveadmin@192.168.20.1 'cat /conf/config.xml' > "$out"

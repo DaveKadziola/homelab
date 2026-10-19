@@ -143,7 +143,7 @@ Still missing on a **prod** rebuild until metal exists: SA500 libraries, rclone 
 |---------|----------------|
 | New hypervisor | Step 2 + 3. Keep OPNsense if the LAN is unchanged. |
 | New storage | Fill `by_id`, `pve-attach-nas-disks.sh --env prod`, `deploy-storage.yml`, prod compose NFS override. |
-| Renumber network | **Do not**, unless you also move printer/Tuya/NPM. Edit `docs/network.md` first. |
+| Renumber network | **Do not**, unless you also move printer/Tuya. Edit `docs/network.md` first. |
 | Nested DEV on a new laptop | Steps 2-DEV → 3-DEV → 4 → 5 → 6 → 9. No OPNsense, no restore. |
 
 ## Related

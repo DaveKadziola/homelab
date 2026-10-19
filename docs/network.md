@@ -35,7 +35,6 @@ Dev is **isolated** from prod VLANs.
 | `192.168.20.11` | E1 Zoom |
 | `192.168.20.20` | **Proxmox host** (NIC1 mgmt) |
 | `192.168.20.50`–`.58` | Tuya / IoT |
-| `192.168.50.2` | legacy NPM (APP) |
 
 ### Homelab v2 slots (new DHCP static mappings at F3/F5)
 
@@ -46,7 +45,7 @@ Dev is **isolated** from prod VLANs.
 | HP T620 HAOS | IOT | 20 | **`192.168.20.13`** | T620 NIC — set at F5 |
 | `ubuntu-apps` | APP | 51 | **`192.168.50.30`** | VM NIC — set at F3 |
 
-**Open (2026-10-19):** DMZ `192.168.50.1/28` (`.0`–`.15`, NPM `.50.2`) lies inside APP `192.168.50.50/26` (`.0`–`.63`). The two interfaces overlap; fixing it means renumbering one of them - decision pending.
+**DMZ** (VLAN 50, `vlan06`, parent of the APP QinQ): `192.168.50.65/28` (`.64`–`.79`) since 2026-10-19, moved out of APP `192.168.50.0/26` (`utils/f2-opnsense-dmz.sh`). Unused; DHCP off. The dead legacy NPM `.50.2` (no ARP) lost its static map and its LAN/DMZ rules and its WAN port-forward (disabled).
 
 ---
 
@@ -71,6 +70,7 @@ Host has **one** management IP. NIC2/NIC3 offload storage and app traffic from N
 | APP net `192.168.50.0/26` (`opt6`) | `192.168.20.12` | TCP 2049, 111 | NFS apps → NAS |
 | IOT (`opt3`) | everything except HOME OFFICE + GUEST (`!NotForIOT`) | any | DNS to `opt3ip`; the old IOT `pass any -> any` is disabled since 2026-10-19 (`utils/f2-opnsense-iot.sh`) |
 | WireGuard `10.10.10.0/24` | IOT / APP / LAN | per rule | VPN |
+| any CommonDNS member (LAN, IOT, GUEST, VPN, DMZ, APP) | a DNS server outside them | 53 | redirected to the router's own address on that interface (AdGuard); one rdr per interface since 2026-10-19 (`utils/f2-opnsense-dns.sh`) - AdGuard answers redirected UDP from the interface address, so a single rdr to `127.0.0.1` never got its replies back |
 | WAN | WAN address | 443 | HAProxy → Grocery (F2-05 / F4) |
 
 ---
