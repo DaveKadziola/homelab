@@ -57,7 +57,7 @@ vm_config = {
     enable_cloud_init  = true
     cloud_init_cidr    = "192.168.50.30/26"
     cloud_init_gateway = "192.168.50.50"
-    cloud_init_dns     = "192.168.20.1"
+    cloud_init_dns     = "192.168.50.50" # own gateway: AdGuard answers .20.1 from .50.50 over UDP
     storage_type       = "local-lvm"
     storage_interface  = "scsi0"
     # Full P0–P2 image set needed 27G on dev (media libs live on NFS, not here).
