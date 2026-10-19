@@ -92,11 +92,18 @@ sudo env HOMELAB_SECRETS_DIR=/opt/homelab/secrets \
 
 ## 7. Restore data — **semi-auto** (F5)
 
-On the apps guest, after NFS is mounted. The dumps are plain SQL without `--clean`, so they load only into an **empty** database; the fresh deploy has already created and filled most of them, so use `--replace` (drop `WITH (FORCE)` + create). Stop the app first, or it reconnects to a half-restored database:
+On the apps guest, after NFS is mounted. A rebuilt DEV guest has an empty `/mnt/homelab/backups`: put the copy back first, from the laptop:
 
 ```bash
+ssh -i ~/.ssh/homelab_dev_ed25519 ubuntu-dev@<guest> 'sudo tar -C /mnt/homelab -xzf -' < backups.tar.gz
+```
+
+The dumps are plain SQL without `--clean`, so they load only into an **empty** database; the fresh deploy has already created and filled most of them, so use `--replace` (drop `WITH (FORCE)` + create). Stop the app first, or it reconnects to a half-restored database:
+
+```bash
+cd /opt/homelab
 B=/mnt/homelab/backups/postgres
-R="./utils/backup/restore-pg.sh --env <env>"
+R="sudo env HOMELAB_SECRETS_DIR=/opt/homelab/secrets ./utils/backup/restore-pg.sh --env <env>"
 
 docker stop homelab-core-linkwarden-1
 $R --db linkwarden --file $B/linkwarden-….sql.gz --replace --owner linkwarden
@@ -113,7 +120,7 @@ $R --db todo_grocery --file $B/todo_grocery-….sql.gz --replace   # grocery sta
 
 `--owner` matters for linkwarden: the app connects as `linkwarden` and must own its tables; without it they would belong to `homelab`, the user the script connects as. Immich has its own Postgres container and superuser.
 
-DEV proof: `./utils/run-tests.sh --env dev --suite restore` (throwaway DB). On 2026-10-19 the commands above restored linkwarden (18 tables, owner `linkwarden`, app 200) and immich (row counts equal to the dump, `isInitialized` true) over the databases of a fresh deploy. Copy `/mnt/homelab/backups` off a DEV guest before wiping it: the DEV NFS export lives on the same guest.
+DEV proof: `./utils/run-tests.sh --env dev --suite restore` (throwaway DB). On 2026-10-19 the commands above restored linkwarden (18 tables, owner `linkwarden`, app 200) and immich (row counts equal to the dump, `isInitialized` true) over the databases of a fresh deploy. Copy `/mnt/homelab/backups` off a DEV guest before wiping it: the DEV NFS export lives on the same guest (`ssh … 'sudo tar -C /mnt/homelab -czf - backups' > backups.tar.gz`). Run `restore-pg.sh` from a file or a terminal, not inside a script piped to `ssh … bash -s`: its `docker exec -i` reads the rest of that script as input.
 
 Still missing on a **prod** rebuild until metal exists: SA500 libraries, rclone pull, HA `.tar`, vzdump. A rebuild without those artefacts still gives empty media libraries with known passwords.
 

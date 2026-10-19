@@ -50,6 +50,6 @@ Clock below is “stranger with this repo + Bitwarden + this laptop”, not wall
 - [x] Bitwarden — cache synced 2026-09-11; operator confirmed remaining passwords (incl. `POSTGRES_PASSWORD` / F1) are in the vault
 - [~] F5: DEV `pg_dump` + NFS + restore suite PASS; rclone remote `pcloud:` + `RCLONE_CONFIG` in GH prod (2026-09-11). Timer offsite still DEV-disabled
 - [x] `tests/restore/` (C4) exists and PASSed on DEV (scratch DB)
-- [ ] Nested rebuild (new VMID or planned wipe) completed using only repo + vault + `rebuild.md`
+- [x] Nested rebuild (new VMID or planned wipe) completed using only repo + vault + `rebuild.md` - 2026-10-19, `rebuild-drill-2026-10-19b.md`
 - [ ] nmap from WG/IOT/APP (S7)
 - [ ] GHA `apps-deploy-*` injects the full secret set (this change) and a DEV test workflow runs
