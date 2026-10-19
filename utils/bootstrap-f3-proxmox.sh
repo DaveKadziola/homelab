@@ -5,7 +5,8 @@
 #
 # Usage:
 #   PROXMOX_IP=192.168.20.20 [PVE_KEY=~/.ssh/<root key>] ./utils/bootstrap-f3-proxmox.sh
-#   ./utils/bootstrap-f3-proxmox.sh --set-token   # also prompt for token secret via gh
+#   ./utils/bootstrap-f3-proxmox.sh --set-token   # also prompt for the token secret; it replaces
+#     GH prod, ~/.homelab-secrets/prod/ and Bitwarden (utils/bw-store.py, queued while locked)
 
 set -euo pipefail
 
@@ -36,12 +37,12 @@ if $SET_TOKEN; then
   echo "Paste API token secret (input hidden):"
   read -rs TOKEN
   printf '%s' "$TOKEN" | gh secret set PROXMOX_API_TOKEN_SECRET --env prod --repo "$REPO"
+  printf '%s' "$TOKEN" | "$(dirname "${BASH_SOURCE[0]}")/bw-store.py" --env prod --stdin PROXMOX_API_TOKEN_SECRET
   unset TOKEN
   echo "set secret PROXMOX_API_TOKEN_SECRET (prod)"
 fi
 
 echo ""
 echo "Next:"
-echo "  1. Store token in Bitwarden homelab/PROXMOX_API_TOKEN_SECRET/prod"
-echo "  2. ./utils/f3-verify.sh"
-echo "  3. terraform plan/apply — docs/f3-proxmox.md"
+echo "  1. ./utils/f3-verify.sh"
+echo "  2. terraform plan/apply — docs/f3-proxmox.md"

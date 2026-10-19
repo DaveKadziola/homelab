@@ -13,5 +13,5 @@ This directory is a placeholder for any config-as-code we later export. Do not p
 ## After HAOS is up
 
 1. Create a Supervisor backup in the UI (or `ha backups new`).
-2. Put `HA_TOKEN` in `~/.homelab-secrets/prod/` (and Bitwarden).
+2. Store `HA_TOKEN`: `printf '%s' "$t" | utils/bw-store.py --env prod --stdin HA_TOKEN` (laptop cache `~/.homelab-secrets/prod/` and Bitwarden).
 3. Nightly `homelab-backup.timer` on `ubuntu-apps` will pull the newest `.tar` into `/mnt/homelab/backups/homeassistant`.
