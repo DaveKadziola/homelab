@@ -53,3 +53,8 @@ jobs:
         run: |
           docker run --rm -v "$PWD:/repo:ro" zricethezav/gitleaks:latest \
             detect --source /repo --no-banner
+
+      - name: Script self-tests
+        run: |
+          ./utils/pve-attach-nas-disks.sh --self-test
+          python3 utils/pve-network.py --self-test

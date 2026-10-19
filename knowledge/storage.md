@@ -1,3 +1,7 @@
+Status: draft
+Last reviewed: 2026-10-20
+Scope: NAS storage layout, passthrough attach and format order, Samba (dev and prod)
+
 # Storage
 
 Layout and env modes live in [`config/storage.yml`](../config/storage.yml). Ansible: `ansible/playbooks/deploy-storage.yml`.
@@ -44,7 +48,7 @@ Firewall APP → NAS `:2049` / `:111` is an F2 rule — see [`docs/network.md`](
 ### Attach and format (run order)
 
 1. `terraform apply`, then `terraform plan` - no drift.
-2. `./utils/pve-attach-nas-disks.sh --env prod --dry-run`, then without `--dry-run` (optional `PVE_KEY`). Fixed slots, `serial=` and, for the SSD, `ssd=1,discard=on` come from the config; a bad by-id, slot or serial fails the run. On the host it checks first: VM exists, by-id exists, disk not mounted and not an LVM PV, slot free (the same line already there -> skip).
+2. `./utils/pve-attach-nas-disks.sh --env prod --dry-run`, then without `--dry-run` (optional `PVE_KEY`). Fixed slots, `serial=` and, for the SSD, `ssd=1,discard=on` come from the config; a bad by-id, slot or serial fails the run. On the host it checks first: VM exists, by-id exists, disk not mounted and not an LVM PV, slot free (the same disk with the same options already there -> skip; PVE stores the options sorted and adds `size=`, so the check ignores both, see `--self-test`; `qm config 102`, 2026-10-20: `scsi1: ...,serial=2525GTD00073,size=1953514584K,ssd=1`).
 3. `terraform plan` again - still no changes. On DEV (bpg 0.77.1) a disk attached with `qm set` outside Terraform gave "No changes"; that test used a pool volume, not a raw device.
 4. `deploy-storage.yml` once with the wipe opt-in below.
 5. Normal deploys, without `nas_wipe`.
