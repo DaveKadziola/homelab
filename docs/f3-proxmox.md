@@ -23,7 +23,7 @@ Host mgmt stays **`192.168.20.20/24`** on `vmbr0.20`, static on the host from `c
 |----|------|------|
 | F3-01 | Proxmox reachable (SSH/API) | `./utils/f3-verify.sh` |
 | F3-02 | API token `homelab-prod@pam!terraform` (done 2026-10-19) | `pveum` on the host, see below |
-| F3-03 | GH prod variables → real `PROXMOX_API_URL` | `./utils/bootstrap-f3-proxmox.sh` |
+| F3-03 | Host post-install (pve-no-subscription, no subscription notice, HA off on one node), GH prod variable `PROXMOX_API_URL` | `./utils/bootstrap-f3-proxmox.sh --dry-run`, then `--upgrade` |
 | F3-04 | `terraform plan` | `./utils/f3-proxmox-preflight.sh` then plan |
 | F3-05 | `terraform apply` on `main` | `infra-apply-prod.yml` (needs prod runner — chicken/egg) |
 | F3-06 | DHCP static for VM MACs on OPNsense | after first boot |
@@ -104,7 +104,9 @@ Purple (`/srv/purple/backups`, `knowledge/backup.md`) or on the laptop (the `tar
      `gh secret set PROXMOX_SSH_PASSWORD --env prod < ~/.homelab-secrets/prod/PROXMOX_SSH_PASSWORD`.
    - API tokens: "Proxmox API token (F3-02)" below, then "PR plan" step 1 and its
      `gh secret set PROXMOX_API_TOKEN_SECRET --env prod-plan` line.
-6. `PVE_KEY="$KEY" ./utils/bootstrap-f3-proxmox.sh` enables `snippets` on `local`; the API URL does
+6. `PVE_KEY="$KEY" ./utils/bootstrap-f3-proxmox.sh --upgrade` (first with `--dry-run`) switches apt to
+   `pve-no-subscription`, hides the subscription notice, turns HA off on the single node, upgrades the
+   packages (reboot if it prints `REBOOT NEEDED`) and enables `snippets` on `local`; the API URL does
    not change. Then start the temporary laptop runner (Bootstrap order step 2) and re-run
    `Infra Apply Prod` with workflow_dispatch. Continue with `knowledge/rebuild.md` step 3 (attach the
    NAS disks with `utils/pve-attach-nas-disks.sh`, never `nas_wipe`) through step 9. Bootstrap order
@@ -127,7 +129,7 @@ Prod is built from `main` only (owner, 2026-10-19): `Infra Apply Prod` on a push
 owner's approval. The prod runner lives on `ubuntu-apps`, which does not exist before the first
 apply, so the first run uses a temporary runner on the laptop:
 
-1. `./utils/bootstrap-f3-proxmox.sh` (API URL, `snippets` on datastore `local`).
+1. `./utils/bootstrap-f3-proxmox.sh --upgrade` (post-install, API URL, `snippets` on datastore `local`).
 2. Temporary runner: `RUNNER_INSTALL_DIR=~/actions-runner-homelab-prod ./utils/setup-github-runner.sh --label homelab-prod --name homelab-prod-laptop-bootstrap`, started with `./run.sh`.
 3. Tag the old `main` as `legacy-pre-v2`, open the PR `homelab-v2` -> `main` (`Infra Plan Prod` runs the plan), merge, approve `Infra Apply Prod`.
 4. Attach and format the NAS disks as in [`knowledge/storage.md`](../knowledge/storage.md#attach-and-format-run-order), never in CI.

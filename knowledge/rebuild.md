@@ -44,7 +44,7 @@ Without the router, VLANs, DHCP statics, WireGuard, and HAProxy do not exist.
 
 - Install PVE and put it on its network as in [`docs/f3-proxmox.md`](../docs/f3-proxmox.md#bare-metal-install): installer values, VLAN 20 by hand on the console, then `config/pve/interfaces.prod` copied to the host and one reboot (unverified: bare-metal path not run end to end). Reinstalling the running host erases VMs 101/102 on `local-lvm`; read that section first. Node name in prod tfvars is `proxmox`.
 - Later host network changes: `utils/pve-network.py --env prod` (diff, backup, auto-revert) (unverified: apply and revert path not run on any host yet; DEV control runs pending, only `--dry-run` was run).
-- API tokens `homelab-prod@pam!terraform` (`prod`) and `homelab-prod@pam!plan` (`prod-plan`, read-only), then `utils/bootstrap-f3-proxmox.sh`.
+- API tokens `homelab-prod@pam!terraform` (`prod`) and `homelab-prod@pam!plan` (`prod-plan`, read-only), then `utils/bootstrap-f3-proxmox.sh --upgrade` (post-install: `pve-no-subscription`, no subscription notice, HA off).
 - Secrets: `PROXMOX_API_TOKEN_SECRET` (`prod`, `prod-plan`), `PROXMOX_SSH_PASSWORD` (the new root password). The command that creates each one also writes the laptop cache and Bitwarden (`utils/bw-store.py --stdin`, as in `docs/f3-proxmox.md`), then `gh secret set` reads the cache file; `utils/bw-store.py --pending` stores what waited for a locked vault. Variable: `PROXMOX_API_URL`.
 - Verify: `utils/pve-network.py --env prod --dry-run` prints `no change`; `utils/f3-verify.sh` / `utils/f3-proxmox-preflight.sh`.
 - Time: 1–2 h.
