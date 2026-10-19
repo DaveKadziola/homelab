@@ -117,9 +117,12 @@ variable "vm_config" {
     storage_size       = number
     ssd_enabled        = bool
     boot_order         = optional(set(string))
-    image_url          = string
-    img_storage_type   = string
-    img_file_format    = string
+    # PVE starts VMs by ascending order and shuts them down in reverse; up_delay waits before the next.
+    startup_order    = optional(number)
+    startup_up_delay = optional(number)
+    image_url        = string
+    img_storage_type = string
+    img_file_format  = string
   }))
   description = "Config VMs for specific environment"
 }
