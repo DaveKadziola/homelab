@@ -11,7 +11,7 @@ Helper scripts:
 | Script | Purpose |
 |--------|---------|
 | `utils/export-secrets-for-bitwarden.sh` | Legacy F1 text export (`--regenerate` for GH-only secrets) |
-| `utils/sync-cache-to-bitwarden.sh` | Push `~/.homelab-secrets/<env>/` into Bitwarden (needs `BW_SESSION`) |
+| `utils/bw-store.py` | Store `~/.homelab-secrets/<env>/<NAME>` as Bitwarden `homelab/<NAME>/<env>`. `gen-app-credentials.sh`, `setup-rclone-pcloud.sh` and `bootstrap-f3-proxmox.sh --set-token` call it for every new value; with the vault locked the names wait in `~/.homelab-secrets/.bw-pending` until `--pending`. `--env dev\|prod\|prod-plan\|all` stores a whole cache (`sync-cache-to-bitwarden.sh` is now a wrapper for it) |
 | `utils/setup-rclone-pcloud.sh` | After OAuth: pCloud folders, optional `RCLONE_CONFIG` in GH prod |
 | `utils/bootstrap-f1-secrets.sh` | Push secrets/variables to GitHub (values not printed) |
 | `utils/sync-secrets-to-github.py` | Push `~/.homelab-secrets/<env>/` to a GitHub Environment (dry run unless `--apply`); `UBUNTU_DOCKER_PASSWORD` goes as its SHA-512 crypt hash, `RCLONE_CONFIG` (prod) as base64 |

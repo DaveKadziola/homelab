@@ -66,7 +66,7 @@ pveum acl modify / --users homelab-prod@pam --roles Administrator
 pveum user token add homelab-prod@pam terraform --privsep 0 --output-format json   # "value" = secret, shown once
 ```
 
-The secret goes to `~/.homelab-secrets/prod/PROXMOX_API_TOKEN_SECRET` (mode 600), Bitwarden `homelab/PROXMOX_API_TOKEN_SECRET/prod` and `gh secret set PROXMOX_API_TOKEN_SECRET --env prod < file`. Never print it.
+Paste the secret into `./utils/bootstrap-f3-proxmox.sh --set-token` (hidden input): it sets `PROXMOX_API_TOKEN_SECRET` in GH `prod`, writes `~/.homelab-secrets/prod/PROXMOX_API_TOKEN_SECRET` (mode 600) and stores Bitwarden `homelab/PROXMOX_API_TOKEN_SECRET/prod` (queued while the vault is locked). Never print it.
 
 ---
 
@@ -95,6 +95,7 @@ install -d -m 700 ~/.homelab-secrets/prod-plan
 ssh root@192.168.20.20 'pveum user token add homelab-prod@pam plan --privsep 1 --output-format json' \
   | jq -r .value > ~/.homelab-secrets/prod-plan/PROXMOX_API_TOKEN_SECRET
 chmod 600 ~/.homelab-secrets/prod-plan/PROXMOX_API_TOKEN_SECRET
+utils/bw-store.py --env prod-plan PROXMOX_API_TOKEN_SECRET   # Bitwarden, or queued while locked
 ssh root@192.168.20.20 'pveum acl modify / --tokens "homelab-prod@pam!plan" --roles PVEAuditor'
 
 # 2. Environment without reviewers and without a branch policy.
