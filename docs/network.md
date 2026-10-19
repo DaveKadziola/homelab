@@ -57,6 +57,8 @@ Dev is **isolated** from prod VLANs.
 | **NIC2** | none | PCI passthrough SA500 + Purple → NAS VM disks only |
 | **NIC3** | none on host | Trunk VLAN 51 → `ubuntu-apps` `.50.30` |
 
+Host names come from **AdGuard Home rewrites** on OPNsense (`/usr/local/AdGuardHome/AdGuardHome.yaml`, `filtering.rewrites`): `proxmox.dkhomelabserver.xyz` -> `.20.20`, `hass.dkhomelabserver.xyz` -> `.20.13` (moved from `.20.20` on 2026-10-19), `adguard.` -> `192.168.1.1`, `ap.` -> `.1.3`, `switch.` -> `.1.2`; `npm.` disabled (NPM removed).
+
 As-built NICs (installer, 2026-10-19; names pinned): `nic0` `70:85:c2:53:e0:ac` Realtek r8169, `nic1` `3c:49:37:19:71:ae` Intel igb (management), `nic2` `3c:49:37:19:71:af` Intel igb. All three switch ports deliver IOT (VLAN 20) untagged; tagged VLANs not yet checked.
 
 Host has **one** management IP. NIC2/NIC3 offload storage and app traffic from NIC1 — not multiple host IPs.
