@@ -77,7 +77,7 @@ unset BW_SESSION
 
 Notes are named `homelab/<NAME>/<env>` in folder `homelab`. The script never prints values. `utils/sync-cache-to-bitwarden.sh` is a wrapper for `bw-store.py`.
 
-Operator sync: **2026-10-20**: `bw-store.py --env all --dry-run` against the real vault found all 44 cache values unchanged (dev 20, dev-plan 1, prod 22, prod-plan 1, including `RCLONE_CONFIG`), (operator); the queue `~/.homelab-secrets/.bw-pending` is gone since. Earlier full sync 2026-09-11 (`--env all`). Vault also holds `POSTGRES_PASSWORD` / F1 leftovers (operator confirmed). Locked on this laptop; no session in the repo or chat.
+Operator sync: **2026-10-20**: `bw-store.py --env all --dry-run` against the real vault found 43 of the 44 cache values unchanged (dev 20, dev-plan 1, prod 22, prod-plan 1, including `RCLONE_CONFIG`) and `PROXMOX_API_TOKEN_SECRET/prod` to update: the token was made 2026-10-19 21:57, before `bw-store.py` existed (#45, merged 2026-10-20 01:49), so the vault kept an older value and nothing was queued. The cache value is the live one (HTTP 200 from the PVE API); `bw-store.py --env prod PROXMOX_API_TOKEN_SECRET` wrote it and the next dry run found all 44 unchanged (operator). The queue `~/.homelab-secrets/.bw-pending` is gone since. A secret made before 2026-10-20 can lag in the vault: run the dry run after an unlock. Earlier full sync 2026-09-11 (`--env all`). Vault also holds `POSTGRES_PASSWORD` / F1 leftovers (operator confirmed). Locked on this laptop; no session in the repo or chat.
 
 Staging `~/homelab-bitwarden-*.txt` shredded the same day.
 
