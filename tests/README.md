@@ -51,6 +51,7 @@ A skip always carries its reason. The ones that are expected today:
 | `smoke/*`, `infra/vm/*`, `net/firewall/*` on `--env prod` | the physical host `192.168.50.30` is offline until F3 |
 | `net/public/*` | the public endpoint goes through HAProxy on OPNsense, which needs the prod backend |
 | `net/wireguard/handshake` | `wg0` runs on OPNsense; there is no WireGuard interface on the machine running the tests |
+| `net/wireguard/gateway` | the prod CI runner `ci-runner` sits on IOT VLAN 20 and has no route to `10.10.10.1`; it passed from the laptop runner on LAN (2026-10-20) |
 | `net/dns/internal` | dev has no internal DNS zone (`homelabdev.local` has no server) |
 | `infra/terraform/plan` | no Proxmox API token, or the nested PVE is not running (`utils/ensure-dev-proxmox.sh`) |
 | `infra/ansible/check` | One of the secrets `deploy-core.yml` asserts (`POSTGRES_PASSWORD`, `HOMARR_SECRET_KEY`, `LINKWARDEN_SECRET`, `PGADMIN_PASSWORD`) is neither in the environment nor in `~/.homelab-secrets/<env>/` - the case on the prod CI runner -, so the playbook stops before the rendered `.env` can be compared |
