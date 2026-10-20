@@ -8,6 +8,7 @@ on:
 jobs:
   apply:
     runs-on: [self-hosted, homelab-dev]
+    timeout-minutes: 60
     environment: dev
     env:
       TF_WORKSPACE: homelab-dev

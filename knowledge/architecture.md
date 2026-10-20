@@ -9,7 +9,7 @@ Laptop (dev)
       compose/core + compose/grocery
       self-hosted runner `homelab-dev`
 
-Prod (physical — after sign-off)
+Prod (physical — running since 2026-10-20, release #75)
   OPNsense  →  Proxmox host 192.168.20.20 (node `proxmox`)
     ubuntu-nas   192.168.20.12   IOT VLAN 20   NFS + Samba (not OMV/TrueNAS — see storage.md)
     ubuntu-apps  192.168.50.30   APP VLAN 51   Docker
@@ -33,9 +33,9 @@ A port exists in `services.yml` first, then in compose. Never only in a markdown
 
 ## What is in scope vs not
 
-- **In scope on DEV today:** P0–P2 apps on `ubuntu-apps-dev`, Authelia, Immich (local volumes), F7 bootstrap + F7-C tests, F5 loopback NFS + Samba + backup timer + restore and storage suites.
-- **Not built yet:** SA500/Purple passthrough, rclone OAuth, public HAProxy/ACME on grocery, F9 merge-to-`main` wipe, F10 monitoring.
-- **T620:** HAOS is installed (2026-10-20); onboarding, `HA_TOKEN` and the backup pull are not done.
+- **In scope on DEV today:** P0–P2 apps on `ubuntu-apps-dev`, app names through Caddy + Authelia (decision 0007), Immich (local volumes), F7 bootstrap + F7-C tests, F5 loopback NFS + Samba + backup timer + restore and storage suites.
+- **Built on prod** (README "Status", [storage](storage.md#prod)): VMs 101/102, CT 110, SA500/Purple attached and mounted, public Grocery through HAProxy; `RCLONE_CONFIG` in environment `prod`; HAOS 18.3 on the T620.
+- **On DEV, not on prod yet** (README "Status"): the risk gate, Home Assistant as code, the NAS and Proxmox backup streams, F10 alerts (Kuma, Beszel, Diun mail, [monitoring](monitoring.md)), Caddy + Authelia (prod also needs `CLOUDFLARE_API_TOKEN`); `HA_TOKEN` in environment `prod` is the owner's step.
 
 ## Related
 

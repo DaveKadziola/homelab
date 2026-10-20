@@ -20,6 +20,7 @@ if ! (
     -x './.git/*' \
     -x './secrets/*' \
     -x '*/.env' \
+    -x '*.env' \
     -x '*/authelia/certs/*'
 ); then
   echo "repo-zip: zip exited $? — skip"

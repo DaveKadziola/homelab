@@ -6,6 +6,8 @@ terraform/environments/dev/plan.tfplan
 .env
 .env.*
 !.env.example
+# Host-side env files the deploy writes next to compose (Diun mail, Beszel agent token).
+compose/core/*.env
 actions-runner*/
 .cache/
 *.qcow2

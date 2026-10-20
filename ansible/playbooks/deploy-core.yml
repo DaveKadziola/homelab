@@ -44,12 +44,29 @@
       - NAVIDROME_ADMIN_PASSWORD
       - SYNCTHING_ADMIN_PASSWORD
       - BESZEL_ADMIN_PASSWORD
-      - BESZEL_KEY
+      # Offsite copy (utils/backup/rclone-offsite.sh); prod only, rclone: false on DEV.
+      - RCLONE_CONFIG
+      # Alert mail through the env's SMTP relay (config/monitoring.yml); prod: Proton SMTP.
+      - SMTP_USERNAME
+      - SMTP_PASSWORD
+      # Caddy's DNS challenge for the prod wildcard certificate (decision 0007).
+      - CLOUDFLARE_API_TOKEN
     postgres_password: "{{ resolved_secrets.POSTGRES_PASSWORD }}"
     immich_db_password: "{{ resolved_secrets.IMMICH_DB_PASSWORD | default(postgres_password, true) }}"
-    # Prod runs without Authelia until a proxy with forward-auth sits in front of the apps
-    # (knowledge/decisions/0003); its config is DEV-only (homelab.local).
-    compose_profiles: "{{ lookup('env', 'COMPOSE_PROFILES') | default('media' if homelab_env == 'prod' else 'auth,media', true) }}"
+    # proxy + auth: Caddy names and Authelia in front of the apps (decision 0007). Prod turns them on
+    # only with CLOUDFLARE_API_TOKEN: without it Caddy cannot get the certificate. devmail: the DEV
+    # SMTP sink (mailpit) for alert mail.
+    services_doc: "{{ lookup('file', config_src + '/services.yml') | from_yaml }}"
+    default_profiles: "{{ services_doc.environments[homelab_env].profiles }}"
+    compose_profiles: >-
+      {{ lookup('env', 'COMPOSE_PROFILES') | default(
+           default_profiles
+           if homelab_env != 'prod' or resolved_secrets.CLOUDFLARE_API_TOKEN | default('', true) | length > 0
+           else default_profiles.split(',') | reject('in', ['auth', 'proxy']) | join(','), true) }}
+    monitoring: "{{ lookup('file', config_src + '/monitoring.yml') | from_yaml }}"
+    # Runs on the controller (the runner or the laptop), like the other config lookups.
+    proxy_gen: "python3 {{ utils_src }}/gen-proxy-config.py --env {{ homelab_env }} --profiles {{ compose_profiles }}"
+    smtp: "{{ monitoring.environments[homelab_env].smtp }}"
     run_bootstrap: "{{ lookup('env', 'HOMELAB_SKIP_BOOTSTRAP') | default('', true) | length == 0 }}"
     # Prod binds Immich/Jellyfin/Navidrome libraries to NFS. Never on DEV —
     # that would hide the existing named volumes (Immich photos).
@@ -105,7 +122,6 @@
       loop:
         - "{{ compose_dest }}"
         - "{{ compose_dest }}/authelia"
-        - "{{ compose_dest }}/zotify"
         - "{{ compose_dest }}/diun"
         - "{{ compose_dest }}/pgadmin"
         - "{{ compose_dest }}/navidrome"
@@ -131,7 +147,7 @@
         group: docker
         mode: "0644"
 
-    - name: Authelia config and DEV certificate
+    - name: Authelia config
       when: "'auth' in compose_profiles.split(',')"
       block:
         - name: Sync Authelia config
@@ -141,42 +157,45 @@
             owner: "{{ ansible_user }}"
             group: docker
             mode: "0644"
+          notify: Restart authelia
 
-        - name: Ensure Authelia certs directory
-          ansible.builtin.file:
-            path: "{{ compose_dest }}/authelia/certs"
-            state: directory
-            owner: "{{ ansible_user }}"
-            group: docker
-            mode: "0750"
-
-        - name: Generate DEV Authelia self-signed TLS cert
-          ansible.builtin.command:
-            cmd: >
-              openssl req -x509 -nodes -newkey rsa:2048 -days 825
-              -keyout {{ compose_dest }}/authelia/certs/key.pem
-              -out {{ compose_dest }}/authelia/certs/cert.pem
-              -subj /CN=authelia.homelab.local
-              -addext subjectAltName=DNS:authelia.homelab.local,DNS:homelab.local,DNS:*.homelab.local,IP:192.168.122.50
-            creates: "{{ compose_dest }}/authelia/certs/cert.pem"
-
-        - name: Fix Authelia cert permissions
-          ansible.builtin.file:
-            path: "{{ item }}"
+        # Session cookie domain and access rules for this env, from config/services.yml.
+        - name: Write the Authelia access rules
+          ansible.builtin.copy:
+            dest: "{{ compose_dest }}/authelia/access.yml"
             owner: "{{ ansible_user }}"
             group: docker
             mode: "0644"
-          loop:
-            - "{{ compose_dest }}/authelia/certs/cert.pem"
-            - "{{ compose_dest }}/authelia/certs/key.pem"
+            content: "{{ lookup('pipe', proxy_gen ~ ' --file authelia') }}\n"
+          notify: Restart authelia
 
-    - name: Sync Zotify Dockerfile
-      ansible.builtin.copy:
-        src: "{{ compose_src }}/zotify/Dockerfile"
-        dest: "{{ compose_dest }}/zotify/Dockerfile"
-        owner: "{{ ansible_user }}"
-        group: docker
-        mode: "0644"
+    - name: Caddy config
+      when: "'proxy' in compose_profiles.split(',')"
+      block:
+        - name: Ensure the Caddy directory
+          ansible.builtin.file:
+            path: "{{ compose_dest }}/caddy"
+            state: directory
+            owner: "{{ ansible_user }}"
+            group: docker
+            mode: "0755"
+
+        - name: Sync the Caddy Dockerfile
+          ansible.builtin.copy:
+            src: "{{ compose_src }}/caddy/Dockerfile"
+            dest: "{{ compose_dest }}/caddy/Dockerfile"
+            owner: "{{ ansible_user }}"
+            group: docker
+            mode: "0644"
+
+        - name: Write the Caddyfile
+          ansible.builtin.copy:
+            dest: "{{ compose_dest }}/caddy/Caddyfile"
+            owner: "{{ ansible_user }}"
+            group: docker
+            mode: "0644"
+            content: "{{ lookup('pipe', proxy_gen ~ ' --file caddyfile') }}\n"
+          notify: Restart caddy
 
     - name: Sync Diun config
       ansible.builtin.copy:
@@ -186,7 +205,7 @@
         group: docker
         mode: "0644"
 
-    - name: Sync application config as code (pgAdmin servers, Navidrome, Immich, Homarr board)
+    - name: Sync application config as code (pgAdmin servers, Navidrome, Immich)
       ansible.builtin.copy:
         src: "{{ item.src }}"
         dest: "{{ item.dest }}"
@@ -197,9 +216,19 @@
         - { src: "{{ compose_src }}/pgadmin/servers.json", dest: "{{ compose_dest }}/pgadmin/servers.json" }
         - { src: "{{ compose_src }}/navidrome/navidrome.toml", dest: "{{ compose_dest }}/navidrome/navidrome.toml" }
         - { src: "{{ compose_src }}/immich/system-config.json", dest: "{{ compose_dest }}/immich/system-config.json" }
-        - { src: "{{ compose_src }}/homarr/board-{{ homelab_env }}.json", dest: "{{ compose_dest }}/homarr/board-{{ homelab_env }}.json" }
       loop_control:
         label: "{{ item.dest }}"
+
+    # Generated with the profiles this deploy enables, so the tiles and their links (names with
+    # profile proxy, else host:port) match what runs; compose/core/homarr/board-<env>.json in git
+    # shows the default profiles.
+    - name: Write the Homarr board seed
+      ansible.builtin.copy:
+        dest: "{{ compose_dest }}/homarr/board-{{ homelab_env }}.json"
+        owner: "{{ ansible_user }}"
+        group: docker
+        mode: "0644"
+        content: "{{ lookup('pipe', utils_src ~ '/gen-homarr-board.sh --env ' ~ homelab_env ~ ' --profiles ' ~ compose_profiles ~ ' -o /dev/stdout') }}\n"
 
     - name: Sync grocery compose (bridge + published ports)
       ansible.builtin.copy:
@@ -241,18 +270,43 @@
           AUTHELIA_PUID={{ ansible_facts.getent_passwd[ansible_user][1] }}
           AUTHELIA_PGID={{ ansible_facts.getent_group.docker[1] }}
           COMPOSE_PROFILES={{ compose_profiles }}
+          CLOUDFLARE_API_TOKEN={{ resolved_secrets.CLOUDFLARE_API_TOKEN | default('', true) }}
           IMMICH_DB_PASSWORD={{ immich_db_password }}
           IMMICH_VERSION={{ lookup('env', 'IMMICH_VERSION') | default('v3.3.3', true) }}
           JELLYFIN_URL={{ lookup('env', 'JELLYFIN_URL') | default('http://192.168.122.50:8096', true) }}
           BESZEL_HUB_URL={{ lookup('env', 'BESZEL_HUB_URL') | default('http://127.0.0.1:8090', true) }}
-          BESZEL_KEY={{ resolved_secrets.BESZEL_KEY | default('', true) }}
-          BESZEL_TOKEN={{ lookup('env', 'BESZEL_TOKEN') | default('', true) }}
-          ZOTIFY_USERNAME={{ lookup('env', 'ZOTIFY_USERNAME') | default('', true) }}
-          ZOTIFY_TOKEN={{ lookup('env', 'ZOTIFY_TOKEN') | default('', true) }}
       no_log: true
 
     # The bootstrap scripts read secrets from here, so a re-run on the host
     # needs no environment. Root only, never synced back to git.
+
+    # Diun reads this through env_file (required: false); without a usable relay the file is
+    # removed and Diun only logs new tags. Prod needs SMTP_USERNAME/SMTP_PASSWORD (Proton SMTP).
+    - name: Write the Diun mail settings
+      when: smtp.security == 'none' or resolved_secrets.SMTP_USERNAME | length > 0
+      ansible.builtin.copy:
+        dest: "{{ compose_dest }}/diun.env"
+        owner: "{{ ansible_user }}"
+        group: docker
+        mode: "0640"
+        content: |
+          DIUN_NOTIF_MAIL_HOST={{ smtp.host }}
+          DIUN_NOTIF_MAIL_PORT={{ smtp.port }}
+          DIUN_NOTIF_MAIL_SSL={{ 'true' if smtp.security == 'tls' else 'false' }}
+          DIUN_NOTIF_MAIL_INSECURESKIPVERIFY=false
+          {% if resolved_secrets.SMTP_USERNAME | length > 0 %}
+          DIUN_NOTIF_MAIL_USERNAME={{ resolved_secrets.SMTP_USERNAME }}
+          DIUN_NOTIF_MAIL_PASSWORD={{ resolved_secrets.SMTP_PASSWORD }}
+          {% endif %}
+          DIUN_NOTIF_MAIL_FROM={{ resolved_secrets.SMTP_USERNAME | default(identities.environment_email[homelab_env], true) }}
+          DIUN_NOTIF_MAIL_TO={{ identities.environment_email[homelab_env] }}
+      no_log: true
+
+    - name: Remove the Diun mail settings when the env has no usable relay
+      when: not (smtp.security == 'none' or resolved_secrets.SMTP_USERNAME | length > 0)
+      ansible.builtin.file:
+        path: "{{ compose_dest }}/diun.env"
+        state: absent
     - name: Ensure the host secret cache
       ansible.builtin.file:
         path: "{{ secrets_dest }}/{{ homelab_env }}"
@@ -283,6 +337,8 @@
         - services.yml
         - identities.yml
         - storage.yml
+        # Beszel thresholds and the SMTP relay for utils/bootstrap/beszel_config.py on the host.
+        - monitoring.yml
 
     - name: Sync the bootstrap scripts
       ansible.builtin.copy:
@@ -312,6 +368,11 @@
         chdir: "{{ compose_dest }}"
       register: compose_up
       changed_when: "'Started' in compose_up.stderr or 'Created' in compose_up.stderr or 'Running' in compose_up.stderr or compose_up.rc == 0"
+
+    # Now, not at the end of the play: a later failure (bootstrap) would drop the restarts.
+    - name: Restart what changed config needs before the bootstrap
+      ansible.builtin.meta: flush_handlers
+
 
     # Grocery (rebuild drill 2026-10-19): the image is never pushed to a registry and the
     # database used to be a manual "prep once". Both are prepared before the Portainer
@@ -399,3 +460,18 @@
       ansible.builtin.debug:
         var: bootstrap_apps.stdout_lines
       when: run_bootstrap | bool
+
+  # Bind-mounted config: compose does not recreate a container when only the file changed. Handlers
+  # run after "Pull/build and start core stack", so the containers exist.
+  handlers:
+    - name: Restart caddy
+      ansible.builtin.command:
+        cmd: docker compose {{ compose_file_args }} --env-file {{ compose_dest }}/.env restart caddy
+        chdir: "{{ compose_dest }}"
+      changed_when: true
+
+    - name: Restart authelia
+      ansible.builtin.command:
+        cmd: docker compose {{ compose_file_args }} --env-file {{ compose_dest }}/.env restart authelia
+        chdir: "{{ compose_dest }}"
+      changed_when: true

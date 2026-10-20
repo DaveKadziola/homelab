@@ -78,12 +78,10 @@ else
   report FAIL "backup/volume-artefacts" "no volume tars (are the named volumes present?)"
 fi
 
-# Streams that cannot run here must SKIP with a reason, not pretend to PASS.
+# Streams that cannot run here must SKIP with a reason, not pretend to PASS. Home Assistant and
+# OPNsense run on the NAS, the VM dumps are a Proxmox job: their age is in the storage suite.
 if [[ "$HL_ENV" == "dev" ]]; then
   report SKIP "backup/rclone" "storage.yml environments.dev.rclone is false"
-  report SKIP "backup/homeassistant" "no ha_host on DEV; T620 is not flashed from this repo"
-  report SKIP "backup/vzdump" "vzdump is not on the apps guest (physical PVE only)"
-  report SKIP "backup/opnsense" "192.168.20.1 is not on the libvirt network"
 fi
 
 # --------------------------------------------------------------------------

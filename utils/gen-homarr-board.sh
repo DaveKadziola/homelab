@@ -2,13 +2,16 @@
 # Generate the Homarr board seed from config/services.yml (F7-B).
 #
 # The board is never hand-maintained: every tile comes from the service list,
-# ordered by `dashboard.group`, skipping `dashboard.hidden` entries. IDs are
-# derived from the service name, so regenerating produces a stable diff and
-# utils/bootstrap/homarr.sh can apply the seed idempotently.
+# ordered by `dashboard.group`, skipping `dashboard.hidden` entries and services
+# whose compose profile is off. IDs are derived from the service name, so
+# regenerating produces a stable diff and utils/bootstrap/homarr.sh can apply the
+# seed idempotently. With profile proxy a tile links to https://<name>.<domain>
+# (same names as utils/gen-proxy-config.py); the status ping stays on host:port.
 #
 # Usage:
 #   ./utils/gen-homarr-board.sh --env dev
 #   ./utils/gen-homarr-board.sh --env prod -o /tmp/board.json
+#   ./utils/gen-homarr-board.sh --env prod --profiles media -o /dev/stdout
 #
 # Output: compose/core/homarr/board-<env>.json
 
@@ -20,8 +23,10 @@ SERVICES="${ROOT}/config/services.yml"
 ENVIRONMENT=""
 OUTPUT=""
 
+PROFILES=""
+
 usage() {
-  sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'
   exit "${1:-0}"
 }
 
@@ -29,6 +34,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --env) ENVIRONMENT="$2"; shift 2 ;;
     -o|--output) OUTPUT="$2"; shift 2 ;;
+    --profiles) PROFILES="$2"; shift 2 ;;
     -h|--help) usage 0 ;;
     *) echo "Unknown option: $1" >&2; usage 1 ;;
   esac
@@ -41,16 +47,19 @@ done
 OUTPUT="${OUTPUT:-${ROOT}/compose/core/homarr/board-${ENVIRONMENT}.json}"
 mkdir -p "$(dirname "$OUTPUT")"
 
-python3 - "$SERVICES" "$ENVIRONMENT" "$OUTPUT" <<'PY'
+python3 - "$SERVICES" "$ENVIRONMENT" "$OUTPUT" "$PROFILES" <<'PY'
 import hashlib
 import json
 import sys
 
 import yaml
 
-services_path, environment, output_path = sys.argv[1:4]
+services_path, environment, output_path, profiles = sys.argv[1:5]
 doc = yaml.safe_load(open(services_path))
-host = doc["environments"][environment]["host"]
+env = doc["environments"][environment]
+host = env["host"]
+enabled = set((profiles or env.get("profiles", "")).split(","))
+by_name = "proxy" in enabled and env.get("domain")
 
 GROUP_ORDER = ["infra", "apps", "media", "tools"]
 COLUMNS = 10
@@ -83,6 +92,11 @@ def href_for(service: dict) -> str:
     path = service.get("path", "/")
     if path.startswith("/api"):
         path = "/"
+    if by_name and service["name"] == "authelia":
+        return f"https://auth.{env['domain']}/"
+    if by_name and service.get("check") in ("http", "https") and service.get("proxy") is not False \
+            and not service.get("public_url"):
+        return f"https://{service.get('subdomain', service['name'])}.{env['domain']}{path}"
     return f"{base_url(service)}{path}"
 
 
@@ -102,6 +116,7 @@ for group in GROUP_ORDER:
         if (service.get("dashboard") or {}).get("group") == group
         and not (service.get("dashboard") or {}).get("hidden")
         and service.get("port")
+        and (not service.get("profile") or service["profile"] in enabled)
     ]
     if not members:
         continue
@@ -163,5 +178,5 @@ with open(output_path, "w") as handle:
     json.dump(seed, handle, indent=2, ensure_ascii=False)
     handle.write("\n")
 
-print(f"{output_path}: {len(items)} tiles from {len(GROUP_ORDER)} groups")
+print(f"{output_path}: {len(items)} tiles from {len(GROUP_ORDER)} groups", file=sys.stderr)
 PY

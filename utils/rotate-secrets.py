@@ -18,7 +18,7 @@ Usage (Bitwarden must be unlocked in the same shell):
   utils/rotate-secrets.py --env prod --generate --apply
   utils/rotate-secrets.py --env dev --vault-from-cache --apply
 
-Secrets issued by an app (BESZEL_KEY) are never generated here.
+Secrets issued by an app (HA_TOKEN) are never generated here.
 Exit code: 0 ok, 1 a write failed, 2 usage or environment error.
 """
 import argparse

@@ -31,7 +31,7 @@ Symptoms first. Root-cause write-ups go in [`lessons-learned.md`](lessons-learne
 
 | Symptom | Check |
 |---------|--------|
-| Authelia “check your credentials” / no session on IP | Use `https://authelia.homelab.local:9091` + `/etc/hosts`. |
+| Authelia “check your credentials” / no session on IP | Use the name `https://auth.<domain>` (DEV `auth.dev.dkhomelabserver.xyz`, AdGuard rewrite or laptop `/etc/hosts`), not the IP: the session cookie is bound to `environments.<env>.domain` in `config/services.yml`. |
 | pgAdmin will not start / rejects email | Mailbox cannot be `*.local`. |
 | Immich reset hangs | `immich-admin reset-admin-password` needs a TTY — bootstrap uses pexpect. |
 | Navidrome CLI “inappropriate ioctl” | `docker exec -t` + pexpect (`utils/bootstrap/navidrome.sh`). Do not pipe. |
@@ -46,7 +46,7 @@ Symptoms first. Root-cause write-ups go in [`lessons-learned.md`](lessons-learne
 | `/mnt/homelab` not NFS | `deploy-storage.yml` with `HOMELAB_ENV` set; `exportfs -v`; `showmount -e 127.0.0.1` |
 | Timer silent | `systemctl status homelab-backup.timer`; `journalctl -u homelab-backup` |
 | `run-all.sh` cannot read secrets | It must run as root (`HOMELAB_SECRETS_DIR=/opt/homelab/secrets`) |
-| rclone / HA / vzdump “failed” | They must SKIP with a reason on DEV, not fail the timer |
+| rclone / HA / OPNsense “failed” | A stream without its target or secret must SKIP with a reason, not fail the timer; real failures show in `journalctl -u homelab-nas-backup` (NAS) and as STALE in `check-fresh.py --dry-run` |
 | Immich photos vanished after compose | You applied `docker-compose.nfs.yml` on DEV. Do not. |
 
 ## CI
@@ -54,7 +54,7 @@ Symptoms first. Root-cause write-ups go in [`lessons-learned.md`](lessons-learne
 | Symptom | Check |
 |---------|--------|
 | Workflows queued forever | Runner `homelab-dev` offline → `sudo ./svc.sh start`. |
-| Config tests fail on `BESZEL_KEY` | It is `issued_by: beszel` — not required in GH until hub bootstrap. |
+| Beszel agent restarts after a fresh deploy | Normal until `utils/bootstrap/beszel.sh` has written `beszel-agent.env`; it runs at the end of the same deploy. |
 | `Check Terraform` fails (`Terraform vX` instead of the expected version) | The runner's Terraform differs from the workflows'. Laptop: `apt policy terraform` (the apt package can move on); `ci-runner`: re-run `utils/pve-ci-runner-lxc.sh`. Upgrade all places together (`knowledge/infrastructure.md` "Runners"). |
 | Setup Terraform hangs: the downloaded zip in `_work/_temp` stops 2-3 KB short of the full file, the socket to HashiCorp's CDN sits in `FIN-WAIT-1` (seen 2026-10-20 on the laptop and on `ci-runner`, five times) | Gone with the step: the workflows no longer download Terraform, it is installed on the runners. Root cause unknown: curl downloads of the same file from both hosts never stalled. |
 

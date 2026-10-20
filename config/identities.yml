@@ -117,12 +117,23 @@ accounts:
     inject: bootstrap
     envs: [dev, prod]
 
-  - app: zotify
+  - app: homeassistant
     identity: homelab-admin
-    login: none
-    inject: manual
+    login: username
+    secret: HA_ADMIN_PASSWORD
+    inject: bootstrap
+    envs: [dev]
+    notes: >-
+      DEV twin only: utils/ha.py bootstrap does the onboarding. Prod HA is the owner's account on the
+      T620; the automation there uses HA_TOKEN.
+
+  - app: uptime-kuma
+    identity: homelab-admin
+    login: username
+    secret: KUMA_ADMIN_PASSWORD
+    inject: bootstrap
     envs: [dev, prod]
-    notes: Interactive Spotify OAuth — see knowledge/apps/zotify.md.
+    notes: Login `admin` of the Uptime Kuma add-on on Home Assistant; utils/kuma-sync.py creates it on a fresh Kuma.
 
 # Secrets that are not login credentials but must exist per environment.
 service_secrets:
@@ -151,8 +162,53 @@ service_secrets:
   - name: AUTHELIA_STORAGE_KEY
     used_by: [authelia]
     envs: [dev, prod]
-  - name: BESZEL_KEY
-    used_by: [beszel-agent]
+  - name: HA_TOKEN
+    used_by: [homeassistant]
     envs: [dev, prod]
-    issued_by: beszel
-    notes: Issued by the hub — bootstrap reads it from the Beszel API, not generated locally.
+    issued_by: homeassistant
+    notes: >-
+      Long-lived access token for utils/ha.py. DEV: utils/ha.py bootstrap creates it; prod: the owner
+      creates it in the HA profile.
+  - name: HA_SSH_PRIV
+    used_by: [homeassistant]
+    envs: [dev, prod]
+    issued_by: ssh-keygen
+    notes: >-
+      Key of the Terminal & SSH add-on (`ssh-keygen -t ed25519 -N ''`); utils/ha.py derives the public
+      half and installs it as the add-on's authorized key.
+  - name: KUMA_PUSH_SECRET
+    used_by: [uptime-kuma]
+    envs: [dev, prod]
+    notes: >-
+      Seed of the Kuma push tokens (sha256 of "<secret>:<stream>"); utils/kuma-sync.py sets them on
+      the monitors, utils/backup/check-fresh.py on the NAS pushes with them.
+  - name: SMTP_USERNAME
+    used_by: [uptime-kuma, diun, beszel]
+    envs: [prod]
+    issued_by: proton
+    notes: >-
+      Address on the Proton custom (sub)domain that sends alert mail; also the From address. The owner
+      makes it with an SMTP token in Proton (knowledge/monitoring.md). DEV sends to mailpit, no login.
+  - name: SMTP_PASSWORD
+    used_by: [uptime-kuma, diun, beszel]
+    envs: [prod]
+    issued_by: proton
+    notes: The Proton SMTP token of SMTP_USERNAME.
+  - name: CLOUDFLARE_API_TOKEN
+    used_by: [caddy]
+    envs: [prod]
+    issued_by: cloudflare
+    notes: >-
+      API token limited to Zone.DNS edit on dkhomelabserver.xyz, for Caddy's DNS challenge (wildcard
+      certificate, decision 0007). The owner creates it; without it prod keeps proxy and auth off.
+  - name: OPNSENSE_BACKUP_SSH_PRIV
+    used_by: [backup]
+    envs: [prod]
+    issued_by: ssh-keygen
+    notes: >-
+      Key the NAS uses to fetch config.xml; on the router it may only run `cat /conf/config.xml`
+      (utils/f2-opnsense-backup-key.sh makes it and installs the public half).
+  - name: HA_BACKUP_PASSWORD
+    used_by: [homeassistant]
+    envs: [dev, prod]
+    notes: Password of the Supervisor backups the NAS pulls (utils/ha.py backup); needed to restore one.

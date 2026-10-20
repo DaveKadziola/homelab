@@ -38,6 +38,17 @@
     samba_login: "{{ identities.identities[samba_account.identity].username }}"
     # Not the login itself: a Unix user named admin gets sudo through Ubuntu's %admin group.
     samba_unix_user: homelab-smb
+    # Backup jobs on the NAS (utils/backup/run-nas.sh, check-fresh.py): it shares the IOT subnet with
+    # Home Assistant and the router. Own tree, so on DEV, where one guest is both NAS and apps host,
+    # it never fights the apps play over /opt/homelab ownership.
+    nas_root: /opt/homelab-nas
+    # Names only (as homelab_secrets in deploy-core.yml); values from the environment or the cache.
+    nas_secrets:
+      - HA_TOKEN
+      - HA_SSH_PRIV
+      - HA_BACKUP_PASSWORD
+      - KUMA_PUSH_SECRET
+      - OPNSENSE_BACKUP_SSH_PRIV
   tasks:
     - name: Refuse a run whose HOMELAB_ENV does not match the inventory
       ansible.builtin.assert:
@@ -222,6 +233,20 @@
         mode: "0755"
       loop: "{{ storage.exports }}"
 
+    # Outside export_root: no client of the export tree (the apps host is root there through
+    # no_root_squash) and no Samba share reaches router config, HA UI YAML or the VM dumps.
+    - name: Create the NAS-private backup directories
+      when: st.nas_private_root is defined
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0700"
+      loop:
+        - "{{ st.nas_private_root }}"
+        - "{{ st.nas_private_root }}/vzdump"
+
     # crossmnt: the passthrough filesystems and binds are mounted below export_root.
     - name: Write /etc/exports
       ansible.builtin.copy:
@@ -232,6 +257,10 @@
           {% for client in st.export_clients %}
           {{ st.export_root }} {{ client }}(rw,sync,no_subtree_check,no_root_squash,crossmnt)
           {% endfor %}
+          {% if st.vzdump is defined and st.nas_private_root is defined %}
+          # Proxmox writes its VM dumps here as root (utils/pve-backup-job.py); outside the tree above.
+          {{ st.nas_private_root }}/vzdump {{ st.vzdump.pve_host }}(rw,sync,no_subtree_check,no_root_squash)
+          {% endif %}
       notify: Reload nfs
 
     - name: Enable and start NFS server
@@ -369,6 +398,122 @@
           when: samba_login_check.rc != 0
           changed_when: true
           no_log: true
+
+    - name: NAS backup jobs
+      block:
+        - name: Install the NAS backup dependencies
+          ansible.builtin.apt:
+            name: [python3-yaml, curl]
+            state: present
+
+        - name: Create the NAS backup tree
+          ansible.builtin.file:
+            path: "{{ item.path }}"
+            state: directory
+            owner: root
+            group: root
+            mode: "{{ item.mode }}"
+          loop:
+            - { path: "{{ nas_root }}/config", mode: "0755" }
+            - { path: "{{ nas_root }}/utils/backup", mode: "0755" }
+            - { path: "{{ nas_root }}/secrets", mode: "0700" }
+            - { path: "{{ nas_root }}/secrets/{{ homelab_env }}", mode: "0700" }
+
+        - name: Sync the backup config to the NAS
+          ansible.builtin.copy:
+            src: "{{ playbook_dir }}/../../config/{{ item }}"
+            dest: "{{ nas_root }}/config/{{ item }}"
+            owner: root
+            group: root
+            mode: "0644"
+          loop: [storage.yml, monitoring.yml]
+
+        - name: Sync the backup scripts to the NAS
+          ansible.builtin.copy:
+            src: "{{ item.src }}"
+            dest: "{{ item.dest }}"
+            owner: root
+            group: root
+            mode: "0755"
+          loop:
+            - { src: "{{ playbook_dir }}/../../utils/backup/", dest: "{{ nas_root }}/utils/backup/" }
+            - { src: "{{ playbook_dir }}/../../utils/ha.py", dest: "{{ nas_root }}/utils/ha.py" }
+
+        - name: Write the NAS secret cache
+          ansible.builtin.copy:
+            dest: "{{ nas_root }}/secrets/{{ homelab_env }}/{{ item }}"
+            content: "{{ value }}"
+            owner: root
+            group: root
+            mode: "0600"
+          vars:
+            value: >-
+              {{ lookup('env', item)
+                 | default(lookup('file', secret_cache ~ '/' ~ item, errors='ignore'), true)
+                 | default('', true) }}
+          loop: "{{ nas_secrets }}"
+          when: value | length > 0
+          no_log: true
+
+        - name: Install the NAS backup units
+          ansible.builtin.copy:
+            dest: "/etc/systemd/system/{{ item.name }}"
+            owner: root
+            group: root
+            mode: "0644"
+            content: "{{ item.content }}"
+          loop:
+            - name: homelab-nas-backup.service
+              content: |
+                [Unit]
+                Description=Homelab backups that run on the NAS (Home Assistant, OPNsense)
+                After=network-online.target
+                Wants=network-online.target
+                [Service]
+                Type=oneshot
+                Environment=HOMELAB_ENV={{ homelab_env }}
+                Environment=HOMELAB_CONFIG_DIR={{ nas_root }}/config
+                Environment=HOMELAB_SECRETS_DIR={{ nas_root }}/secrets
+                Environment=HL_REPO_ROOT={{ nas_root }}
+                ExecStart={{ nas_root }}/utils/backup/run-nas.sh --env {{ homelab_env }}
+            - name: homelab-nas-backup.timer
+              content: |
+                [Unit]
+                Description=Nightly NAS backups
+                [Timer]
+                OnCalendar=*-*-* 02:30:00
+                Persistent=true
+                [Install]
+                WantedBy=timers.target
+            - name: homelab-backup-check.service
+              content: |
+                [Unit]
+                Description=Backup freshness -> Uptime Kuma push monitors
+                After=network-online.target
+                Wants=network-online.target
+                [Service]
+                Type=oneshot
+                Environment=HOMELAB_CONFIG_DIR={{ nas_root }}/config
+                Environment=HOMELAB_SECRETS_DIR={{ nas_root }}/secrets
+                ExecStart=/usr/bin/python3 {{ nas_root }}/utils/backup/check-fresh.py --env {{ homelab_env }}
+            - name: homelab-backup-check.timer
+              content: |
+                [Unit]
+                Description=Daily backup freshness check, after the apps (03:15) and Proxmox (04:30) runs
+                [Timer]
+                OnCalendar=*-*-* 06:00:00
+                Persistent=true
+                [Install]
+                WantedBy=timers.target
+          register: nas_units
+
+        - name: Enable the NAS backup timers
+          ansible.builtin.systemd:
+            name: "{{ item }}"
+            enabled: true
+            state: started
+            daemon_reload: "{{ nas_units.changed }}"
+          loop: [homelab-nas-backup.timer, homelab-backup-check.timer]
 
   handlers:
     - name: Reload systemd

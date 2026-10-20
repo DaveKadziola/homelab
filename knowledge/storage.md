@@ -1,5 +1,5 @@
 Status: draft
-Last reviewed: 2026-10-20
+Last reviewed: 2026-10-21
 Scope: NAS storage layout, passthrough attach and format order, Samba (dev and prod)
 
 # Storage
@@ -37,9 +37,9 @@ Layout by data type, not quotas (decision [0002](decisions/0002-nas-layout-and-s
 |------|------|-----|
 | SA500 2 TB SSD | all media: Immich, music, video, Syncthing sync (`/export/media`) | slot `scsi1` with `ssd=1,discard=on`, serial `2525GTD00073`, ext4 `LABEL=hl-media` |
 | Purple 4 TB HDD | backups + Samba share `share` (installers); mounted at `/srv/purple`, outside the NFS tree | slot `scsi2`, serial `WD-WCC7K3KZKJKX`, ext4 `LABEL=hl-purple`; `/srv/purple/backups` is bind-mounted to `/export/backups` |
-| apps 48G | images + small state | TF sized, not applied yet |
+| apps 48G | images + small state | TF sized; VM 101 runs since 2026-10-20 |
 
-By-id paths are in `config/storage.yml` `passthrough[]`. The share (`/srv/purple/share`) is neither NFS-visible nor in backups/offsite. SMART 2026-10-19: SA500 PASSED (37 h); Purple PASSED (50733 h, ~5.8 years, no reallocated or pending sectors). Both still hold NTFS and get wiped once (below).
+By-id paths are in `config/storage.yml` `passthrough[]`. The share (`/srv/purple/share`) is neither NFS-visible nor in backups/offsite. SMART 2026-10-19: SA500 PASSED (37 h); Purple PASSED (50733 h, ~5.8 years, no reallocated or pending sectors). Both held NTFS until the one-time wipe (below); on prod both are attached and mounted by LABEL since 2026-10-20 (check: `utils/run-tests.sh --env prod --suite storage`, `disk/<label>@<path>`).
 
 `ubuntu-nas` `.20.12` exports `/export`. `ubuntu-apps` `.50.30` mounts it at `/mnt/homelab`. Compose then uses [`compose/core/docker-compose.nfs.yml`](../compose/core/docker-compose.nfs.yml).
 

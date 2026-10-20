@@ -8,7 +8,7 @@ secrets are write-only, so this tool cannot compare values; it overwrites what y
 Usage:
   utils/sync-secrets-to-github.py --env dev                 # dry run: names and actions only
   utils/sync-secrets-to-github.py --env dev --apply         # write every secret that has a source
-  utils/sync-secrets-to-github.py --env dev --only POSTGRES_PASSWORD,BESZEL_KEY --apply
+  utils/sync-secrets-to-github.py --env dev --only POSTGRES_PASSWORD,HA_TOKEN --apply
 
 Values go to `gh secret set NAME --env ENV --repo REPO` on standard input. Never use
 `--body -`: gh then stores the literal "-" (that is how every secret became "-" before).

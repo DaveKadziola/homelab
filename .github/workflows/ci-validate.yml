@@ -9,6 +9,7 @@ on:
 jobs:
   validate:
     runs-on: [self-hosted, homelab-dev]
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -59,3 +60,10 @@ jobs:
           ./utils/pve-attach-nas-disks.sh --self-test
           python3 utils/pve-network.py --self-test
           python3 utils/bw-store.py --self-test
+          python3 utils/tf-plan-risk.py --self-test
+          python3 utils/ha.py --self-test
+          python3 utils/backup/check-fresh.py --self-test
+          python3 utils/pve-backup-job.py --self-test
+          python3 utils/gen-proxy-config.py --self-test
+          python3 utils/kuma-sync.py --self-test
+          python3 utils/bootstrap/beszel_config.py --self-test

@@ -1,5 +1,5 @@
 Status: verified
-Last reviewed: 2026-10-19
+Last reviewed: 2026-10-21
 Scope: what the prod rollout (F3-F5) creates, from which file, with which settings; open gaps before `terraform apply`
 
 # Prod target - what gets deployed
@@ -15,11 +15,11 @@ and `knowledge/rebuild.md` (order of steps).
 | OPNsense 26.1.9 | router, VLANs, DHCP, firewall, AdGuard DNS, HAProxy, WireGuard | LAN `192.168.1.1`, IOT `.20.1`, APP `.50.50`, WAN `192.168.100.2/30` | `docs/network.md` |
 | NETGEAR GS308EP | switch; IOT VLAN 20 tagged to Proxmox ports, VLAN 51 tagged to router + `nic2` | `192.168.1.2` | `docs/network.md` |
 | Proxmox VE 9.2.2 | Pentium J4205 (4 cores), 15 GiB RAM; system on Crucial MX500 250 GB (`local` 66 GiB, `local-lvm` 137 GiB thin) | `192.168.20.20`, `proxmox.dkhomelabserver.xyz` | live host |
-| HP t620 | Home Assistant OS (to install) | `192.168.20.13`, `hass.dkhomelabserver.xyz` | DHCP map, AdGuard rewrite |
+| HP t620 | Home Assistant OS 18.3 (installed 2026-10-20) | `192.168.20.13`, `hass.dkhomelabserver.xyz` | DHCP map, AdGuard rewrite |
 
-SMART 2026-10-19: SA500 PASSED, 37 h; Purple PASSED, 50 733 h (~5.8 years), no reallocated or pending sectors. Both still carry NTFS partitions (to be wiped, owner's decision).
+SMART 2026-10-19: SA500 PASSED, 37 h; Purple PASSED, 50 733 h (~5.8 years), no reallocated or pending sectors. Both carried NTFS partitions until their one-time format ([storage](storage.md#attach-and-format-run-order)).
 
-Proxmox network: `vmbr0` VLAN-aware on `bond0` (active-backup `nic1` + `nic0`, MAC `3c:49:37:19:71:ae`), management `vmbr0.20`; `vmbr1` VLAN-aware on `nic2` for APP. Disks not yet given to anything: WD Red SA500 2 TB (`ata-WD_Red_SA500_2.5_2TB_2525GTD00073`), WD Purple 4 TB (`ata-WDC_WD40PURZ-85TTDY0_WD-WCC7K3KZKJKX`).
+Proxmox network: `vmbr0` VLAN-aware on `bond0` (active-backup `nic1` + `nic0`, MAC `3c:49:37:19:71:ae`), management `vmbr0.20`; `vmbr1` VLAN-aware on `nic2` for APP. Disks passed through to the NAS VM 102 (`qm config 102`, 2026-10-20): WD Red SA500 2 TB (`ata-WD_Red_SA500_2.5_2TB_2525GTD00073`), WD Purple 4 TB (`ata-WDC_WD40PURZ-85TTDY0_WD-WCC7K3KZKJKX`).
 
 ## 2. Virtual machines (Terraform)
 
@@ -44,11 +44,11 @@ Decided 2026-10-19 (owner): layout by data type, not by quotas - media total is 
 - NFS: exports for `ubuntu-apps` only (`192.168.50.0/26`); `ubuntu-apps` mounts at `/mnt/homelab`; firewall APP -> `.20.12` TCP 2049/111 (exists). Paths in `compose/core/docker-compose.nfs.yml` stay.
 - Samba on `ubuntu-nas`: share `share` on the Purple; the owner's admin account has access to everything, more users later; clients LAN `192.168.1.0/24` and WireGuard `10.10.10.0/24` only (`hosts allow` - IOT devices sit in the NAS subnet). Name `nas.dkhomelabserver.xyz` (AdGuard rewrite).
 - `share` is not backed up (installers can be downloaded again). Media backup to pCloud is deferred until prod runs (media already exists on pCloud).
-- Not implemented yet: formatting/mounting the passed disks inside the NAS VM (today `deploy-storage.yml` would create the exports on the 32 GiB root disk), Samba, the by-id values in `config/storage.yml`.
+- Format, LABEL mounts, Samba and the by-id values are in `deploy-storage.yml` and `config/storage.yml` (#35, #36); on prod the disks are attached and mounted ([storage](storage.md#prod)).
 
 ## 4. Applications (`ubuntu-apps`, Ansible `deploy-core.yml` + Docker Compose)
 
-Source: `config/services.yml`, `compose/core/docker-compose.yml` (versions pinned, #23), `compose/grocery/`. All on `192.168.50.30`. Compose profiles `auth,media` on by default. Accounts: `config/identities.yml` (admin user `admin`, prod mail `prod-homelabnotifications@pm.me`), passwords from GH `prod` secrets / Bitwarden; `utils/bootstrap-apps.sh` configures them headlessly.
+Source: `config/services.yml`, `compose/core/docker-compose.yml` (versions pinned, #23), `compose/grocery/`. All on `192.168.50.30`. Compose profiles from `config/services.yml` `environments.prod.profiles` (`media,auth,proxy,beszel-agent`); `auth` and `proxy` only when `CLOUDFLARE_API_TOKEN` is in environment `prod` (`deploy-core.yml` `compose_profiles`). Accounts: `config/identities.yml` (admin user `admin`, prod mail `prod-homelabnotifications@pm.me`), passwords from GH `prod` secrets / Bitwarden; `utils/bootstrap-apps.sh` configures them headlessly.
 
 | Prio | App | Port | Notes |
 |------|-----|------|-------|
@@ -59,17 +59,17 @@ Source: `config/services.yml`, `compose/core/docker-compose.yml` (versions pinne
 | P0 | Trilium | 8082 | |
 | P0 | Actual | 5006 | |
 | P0 | Linkwarden | 3001 | |
-| P0 | Authelia | 9091 | profile `auth`; DEV only ([0003](decisions/0003-prod-without-authelia.md)) |
-| P0 | Omni-tools / DumbWhois / BentoPDF | 8083 / 8084 / 8085 | |
+| P0 | Caddy | 443 / 80 | profile `proxy`; names `<app>.dkhomelabserver.xyz`, Let's Encrypt wildcard through the Cloudflare DNS challenge ([0007](decisions/0007-app-names-caddy-authelia.md)) |
+| P0 | Authelia | 9091 | profile `auth`; plain HTTP behind Caddy, portal `https://auth.dkhomelabserver.xyz` ([0007](decisions/0007-app-names-caddy-authelia.md)) |
+| P0 | Omni-tools / IT Tools / Networking Toolbox / BentoPDF | 8083 / 8086 / 8087 / 8085 | DumbWhois replaced 2026-10-20 |
 | P0 | Grocery | 8101 | built on the guest from its repo at pinned `grocery_ref`; DB/role/schema by `deploy-core.yml`; **public** via HAProxy |
 | P1 | Syncthing | 8384 (+22000, 21027) | peers by hand |
 | P1 | Navidrome | 4533 | music on NFS |
 | P1 | Jellyfin | 8096 | profile `media`; video on NFS |
 | P1 | Immich (+ ML, Valkey, own Postgres) | 2283 | profile `media`; photos on NFS |
-| P2 | Beszel hub | 8090 | agent needs a hub key (profile `beszel-agent`, off) |
+| P2 | Beszel hub + agent | 8090 | agent key and token from the hub, written on the host by the bootstrap; threshold alerts by mail ([monitoring](monitoring.md)) |
 | P2 | Dozzle | 8080 | container logs; Docker socket |
-| P2 | Diun | - | new image tags to stdout |
-| P2 | Zotify | 4381 | Spotify OAuth by hand |
+| P2 | Diun | - | new image tags by mail through Proton SMTP once `SMTP_USERNAME` / `SMTP_PASSWORD` exist, else log only ([monitoring](monitoring.md)) |
 
 Reachability: LAN, WireGuard and IOT can open APP; APP reaches the internet and the NAS NFS only (`docs/network.md`).
 
@@ -86,16 +86,16 @@ Source: `config/storage.yml`, `utils/backup/run-all.sh`, `deploy-storage.yml`. D
 | postgres (both Postgres) | `pg-dump.sh` | apps |
 | volumes (named Docker volumes, not media) | `volumes.sh` | apps |
 | repo-zip | `repo-zip.sh` | apps |
-| opnsense `config.xml` | `opnsense.sh` | apps -> router SSH |
-| homeassistant `.tar` | `ha-pull.sh` (`HA_TOKEN`) | apps -> `.20.13` |
-| vzdump 101/102 | `vzdump.sh` | needs a Proxmox host |
+| opnsense `config.xml` | `opnsense.sh` (key with a forced command) | NAS -> router `.20.1` (same subnet) |
+| homeassistant full backup + UI YAML | `ha-pull.sh`, `ha-yaml.sh` (`HA_TOKEN`) | NAS -> `.20.13` (same subnet) |
+| vzdump 101/102 | Proxmox job `homelab-vms` (`utils/pve-backup-job.py`) | PVE -> NAS NFS `backups/vzdump` |
 | offsite | `rclone-offsite.sh` (`RCLONE_CONFIG`) | apps -> internet |
 
 Restore: `utils/backup/restore-pg.sh --replace` (`knowledge/rebuild.md` step 7).
 
 ## 7. Monitoring
 
-Beszel hub (host metrics; agent off until keyed), Dozzle (logs), Diun (image updates, stdout only), smoke/infra tests `utils/run-tests.sh --env prod`. F10 alerting (mail to `prod-homelabnotifications@pm.me`) is not built; Grafana has a database but no service.
+Uptime Kuma on the T620 (services, hosts, backup freshness), Beszel (host thresholds), Diun (image tags), all mailing `prod-homelabnotifications@pm.me` through Proton SMTP once `SMTP_USERNAME` / `SMTP_PASSWORD` are in environment `prod` ([monitoring](monitoring.md), decision [0006](decisions/0006-alerts-kuma-proton-smtp.md)); Dozzle (logs); smoke/infra tests `utils/run-tests.sh --env prod`. Grafana has a database but no service.
 
 ## 8. How it is deployed
 
@@ -110,9 +110,9 @@ Beszel hub (host metrics; agent off until keyed), Dozzle (logs), Diun (image upd
 1. ~~HAProxy backend pointed at `192.168.50.30:8080` (Dozzle)~~ - fixed on the router: `8101` (`utils/f2-opnsense-haproxy.sh`, #35).
 2. ~~SSH user mismatch `ubuntu` vs `ubuntu-prod`~~ - fixed: inventory and `services.yml` use `ubuntu-prod` (#35).
 3. ~~Prod reused the DEV key and a June password~~ - fixed: own key `homelab_prod_ed25519`, new password hash, the prod deploy installs the key on the runner (#35).
-4. ~~NAS disks: no by-id, nothing formats or mounts them~~ - fixed in #35: serials, one-time wipe opt-in, LABEL mounts, `crossmnt`, nfs-server guard, Samba; tested on DEV with two test disks. Still to run on prod after `terraform apply`: attach, then the opt-in format.
-5. **Backups that cannot run from `ubuntu-apps`:** `vzdump.sh` needs a Proxmox host (timer on apps -> SKIP); `opnsense.sh` and `ha-pull.sh` need APP -> router SSH and APP -> `.20.13`, which the APP firewall blocks; `opnsense.sh` also needs a key on the router.
-6. ~~Authelia is configured for `homelab.local` (DEV) only~~ - prod runs without it until a proxy with forward-auth exists ([decision 0003](decisions/0003-prod-without-authelia.md)).
-7. **Monitoring alerts:** no notifier for Diun/Beszel; F10 not built.
+4. ~~NAS disks: no by-id, nothing formats or mounts them~~ - fixed in #35: serials, one-time wipe opt-in, LABEL mounts, `crossmnt`, nfs-server guard, Samba; tested on DEV with two test disks. On prod since 2026-10-20: attached and mounted ([storage](storage.md#prod)).
+5. ~~Backups that cannot run from `ubuntu-apps`~~ - moved (2026-10-20): Home Assistant and OPNsense run on the NAS (same subnet as both), VM dumps are a Proxmox job onto the NAS ([backup](backup.md)). Still open: `HA_TOKEN` (owner) and the router key (`utils/f2-opnsense-backup-key.sh`, owner's decision).
+6. ~~Authelia is configured for `homelab.local` (DEV) only~~ - replaced by Caddy + Authelia under `dkhomelabserver.xyz` ([decision 0007](decisions/0007-app-names-caddy-authelia.md), supersedes 0003); on prod it needs `CLOUDFLARE_API_TOKEN` in environment `prod`.
+7. ~~Monitoring alerts: no notifier for Diun/Beszel~~ - Kuma, Beszel and Diun mail through the env's SMTP relay ([monitoring](monitoring.md)); prod mails once `SMTP_USERNAME` / `SMTP_PASSWORD` are in environment `prod`.
 8. ~~Workflow Terraform version prod `1.15.6` vs DEV `1.16.3`~~ - all workflows and the HCP workspace `homelab` on 1.16.3 since 2026-10-19, before the first prod state.
 9. ~~APP -> NAS rules passed every TCP port~~ (port in a top-level `<destinationport>` that pf ignores) - fixed on the router: NFS 2049/111 plus SSH 22 from `.50.30` only (`utils/f2-opnsense-nas-ports.sh`, #35).

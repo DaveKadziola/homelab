@@ -10,6 +10,7 @@ on:
 jobs:
   plan:
     runs-on: [self-hosted, homelab-prod]
+    timeout-minutes: 10
     environment: prod-plan
     env:
       TF_WORKSPACE: homelab

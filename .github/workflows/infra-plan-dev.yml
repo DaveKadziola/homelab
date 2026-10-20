@@ -13,6 +13,7 @@ on:
 jobs:
   plan:
     runs-on: [self-hosted, homelab-dev]
+    timeout-minutes: 20
     environment: dev-plan
     env:
       TF_WORKSPACE: homelab-dev
