@@ -32,9 +32,16 @@ Generator: `utils/gen-app-credentials.sh` → GH Environment secret + `~/.homela
 
 ## CI on a public repository
 
-Workflows run on self-hosted runners inside the home network, so every `uses:` in `.github/workflows/` is pinned to a commit SHA with the version as a comment: a moved or hijacked tag cannot change what runs there. To update an action, take the commit of the new tag (`gh api repos/<owner>/<action>/commits/<tag> --jq .sha`) and replace the SHA and the comment in every workflow.
+Threat model, checked 2026-10-20 with `gh api` (sources at the end).
 
-Workflows from fork PRs wait for the owner's approval for every external contributor (`approval_policy: all_external_contributors`, 2026-10-20). Rulesets without bypass: `main` accepts changes only through a PR (0 approvals) and refuses force pushes and deletion; `homelab-v2` also accepts changes only through a PR, and only when the checks `validate` and `plan` passed. Risky Terraform plans on prod wait in environment `prod-gate` for the owner ([0004](decisions/0004-ci-autonomy-and-prod-risk-gate.md)); agents share the owner's account, so these settings stop mistakes, not an agent that breaks the rules in `PROJECT-CONTEXT.md`.
+- The repository is public and both runners sit inside the home network: `homelab-dev-laptop` runs as the laptop user `kdzl`, whose home holds `~/.homelab-secrets/` and `~/.ssh/`; `homelab-prod-ci-runner` runs as `runner` in the unprivileged CT 110 `ci-runner` on IOT (`192.168.20.14`). A job can read whatever its runner user can read.
+- Fork PRs trigger `CI Validate` and `Infra Plan Dev` on the laptop runner and `Infra Plan Prod` on the prod runner, with the PR's own workflow files. Every external contributor's run waits for the owner (`approval_policy: all_external_contributors`); approving one hands its code a shell on that runner, so approve only after reading the whole diff, workflows included.
+- Every `uses:` is pinned to a commit SHA and GitHub enforces it (`sha_pinning_required: true`): a moved or hijacked tag cannot change what runs. To update an action, take the commit of the new tag (`gh api repos/<owner>/<action>/commits/<tag> --jq .sha`) and replace the SHA and the version comment in every workflow. `GITHUB_TOKEN` is read-only by default and cannot approve PRs.
+- Rulesets without bypass actors: `main` accepts changes only through a PR (0 approvals) and refuses force pushes and deletion; `homelab-v2` the same, plus required checks `validate` and `plan`.
+- Environments: `dev` (branch `homelab-v2`, no reviewer) and `prod` (branch `main`; reviewer: the owner until the gated `Infra Apply Prod` has run on `main`) hold the deploy secrets. `dev-plan` and `prod-plan` have no rules and hold the plan secrets (`PVEAuditor` tokens, `TF_API_TOKEN`, the `UBUNTU_DOCKER_PASSWORD` hash). `prod-gate` (branch `main`, reviewer: the owner, no secrets) stops risky Terraform plans ([0004](decisions/0004-ci-autonomy-and-prod-risk-gate.md)).
+- The owner is the only collaborator and agents act with the owner's account, so GitHub cannot tell them apart: reviewers, rulesets and the gate stop mistakes, not an agent that ignores `PROJECT-CONTEXT.md`.
+
+Sources: `gh api repos/DaveKadziola/homelab/{actions/permissions,actions/permissions/workflow,actions/permissions/fork-pr-contributor-approval,rulesets/25494696,rulesets/25494699,environments,actions/runners,collaborators}`; `pct config 110`; `ps` on the laptop (2026-10-20). Host and network findings on prod: [security-audit-2026-10-20](security-audit-2026-10-20.md).
 
 ## Known sharp edges (will be in F9)
 

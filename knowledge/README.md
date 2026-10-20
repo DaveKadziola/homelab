@@ -21,6 +21,7 @@ so a wrong entry costs more than a missing one.
 | [lessons-learned.md](lessons-learned.md) | Append-only post-mortems |
 | [apps/](apps/) | One page per service |
 | [security-audit-2026-09-10.md](security-audit-2026-09-10.md) | F9-F1 — DEV nmap / inspect / gitleaks |
+| [security-audit-2026-10-20.md](security-audit-2026-10-20.md) | F9-F1 on prod - S7 nmap from LAN/IOT/APP, host review, findings S16-S27 (IOT reaches router admin, password SSH on router and PVE, uninitialised Actual/Trilium) |
 | [repo-audit-2026-09-10.md](repo-audit-2026-09-10.md) | F9-F2 — stranger readability |
 | [rebuild-drill-2026-09-10.md](rebuild-drill-2026-09-10.md) | F9-F3 — tabletop; merge gate **FAIL** |
 | [rebuild-drill-2026-10-19.md](rebuild-drill-2026-10-19.md) | F9-F3 — real wipe + rebuild of DEV; works, 9 gaps found; repeat needed |
