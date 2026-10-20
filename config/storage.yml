@@ -25,6 +25,9 @@ environments:
     # Proxmox job that dumps the VMs onto the NAS (utils/pve-backup-job.py). Created but disabled
     # on DEV: the nested PVE has no room for a dump of ubuntu-apps-dev.
     vzdump: { pve_host: 192.168.122.219, vmids: [101], schedule: "04:30", enabled: false }
+    # NAS-only backups (router config, HA UI YAML, VM dumps): outside export_root, so no NFS client of
+    # the export tree (the apps host, as root) and no Samba share reaches them; not offsite.
+    nas_private_root: /srv/homelab-nas-backups
     # Samba runs on the NAS guest; DEV reaches it from the libvirt network only.
     samba:
       share_path: /srv/homelab-share
@@ -52,6 +55,8 @@ environments:
           by_id: /dev/disk/by-id/ata-WDC_WD40PURZ-85TTDY0_WD-WCC7K3KZKJKX }
     # CT 110 (ci-runner) is not dumped: utils/pve-ci-runner-lxc.sh rebuilds it.
     vzdump: { pve_host: 192.168.20.20, vmids: [101, 102], schedule: "04:30", enabled: true }
+    # On Purple next to the bind source /srv/purple/backups, outside the NFS tree (see dev).
+    nas_private_root: /srv/purple/nas-backups
     # Bind mounts that place part of a passthrough fs into the NFS tree.
     binds:
       - { from: /srv/purple/backups, to: /export/backups, label: hl-purple }
@@ -81,8 +86,11 @@ streams:
   - { name: repo-zip,     method: zip,      dest: repo-zip }
   - { name: vzdump,       method: vzdump,   dest: vzdump }
 
-# Offsite is DR only — not Immich/Jellyfin/Navidrome libraries (already on pCloud).
+# Offsite is DR only — not Immich/Jellyfin/Navidrome libraries (already on pCloud). Only the streams
+# in `include` are copied (rclone --include), and only to an rclone crypt remote: rclone-offsite.sh
+# skips a plain remote, because the dumps and volume tars hold app data and credentials. The
+# NAS-private streams (opnsense, homeassistant-yaml, vzdump) are not under backup_root at all.
 offsite:
-  remote: pcloud:homelab-backups
+  remote: pcloud-crypt:homelab-backups
   secret: RCLONE_CONFIG
-  include: [postgres, volumes, homeassistant, opnsense, repo-zip, vzdump]
+  include: [postgres, volumes, homeassistant, repo-zip]

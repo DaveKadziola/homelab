@@ -4,23 +4,26 @@
 
 ## Layout
 
-Declared in [`config/storage.yml`](../config/storage.yml). One directory holds everything: on the NAS it is `<export_root>/backups` (prod: `/srv/purple/backups` on Purple, bind-mounted to `/export/backups`), on the apps guest the same directory is the NFS mount `backup_root` (`/mnt/homelab/backups`).
+Declared in [`config/storage.yml`](../config/storage.yml). Two directories:
+
+- the shared one: on the NAS `<export_root>/backups` (prod: `/srv/purple/backups` on Purple, bind-mounted to `/export/backups`), on the apps guest the NFS mount `backup_root` (`/mnt/homelab/backups`), in the read-only Samba share `backups`, and the source of offsite;
+- the NAS-private one, `nas_private_root` (prod `/srv/purple/nas-backups`, DEV `/srv/homelab-nas-backups`): router config, HA UI YAML and VM dumps, which hold password hashes and keys. Outside the export tree, so the apps host (root over NFS) and the Samba share do not reach it; only the Proxmox host mounts its `vzdump` folder. It is not copied offsite.
 
 | Stream | Runs on, by | DEV | Prod |
 |--------|-------------|-----|------|
 | Postgres (shared + Immich) | apps, `pg-dump.sh` (`homelab-backup.timer` 03:15) | runs | runs |
 | App volumes (not media libraries) | apps, `volumes.sh` | runs | runs |
 | Deployed `/opt/homelab` zip | apps, `repo-zip.sh` | runs | runs |
-| rclone → `pcloud:homelab-backups` | apps, `rclone-offsite.sh`; writes `.offsite-ok` | disabled | needs `RCLONE_CONFIG` |
+| rclone → `pcloud-crypt:homelab-backups` (only `offsite.include`: postgres, volumes, homeassistant, repo-zip) | apps, `rclone-offsite.sh`; writes `.offsite-ok` | disabled | needs `RCLONE_CONFIG` with a **crypt** remote, else it skips |
 | Home Assistant full backup (`ha-full-*.tar`, `HA_BACKUP_PASSWORD`) | NAS, `ha-pull.sh` -> `utils/ha.py backup` (`homelab-nas-backup.timer` 02:30) | HAOS twin | needs `HA_TOKEN` |
-| Home Assistant UI YAML snapshots (keep 30, only on change) | NAS, `ha-yaml.sh` -> `utils/ha.py export-ui` | HAOS twin | needs `HA_TOKEN`, `HA_SSH_PRIV` |
-| OPNsense `config.xml` | NAS, `opnsense.sh`, key with a forced command | SKIP (prod only) | after `utils/f2-opnsense-backup-key.sh` |
-| VM dumps 101/102 (`vzdump/dump/`) | Proxmox job `homelab-vms` 04:30 onto storage `nas-backups` (NFS `backups/vzdump`), `utils/pve-backup-job.py` | job created, disabled | runs |
+| Home Assistant UI YAML snapshots (keep 30, only on change), NAS-private | NAS, `ha-yaml.sh` -> `utils/ha.py export-ui` | HAOS twin | needs `HA_TOKEN`, `HA_SSH_PRIV` |
+| OPNsense `config.xml`, NAS-private | NAS, `opnsense.sh`, key with a forced command | SKIP (prod only) | after `utils/f2-opnsense-backup-key.sh` |
+| VM dumps 101/102 (`vzdump/dump/`), NAS-private | Proxmox job `homelab-vms` 04:30 onto storage `nas-backups` (NFS `<nas_private_root>/vzdump`, only to the PVE host), `utils/pve-backup-job.py` | job created, disabled | runs |
 | Freshness of every stream | NAS, `check-fresh.py` (`homelab-backup-check.timer` 06:00) -> Uptime Kuma push | runs | runs |
 
 Retention **A15 = 2 newest** artefacts **per name prefix** (`linkwarden-*.sql.gz`, not “2 files in the whole folder”). `hl_prune` in `utils/backup/lib.sh`; Home Assistant: `ha.py backup --keep 2`; VM dumps: `prune-backups keep-last=2` on the Proxmox job. Max ages and the Kuma push monitors: [`config/monitoring.yml`](../config/monitoring.yml) `backups`.
 
-Offsite is **DR only** — not Immich / Jellyfin / Navidrome libraries (those already live on pCloud separately). Media on prod is the NFS share on SA500, not a second copy in this job. A homelab backup of the media to pCloud is deferred until prod runs; the owner will adjust the pCloud targets ([decision 0002](decisions/0002-nas-layout-and-samba.md)).
+Offsite copies only the streams in `offsite.include` and only to an rclone **crypt** remote (`rclone-offsite.sh` skips a plain one: dumps and volume tars hold app data and credentials). It keeps every upload (`rclone copy`): remote retention is the owner's decision. Offsite is **DR only** — not Immich / Jellyfin / Navidrome libraries (those already live on pCloud separately). Media on prod is the NFS share on SA500, not a second copy in this job. A homelab backup of the media to pCloud is deferred until prod runs; the owner will adjust the pCloud targets ([decision 0002](decisions/0002-nas-layout-and-samba.md)).
 
 The Samba share `share` (`/srv/purple/share`) is **not backed up**: it is outside the NFS tree, so neither the timer nor offsite sees it.
 

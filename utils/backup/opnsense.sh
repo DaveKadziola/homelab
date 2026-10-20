@@ -26,7 +26,8 @@ if ! ping -c 1 -W 2 "$HOST" >/dev/null 2>&1; then
   exit 0
 fi
 
-ROOT="$(hl_storage nas_backup_root)/opnsense"
+# NAS-private root: config.xml holds password hashes and keys; no NFS client or share reaches it.
+ROOT="$(hl_storage nas_private_root)/opnsense"
 mkdir -p "$ROOT"
 dest="${ROOT}/config-$(hl_stamp).xml"
 # The forced command on the router ignores what is sent; the argument documents the intent.

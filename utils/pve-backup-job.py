@@ -5,12 +5,12 @@
   utils/pve-backup-job.py --env prod
   utils/pve-backup-job.py --self-test
 
-Config: config/storage.yml environments.<env> (nas_host, export_root, vzdump: pve_host, vmids,
+Config: config/storage.yml environments.<env> (nas_host, nas_private_root, vzdump: pve_host, vmids,
 schedule, enabled) and retention.keep. API: PROXMOX_API_URL (default
 https://<vzdump.pve_host>:8006/api2/json), PROXMOX_API_TOKEN_ID, PROXMOX_API_TOKEN_SECRET; on dev
 the token defaults to root@pam!terraform with the secret from ~/.homelab-pve-dev-token-secret.
 The secret is never printed.
-First the storage `nas-backups` (NFS <nas_host>:<export_root>/backups/vzdump, content backup),
+First the storage `nas-backups` (NFS <nas_host>:<nas_private_root>/vzdump, content backup),
 then the job `homelab-vms` (snapshot, zstd, notes {{guestname}}); both prune to keep-last=<keep>.
 Missing -> created, differing -> only the differing fields updated, equal -> "ok". Stops when the
 API's node is not proxmox_node_name of that env, or the storage exists with another type, server
@@ -56,7 +56,7 @@ def desired(env_cfg, keep):
         raise ValueError("vzdump needs vmids, schedule and enabled: true|false")
     prune = f"keep-last={int(keep)}"
     storage = {"type": "nfs", "server": env_cfg["nas_host"],
-               "export": f"{env_cfg['export_root'].rstrip('/')}/backups/vzdump",
+               "export": f"{env_cfg['nas_private_root'].rstrip('/')}/vzdump",
                "content": "backup", "prune-backups": prune}
     job = {"schedule": vz["schedule"], "vmid": ",".join(str(int(v)) for v in vz["vmids"]),
            "storage": STORAGE_ID, "mode": "snapshot", "compress": "zstd",
@@ -202,10 +202,10 @@ def self_test():
     tf = '# proxmox_node_name = "x"\nproxmox_node_name   = "dev"\n'
     assert node_name(tf) == "dev" and node_name('# proxmox_node_name = "x"\n') == ""
 
-    env = {"nas_host": "192.168.20.12", "export_root": "/export/",
+    env = {"nas_host": "192.168.20.12", "nas_private_root": "/srv/purple/nas-backups/",
            "vzdump": {"pve_host": "192.168.20.20", "vmids": [101, 102], "schedule": "04:30", "enabled": True}}
     st, job = desired(env, 2)
-    assert st == {"type": "nfs", "server": "192.168.20.12", "export": "/export/backups/vzdump",
+    assert st == {"type": "nfs", "server": "192.168.20.12", "export": "/srv/purple/nas-backups/vzdump",
                   "content": "backup", "prune-backups": "keep-last=2"}, st
     assert job["vmid"] == "101,102" and job["enabled"] == 1 and job["storage"] == STORAGE_ID, job
     assert job["prune-backups"] == "keep-last=2" and job["notes-template"] == "{{guestname}}", job

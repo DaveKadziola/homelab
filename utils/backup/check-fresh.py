@@ -5,7 +5,8 @@
   check-fresh.py --self-test
 
 Runs on the NAS (homelab-backup-check.timer): the backup root there is <export_root>/backups,
-which holds what the apps host writes over NFS, what run-nas.sh pulls and the Proxmox dumps. For
+which holds what the apps host writes over NFS and the HA backups; `root: private` streams (router
+config, HA UI YAML, Proxmox dumps) live in storage.yml nas_private_root. For
 each stream of config/monitoring.yml `backups` enabled for the env, the newest file matching `glob`
 must be younger than `max_age_hours`. Each result is pushed to
 <kuma_url>/api/push/<token>?status=up|down&msg=... (token = first 24 hex characters of
@@ -42,13 +43,13 @@ def newest(base, pattern):
     return best
 
 
-def verdicts(streams, env, base, now):
-    """[(stream, ok, message)] for the streams enabled in env."""
+def verdicts(streams, env, base, now, private=None):
+    """[(stream, ok, message)] for the streams enabled in env; `root: private` streams use private."""
     out = []
     for s in streams:
         if env not in s.get("envs", []):
             continue
-        path, mtime = newest(base, s["glob"])
+        path, mtime = newest(private if s.get("root") == "private" else base, s["glob"])
         if path is None:
             out.append((s["stream"], False, f"no file matches {s['glob']}"))
             continue
@@ -83,13 +84,14 @@ def main(argv=None):
     mon = yaml.safe_load(open(config / "monitoring.yml"))
     st = yaml.safe_load(open(config / "storage.yml"))["environments"][args.env]
     base = st["export_root"].rstrip("/") + "/backups"
+    private = st.get("nas_private_root") or base
     kuma = mon["environments"][args.env]["kuma_url"].rstrip("/")
     key = secret(args.env, "KUMA_PUSH_SECRET")
     if not key and not args.dry_run:
         print("error: KUMA_PUSH_SECRET is not in the environment or the secret cache", file=sys.stderr)
         return 2
     rc = 0
-    for stream, ok, msg in verdicts(mon["backups"], args.env, base, time.time()):
+    for stream, ok, msg in verdicts(mon["backups"], args.env, base, time.time(), private):
         print(f"{'ok   ' if ok else 'STALE'} {stream:<20} {msg}")
         rc = rc if ok else 1
         if args.dry_run:
@@ -128,6 +130,12 @@ def self_test():
         assert v["offsite"][0] is False, v
         assert v["vzdump"] == (False, "no file matches vzdump/dump/*.vma.zst"), v
         assert [s for s, _, _ in verdicts(streams, "dev", d, now)] == ["postgres"]
+        priv = Path(d, "private")
+        (priv / "opnsense").mkdir(parents=True)
+        Path(priv, "opnsense", "config-1.xml").write_text("x")
+        p = [{"stream": "opnsense", "glob": "opnsense/*.xml", "max_age_hours": 26, "envs": ["prod"], "root": "private"}]
+        assert verdicts(p, "prod", d, now + 60, str(priv))[0][1] is True
+        assert verdicts(p, "prod", str(priv / "nowhere"), now + 60, d)[0][1] is False
     print("self-test ok")
     return 0
 

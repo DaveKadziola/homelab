@@ -233,14 +233,19 @@
         mode: "0755"
       loop: "{{ storage.exports }}"
 
-    - name: Create the Proxmox dump directory
-      when: st.vzdump is defined
+    # Outside export_root: no client of the export tree (the apps host is root there through
+    # no_root_squash) and no Samba share reaches router config, HA UI YAML or the VM dumps.
+    - name: Create the NAS-private backup directories
+      when: st.nas_private_root is defined
       ansible.builtin.file:
-        path: "{{ st.export_root }}/backups/vzdump"
+        path: "{{ item }}"
         state: directory
         owner: root
         group: root
         mode: "0700"
+      loop:
+        - "{{ st.nas_private_root }}"
+        - "{{ st.nas_private_root }}/vzdump"
 
     # crossmnt: the passthrough filesystems and binds are mounted below export_root.
     - name: Write /etc/exports
@@ -252,9 +257,9 @@
           {% for client in st.export_clients %}
           {{ st.export_root }} {{ client }}(rw,sync,no_subtree_check,no_root_squash,crossmnt)
           {% endfor %}
-          {% if st.vzdump is defined %}
-          # Proxmox writes its VM dumps here as root (utils/pve-backup-job.py), nothing else can.
-          {{ st.export_root }}/backups/vzdump {{ st.vzdump.pve_host }}(rw,sync,no_subtree_check,no_root_squash)
+          {% if st.vzdump is defined and st.nas_private_root is defined %}
+          # Proxmox writes its VM dumps here as root (utils/pve-backup-job.py); outside the tree above.
+          {{ st.nas_private_root }}/vzdump {{ st.vzdump.pve_host }}(rw,sync,no_subtree_check,no_root_squash)
           {% endif %}
       notify: Reload nfs
 

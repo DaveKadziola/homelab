@@ -26,6 +26,10 @@ elif cmd == "nas_backup_root":
     print(st["export_root"].rstrip("/") + "/backups")
 elif cmd == "offsite":
     print(doc["offsite"]["remote"])
+elif cmd == "offsite_include":
+    print("\n".join(doc["offsite"].get("include") or []))
+elif cmd == "nas_private_root":
+    print(st.get("nas_private_root") or "")
 PY
 }
 
