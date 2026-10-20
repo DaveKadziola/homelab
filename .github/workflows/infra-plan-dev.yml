@@ -18,13 +18,13 @@ jobs:
       TF_WORKSPACE: homelab-dev
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Ensure nested Proxmox VM is running
         run: ./utils/ensure-dev-proxmox.sh
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v4
         with:
           # Same version as the laptop (utils/dev-apply-local.sh, tests) - one state, one version.
           terraform_version: 1.16.3

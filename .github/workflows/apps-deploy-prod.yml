@@ -16,7 +16,7 @@ jobs:
     environment: prod
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install the prod SSH key
         # Inventory and tests use ~/.ssh/homelab_prod_ed25519 (user ubuntu-prod, made by Terraform).
@@ -76,7 +76,7 @@ jobs:
     environment: prod
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install the prod SSH key
         # Inventory and tests use ~/.ssh/homelab_prod_ed25519 (user ubuntu-prod, made by Terraform).
@@ -100,7 +100,7 @@ jobs:
 
       - name: Upload report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: tests-prod-report
           path: tests-prod-report.json
