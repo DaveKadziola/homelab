@@ -5,7 +5,7 @@
 
 ## What is deployed
 
-Ansible playbook `ansible/playbooks/deploy-core.yml` syncs `compose/core/` (+ grocery compose) to `/opt/homelab/compose/` and runs `docker compose up -d` with profiles `auth,media` by default.
+Ansible playbook `ansible/playbooks/deploy-core.yml` syncs `compose/core/` (+ grocery compose) to `/opt/homelab/compose/` and runs `docker compose up -d` with profiles `auth,media,devmail` by default (devmail: the DEV mail sink).
 
 ### Port table (DEV `.50`)
 
@@ -55,7 +55,7 @@ Laptop libvirt “Proxmox” guest stayed at 8 GiB — do not add more guests wi
 export POSTGRES_PASSWORD="$(cat ~/.homelab-secrets/dev/POSTGRES_PASSWORD)"
 export IMMICH_DB_PASSWORD="$(cat ~/.homelab-secrets/dev/IMMICH_DB_PASSWORD)"
 export LINKWARDEN_URL=http://192.168.122.50:3001
-# Default profiles in playbook: auth,media
+# Default profiles in playbook: auth,media,devmail
 # Optional: BESZEL_KEY=… after hub bootstrap; ZOTIFY_* unused (interactive login)
 
 cd ansible

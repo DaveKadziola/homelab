@@ -7,6 +7,15 @@
 #   <name>/port        the declared host port is published by Docker
 #   <name>/endpoint    HTTP(S) status is one of `expect`, or the TCP port accepts
 #
+# With compose profile proxy (decision 0007), per app name of utils/gen-proxy-config.py, resolved to the
+# host with curl --resolve (no DNS needed):
+#   proxy/http-redirect      http://<name>/ answers a redirect to https
+#   proxy/<name>             without a session: a redirect to https://auth.<domain>/ ; with
+#                            `auth_bypass: all`: the app itself (no redirect to Authelia)
+#   proxy/<name>-api         an `auth_bypass` path answers without a redirect to Authelia
+#   proxy/login              Authelia login (AUTHELIA_ADMIN_PASSWORD), then omni-tools.<domain> (no own
+#                            login) answers 200
+#
 # `optional: true` and a compose `profile` that is not enabled turn a missing
 # service into SKIP instead of FAIL. Nothing here writes to the host.
 
@@ -46,8 +55,8 @@ report PASS "host/docker" "$(wc -l <"$DOCKER_FACTS") container(s) inspected"
 # Enabled compose profiles decide whether a profiled service must be up.
 ENABLED_PROFILES="$(hl_ssh 'grep -h "^COMPOSE_PROFILES=" /opt/homelab/compose/core/.env 2>/dev/null | tail -1 | cut -d= -f2-' 2>/dev/null || true)"
 if [[ -z "$ENABLED_PROFILES" ]]; then
-  # Same defaults as deploy-core.yml (prod without auth, decision 0003).
-  ENABLED_PROFILES="${HL_COMPOSE_PROFILES:-$([[ "$HL_ENV" == prod ]] && echo media || echo auth,media)}"
+  # Same defaults as deploy-core.yml: config/services.yml environments.<env>.profiles.
+  ENABLED_PROFILES="${HL_COMPOSE_PROFILES:-$HL_PROFILES}"
   hl_note "  (COMPOSE_PROFILES not readable on host, assuming '$ENABLED_PROFILES')"
 fi
 
@@ -152,5 +161,73 @@ while IFS="$HL_FS" read -r name priority stack container check port path expect 
       ;;
   esac
 done <"$SERVICES"
+
+# --------------------------------------------------------------------------
+# app names through Caddy + Authelia (profile proxy)
+# --------------------------------------------------------------------------
+if [[ ",$ENABLED_PROFILES," != *",proxy,"* ]]; then
+  report SKIP "proxy/all" "compose profile proxy is not enabled for $HL_ENV"
+  exit 0
+fi
+auth="auth.${HL_DOMAIN}"
+# -k: DEV serves Caddy's internal CA. Prints "<code> <redirect location>".
+probe() {
+  local name="$1" path="${2:-/}" scheme="${3:-https}" port=443
+  [[ "$scheme" == http ]] && port=80
+  curl -sk -o /dev/null --max-time "$HL_HTTP_TIMEOUT" --resolve "${name}:${port}:${HL_HOST}" \
+    -w '%{http_code} %{redirect_url}' "${@:4}" "${scheme}://${name}${path}"
+}
+first="$(python3 "$HL_REPO_ROOT/utils/gen-proxy-config.py" --env "$HL_ENV" --file list --profiles "$ENABLED_PROFILES" | head -1 | cut -f1)"
+read -r code loc <<<"$(probe "$first" / http)"
+if [[ "$code" =~ ^30[178]$ && "$loc" == https://* ]]; then
+  report PASS "proxy/http-redirect" "http://$first -> $code $loc"
+else
+  report FAIL "proxy/http-redirect" "http://$first -> ${code:-none} ${loc:-}"
+fi
+while IFS=$'\t' read -r name bypass; do
+  [[ -z "$name" ]] && continue
+  short="${name%%.*}"
+  read -r code loc <<<"$(probe "$name" /)"
+  if [[ "$bypass" == all ]]; then
+    if [[ "$code" != 000 && "$loc" != https://${auth}/* ]]; then
+      report PASS "proxy/$short" "$name -> $code without Authelia (auth_bypass: all)"
+    else
+      report FAIL "proxy/$short" "$name -> ${code} ${loc} (expected the app itself)"
+    fi
+  elif [[ "$code" == 302 && "$loc" == https://${auth}/* ]]; then
+    report PASS "proxy/$short" "$name -> Authelia login"
+  else
+    report FAIL "proxy/$short" "$name -> ${code} ${loc:-} (expected 302 to https://${auth}/)"
+  fi
+  if [[ -n "$bypass" && "$bypass" != all ]]; then
+    # First regex of the list, turned into a path: ^/api([/?].*)?$ -> /api
+    api="$(sed -E 's/,.*//; s/^\^//; s/\(.*$//; s/\$$//' <<<"$bypass")"
+    read -r code loc <<<"$(probe "$name" "$api")"
+    if [[ "$code" != 000 && "$loc" != https://${auth}/* ]]; then
+      report PASS "proxy/$short-api" "$name$api -> $code without Authelia"
+    else
+      report FAIL "proxy/$short-api" "$name$api -> ${code} ${loc} (auth_bypass not applied)"
+    fi
+  fi
+done < <(python3 "$HL_REPO_ROOT/utils/gen-proxy-config.py" --env "$HL_ENV" --file list --profiles "$ENABLED_PROFILES")
+
+password="${AUTHELIA_ADMIN_PASSWORD:-}"
+cache="${HOMELAB_SECRETS_DIR:-$HOME/.homelab-secrets}/${HL_ENV}/AUTHELIA_ADMIN_PASSWORD"
+[[ -z "$password" && -r "$cache" ]] && password="$(cat "$cache")"
+if [[ -z "$password" ]]; then
+  report SKIP "proxy/login" "AUTHELIA_ADMIN_PASSWORD is not in the environment or ${cache}"
+else
+  jar="$HL_TMP/authelia.jar"
+  body="$(python3 -c 'import json,sys; print(json.dumps({"username": "admin", "password": sys.stdin.read().rstrip("\n"), "keepMeLoggedIn": False}))' <<<"$password")"
+  unset password
+  login="$(printf '%s' "$body" | curl -sk -o /dev/null --max-time "$HL_HTTP_TIMEOUT" --resolve "${auth}:443:${HL_HOST}" \
+    -c "$jar" -H 'Content-Type: application/json' --data @- -w '%{http_code}' "https://${auth}/api/firstfactor")"
+  read -r code loc <<<"$(probe "omni-tools.${HL_DOMAIN}" / https -b "$jar")"
+  if [[ "$login" == 200 && "$code" == 200 ]]; then
+    report PASS "proxy/login" "Authelia login, then omni-tools.${HL_DOMAIN} -> 200"
+  else
+    report FAIL "proxy/login" "login -> ${login:-none}, omni-tools.${HL_DOMAIN} -> ${code:-none} ${loc:-}"
+  fi
+fi
 
 exit 0

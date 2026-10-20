@@ -49,6 +49,7 @@ jobs:
           IMMICH_DB_PASSWORD: ${{ secrets.IMMICH_DB_PASSWORD }}
           SAMBA_ADMIN_PASSWORD: ${{ secrets.SAMBA_ADMIN_PASSWORD }}
           HA_TOKEN: ${{ secrets.HA_TOKEN }}
+          AUTHELIA_ADMIN_PASSWORD: ${{ secrets.AUTHELIA_ADMIN_PASSWORD }}
           TF_VAR_proxmox_api_url: ${{ vars.PROXMOX_API_URL }}
           TF_VAR_proxmox_api_token_id: ${{ vars.PROXMOX_API_TOKEN_ID }}
           TF_VAR_proxmox_api_token_secret: ${{ secrets.PROXMOX_API_TOKEN_SECRET }}

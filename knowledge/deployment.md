@@ -11,7 +11,7 @@ Manual DEV deploy from the laptop:
 
 ```bash
 export HOMELAB_ENV=dev
-export COMPOSE_PROFILES=auth,media
+export COMPOSE_PROFILES=auth,media,devmail
 export LINKWARDEN_URL=http://192.168.122.50:3001
 while IFS= read -r f; do
   export "$(basename "$f")=$(tr -d '\r\n' < "$f")"

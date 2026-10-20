@@ -85,6 +85,10 @@ jobs:
           BESZEL_ADMIN_PASSWORD: ${{ secrets.BESZEL_ADMIN_PASSWORD }}
           BESZEL_KEY: ${{ secrets.BESZEL_KEY }}
           RCLONE_CONFIG: ${{ secrets.RCLONE_CONFIG }}
+          # Alert mail and the proxy certificate; empty until the owner adds them (decisions 0006, 0007).
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           ansible-playbook -i environments/prod/hosts.ini playbooks/deploy-core.yml
 
@@ -125,6 +129,7 @@ jobs:
           IMMICH_DB_PASSWORD: ${{ secrets.IMMICH_DB_PASSWORD }}
           SAMBA_ADMIN_PASSWORD: ${{ secrets.SAMBA_ADMIN_PASSWORD }}
           HA_TOKEN: ${{ secrets.HA_TOKEN }}
+          AUTHELIA_ADMIN_PASSWORD: ${{ secrets.AUTHELIA_ADMIN_PASSWORD }}
           LINKWARDEN_URL: http://192.168.50.30:3001
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NO_COLOR: "1"

@@ -23,7 +23,10 @@ CONTAINER="$(hl_service authelia container)"
 # First, so an environment without Authelia (prod, decision 0003) SKIPs without its secrets.
 hl_require_container "$CONTAINER"
 PORT="$(hl_service authelia port)"
-BASE="https://${HOMELAB_HOST}:${PORT}"
+BASE="http://${HOMELAB_HOST}:${PORT}"
+# Behind Caddy (decision 0007) the portal is https://auth.<domain>; the check talks to the container
+# directly and names that origin in the forwarding headers, as Caddy does.
+AUTH_HOST="auth.$(hl_env_field domain)"
 USERNAME="$(hl_account authelia username)"
 EMAIL="$(hl_account authelia email)"
 PASSWORD="$(hl_secret "$(hl_account authelia secret)")"
@@ -33,12 +36,12 @@ REPO_USERS_FILE="${HL_REPO_ROOT}/compose/core/authelia/users_database.yml"
 
 first_factor_ok() {
   local body response
-  # Cookie domain is homelab.local — posting to a raw IP fails with
+  # A request without the portal's origin fails with
   # "no configured session cookie domain matches the url".
   body="{\"username\":$(hl_json_escape "$USERNAME"),\"password\":$(hl_json_escape "$PASSWORD"),\"keepMeLoggedIn\":false}"
   response="$(printf '%s' "$body" |
-    curl -sS -k --max-time 20 --resolve "authelia.homelab.local:${PORT}:127.0.0.1" \
-      -X POST "https://authelia.homelab.local:${PORT}/api/firstfactor" \
+    curl -sS --max-time 20 -X POST "http://127.0.0.1:${PORT}/api/firstfactor" \
+      -H "X-Forwarded-Proto: https" -H "X-Forwarded-Host: ${AUTH_HOST}" \
       -H 'Content-Type: application/json' --data @- 2>/dev/null || true)"
   [[ "$response" == *'"status":"OK"'* ]]
 }

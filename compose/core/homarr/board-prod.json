@@ -25,7 +25,7 @@
       "name": "Portainer",
       "description": "infra · P0",
       "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/portainer.svg",
-      "href": "http://192.168.50.30:9000/",
+      "href": "https://portainer.dkhomelabserver.xyz/",
       "pingUrl": "http://192.168.50.30:9000/"
     },
     {
@@ -33,7 +33,7 @@
       "name": "pgAdmin",
       "description": "infra · P0",
       "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/pgadmin.svg",
-      "href": "http://192.168.50.30:5050/",
+      "href": "https://pgadmin.dkhomelabserver.xyz/",
       "pingUrl": "http://192.168.50.30:5050/"
     },
     {
@@ -41,7 +41,7 @@
       "name": "Homarr",
       "description": "infra · P0",
       "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/homarr.svg",
-      "href": "http://192.168.50.30:7575/",
+      "href": "https://homarr.dkhomelabserver.xyz/",
       "pingUrl": "http://192.168.50.30:7575/"
     },
     {
@@ -49,7 +49,7 @@
       "name": "Dozzle",
       "description": "infra · P2",
       "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/dozzle.svg",
-      "href": "http://192.168.50.30:8080/",
+      "href": "https://dozzle.dkhomelabserver.xyz/",
       "pingUrl": "http://192.168.50.30:8080/"
     },
     {
@@ -57,15 +57,15 @@
       "name": "Authelia",
       "description": "infra · P0",
       "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/authelia.svg",
-      "href": "https://192.168.50.30:9091/",
-      "pingUrl": "https://192.168.50.30:9091/"
+      "href": "https://auth.dkhomelabserver.xyz/",
+      "pingUrl": "http://192.168.50.30:9091/api/health"
     },
     {
       "id": "j5tmih76pj2fhs69l7936ec7",
       "name": "Beszel",
       "description": "infra · P2",
       "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/beszel.svg",
-      "href": "http://192.168.50.30:8090/",
+      "href": "https://beszel.dkhomelabserver.xyz/",
       "pingUrl": "http://192.168.50.30:8090/"
     },
     {
@@ -73,7 +73,7 @@
       "name": "Trilium Notes",
       "description": "apps · P0",
       "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/trilium.svg",
-      "href": "http://192.168.50.30:8082/",
+      "href": "https://trilium.dkhomelabserver.xyz/",
       "pingUrl": "http://192.168.50.30:8082/"
     },
     {
@@ -81,7 +81,7 @@
       "name": "Actual Budget",
       "description": "apps · P0",
       "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/actual-budget.svg",
-      "href": "http://192.168.50.30:5006/",
+      "href": "https://actual.dkhomelabserver.xyz/",
       "pingUrl": "http://192.168.50.30:5006/"
     },
     {
@@ -89,7 +89,7 @@
       "name": "Linkwarden",
       "description": "apps · P0",
       "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/docker.svg",
-      "href": "http://192.168.50.30:3001/",
+      "href": "https://linkwarden.dkhomelabserver.xyz/",
       "pingUrl": "http://192.168.50.30:3001/"
     },
     {
@@ -105,7 +105,7 @@
       "name": "Syncthing",
       "description": "apps · P1",
       "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/syncthing.svg",
-      "href": "http://192.168.50.30:8384/",
+      "href": "https://syncthing.dkhomelabserver.xyz/",
       "pingUrl": "http://192.168.50.30:8384/"
     },
     {
@@ -113,7 +113,7 @@
       "name": "Navidrome",
       "description": "media · P1",
       "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/navidrome.svg",
-      "href": "http://192.168.50.30:4533/",
+      "href": "https://navidrome.dkhomelabserver.xyz/",
       "pingUrl": "http://192.168.50.30:4533/"
     },
     {
@@ -121,7 +121,7 @@
       "name": "Jellyfin",
       "description": "media · P1",
       "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/jellyfin.svg",
-      "href": "http://192.168.50.30:8096/web/",
+      "href": "https://jellyfin.dkhomelabserver.xyz/web/",
       "pingUrl": "http://192.168.50.30:8096/web/"
     },
     {
@@ -129,7 +129,7 @@
       "name": "Immich",
       "description": "media · P1",
       "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/immich.svg",
-      "href": "http://192.168.50.30:2283/",
+      "href": "https://immich.dkhomelabserver.xyz/",
       "pingUrl": "http://192.168.50.30:2283/api/server/ping"
     },
     {
@@ -137,7 +137,7 @@
       "name": "Omni Tools",
       "description": "tools · P0",
       "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/it-tools.svg",
-      "href": "http://192.168.50.30:8083/",
+      "href": "https://omni-tools.dkhomelabserver.xyz/",
       "pingUrl": "http://192.168.50.30:8083/"
     },
     {
@@ -145,7 +145,7 @@
       "name": "DumbWhois",
       "description": "tools · P0",
       "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/docker.svg",
-      "href": "http://192.168.50.30:8084/",
+      "href": "https://dumbwhois.dkhomelabserver.xyz/",
       "pingUrl": "http://192.168.50.30:8084/"
     },
     {
@@ -153,7 +153,7 @@
       "name": "BentoPDF",
       "description": "tools · P0",
       "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/bentopdf.svg",
-      "href": "http://192.168.50.30:8085/",
+      "href": "https://bentopdf.dkhomelabserver.xyz/",
       "pingUrl": "http://192.168.50.30:8085/"
     }
   ],

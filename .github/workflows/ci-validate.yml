@@ -64,3 +64,5 @@ jobs:
           python3 utils/ha.py --self-test
           python3 utils/backup/check-fresh.py --self-test
           python3 utils/pve-backup-job.py --self-test
+          python3 utils/gen-proxy-config.py --self-test
+          python3 utils/kuma-sync.py --self-test

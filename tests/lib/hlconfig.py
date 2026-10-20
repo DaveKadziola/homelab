@@ -125,6 +125,8 @@ def cmd_env(env):
     print(f"HL_INVENTORY={inventory}")
     print(f"HL_INVENTORY_HOST={facts.get('ansible_host', '')}")
     print(f"HL_IDENTITY={spec.get('identity', '')}")
+    print(f"HL_DOMAIN={spec.get('domain', '')}")
+    print(f"HL_PROFILES={spec.get('profiles', '')}")
 
 
 def cmd_storage(env):
