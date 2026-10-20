@@ -83,7 +83,6 @@ jobs:
           NAVIDROME_ADMIN_PASSWORD: ${{ secrets.NAVIDROME_ADMIN_PASSWORD }}
           SYNCTHING_ADMIN_PASSWORD: ${{ secrets.SYNCTHING_ADMIN_PASSWORD }}
           BESZEL_ADMIN_PASSWORD: ${{ secrets.BESZEL_ADMIN_PASSWORD }}
-          BESZEL_KEY: ${{ secrets.BESZEL_KEY }}
           RCLONE_CONFIG: ${{ secrets.RCLONE_CONFIG }}
           # Alert mail and the proxy certificate; empty until the owner adds them (decisions 0006, 0007).
           SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}

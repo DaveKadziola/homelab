@@ -149,12 +149,20 @@
       "pingUrl": "http://192.168.122.50:8083/"
     },
     {
-      "id": "x08h9flsupucm828o1ikp56g",
-      "name": "DumbWhois",
+      "id": "10bqiht2g1noad7cecx85in0",
+      "name": "IT Tools",
       "description": "tools · P0",
-      "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/docker.svg",
-      "href": "https://dumbwhois.dev.dkhomelabserver.xyz/",
-      "pingUrl": "http://192.168.122.50:8084/"
+      "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/it-tools.svg",
+      "href": "https://it-tools.dev.dkhomelabserver.xyz/",
+      "pingUrl": "http://192.168.122.50:8086/"
+    },
+    {
+      "id": "5wkvvxvfv3sk1uez1bdz4cpi",
+      "name": "Networking Toolbox",
+      "description": "tools · P0",
+      "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/networking-toolbox.svg",
+      "href": "https://networking-toolbox.dev.dkhomelabserver.xyz/",
+      "pingUrl": "http://192.168.122.50:8087/"
     },
     {
       "id": "1nqk1e16kh07ezjyvvub1skc",
@@ -311,10 +319,19 @@
       "height": 1
     },
     {
-      "id": "gv7hdju698opmx904f6l0061",
+      "id": "i1jriut8gvux1jxu6ms18ngt",
       "kind": "app",
-      "appId": "x08h9flsupucm828o1ikp56g",
+      "appId": "10bqiht2g1noad7cecx85in0",
       "xOffset": 2,
+      "yOffset": 4,
+      "width": 2,
+      "height": 1
+    },
+    {
+      "id": "5fx76eq8y8nclzvwr5si0rg2",
+      "kind": "app",
+      "appId": "5wkvvxvfv3sk1uez1bdz4cpi",
+      "xOffset": 4,
       "yOffset": 4,
       "width": 2,
       "height": 1
@@ -323,7 +340,7 @@
       "id": "pld20x226fqfj97ksfhx6g6n",
       "kind": "app",
       "appId": "1nqk1e16kh07ezjyvvub1skc",
-      "xOffset": 4,
+      "xOffset": 6,
       "yOffset": 4,
       "width": 2,
       "height": 1

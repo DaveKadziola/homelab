@@ -224,7 +224,7 @@ Severity: high / medium / low / info. Status: `open`, `accepted`, `mitigated`, `
 | S10 | Secrets on the guest; Bitwarden copy | `/opt/homelab/secrets` `root:root 0700`, files `0600`; `.env` `0640`; vault sync verified 2026-10-20 (`security.md`, operator) | **fixed** |
 | S11 | Apps without accounts | Actual `"bootstrapped":false`, Trilium `"isInitialized":false` on prod: whoever opens them first from LAN, IOT or WG sets the password. Omni-tools, DumbWhois, BentoPDF: no auth by design | **open**, raised to high on prod |
 | S12 | SSH on the apps guest | NAS and apps: `passwordauthentication no`, root locked, one key | **mitigated** |
-| S13 | Zotify image runs as root | `compose/core/zotify/Dockerfile` has no `USER` | **open**, low |
+| S13 | Zotify image runs as root | `compose/core/zotify/Dockerfile` has no `USER` | **closed** - Zotify removed in the same batch (2026-10-20); its volumes are left for the owner |
 | S14 | CI deploy without F7 secrets | `Apps Deploy Prod` succeeded 2026-10-20 20:18 UTC (`gh run list --branch main`) | **fixed** |
 | S15 | No image CVE scan | no Trivy in `.github/workflows/` or `utils/` | **accepted** |
 

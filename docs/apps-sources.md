@@ -17,7 +17,8 @@ Verification: repositories exist, `archived=false`. Deploy: mostly via Docker Hu
 | Linkwarden | [linkwarden/linkwarden](https://github.com/linkwarden/linkwarden) | 2026-06-09 | GHCR / compose | ~~linkwarden-app/linkwarden~~ → 404 |
 | Authelia | [authelia/authelia](https://github.com/authelia/authelia) | 2026-06-11 | GHCR `authelia/authelia` | SSO forward-auth |
 | omni-tools | [iib0011/omni-tools](https://github.com/iib0011/omni-tools) | 2026-05-04 | compose / GHCR | VPN only |
-| DumbWhoIs | [DumbWareio/DumbWhoIs](https://github.com/DumbWareio/DumbWhoIs) | 2026-02-02 | compose | [dumbware.io](https://www.dumbware.io/DumbWhoIs) |
+| IT Tools | [CorentinTh/it-tools](https://github.com/CorentinTh/it-tools) | 2026-10-20 | Docker Hub `corentinth/it-tools` | GPL-3.0; added 2026-10-20 |
+| Networking Toolbox | [Lissy93/networking-toolbox](https://github.com/Lissy93/networking-toolbox) | 2026-10-09 | Docker Hub `lissy93/networking-toolbox` | MIT; RDAP lookups, replaced DumbWhoIs on 2026-10-20 |
 | Bento PDF | [alam00000/bentopdf](https://github.com/alam00000/bentopdf) | 2026-06-09 | compose | Plan: "Bentoo PDF" |
 | Portainer | [portainer/portainer](https://github.com/portainer/portainer) | 2026-06-11 | Docker Hub `portainer/portainer-ce` | Multi-repo stacks |
 | Easy Todo Grocery | [DaveKadziola/easytodo-grocery-list](https://github.com/DaveKadziola/easytodo-grocery-list) | 2025-03-15 | **Portainer** + `compose/grocery/` | Bridge + `:8101`; public HTTPS on prod (A11) |
@@ -38,7 +39,6 @@ Verification: repositories exist, `archived=false`. Deploy: mostly via Docker Hu
 | Beszel | [henrygd/beszel](https://github.com/henrygd/beszel) | 2026-06-08 | compose | Metrics (B19) |
 | Diun | [crazy-max/diun](https://github.com/crazy-max/diun) | 2026-06-11 | Docker Hub `crazymax/diun` | Image update notify (B20) |
 | Dozzle | [amir20/dozzle](https://github.com/amir20/dozzle) | 2026-06-11 | Docker Hub `amir20/dozzle` | Container logs |
-| Zotify | [Googolplexed0/zotify](https://github.com/Googolplexed0/zotify) | 2026-05-12 | compose/core `zotify` (build) | DEV helper; CLI + OAuth :4381 |
 
 ## Corrections vs earlier URLs in the plan
 

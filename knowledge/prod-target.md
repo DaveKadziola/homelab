@@ -60,16 +60,15 @@ Source: `config/services.yml`, `compose/core/docker-compose.yml` (versions pinne
 | P0 | Actual | 5006 | |
 | P0 | Linkwarden | 3001 | |
 | P0 | Authelia | 9091 | profile `auth`; DEV only ([0003](decisions/0003-prod-without-authelia.md)) |
-| P0 | Omni-tools / DumbWhois / BentoPDF | 8083 / 8084 / 8085 | |
+| P0 | Omni-tools / IT Tools / Networking Toolbox / BentoPDF | 8083 / 8086 / 8087 / 8085 | DumbWhois replaced 2026-10-20 |
 | P0 | Grocery | 8101 | built on the guest from its repo at pinned `grocery_ref`; DB/role/schema by `deploy-core.yml`; **public** via HAProxy |
 | P1 | Syncthing | 8384 (+22000, 21027) | peers by hand |
 | P1 | Navidrome | 4533 | music on NFS |
 | P1 | Jellyfin | 8096 | profile `media`; video on NFS |
 | P1 | Immich (+ ML, Valkey, own Postgres) | 2283 | profile `media`; photos on NFS |
-| P2 | Beszel hub | 8090 | agent needs a hub key (profile `beszel-agent`, off) |
+| P2 | Beszel hub + agent | 8090 | agent key and token from the hub, written on the host by the bootstrap; threshold alerts by mail ([monitoring](monitoring.md)) |
 | P2 | Dozzle | 8080 | container logs; Docker socket |
 | P2 | Diun | - | new image tags to stdout |
-| P2 | Zotify | 4381 | Spotify OAuth by hand |
 
 Reachability: LAN, WireGuard and IOT can open APP; APP reaches the internet and the NAS NFS only (`docs/network.md`).
 

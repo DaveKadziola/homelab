@@ -18,7 +18,7 @@ environments:
     # App names <subdomain>.<domain> through Caddy + Authelia (utils/gen-proxy-config.py).
     domain: dev.dkhomelabserver.xyz
     # Default compose profiles (deploy-core.yml; COMPOSE_PROFILES overrides). devmail: DEV mail sink.
-    profiles: auth,media,devmail,proxy
+    profiles: auth,media,devmail,proxy,beszel-agent
     inventory: ansible/environments/dev/hosts.ini
     ssh_user: ubuntu-dev
     identity: homelab-dev
@@ -26,7 +26,7 @@ environments:
     host: 192.168.50.30
     domain: dkhomelabserver.xyz
     # auth and proxy only with CLOUDFLARE_API_TOKEN: Caddy needs it for the certificate (deploy-core.yml).
-    profiles: media,auth,proxy
+    profiles: media,auth,proxy,beszel-agent
     inventory: ansible/environments/prod/hosts.ini
     ssh_user: ubuntu-prod
     identity: homelab-prod
@@ -225,18 +225,32 @@ services:
     login: none
     dashboard: { group: tools, icon: it-tools }
 
-  - name: dumbwhois
-    title: DumbWhois
+  - name: it-tools
+    title: IT Tools
     priority: P0
     stack: core
-    container: homelab-core-dumbwhois-1
+    container: homelab-core-it-tools-1
     check: http
-    port: 8084
+    port: 8086
     path: /
     expect: [200]
     config_as_code: yes
     login: none
-    dashboard: { group: tools, icon: docker }
+    dashboard: { group: tools, icon: it-tools }
+
+  - name: networking-toolbox
+    title: Networking Toolbox
+    priority: P0
+    stack: core
+    container: homelab-core-networking-toolbox-1
+    check: http
+    port: 8087
+    path: /
+    expect: [200]
+    config_as_code: yes
+    login: none
+    dashboard: { group: tools, icon: networking-toolbox }
+    notes: DNS, WHOIS over RDAP (domain, IP, ASN), ports and TLS checks; replaced DumbWhois on 2026-10-20.
 
   - name: bentopdf
     title: BentoPDF
@@ -370,7 +384,7 @@ services:
     config_as_code: partial
     login: none
     optional: true
-    notes: Needs a key issued by the hub; enabled through its own compose profile.
+    notes: KEY and TOKEN come from beszel-agent.env, written by utils/bootstrap/beszel.sh from the hub.
 
   - name: diun
     title: Diun
@@ -382,15 +396,3 @@ services:
     login: none
     dashboard: { group: infra, hidden: true }
 
-  - name: zotify
-    title: Zotify
-    priority: P2
-    stack: core
-    container: homelab-core-zotify-1
-    check: container
-    port: 4381
-    config_as_code: no
-    login: none
-    manual_steps: knowledge/apps/zotify.md
-    dashboard: { group: media, hidden: true }
-    notes: Spotify OAuth is interactive; the port is only used during that login.

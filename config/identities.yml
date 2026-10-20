@@ -135,13 +135,6 @@ accounts:
     envs: [dev, prod]
     notes: Login `admin` of the Uptime Kuma add-on on Home Assistant; utils/kuma-sync.py creates it on a fresh Kuma.
 
-  - app: zotify
-    identity: homelab-admin
-    login: none
-    inject: manual
-    envs: [dev, prod]
-    notes: Interactive Spotify OAuth — see knowledge/apps/zotify.md.
-
 # Secrets that are not login credentials but must exist per environment.
 service_secrets:
   - name: POSTGRES_PASSWORD
@@ -169,11 +162,6 @@ service_secrets:
   - name: AUTHELIA_STORAGE_KEY
     used_by: [authelia]
     envs: [dev, prod]
-  - name: BESZEL_KEY
-    used_by: [beszel-agent]
-    envs: [dev, prod]
-    issued_by: beszel
-    notes: Issued by the hub — bootstrap reads it from the Beszel API, not generated locally.
   - name: HA_TOKEN
     used_by: [homeassistant]
     envs: [dev, prod]

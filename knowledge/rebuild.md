@@ -90,7 +90,7 @@ sudo env HOMELAB_SECRETS_DIR=/opt/homelab/secrets \
   /opt/homelab/utils/bootstrap-apps.sh --env <env> --host 127.0.0.1
 ```
 
-- Manual leftovers: Zotify OAuth ([`apps/zotify.md`](apps/zotify.md)), Homarr password if CLI hangs, Syncthing **peers** (device IDs).
+- Manual leftovers: Homarr password if CLI hangs, Syncthing **peers** (device IDs).
 - Verify: table in [`operations.md`](operations.md).
 - Time: 5–15 min.
 

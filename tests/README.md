@@ -56,7 +56,7 @@ A skip always carries its reason. The ones that are expected today:
 | `net/dns/internal` | dev has no internal DNS zone (`homelabdev.local` has no server) |
 | `infra/terraform/plan` | no Proxmox API token, or the nested PVE is not running (`utils/ensure-dev-proxmox.sh`) |
 | `infra/ansible/check` | One of the secrets `deploy-core.yml` asserts (`POSTGRES_PASSWORD`, `HOMARR_SECRET_KEY`, `LINKWARDEN_SECRET`, `PGADMIN_PASSWORD`) is neither in the environment nor in `~/.homelab-secrets/<env>/` - the case on the prod CI runner -, so the playbook stops before the rendered `.env` can be compared |
-| `<service>/port`, `<service>/endpoint` for `check: container` | Diun, Zotify and the Beszel agent have no HTTP listener to probe |
+| `<service>/port`, `<service>/endpoint` for `check: container` | Diun and the Beszel agent have no HTTP listener to probe |
 | a service whose `profile` is not in `COMPOSE_PROFILES` | it is intentionally not deployed |
 | a service with `optional: true` that is missing | it needs a manual step first (Beszel agent needs a hub key) |
 | `storage/disk/all`, `storage/nfs/markers`, `storage/nfs/guard` on `--env dev` | `passthrough` is empty for DEV in `config/storage.yml`: no SA500/Purple there |

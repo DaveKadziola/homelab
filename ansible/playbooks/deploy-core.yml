@@ -44,7 +44,6 @@
       - NAVIDROME_ADMIN_PASSWORD
       - SYNCTHING_ADMIN_PASSWORD
       - BESZEL_ADMIN_PASSWORD
-      - BESZEL_KEY
       # Offsite copy (utils/backup/rclone-offsite.sh); prod only, rclone: false on DEV.
       - RCLONE_CONFIG
       # Alert mail through the env's SMTP relay (config/monitoring.yml); prod: Proton SMTP.
@@ -123,7 +122,6 @@
       loop:
         - "{{ compose_dest }}"
         - "{{ compose_dest }}/authelia"
-        - "{{ compose_dest }}/zotify"
         - "{{ compose_dest }}/diun"
         - "{{ compose_dest }}/pgadmin"
         - "{{ compose_dest }}/navidrome"
@@ -197,14 +195,6 @@
             mode: "0644"
             content: "{{ lookup('pipe', proxy_gen ~ ' --file caddyfile') }}\n"
           notify: Restart caddy
-
-    - name: Sync Zotify Dockerfile
-      ansible.builtin.copy:
-        src: "{{ compose_src }}/zotify/Dockerfile"
-        dest: "{{ compose_dest }}/zotify/Dockerfile"
-        owner: "{{ ansible_user }}"
-        group: docker
-        mode: "0644"
 
     - name: Sync Diun config
       ansible.builtin.copy:
@@ -284,10 +274,6 @@
           IMMICH_VERSION={{ lookup('env', 'IMMICH_VERSION') | default('v3.3.3', true) }}
           JELLYFIN_URL={{ lookup('env', 'JELLYFIN_URL') | default('http://192.168.122.50:8096', true) }}
           BESZEL_HUB_URL={{ lookup('env', 'BESZEL_HUB_URL') | default('http://127.0.0.1:8090', true) }}
-          BESZEL_KEY={{ resolved_secrets.BESZEL_KEY | default('', true) }}
-          BESZEL_TOKEN={{ lookup('env', 'BESZEL_TOKEN') | default('', true) }}
-          ZOTIFY_USERNAME={{ lookup('env', 'ZOTIFY_USERNAME') | default('', true) }}
-          ZOTIFY_TOKEN={{ lookup('env', 'ZOTIFY_TOKEN') | default('', true) }}
       no_log: true
 
     # The bootstrap scripts read secrets from here, so a re-run on the host
@@ -350,6 +336,8 @@
         - services.yml
         - identities.yml
         - storage.yml
+        # Beszel thresholds and the SMTP relay for utils/bootstrap/beszel_config.py on the host.
+        - monitoring.yml
 
     - name: Sync the bootstrap scripts
       ansible.builtin.copy:

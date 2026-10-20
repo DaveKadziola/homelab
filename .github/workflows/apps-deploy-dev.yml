@@ -74,7 +74,6 @@ jobs:
           NAVIDROME_ADMIN_PASSWORD: ${{ secrets.NAVIDROME_ADMIN_PASSWORD }}
           SYNCTHING_ADMIN_PASSWORD: ${{ secrets.SYNCTHING_ADMIN_PASSWORD }}
           BESZEL_ADMIN_PASSWORD: ${{ secrets.BESZEL_ADMIN_PASSWORD }}
-          BESZEL_KEY: ${{ secrets.BESZEL_KEY }}
         run: |
           ansible-playbook -i environments/dev/hosts.ini playbooks/deploy-core.yml
 
