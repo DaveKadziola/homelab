@@ -31,7 +31,7 @@ Symptoms first. Root-cause write-ups go in [`lessons-learned.md`](lessons-learne
 
 | Symptom | Check |
 |---------|--------|
-| Authelia “check your credentials” / no session on IP | Use `https://authelia.homelab.local:9091` + `/etc/hosts`. |
+| Authelia “check your credentials” / no session on IP | Use the name `https://auth.<domain>` (DEV `auth.dev.dkhomelabserver.xyz`, AdGuard rewrite or laptop `/etc/hosts`), not the IP: the session cookie is bound to `environments.<env>.domain` in `config/services.yml`. |
 | pgAdmin will not start / rejects email | Mailbox cannot be `*.local`. |
 | Immich reset hangs | `immich-admin reset-admin-password` needs a TTY — bootstrap uses pexpect. |
 | Navidrome CLI “inappropriate ioctl” | `docker exec -t` + pexpect (`utils/bootstrap/navidrome.sh`). Do not pipe. |

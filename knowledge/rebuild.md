@@ -1,5 +1,5 @@
 Status: draft
-Last reviewed: 2026-10-20
+Last reviewed: 2026-10-21
 Scope: rebuild order from OPNsense to tests, for prod metal and nested DEV
 
 # Rebuild / migration runbook
@@ -10,7 +10,7 @@ Do this in order. A later step will fail if an earlier one is skipped.
 
 **Before step 4:** `./utils/gen-app-credentials.sh --env <env> --all` (or restore `~/.homelab-secrets/<env>/` from Bitwarden). GH cannot read secrets back.
 
-**DEV Authelia:** add `192.168.122.50 authelia.homelab.local homelab.local` on the **client**. Nested PVE itself is not created by this repo — `ensure-dev-proxmox.sh` only starts an existing libvirt domain named `Proxmox`.
+**DEV app names:** `auth.dev.dkhomelabserver.xyz` and `<app>.dev.dkhomelabserver.xyz` resolve through the AdGuard rewrites (`utils/f2-adguard-rewrites.sh`) or, until those exist, the client's `/etc/hosts` -> `192.168.122.50` ([`docs/f4-apps-dev.md`](../docs/f4-apps-dev.md)). Nested PVE itself is not created by this repo — `ensure-dev-proxmox.sh` only starts an existing libvirt domain named `Proxmox`.
 
 **Grocery:** image `easy-todo-grocery-nodb:latest` is built from `DaveKadziola/easytodo-grocery-list` (pinned `grocery_ref` in `deploy-core.yml`), not this repo. DB `todo_grocery`, its role and schema are created by `deploy-core.yml`, not by `postgres-init` (step 5).
 
@@ -154,4 +154,4 @@ The Samba share on Purple (`/srv/purple/share`) is in no backup and no offsite c
 
 ## Related
 
-- [`architecture.md`](architecture.md) · [`dr.md`](dr.md) · [`lessons-learned.md`](lessons-learned.md) · drills: [`2026-09-10`](rebuild-drill-2026-09-10.md), [`2026-10-19`](rebuild-drill-2026-10-19.md)
+- [`architecture.md`](architecture.md) · [`dr.md`](dr.md) · [`lessons-learned.md`](lessons-learned.md) · drills: [`2026-09-10`](rebuild-drill-2026-09-10.md), [`2026-10-19`](rebuild-drill-2026-10-19.md), [`2026-10-19b`](rebuild-drill-2026-10-19b.md)

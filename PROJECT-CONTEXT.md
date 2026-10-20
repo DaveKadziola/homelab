@@ -4,16 +4,16 @@ Facts of this project for the agent rules in `AGENTS.md`. Every filled field nam
 An empty field is unknown: the agent asks about it and assumes nothing.
 
 Status: draft (takeover 2026-10-18; operator answers recorded 2026-10-18)
-Last reviewed: 2026-10-18
+Last reviewed: 2026-10-21
 
 ## 1. Goal
 
 - What this project is for: self-hosted homelab on Proxmox - Terraform + Ansible + Docker
   Compose, deployed through GitHub Actions with two self-hosted runners.
-  <!-- source: README.md:3 -->
+  <!-- source: README.md first paragraph -->
 - Plan and phases: `docs/plan/greenfield-plan.md` (phases F0-F10; copied from Cursor, its todo
-  statuses are older than the code). Current status: `README.md` "Roadmap" table.
-  <!-- source: docs/plan/greenfield-plan.md "Fazy / sprinty"; README.md "Roadmap" -->
+  statuses are older than the code). Current status: `README.md` "Status".
+  <!-- source: docs/plan/greenfield-plan.md "Fazy / sprinty"; README.md "Status" -->
 - Who uses it: the operator (user and admin); later 1-2 occasional users of single apps such as
   the photo gallery and the shopping list. <!-- source: operator, 2026-10-18 -->
 - What is out of scope: <ask>
@@ -23,12 +23,12 @@ Last reviewed: 2026-10-18
 | Area | Choice and version | Source |
 | --- | --- | --- |
 | Languages | Bash (`utils/`, `tests/`), Python helpers (`tests/lib/hlconfig.py`, `utils/bootstrap/homarr_board.py`), HCL, YAML | repository tree |
-| Runtime / OS | Ubuntu VMs `ubuntu-apps`, `ubuntu-nas` on a physical Proxmox host; DEV: nested Proxmox in laptop libvirt. VMs run the Ubuntu 24.04 (noble) cloud image | `README.md` architecture; `docs/network.md:6-13`; `terraform/environments/dev/terraform.tfvars:41`; `terraform/environments/prod/terraform.tfvars:40,66` |
+| Runtime / OS | Ubuntu VMs `ubuntu-apps`, `ubuntu-nas` on a physical Proxmox host; DEV: nested Proxmox in laptop libvirt. VMs run the Ubuntu 24.04 (noble) cloud image | `README.md` "How it is built"; `docs/network.md:6-13`; `terraform/environments/dev/terraform.tfvars:41`; `terraform/environments/prod/terraform.tfvars:43,70` |
 | Infrastructure as code | Terraform `>= 1.8.0`, provider `bpg/proxmox` `0.77.1`; Terraform Cloud org `dkhomelabserver`, workspaces `homelab` (prod) and `homelab-dev` (DEV), chosen by `TF_WORKSPACE`, execution mode local | `terraform/versions.tf:2,6-7`; `terraform/cloud.tf` |
 | Configuration | Ansible (`ansible/playbooks/`, inventories `ansible/environments/{dev,prod}/hosts.ini`), ansible-lint profile `production`. Ansible version: not pinned | `ansible/ansible.cfg`; `.ansible-lint` |
 | Applications | Docker Compose (`compose/core`, `compose/grocery`); services declared once in `config/services.yml`, accounts and secret names in `config/identities.yml` | `README.md` "Applications" |
 | CI | GitHub Actions on self-hosted runners `homelab-dev` (laptop) and `homelab-prod` (LXC `ci-runner` on the prod Proxmox host) | `.github/workflows/*.yml` `runs-on`; `utils/pve-ci-runner-lxc.sh` |
-| Secrets | Generated locally -> Bitwarden `homelab/<NAME>/<env>` -> `gh secret set`; app secrets from `utils/gen-app-credentials.sh`; local copies in `~/.homelab-secrets/<env>/` | `README.md:76,78,146` |
+| Secrets | `utils/gen-app-credentials.sh` writes each value to the GitHub environment, `~/.homelab-secrets/<env>/` and Bitwarden `homelab/<NAME>/<env>` in one run | `README.md` "Where to start" (Secrets); `knowledge/security.md` "Identities" |
 
 ## 3. Constraints
 
@@ -37,7 +37,7 @@ Last reviewed: 2026-10-18
 - Security: secret values never enter git; names only in `docs/secrets-inventory.md`. gitleaks
   runs in CI. OPNsense `config.xml` backups stay in the gitignored `opnsense/backups/`.
   The repository is **public**: anything committed is published.
-  <!-- source: README.md:76; .github/workflows/ci-validate.yml:54; .gitignore -->
+  <!-- source: README.md second paragraph; .github/workflows/ci-validate.yml:53 (Gitleaks); .gitignore -->
 - Compatibility: <ask>
 - Things the agent must never touch without an explicit request each time:
   - `main` and anything that triggers prod workflows (push to `main` applies Terraform and
@@ -51,17 +51,18 @@ Last reviewed: 2026-10-18
   - `terraform apply` whose plan replaces `ubuntu-apps` - it wipes Docker volumes.
     <!-- source: knowledge/deployment.md:53 -->
   - The OPNsense router and its live configuration.
-  - Merging `homelab-v2` into `main` while the F9 gate is FAIL.
-    <!-- source: knowledge/rebuild-drill-2026-09-10.md:7 -->
+  - Merging the release PR `homelab-v2` -> `main`: the operator merges it. The F9 gate that blocked
+    it is met: wipe drill passed 2026-10-19, prod built from `main` by release #75 (2026-10-20).
+    <!-- source: README.md "Change flow", "Status"; knowledge/rebuild-drill-2026-10-19b.md -->
 
 ## 4. Commands
 
 | Purpose | Command | Notes |
 | --- | --- | --- |
-| Install dependencies | - | Tools expected on the laptop: `git`, `gh`, `terraform`, `ansible`, `ansible-lint`, `docker`, `virsh`, `virt-install`, `openssl` (`README.md:72`) |
+| Install dependencies | - | Tools expected on the laptop: `git`, `gh`, `terraform`, `ansible`, `ansible-lint`, `docker`, `virsh`, `virt-install`, `openssl` (`README.md` "Where to start") |
 | Build | - | nothing to build |
-| Test (all) | `utils/run-tests.sh --env dev --suite all` | `README.md:119`; `restore` is opt-in and not in `all` |
-| Test (single) | `utils/run-tests.sh --env dev --suite <smoke\|infra\|net\|config\|restore>` | `utils/run-tests.sh:4`. Only `config` is static; the others reach DEV hosts over SSH |
+| Test (all) | `utils/run-tests.sh --env dev --suite all` | `README.md` "Where to start"; `all` = smoke, infra, net, config, storage, ha (`utils/run-tests.sh:15`); `restore` is opt-in and not in `all` |
+| Test (single) | `utils/run-tests.sh --env dev --suite <smoke\|infra\|net\|config\|storage\|ha\|restore>` | `utils/run-tests.sh:4`. Only `config` is static; `ha` talks to the Home Assistant API (`utils/ha.py`), the others reach DEV hosts over SSH |
 | Lint / format | `terraform fmt -check -recursive`; `terraform validate`; `ansible-lint ansible/playbooks/`; `docker compose --profile auth --profile media config` (in `compose/core`, needs placeholder env values); `./utils/pve-attach-nas-disks.sh --self-test`; `python3 utils/pve-network.py --self-test`; `python3 utils/bw-store.py --self-test`; `python3 utils/tf-plan-risk.py --self-test`; `python3 utils/ha.py --self-test`; `python3 utils/backup/check-fresh.py --self-test`; `python3 utils/pve-backup-job.py --self-test`; `python3 utils/gen-proxy-config.py --self-test`; `python3 utils/kuma-sync.py --self-test`; `python3 utils/bootstrap/beszel_config.py --self-test` | `.github/workflows/ci-validate.yml` (step "Script self-tests") |
 | Kit check | `python3 scripts/validate_kit.py` | agent kit |
 | Run locally | - | |
@@ -79,7 +80,7 @@ Last reviewed: 2026-10-18
   typography in docs and scripts.
 - Release notes / change log file: none.
 - README reference examples: app pages follow `knowledge/apps/<app>.md`; adding an app is
-  `config/services.yml` -> compose -> `knowledge/apps/<app>.md`. <!-- source: README.md:143 -->
+  `config/services.yml` -> compose -> `knowledge/apps/<app>.md`. <!-- source: README.md "Applications" -->
 - Commits: `type(scope): subject`, scope = phase (`f1` ... `f10`) when there is one.
   <!-- source: git log main..homelab-v2 -->
 - Branching and review: `homelab-v2` = DEV, `main` = prod. Agent work happens on a feature branch
@@ -108,7 +109,7 @@ Last reviewed: 2026-10-18
 | --- | --- | --- |
 | F0-F10 | Plan phases (F0 manual setup ... F9 audits and merge gate, F10 monitoring after prod) | `docs/plan/greenfield-plan.md` "Fazy / sprinty" |
 | P0 / P1 / P2 | Application priority tiers | `docs/apps-sources.md:8,25` |
-| greenfield / v2 | The rebuild on `homelab-v2`; pre-v2 code is legacy | `README.md:10` |
+| greenfield / v2 | The rebuild on `homelab-v2`; pre-v2 code is legacy | `README.md` title; `docs/plan/greenfield-plan.md` "Strategia Git — gałąź `homelab-v2`" |
 | F9 gate | Conditions for merging `homelab-v2` into `main` | `knowledge/rebuild-drill-2026-09-10.md:7,48-55` |
 | IOT / APP / WireGuard | Prod VLANs and the VPN network | `docs/network.md:23-28` |
 

@@ -7,8 +7,8 @@
 | Logs | Dozzle `http://<apps>:8080` |
 | Container health | `utils/run-tests.sh --env dev --suite smoke` |
 | Dashboard | Homarr `:7575` (board seeded from `services.yml`) |
-| Image updates | Diun (stdout / future mail) |
-| Backups | `homelab-backup.timer` 03:15; `journalctl -u homelab-backup` |
+| Image updates | Diun mails new tags through the env's SMTP relay (`diun.env` from the deploy; DEV: mailpit); without the relay it only logs ([`monitoring.md`](monitoring.md)) |
+| Backups | apps `homelab-backup.timer` 03:15 (`journalctl -u homelab-backup`); NAS `homelab-nas-backup.timer` 02:30; Proxmox job `homelab-vms` 04:30; stale streams alert in Uptime Kuma ([`backup.md`](backup.md)) |
 
 ## Logins (DEV)
 
@@ -27,7 +27,7 @@ cat ~/.homelab-secrets/dev/IMMICH_ADMIN_PASSWORD
 | Portainer | http://192.168.122.50:9000 | `admin` | `PORTAINER_ADMIN_PASSWORD` |
 | pgAdmin | http://192.168.122.50:5050 | env mailbox | `PGADMIN_PASSWORD` |
 | Homarr | http://192.168.122.50:7575 | `admin` | `HOMARR_ADMIN_PASSWORD` |
-| Authelia | https://authelia.homelab.local:9091 | `admin` | `AUTHELIA_ADMIN_PASSWORD` |
+| Authelia | https://auth.dev.dkhomelabserver.xyz | `admin` | `AUTHELIA_ADMIN_PASSWORD` |
 | Linkwarden | http://192.168.122.50:3001 | `admin` (or mailbox) | `LINKWARDEN_ADMIN_PASSWORD` |
 | Immich | http://192.168.122.50:2283 | env mailbox | `IMMICH_ADMIN_PASSWORD` |
 | Jellyfin | http://192.168.122.50:8096 | `admin` | `JELLYFIN_ADMIN_PASSWORD` |
@@ -37,7 +37,7 @@ cat ~/.homelab-secrets/dev/IMMICH_ADMIN_PASSWORD
 | Grocery | http://192.168.122.50:8101 | none (app users) | `GROCERY_DB_PASSWORD` for the DB role |
 | Samba | `\\192.168.122.50\share`, `\\192.168.122.50\media` | `admin` | `SAMBA_ADMIN_PASSWORD` |
 
-Authelia: accept the self-signed cert; use the **name**, not the IP. See [`networking.md`](networking.md).
+The apps also answer by name, `https://<app>.dev.dkhomelabserver.xyz` (list: `utils/gen-proxy-config.py --env dev --file list`), through Caddy, Authelia first ([decision 0007](decisions/0007-app-names-caddy-authelia.md)). Caddy uses its internal CA on DEV: accept the warning or trust Caddy's root. Use the **name**, not the IP. See [`networking.md`](networking.md).
 
 ## Add an app
 

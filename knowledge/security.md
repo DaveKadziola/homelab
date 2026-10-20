@@ -1,5 +1,5 @@
 Status: draft
-Last reviewed: 2026-10-20
+Last reviewed: 2026-10-21
 Scope: identities, where secret values live (cache, GitHub, Bitwarden), rotation, known security edges
 
 # Security
@@ -25,10 +25,10 @@ The Beszel agent key and token are issued by the hub and stay on the apps host (
 
 | Layer | Today |
 |-------|--------|
-| Authelia | DEV only (profile `auth`), off on prod ([decision 0003](decisions/0003-prod-without-authelia.md)). Cookie domain `homelab.local`. No proxy puts it in front of any app yet. |
+| Authelia | In front of every app name through Caddy (profiles `auth` + `proxy`, [decision 0007](decisions/0007-app-names-caddy-authelia.md)), one factor, except the paths in `auth_bypass`. Cookie domain `dev.dkhomelabserver.xyz` on DEV, `dkhomelabserver.xyz` on prod, where both profiles run only once `CLOUDFLARE_API_TOKEN` is in environment `prod` (`ansible/playbooks/deploy-core.yml` `compose_profiles`). The app ports stay published (Caddy's upstream is `host.docker.internal:<port>`, `utils/gen-proxy-config.py`), so `<host>:<port>` reaches each app directly, without Authelia. |
 | App admins | Converged by `utils/bootstrap/*.sh` where the app has an API/CLI |
 | SSH | Key-only to the apps guest. Root on the prod Proxmox host: own laptop key `~/.ssh/homelab_prod_pve_ed25519` since 2026-10-20; the DEV key `~/.ssh/homelab_dev_ed25519` (also GH `dev` `UBUNTU_DOCKER_SSH_PRIV`, an environment without reviewer) no longer logs in there. Lost key: console login with the root password |
-| TLS | Authelia self-signed on `:9091`. Public grocery ACME is a prod HAProxy job. |
+| TLS | Caddy: DEV internal CA, prod Let's Encrypt wildcard `*.dkhomelabserver.xyz` through the Cloudflare DNS challenge (`utils/gen-proxy-config.py`); Authelia is plain HTTP behind it. Public grocery ACME is a prod HAProxy job. |
 
 ## CI on a public repository
 

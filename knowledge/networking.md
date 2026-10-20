@@ -7,13 +7,13 @@ Canonical map and “do not renumber” list: [`docs/network.md`](../docs/networ
 - Isolated libvirt `default`: `192.168.122.0/24`, GW `.1`
 - Apps: **`192.168.122.50`**
 - No OPNsense, no VLANs, no public DNS
-- Authelia cookie domain is `homelab.local` — add on the **client**:
+- App names `<app>.dev.dkhomelabserver.xyz` and the Authelia portal `auth.dev.dkhomelabserver.xyz` go through Caddy on `192.168.122.50` ([decision 0007](decisions/0007-app-names-caddy-authelia.md)). They resolve through the AdGuard rewrites once `utils/f2-adguard-rewrites.sh` has run (owner's decision); until then add them on the **client**:
 
   ```
-  192.168.122.50 authelia.homelab.local homelab.local
+  192.168.122.50 auth.dev.dkhomelabserver.xyz homarr.dev.dkhomelabserver.xyz
   ```
 
-  Hitting the raw IP reaches the UI but first-factor / session fails (`no configured session cookie domain`).
+  Hitting the raw IP reaches the app's own port but no Authelia session: the cookie domain is `dev.dkhomelabserver.xyz` (`config/services.yml` `environments.dev.domain`).
 
 ## Prod (as-built, do not invent new IPs)
 
@@ -31,12 +31,12 @@ PVE has **one** host IP: `vmbr0.20` on `bond0` (nic1 + nic0 backup); nic2 reserv
 
 | Path | What |
 |------|------|
-| LAN / VPN only | Almost every UI (Portainer, Immich, Authelia, …) |
+| LAN, WireGuard, IOT | Every app port on `ubuntu-apps` `192.168.50.30` and, with profile `proxy`, every app name through Caddy + Authelia. IOT reaching them is finding S16 ([`security-audit-2026-10-20.md`](security-audit-2026-10-20.md)); WireGuard follows the `docs/network.md` firewall table and was not scanned. APP itself reaches only the internet and the NAS NFS |
 | LAN + WireGuard only | SMB `445` on the NAS `192.168.20.12` (shares `share`, `media`); limited by Samba `hosts allow`, because IOT devices share the NAS subnet and the router cannot filter them ([`storage.md`](storage.md#samba)) |
-| Public HTTPS | Grocery `grocery.dkhomelabserver.xyz` via OPNsense HAProxy (prod, after F4 sign-off) |
+| Public HTTPS | Grocery `grocery.dkhomelabserver.xyz` via OPNsense HAProxy (prod) |
 | OPNsense WAN | Passes only TCP 443 (HAProxy) and UDP 51820 (WireGuard) since 2026-10-20; TCP 80 reached the AdGuard Home login and is closed (`docs/network.md`). Whether the ISP router in front forwards them is not visible from inside |
 
-Postgres `:5432` is published on the apps host — intended for grocery/`host.docker.internal` on DEV. Do not publish it to WAN. F9 will re-audit this.
+Postgres `:5432` is published on the apps host — intended for grocery/`host.docker.internal` on DEV. Do not publish it to WAN. The F9 audit found it open from LAN and IOT on prod (S1, [`security-audit-2026-10-20.md`](security-audit-2026-10-20.md)).
 
 ## Related
 
