@@ -42,7 +42,13 @@
     # Home Assistant and the router. Own tree, so on DEV, where one guest is both NAS and apps host,
     # it never fights the apps play over /opt/homelab ownership.
     nas_root: /opt/homelab-nas
-    nas_secrets: [HA_TOKEN, HA_SSH_PRIV, HA_BACKUP_PASSWORD, KUMA_PUSH_SECRET, OPNSENSE_BACKUP_SSH_PRIV]
+    # Names only (as homelab_secrets in deploy-core.yml); values from the environment or the cache.
+    nas_secrets:
+      - HA_TOKEN
+      - HA_SSH_PRIV
+      - HA_BACKUP_PASSWORD
+      - KUMA_PUSH_SECRET
+      - OPNSENSE_BACKUP_SSH_PRIV
   tasks:
     - name: Refuse a run whose HOMELAB_ENV does not match the inventory
       ansible.builtin.assert:
