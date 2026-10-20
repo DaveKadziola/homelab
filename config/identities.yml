@@ -107,7 +107,7 @@ accounts:
     inject: ansible
     envs: [dev, prod]
     notes: >-
-      Shares share + media on the NAS. The login maps to the Unix account homelab-smb
+      Shares share + media + read-only backups on the NAS. The login maps to the Unix account homelab-smb
       (a Unix user named admin would get sudo through Ubuntu's %admin group).
 
   - app: beszel

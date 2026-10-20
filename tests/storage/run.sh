@@ -7,10 +7,12 @@
 #   nfs/guard             nfs-server requires every passthrough mount (missing disk -> NFS down)
 #   samba/smbd            smbd is running
 #   samba/hosts-allow     smb.conf allows exactly the clients in config/storage.yml
-#   samba/login           the admin login lists the share and media shares (from the NAS itself:
-#                         the CI runner is not an allowed client)
+#   samba/login           the admin login lists the share, media and backups shares (from the NAS
+#                         itself: the CI runner is not an allowed client)
+#   samba/backups-ro      a write to the backups share is refused
 #
-# Read-only: listings and stat calls, nothing is written to the shares.
+# Read-only: listings and stat calls; the only write is the backups probe, which must be refused
+# (if it ever succeeds, the probe file is deleted again and the check fails).
 
 set -uo pipefail
 
@@ -124,10 +126,21 @@ if [[ -z "$password" ]]; then
 else
   listing="$(printf '%s' "$password" | hl_nas_ssh \
     "PASSWD=\"\$(cat)\" smbclient -g -m SMB3 -L //127.0.0.1 -U '${HL_SMB_LOGIN}' 2>/dev/null")"
-  unset password
-  if grep -q '^Disk|share|' <<<"$listing" && grep -q '^Disk|media|' <<<"$listing"; then
-    report PASS "samba/login" "${HL_SMB_LOGIN} lists share and media"
+  if grep -q '^Disk|share|' <<<"$listing" && grep -q '^Disk|media|' <<<"$listing" \
+     && grep -q '^Disk|backups|' <<<"$listing"; then
+    report PASS "samba/login" "${HL_SMB_LOGIN} lists share, media and backups"
   else
-    report FAIL "samba/login" "${HL_SMB_LOGIN} cannot list share and media on //${HL_NAS_HOST}"
+    report FAIL "samba/login" "${HL_SMB_LOGIN} cannot list share, media and backups on //${HL_NAS_HOST}"
   fi
+
+  probe="$(printf '%s' "$password" | hl_nas_ssh \
+    "PASSWD=\"\$(cat)\" smbclient -m SMB3 //127.0.0.1/backups -U '${HL_SMB_LOGIN}' -c 'put /etc/hostname .rw-probe' 2>&1")"
+  if grep -q -E 'NT_STATUS_(ACCESS_DENIED|MEDIA_WRITE_PROTECTED)' <<<"$probe"; then
+    report PASS "samba/backups-ro" "write to backups refused ($(grep -o -E 'NT_STATUS_[A-Z_]+' <<<"$probe" | head -1))"
+  else
+    printf '%s' "$password" | hl_nas_ssh \
+      "PASSWD=\"\$(cat)\" smbclient -m SMB3 //127.0.0.1/backups -U '${HL_SMB_LOGIN}' -c 'del .rw-probe'" >/dev/null 2>&1
+    report FAIL "samba/backups-ro" "the backups share accepted a write"
+  fi
+  unset password
 fi
