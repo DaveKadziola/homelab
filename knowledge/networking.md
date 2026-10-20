@@ -34,6 +34,7 @@ PVE has **one** host IP: `vmbr0.20` on `bond0` (nic1 + nic0 backup); nic2 reserv
 | LAN / VPN only | Almost every UI (Portainer, Immich, Authelia, …) |
 | LAN + WireGuard only | SMB `445` on the NAS `192.168.20.12` (shares `share`, `media`); limited by Samba `hosts allow`, because IOT devices share the NAS subnet and the router cannot filter them ([`storage.md`](storage.md#samba)) |
 | Public HTTPS | Grocery `grocery.dkhomelabserver.xyz` via OPNsense HAProxy (prod, after F4 sign-off) |
+| OPNsense WAN | Passes only TCP 443 (HAProxy) and UDP 51820 (WireGuard) since 2026-10-20; TCP 80 reached the AdGuard Home login and is closed (`docs/network.md`). Whether the ISP router in front forwards them is not visible from inside |
 
 Postgres `:5432` is published on the apps host — intended for grocery/`host.docker.internal` on DEV. Do not publish it to WAN. F9 will re-audit this.
 
