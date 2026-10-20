@@ -15,23 +15,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
-        # Its download has no timeout: a stalled HashiCorp request once held a runner for 20 min.
-        timeout-minutes: 5
-        with:
-          terraform_version: 1.16.3
-          # The wrapper is a Node script run with the host's node (ci-runner has none); unused here.
-          terraform_wrapper: false
-          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+      - name: Check Terraform
+        # Installed on the runners (laptop: apt package terraform; ci-runner: utils/pve-ci-runner-lxc.sh),
+        # not downloaded per job: the setup-terraform download stalled again and again.
+        run: v="$(terraform version | head -1)"; echo "$v"; test "$v" = "Terraform v1.16.3"
 
       - name: Terraform init
         working-directory: terraform
+        env:
+          # HCP Terraform login: the CLI reads TF_TOKEN_<host>, so the token never lands in a file.
+          TF_TOKEN_app_terraform_io: ${{ secrets.TF_API_TOKEN }}
         run: terraform init
 
       - name: Terraform apply
         working-directory: terraform
         env:
+          TF_TOKEN_app_terraform_io: ${{ secrets.TF_API_TOKEN }}
           TF_VAR_environment: prod
           TF_VAR_proxmox_node_name: proxmox
           TF_VAR_proxmox_api_url: ${{ vars.PROXMOX_API_URL }}

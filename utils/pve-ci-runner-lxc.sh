@@ -23,8 +23,13 @@ CT_IP=192.168.20.14
 GATEWAY=192.168.20.1
 # Debian 13 like the laptop runner it replaces: the same apt Ansible.
 TEMPLATE=debian-13-standard_13.6-1_amd64.tar.zst
+# The workflows check this exact version (step "Check Terraform"); the laptop runner has it from apt.
+TF_VERSION=1.16.3
 RUNNER_NAME=homelab-prod-ci-runner
 RUNNER_DIR=/home/runner/actions-runner
+# The jobs' PATH (.path). config.sh copies the PATH it ran with, and pct exec gives /sbin:/bin:/usr/sbin:/usr/bin,
+# without /usr/local/bin where terraform lives.
+RUNNER_PATH=/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin
 LIB=/usr/local/lib/homelab
 
 # Runs inside the container as root: the host part streams this file to `bash -s -- --inside`.
@@ -57,6 +62,16 @@ table inet filter {
   }
 }
 EOF
+  # Terraform once here, not per job: the setup-terraform download stalled again and again.
+  if [[ "$(/usr/local/bin/terraform version 2>/dev/null | head -1)" != "Terraform v${TF_VERSION}" ]]; then
+    local t z="terraform_${TF_VERSION}_linux_amd64.zip"
+    t="$(mktemp -d)"
+    curl -fsSL --max-time 300 -o "$t/$z" "https://releases.hashicorp.com/terraform/${TF_VERSION}/$z"
+    curl -fsSL --max-time 60 -o "$t/SHA256SUMS" "https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_SHA256SUMS"
+    (cd "$t" && grep " $z\$" SHA256SUMS | sha256sum -c --quiet -)
+    unzip -o -q "$t/$z" terraform -d /usr/local/bin
+    rm -rf "$t"
+  fi
   systemctl enable -q nftables
   systemctl restart nftables
   id runner >/dev/null 2>&1 || useradd --create-home --shell /bin/bash runner
@@ -79,6 +94,9 @@ check_inside() {
     command -v "$t" >/dev/null && echo "ok   tool $t" || { echo "FAIL tool $t"; rc=1; }
   done
   python3 -c 'import yaml' && echo "ok   python3-yaml" || { echo "FAIL python3-yaml"; rc=1; }
+  # With the jobs' own PATH; a missing terraform must report FAIL, not end the checks.
+  t="$(env -i PATH="$(cat "$RUNNER_DIR/.path" 2>/dev/null)" terraform version 2>/dev/null | head -1)" || true
+  [[ "$t" == "Terraform v${TF_VERSION}" ]] && echo "ok   $t" || { echo "FAIL terraform: '${t:-missing}', want v${TF_VERSION}"; rc=1; }
   # With the runner service's own LANG: a locale the container lacks stops every Ansible step.
   t="$(sed -n 's/^LANG=//p' "$RUNNER_DIR/.env" 2>/dev/null)"
   if env -i PATH=/usr/bin:/bin LANG="$t" ansible --version >/dev/null 2>&1; then echo "ok   ansible runs with LANG=$t"; else echo "FAIL ansible with the runner's LANG='$t'"; rc=1; fi
@@ -136,9 +154,9 @@ else
     ct runuser -u runner -- env RUNNER_INSTALL_DIR="$RUNNER_DIR" GITHUB_REPO="$REPO" \
       bash "$LIB/setup-github-runner.sh" --label homelab-prod --name "$RUNNER_NAME" --token-stdin
 fi
-# config.sh copies LANG from the shell that ran it (here the laptop's, through ssh). The container
-# has only C.UTF-8, and ansible-core 2.19 stops on a locale it does not have.
-ct bash -c "cd $RUNNER_DIR && { test -f .service || ./svc.sh install runner; } && { grep -qx LANG=C.UTF-8 .env || { echo LANG=C.UTF-8 >.env && ./svc.sh stop >/dev/null; }; } && ./svc.sh start >/dev/null && chmod 600 .credentials .credentials_rsaparams"
+# config.sh copies LANG and PATH from the shell that ran it (here the laptop's LANG, through ssh, and
+# pct exec's PATH). The container has only C.UTF-8, which ansible-core 2.19 needs; PATH see RUNNER_PATH.
+ct bash -c "cd $RUNNER_DIR && { test -f .service || ./svc.sh install runner; } && { grep -qx LANG=C.UTF-8 .env && grep -qx $RUNNER_PATH .path || { echo LANG=C.UTF-8 >.env && echo $RUNNER_PATH >.path && ./svc.sh stop >/dev/null; }; } && ./svc.sh start >/dev/null && chmod 600 .credentials .credentials_rsaparams"
 
 echo "== checks"
 rc=0

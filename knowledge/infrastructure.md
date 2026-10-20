@@ -38,6 +38,8 @@ Start the DEV runner: `sudo ./svc.sh start` in `~/actions-runner-homelab`. Witho
 
 The prod runner container is built and converged by `utils/pve-ci-runner-lxc.sh` (`--dry-run` first), outside the prod Terraform state: an apply that replaced its own runner would end the job half way. Unprivileged Debian 13, no SSH server (`pct enter 110` on the host), nftables drops all inbound traffic, the runner runs as user `runner` without sudo.
 
+Terraform is installed on both runners, not downloaded per job: the laptop has the apt package `terraform`, `ci-runner` gets the release zip (SHA256-checked) into `/usr/local/bin` from `utils/pve-ci-runner-lxc.sh`, which also keeps `/usr/local/bin` in the runner's job `PATH` (`.path`) and `LANG=C.UTF-8` in its `.env`: `config.sh` copies both from the shell that registered it. Each workflow's `Check Terraform` step fails when the runner's version is not the one it expects (1.16.3). To upgrade, change `TF_VERSION` in the script, the version in every `Check Terraform` step and the laptop package together. The HCP token reaches Terraform as `TF_TOKEN_app_terraform_io` in the Terraform steps only.
+
 ## Related
 
 - [`docs/dev-proxmox.md`](../docs/dev-proxmox.md)
