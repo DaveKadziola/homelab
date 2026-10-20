@@ -79,6 +79,9 @@ check_inside() {
     command -v "$t" >/dev/null && echo "ok   tool $t" || { echo "FAIL tool $t"; rc=1; }
   done
   python3 -c 'import yaml' && echo "ok   python3-yaml" || { echo "FAIL python3-yaml"; rc=1; }
+  # With the runner service's own LANG: a locale the container lacks stops every Ansible step.
+  t="$(sed -n 's/^LANG=//p' "$RUNNER_DIR/.env" 2>/dev/null)"
+  if env -i PATH=/usr/bin:/bin LANG="$t" ansible --version >/dev/null 2>&1; then echo "ok   ansible runs with LANG=$t"; else echo "FAIL ansible with the runner's LANG='$t'"; rc=1; fi
   t="$(ss -Htln | awk '$4 !~ /^(127\.|\[::1\])/ {print $4}' | paste -sd' ')"
   if [[ -n "$t" ]]; then echo "FAIL listening beyond loopback: $t"; rc=1; else echo "ok   nothing listens beyond loopback"; fi
   return "$rc"
@@ -133,7 +136,9 @@ else
     ct runuser -u runner -- env RUNNER_INSTALL_DIR="$RUNNER_DIR" GITHUB_REPO="$REPO" \
       bash "$LIB/setup-github-runner.sh" --label homelab-prod --name "$RUNNER_NAME" --token-stdin
 fi
-ct bash -c "cd $RUNNER_DIR && { test -f .service || ./svc.sh install runner; } && ./svc.sh start >/dev/null && chmod 600 .credentials .credentials_rsaparams"
+# config.sh copies LANG from the shell that ran it (here the laptop's, through ssh). The container
+# has only C.UTF-8, and ansible-core 2.19 stops on a locale it does not have.
+ct bash -c "cd $RUNNER_DIR && { test -f .service || ./svc.sh install runner; } && { grep -qx LANG=C.UTF-8 .env || { echo LANG=C.UTF-8 >.env && ./svc.sh stop >/dev/null; }; } && ./svc.sh start >/dev/null && chmod 600 .credentials .credentials_rsaparams"
 
 echo "== checks"
 rc=0
