@@ -63,6 +63,8 @@ Management is `vmbr0.20` = **`192.168.20.20/24`**, gateway `.20.1`. The switch p
 
 Host names come from **AdGuard Home rewrites** on OPNsense (`/usr/local/AdGuardHome/AdGuardHome.yaml`, `filtering.rewrites`): `proxmox.dkhomelabserver.xyz` -> `.20.20`, `hass.dkhomelabserver.xyz` -> `.20.13` (moved from `.20.20` on 2026-10-19), `adguard.` -> `192.168.1.1`, `ap.` -> `.1.3`, `switch.` -> `.1.2`; `npm.` disabled (NPM removed); `nas.dkhomelabserver.xyz` -> `192.168.20.12` (Samba clients, `\\nas.dkhomelabserver.xyz\share`, added 2026-10-19). `grocery.dkhomelabserver.xyz` -> `192.168.100.2` (2026-10-20): HAProxy listens on the OPNsense WAN address, and the ISP router in front does no hairpin NAT, so from home the public answer `77.252.246.65` timed out.
 
+Plain DNS cannot bypass AdGuard: port forwards on LAN (`igc2`), IOT (`vlan03`), GUEST (`vlan04`), VPN (`vlan05`), DMZ (`vlan06`) and APP (`vlan07`) send TCP/UDP 53 for any address outside the `CommonDNS` alias to the router's own address on that interface (`pfctl -sn`, 2026-10-20). `dig @1.1.1.1` from home therefore shows the AdGuard rewrites, not the public records; check those over DNS over HTTPS, e.g. `curl -H 'accept: application/dns-json' 'https://cloudflare-dns.com/dns-query?name=grocery.dkhomelabserver.xyz&type=A'` (public: `77.252.246.65`).
+
 ---
 
 ## Cross-VLAN firewall (F2)
