@@ -123,7 +123,7 @@ def desired_monitors(env, services, monitoring, profiles, push_secret, notificat
     def put(name, fields):
         if PREFIX + name in out:
             raise Stop(f"monitor name {name} is declared twice")
-        out[PREFIX + name] = {**fields, "notificationIDList": [notification_id]}
+        out[PREFIX + name] = {**fields, "notificationIDList": [notification_id] if notification_id else []}
 
     def http(url, ignore_tls):
         return {"type": "http", "url": url, "ignoreTls": ignore_tls, "accepted_statuscodes": HTTP_OK, **CHECK}
@@ -278,10 +278,15 @@ def sync(env, dry_run):
     smtp = monitoring["environments"][env]["smtp"]
     user = password = None
     if smtp["security"] != "none":
-        user, password = secret(env, "SMTP_USERNAME"), secret(env, "SMTP_PASSWORD")
+        user, password = secret(env, "SMTP_USERNAME", False), secret(env, "SMTP_PASSWORD", False)
     admin_password = secret_or_generate(env, "KUMA_ADMIN_PASSWORD", dry_run)
     push_secret = secret_or_generate(env, "KUMA_PUSH_SECRET", dry_run)
-    mail = smtp_notification(env, monitoring, identities, user, password)
+    # Monitors are worth having before the relay exists; the mail notification waits for its login.
+    mail = None
+    if smtp["security"] == "none" or (user and password):
+        mail = smtp_notification(env, monitoring, identities, user, password)
+    else:
+        print(f"warn {MAIL}: SMTP_USERNAME/SMTP_PASSWORD missing - monitors without mail", file=sys.stderr)
     profiles = enabled_profiles(env, os.environ, services)
 
     monitors, notifications, desired = [], [], {}
@@ -299,16 +304,18 @@ def sync(env, dry_run):
                 monitors, notifications = api.get_monitors(), api.get_notifications()
 
         current = next((n for n in notifications if n.get("name") == MAIL), None)
-        changed = changed_fields(current, mail) if current else []
-        print(line("create" if not current else "update" if changed else "ok", MAIL, changed))
         notification_id = current["id"] if current else None
-        if not dry_run and (not current or changed):
+        changed = changed_fields(current, mail) if current and mail else []
+        if mail:
+            print(line("create" if not current else "update" if changed else "ok", MAIL, changed))
+        if mail and not dry_run and (not current or changed):
             # Raw call: 1.2.1 rejects SMTP options newer than Kuma 1.23 (smtpIgnoreSTARTTLS).
             keep = {k: v for k, v in (current or {}).items() if k not in ("id", "user_id", "is_default")}
             r = api._call("addNotification", ({**keep, **mail, "applyExisting": False}, notification_id))
             notification_id = r["id"]
 
-        desired = desired_monitors(env, services, monitoring, profiles, push_secret, notification_id or -1)
+        desired = desired_monitors(env, services, monitoring, profiles, push_secret,
+                                   notification_id or (-1 if mail and dry_run else None))
         existing = {m["name"]: m for m in monitors if str(m.get("name", "")).startswith(PREFIX)}
         for action, name, fields in plan(desired, existing):
             print(line(action, name, fields))

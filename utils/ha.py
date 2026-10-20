@@ -152,9 +152,9 @@ def ws_call(url, token, msg, timeout=30):
                 raise Stop("websocket: connection closed")
             buf[0] += chunk
 
-    def recv():
+    def frame():
         need(2)
-        n, off = buf[0][1] & 0x7F, 2
+        op, n, off = buf[0][0] & 0x0F, buf[0][1] & 0x7F, 2
         if n == 126:
             need(4)
             n, off = int.from_bytes(buf[0][2:4], "big"), 4
@@ -163,7 +163,18 @@ def ws_call(url, token, msg, timeout=30):
             n, off = int.from_bytes(buf[0][2:10], "big"), 10
         need(off + n)
         payload, buf[0] = buf[0][off:off + n], buf[0][off + n:]
-        return json.loads(payload)
+        return op, payload
+
+    def recv():
+        # HA pings about every 55 s; an unanswered ping drops the connection mid-backup.
+        while True:
+            op, payload = frame()
+            if op == 0x9:
+                sock.sendall(ws_frame(payload, os.urandom(4), opcode=0xA))
+            elif op == 0x8:
+                raise Stop("websocket: closed by Home Assistant")
+            elif op == 0x1:
+                return json.loads(payload)
 
     def send(obj):
         sock.sendall(ws_frame(json.dumps(obj).encode(), os.urandom(4)))
@@ -187,9 +198,10 @@ def ws_call(url, token, msg, timeout=30):
     return r.get("result")
 
 
-def ws_frame(payload, mask):
+def ws_frame(payload, mask, opcode=0x1):
     n = len(payload)
-    head = bytes([0x81, 0x80 | n]) if n < 126 else bytes([0x81, 0x80 | 126]) + n.to_bytes(2, "big")
+    fin = 0x80 | opcode
+    head = bytes([fin, 0x80 | n]) if n < 126 else bytes([fin, 0x80 | 126]) + n.to_bytes(2, "big")
     return head + mask + bytes(b ^ mask[i % 4] for i, b in enumerate(payload))
 
 
@@ -497,7 +509,9 @@ def cmd_backup(args):
     return 0
 
 
-def ensure_addon(api, slug, options, dry_run, network=None):
+def ensure_addon(api, slug, options, dry_run, network=None, start=True):
+    """Install, configure and run an add-on. start=False: install only and leave a stopped add-on
+    stopped (an unclaimed Uptime Kuma makes its first visitor the admin)."""
     info = None
     try:
         info = api.supervisor("GET", f"/addons/{slug}/info")
@@ -509,6 +523,9 @@ def ensure_addon(api, slug, options, dry_run, network=None):
             return
         api.supervisor("POST", f"/store/addons/{slug}/install", timeout=1800)
         info = api.supervisor("GET", f"/addons/{slug}/info")
+    if not start and info.get("state") != "started":
+        print(f"{slug}: installed, left stopped - start it right before utils/kuma-sync.py claims it")
+        return
     changed = False
     if options is not None:
         merged = {**info.get("options", {}), **options}
@@ -600,7 +617,9 @@ def cmd_bootstrap(args):
             if a.get("name") == "Uptime Kuma"]
     if not kuma:
         raise Stop("Uptime Kuma is not in the add-on store (Home Assistant Community Add-ons repository)")
-    ensure_addon(api, kuma[0], None, args.dry_run)
+    # DEV: the twin is claimed by kuma-sync in the same session. Prod: a started Kuma is claimed;
+    # a fresh one stays stopped until the owner runs the two commands in knowledge/monitoring.md.
+    ensure_addon(api, kuma[0], None, args.dry_run, start=args.env == "dev")
     print("bootstrap done" if not args.dry_run else "dry run - nothing changed")
     return 0
 
@@ -639,6 +658,7 @@ def self_test():
     assert bytes(b ^ frame[2:6][i % 4] for i, b in enumerate(frame[6:])) == b"hi"
     big = ws_frame(b"x" * 300, b"\0\0\0\0")
     assert big[1] == 0x80 | 126 and int.from_bytes(big[2:4], "big") == 300
+    assert ws_frame(b"p", b"\0\0\0\0", opcode=0xA)[0] == 0x8A
 
     os.environ.pop("HA_TEST_SECRET", None)
     with tempfile.TemporaryDirectory() as d:

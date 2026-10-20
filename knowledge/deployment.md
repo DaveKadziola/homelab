@@ -11,10 +11,12 @@ Manual DEV deploy from the laptop:
 
 ```bash
 export HOMELAB_ENV=dev
-export COMPOSE_PROFILES=auth,media,devmail
+# No COMPOSE_PROFILES: config/services.yml environments.dev.profiles decides, as in CI.
 export LINKWARDEN_URL=http://192.168.122.50:3001
+export JELLYFIN_URL=http://192.168.122.50:8096
 while IFS= read -r f; do
-  export "$(basename "$f")=$(tr -d '\r\n' < "$f")"
+  # $(<file) keeps inner newlines (SSH keys, RCLONE_CONFIG); only the final one goes.
+  export "$(basename "$f")=$(<"$f")"
 done < <(find ~/.homelab-secrets/dev -type f)
 
 ansible-playbook -i ansible/environments/dev/hosts.ini ansible/playbooks/deploy-core.yml

@@ -4,8 +4,8 @@
 #
 #   api            the API answers to HA_TOKEN
 #   config         the core config check is valid
-#   revision       sensor.homelab_config_revision holds a commit of this repository, i.e.
-#                  homeassistant/packages was deployed and loaded
+#   revision       sensor.homelab_config_revision names the deployed commit, and its
+#                  homeassistant/packages equal this checkout's
 #   addon-<slug>   Terminal & SSH and Uptime Kuma are started
 #
 # Read-only. SKIP without HA_TOKEN (prod until the owner created it).
@@ -35,11 +35,18 @@ else
   report FAIL "config" "$(tr '\n' ' ' <"$HL_TMP/ha-check.out")"
 fi
 
+# The deployed packages must equal this checkout's homeassistant/packages. CI checkouts are shallow:
+# fetch the deployed commit when it is missing, SKIP when even that fails.
 rev="$(jq -r '.revision // ""' <<<"$status_json")"
-if [[ "$rev" =~ ^[0-9a-f]{40}$ ]] && git -C "$HL_REPO_ROOT" merge-base --is-ancestor "$rev" HEAD 2>/dev/null; then
-  report PASS "revision" "packages from ${rev:0:12} loaded"
+git_() { git -C "$HL_REPO_ROOT" "$@"; }
+if [[ ! "$rev" =~ ^[0-9a-f]{40}$ ]]; then
+  report FAIL "revision" "sensor.homelab_config_revision is '${rev:-missing}' (utils/ha.py --env $HL_ENV deploy)"
+elif ! git_ cat-file -e "${rev}^{commit}" 2>/dev/null && ! git_ fetch -q --depth=1 origin "$rev" 2>/dev/null; then
+  report SKIP "revision" "deployed commit ${rev:0:12} is not in this checkout and cannot be fetched"
+elif git_ diff --quiet "$rev" HEAD -- homeassistant/packages; then
+  report PASS "revision" "packages of ${rev:0:12} loaded, same as this checkout"
 else
-  report FAIL "revision" "sensor.homelab_config_revision is '${rev:-missing}', not a commit of this checkout (utils/ha.py --env $HL_ENV deploy)"
+  report FAIL "revision" "Home Assistant runs the packages of ${rev:0:12}; homeassistant/packages changed since (deploy pending?)"
 fi
 
 for slug in core_ssh a0d7b954_uptime-kuma; do

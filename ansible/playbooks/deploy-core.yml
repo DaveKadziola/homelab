@@ -157,6 +157,7 @@
             owner: "{{ ansible_user }}"
             group: docker
             mode: "0644"
+          notify: Restart authelia
 
         # Session cookie domain and access rules for this env, from config/services.yml.
         - name: Write the Authelia access rules
@@ -367,6 +368,10 @@
         chdir: "{{ compose_dest }}"
       register: compose_up
       changed_when: "'Started' in compose_up.stderr or 'Created' in compose_up.stderr or 'Running' in compose_up.stderr or compose_up.rc == 0"
+
+    # Now, not at the end of the play: a later failure (bootstrap) would drop the restarts.
+    - name: Restart what changed config needs before the bootstrap
+      ansible.builtin.meta: flush_handlers
 
 
     # Grocery (rebuild drill 2026-10-19): the image is never pushed to a registry and the

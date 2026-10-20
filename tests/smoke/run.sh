@@ -170,11 +170,14 @@ if [[ ",$ENABLED_PROFILES," != *",proxy,"* ]]; then
   exit 0
 fi
 auth="auth.${HL_DOMAIN}"
-# -k: DEV serves Caddy's internal CA. Prints "<code> <redirect location>".
+# DEV serves Caddy's internal CA, so only DEV skips the certificate check; prod is a public CA.
+insecure=()
+[[ "$HL_ENV" == dev ]] && insecure=(-k)
+# Prints "<code> <redirect location>".
 probe() {
   local name="$1" path="${2:-/}" scheme="${3:-https}" port=443
   [[ "$scheme" == http ]] && port=80
-  curl -sk -o /dev/null --max-time "$HL_HTTP_TIMEOUT" --resolve "${name}:${port}:${HL_HOST}" \
+  curl -s "${insecure[@]}" -o /dev/null --max-time "$HL_HTTP_TIMEOUT" --resolve "${name}:${port}:${HL_HOST}" \
     -w '%{http_code} %{redirect_url}' "${@:4}" "${scheme}://${name}${path}"
 }
 first="$(python3 "$HL_REPO_ROOT/utils/gen-proxy-config.py" --env "$HL_ENV" --file list --profiles "$ENABLED_PROFILES" | head -1 | cut -f1)"
@@ -220,7 +223,7 @@ else
   jar="$HL_TMP/authelia.jar"
   body="$(python3 -c 'import json,sys; print(json.dumps({"username": "admin", "password": sys.stdin.read().rstrip("\n"), "keepMeLoggedIn": False}))' <<<"$password")"
   unset password
-  login="$(printf '%s' "$body" | curl -sk -o /dev/null --max-time "$HL_HTTP_TIMEOUT" --resolve "${auth}:443:${HL_HOST}" \
+  login="$(printf '%s' "$body" | curl -s "${insecure[@]}" -o /dev/null --max-time "$HL_HTTP_TIMEOUT" --resolve "${auth}:443:${HL_HOST}" \
     -c "$jar" -H 'Content-Type: application/json' --data @- -w '%{http_code}' "https://${auth}/api/firstfactor")"
   read -r code loc <<<"$(probe "omni-tools.${HL_DOMAIN}" / https -b "$jar")"
   if [[ "$login" == 200 && "$code" == 200 ]]; then

@@ -27,6 +27,10 @@ utils/kuma-sync.py --setup-venv          # once: venv ~/.local/share/homelab/kum
 ```
 
 - Only monitors named `homelab:...` are touched; anything else in Kuma is left alone.
+- Profiles come from `config/services.yml` `environments.<env>.profiles`. Prod runs `auth` and `proxy`
+  only with `CLOUDFLARE_API_TOKEN`; until then sync prod with `COMPOSE_PROFILES=media,beszel-agent`,
+  or Kuma watches an Authelia and a Caddy that do not run.
+- Without `SMTP_USERNAME`/`SMTP_PASSWORD` the sync still sets up the monitors, without the mail.
 - Push token of a stream = first 24 hex characters of `sha256("<KUMA_PUSH_SECRET>:<stream>")`; the NAS
   gets `KUMA_PUSH_SECRET` from the deploy. A push monitor's heartbeat is the stream's max age, so a NAS
   that stops pushing also alerts.
@@ -34,7 +38,12 @@ utils/kuma-sync.py --setup-venv          # once: venv ~/.local/share/homelab/kum
   written for 1.23: the script waits for Kuma's first `info` event before any call (earlier requests
   are dropped), sends `conditions: []` on create (NOT NULL in 2.x) and writes the SMTP notification
   itself. Review the script before upgrading the library or the add-on.
-- Login `admin` / `KUMA_ADMIN_PASSWORD`; a fresh Kuma is set up (SQLite, admin) by the first sync.
+- Login `admin` / `KUMA_ADMIN_PASSWORD`; a fresh Kuma is set up (SQLite, admin) by the first sync. An
+  unclaimed Kuma makes its first visitor the admin, so on prod the deploy installs the add-on and
+  leaves it stopped; claim it from the laptop in one go:
+  `utils/ha.py --env prod call hassio.addon_start --data '{"addon": "a0d7b954_uptime-kuma"}'` and
+  right after it `~/.local/share/homelab/kuma-venv/bin/python utils/kuma-sync.py --env prod`. The next
+  deploy sees it started and keeps it running at boot.
 - Kuma runs on the T620, so a dead T620, router or uplink sends nothing (accepted, decision 0006).
 
 ## Backup freshness by hand
