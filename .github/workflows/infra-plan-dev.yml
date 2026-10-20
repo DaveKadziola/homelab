@@ -1,15 +1,19 @@
 name: Infra Plan Dev
 
-# Push only: the dev environment's protection rules reject pull request refs
-# (refs/pull/N/merge), so a pull_request trigger can never run this job.
+# On pull requests to homelab-v2, so the plan is seen before the merge; Infra Apply Dev runs on the
+# push after it. Both used to start on the same push and the plan often ran after the apply, so it
+# always showed "No changes". Environment dev-plan, not dev: dev allows only homelab-v2 and rejects
+# pull request refs (refs/pull/N/merge). dev-plan holds a read-only (PVEAuditor) token -
+# docs/dev-proxmox.md "PR plan".
 on:
-  push:
+  pull_request:
     branches: [homelab-v2]
+  workflow_dispatch:
 
 jobs:
   plan:
     runs-on: [self-hosted, homelab-dev]
-    environment: dev
+    environment: dev-plan
     env:
       TF_WORKSPACE: homelab-dev
     steps:
@@ -35,11 +39,13 @@ jobs:
           TF_VAR_proxmox_api_token_id: ${{ vars.PROXMOX_API_TOKEN_ID }}
           TF_VAR_proxmox_api_token_secret: ${{ secrets.PROXMOX_API_TOKEN_SECRET }}
           TF_VAR_proxmox_ssh_username: ${{ vars.PROXMOX_SSH_USERNAME }}
-          TF_VAR_proxmox_ssh_password: ${{ secrets.PROXMOX_SSH_PASSWORD }}
+          # Plan does not connect over SSH, but the provider rejects an empty password.
+          TF_VAR_proxmox_ssh_password: unused-by-plan
           TF_VAR_ubuntu_docker_password: ${{ secrets.UBUNTU_DOCKER_PASSWORD }}
           TF_VAR_ubuntu_docker_ssh_pub: ${{ vars.UBUNTU_DOCKER_SSH_PUB }}
         run: |
           terraform init -input=false
-          terraform plan -input=false \
-            -var-file=environments/dev/terraform.tfvars \
-            -out=environments/dev/plan.tfplan
+          # No lock: a plan writes no state and must never block Infra Apply Dev. No refresh: the
+          # read-only token cannot read VM disks (VM.Config.Disk) - same as Infra Plan Prod.
+          terraform plan -input=false -lock=false -refresh=false \
+            -var-file=environments/dev/terraform.tfvars

@@ -10,7 +10,8 @@ Usage:
   printf '%s' "$v" | utils/bw-store.py --env prod --stdin NAME
                                                  write the cache file (mode 600) first, then store
   utils/bw-store.py --pending                    store what was queued while the vault was locked
-  utils/bw-store.py --env dev|prod|prod-plan|all every cache value of the environment(s)
+  utils/bw-store.py --env dev|dev-plan|prod|prod-plan|all
+                                                 every cache value of the environment(s)
   add --dry-run to print the actions without writing; --self-test runs the built-in checks
 
 Bitwarden is used when it is unlocked in the same shell (export BW_SESSION="$(bw unlock --raw)").
@@ -36,7 +37,7 @@ from pathlib import Path
 CACHE = Path.home() / ".homelab-secrets"
 QUEUE = CACHE / ".bw-pending"
 FOLDER = "homelab"
-ENVS = ("dev", "prod", "prod-plan")
+ENVS = ("dev", "dev-plan", "prod", "prod-plan")
 NAME_RE = re.compile(r"^[A-Z][A-Z0-9_]*$")
 FLUSH_HINT = 'export BW_SESSION="$(bw unlock --raw)" && utils/bw-store.py --pending'
 

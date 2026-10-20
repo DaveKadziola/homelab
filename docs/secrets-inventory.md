@@ -21,7 +21,7 @@ Helper scripts:
 
 | Column | Meaning |
 |--------|---------|
-| **GH env** | `dev` \| `prod` \| `prod-plan` (PR plan only, [f3-proxmox.md](f3-proxmox.md) "PR plan") \| `repo` \| — (not in GH) |
+| **GH env** | `dev` \| `dev-plan` (PR plan only, [dev-proxmox.md](dev-proxmox.md) "PR plan") \| `prod` \| `prod-plan` (PR plan only, [f3-proxmox.md](f3-proxmox.md) "PR plan") \| `repo` \| — (not in GH) |
 | **Type** | `secret` \| `variable` |
 | **Status** | `planned` \| `set` \| `N/A` |
 | **Bitwarden** | path in Password Manager |
@@ -37,6 +37,9 @@ Helper scripts:
 | `PROXMOX_API_TOKEN_SECRET` | dev | secret | `homelab/PROXMOX_API_TOKEN_SECRET/dev` | set | placeholder — update at F3 |
 | `PROXMOX_API_TOKEN_SECRET` | prod | secret | `homelab/PROXMOX_API_TOKEN_SECRET/prod` | set | placeholder — update at F3 |
 | `PROXMOX_API_TOKEN_SECRET` | prod-plan | secret | `homelab/PROXMOX_API_TOKEN_SECRET/prod-plan` | set | read-only token `homelab-prod@pam!plan` (`PVEAuditor`); `~/.homelab-secrets/prod-plan/` |
+| `PROXMOX_API_TOKEN_SECRET` | dev-plan | secret | `homelab/PROXMOX_API_TOKEN_SECRET/dev-plan` | set | read-only token `root@pam!plan` on the nested DEV PVE (`PVEAuditor`); `~/.homelab-secrets/dev-plan/` |
+| `TF_API_TOKEN`, `UBUNTU_DOCKER_PASSWORD` | dev-plan | secret | as in dev | set | `UBUNTU_DOCKER_PASSWORD`: the same SHA-512 hash as dev, or the plan shows the snippet as changed |
+| `PROXMOX_API_TOKEN_ID`, `PROXMOX_API_URL`, `PROXMOX_SSH_USERNAME`, `UBUNTU_DOCKER_SSH_PUB` | dev-plan | variable | — | set | `root@pam!plan`; the rest copied from dev |
 | `PROXMOX_SSH_PASSWORD` | dev | secret | `homelab/PROXMOX_SSH_PASSWORD/dev` | set | placeholder |
 | `PROXMOX_SSH_PASSWORD` | prod | secret | `homelab/PROXMOX_SSH_PASSWORD/prod` | set | placeholder |
 | `UBUNTU_DOCKER_PASSWORD` | dev | secret | `homelab/UBUNTU_DOCKER_PASSWORD/dev` | set | F1 |
