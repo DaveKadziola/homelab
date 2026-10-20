@@ -11,7 +11,8 @@ Create on Proxmox:
 | VM | IP | Role |
 |----|-----|------|
 | `ubuntu-nas-prod` | `192.168.20.12` | NFS (no Docker) |
-| `ubuntu-apps-prod` | `192.168.50.30` | Docker + **homelab-prod** runner |
+| `ubuntu-apps-prod` | `192.168.50.30` | Docker |
+| `ci-runner` (LXC 110, not Terraform) | `192.168.20.14` | **homelab-prod** runner |
 
 Host mgmt stays **`192.168.20.20/24`** on `vmbr0.20`, static on the host from `config/pve/interfaces.prod` (Bare-metal install below; later changes with `./utils/pve-network.py --env prod`). OPNsense keeps a DHCP static map for its MAC (`docs/network.md`).
 
@@ -25,9 +26,9 @@ Host mgmt stays **`192.168.20.20/24`** on `vmbr0.20`, static on the host from `c
 | F3-02 | API token `homelab-prod@pam!terraform` (done 2026-10-19) | `pveum` on the host, see below |
 | F3-03 | Host post-install (pve-no-subscription, no subscription notice, HA off on one node), GH prod variable `PROXMOX_API_URL` | `./utils/bootstrap-f3-proxmox.sh --dry-run`, then `--upgrade` |
 | F3-04 | `terraform plan` | `./utils/f3-proxmox-preflight.sh` then plan |
-| F3-05 | `terraform apply` on `main` | `infra-apply-prod.yml` (needs prod runner — chicken/egg) |
+| F3-05 | `terraform apply` on `main` | `infra-apply-prod.yml` (needs the prod runner, F3-07) |
 | F3-06 | DHCP static for VM MACs on OPNsense | after first boot |
-| F3-07 | Install `homelab-prod` runner on `ubuntu-apps` | `setup-github-runner.sh` |
+| F3-07 | `homelab-prod` runner in the LXC `ci-runner` on the host | `./utils/pve-ci-runner-lxc.sh --dry-run`, then without |
 | F3-08 | Update `docs/network.md` MAC column | F2-07 |
 
 ---
@@ -107,7 +108,7 @@ Purple (`/srv/purple/backups`, `knowledge/backup.md`) or on the laptop (the `tar
 6. `PVE_KEY="$KEY" ./utils/bootstrap-f3-proxmox.sh --upgrade` (first with `--dry-run`) switches apt to
    `pve-no-subscription`, hides the subscription notice, turns HA off on the single node, upgrades the
    packages (reboot if it prints `REBOOT NEEDED`) and enables `snippets` on `local`; the API URL does
-   not change. Then start the temporary laptop runner (Bootstrap order step 2) and re-run
+   not change. Then create the runner container (Bootstrap order step 2) and re-run
    `Infra Apply Prod` with workflow_dispatch. Continue with `knowledge/rebuild.md` step 3 (attach the
    NAS disks with `utils/pve-attach-nas-disks.sh`, never `nas_wipe`) through step 9. Bootstrap order
    steps 3-4 are for the first install only: the NAS disks already hold data.
@@ -126,15 +127,14 @@ Legacy VMs on Proxmox with the same **vmid** or names must be **stopped and dest
 
 Prod is built from `main` only (owner, 2026-10-19): `Infra Apply Prod` on a push to `main`, then
 `Apps Deploy Prod` after it (`workflow_run`), both in the GitHub environment `prod` that needs the
-owner's approval. The prod runner lives on `ubuntu-apps`, which does not exist before the first
-apply, so the first run uses a temporary runner on the laptop:
+owner's approval. The prod runner is an LXC container on the host, made by a script and not by
+Terraform, so it exists before the first apply:
 
 1. `./utils/bootstrap-f3-proxmox.sh --upgrade` (post-install, API URL, `snippets` on datastore `local`).
-2. Temporary runner: `RUNNER_INSTALL_DIR=~/actions-runner-homelab-prod ./utils/setup-github-runner.sh --label homelab-prod --name homelab-prod-laptop-bootstrap`, started with `./run.sh`.
+2. Runner: `./utils/pve-ci-runner-lxc.sh --dry-run`, then without `--dry-run` (CT 110 `ci-runner`, `192.168.20.14`, registered as `homelab-prod-ci-runner`).
 3. Tag the old `main` as `legacy-pre-v2`, open the PR `homelab-v2` -> `main` (`Infra Plan Prod` runs the plan), merge, approve `Infra Apply Prod`.
 4. Attach and format the NAS disks as in [`knowledge/storage.md`](../knowledge/storage.md#attach-and-format-run-order), never in CI.
 5. Approve `Apps Deploy Prod` (or re-run it with workflow_dispatch after step 4).
-6. Permanent runner on `ubuntu-apps` (`setup-github-runner.sh --label homelab-prod`), then remove the laptop runner (`./config.sh remove`).
 
 ---
 

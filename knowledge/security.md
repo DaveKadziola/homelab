@@ -30,6 +30,12 @@ Generator: `utils/gen-app-credentials.sh` → GH Environment secret + `~/.homela
 | SSH | Key-only to the apps guest. Root on the prod Proxmox host: own laptop key `~/.ssh/homelab_prod_pve_ed25519` since 2026-10-20; the DEV key `~/.ssh/homelab_dev_ed25519` (also GH `dev` `UBUNTU_DOCKER_SSH_PRIV`, an environment without reviewer) no longer logs in there. Lost key: console login with the root password |
 | TLS | Authelia self-signed on `:9091`. Public grocery ACME is a prod HAProxy job. |
 
+## CI on a public repository
+
+Workflows run on self-hosted runners inside the home network, so every `uses:` in `.github/workflows/` is pinned to a commit SHA with the version as a comment: a moved or hijacked tag cannot change what runs there. To update an action, take the commit of the new tag (`gh api repos/<owner>/<action>/commits/<tag> --jq .sha`) and replace the SHA and the comment in every workflow.
+
+Workflows from fork PRs wait for the owner's approval for every external contributor (`approval_policy: all_external_contributors`, 2026-10-20). Rulesets without bypass: `main` accepts changes only through a PR (0 approvals) and refuses force pushes and deletion; `homelab-v2` refuses force pushes and deletion.
+
 ## Known sharp edges (will be in F9)
 
 - Postgres `:5432` published on the apps host
