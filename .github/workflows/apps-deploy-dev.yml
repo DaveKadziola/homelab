@@ -8,6 +8,13 @@ on:
       - "ansible/**"
       - "config/storage.yml"
       - "config/identities.yml"
+      # The deploy builds the Caddyfile, Authelia rules, Homarr board and Beszel/backup config from these.
+      - "config/services.yml"
+      - "config/monitoring.yml"
+      - "utils/bootstrap/**"
+      - "utils/backup/**"
+      - "utils/gen-proxy-config.py"
+      - "utils/gen-homarr-board.sh"
       - "homeassistant/**"
       - "utils/ha.py"
       - "utils/dev-haos-vm.sh"
