@@ -55,6 +55,7 @@ Symptoms first. Root-cause write-ups go in [`lessons-learned.md`](lessons-learne
 |---------|--------|
 | Workflows queued forever | Runner `homelab-dev` offline → `sudo ./svc.sh start`. |
 | Config tests fail on `BESZEL_KEY` | It is `issued_by: beszel` — not required in GH until hub bootstrap. |
+| Setup Terraform hangs: the downloaded zip in `_work/_temp` stops 2-3 KB short of the full file, the socket to HashiCorp's CDN sits in `FIN-WAIT-1` (seen 2026-10-20 on the laptop and on `ci-runner`) | The step times out after 5 minutes; re-run the job. Root cause unknown: curl downloads of the same file from both hosts never stalled. |
 
 ## Network
 

@@ -187,8 +187,14 @@ ansible_check() {
   if [[ -z "${IMMICH_DB_PASSWORD:-}" && "$HL_ENV" == "dev" && -f "$HOME/.homelab-immich-db-dev-pass" ]]; then
     IMMICH_DB_PASSWORD="$(cat "$HOME/.homelab-immich-db-dev-pass")"
   fi
-  if [[ -z "${POSTGRES_PASSWORD:-}" ]]; then
-    report SKIP "ansible/check" "POSTGRES_PASSWORD is not available here — .env content cannot be compared"
+  # The secrets deploy-core.yml asserts, looked up as it does: environment, then the operator cache.
+  # The CI test job has only some of them; the laptop has the cache.
+  local name missing=()
+  for name in POSTGRES_PASSWORD HOMARR_SECRET_KEY LINKWARDEN_SECRET PGADMIN_PASSWORD; do
+    [[ -n "${!name:-}" || -s "$HOME/.homelab-secrets/$HL_ENV/$name" ]] || missing+=("$name")
+  done
+  if [[ ${#missing[@]} -gt 0 ]]; then
+    report SKIP "ansible/check" "${missing[*]} not available here — the playbook stops before .env can be compared"
     return
   fi
   # Same values the deploy workflows pass, taken from config/services.yml; without them the
@@ -208,7 +214,7 @@ ansible_check() {
   # Without HOMELAB_ENV the playbook takes dev (deploy-core.yml:19): on prod it then checked the
   # DEV profiles (auth) and failed on the Authelia tasks.
   HOMELAB_ENV="$HL_ENV" \
-    POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
+    POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-}" \
     IMMICH_DB_PASSWORD="${IMMICH_DB_PASSWORD:-}" \
     LINKWARDEN_URL="${LINKWARDEN_URL:-}" \
     JELLYFIN_URL="${JELLYFIN_URL:-}" \
