@@ -191,17 +191,27 @@ ansible_check() {
     report SKIP "ansible/check" "POSTGRES_PASSWORD is not available here — .env content cannot be compared"
     return
   fi
-  # Same value the deploy workflow passes, taken from config/services.yml.
+  # Same values the deploy workflows pass, taken from config/services.yml; without them the
+  # playbook renders its defaults (Jellyfin: the DEV address) and the .env differs on prod.
   if [[ -z "${LINKWARDEN_URL:-}" ]]; then
     local lw_port
     lw_port="$(hl_config services "$HL_ENV" | awk -v FS="$HL_FS" '$1=="linkwarden" {print $6}')"
     [[ -n "$lw_port" ]] && LINKWARDEN_URL="http://${HL_HOST}:${lw_port}"
   fi
+  if [[ -z "${JELLYFIN_URL:-}" ]]; then
+    local jf_port
+    jf_port="$(hl_config services "$HL_ENV" | awk -v FS="$HL_FS" '$1=="jellyfin" {print $6}')"
+    [[ -n "$jf_port" ]] && JELLYFIN_URL="http://${HL_HOST}:${jf_port}"
+  fi
 
   local log="$HL_ARTIFACTS/ansible-check-$HL_ENV.log"
-  POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
+  # Without HOMELAB_ENV the playbook takes dev (deploy-core.yml:19): on prod it then checked the
+  # DEV profiles (auth) and failed on the Authelia tasks.
+  HOMELAB_ENV="$HL_ENV" \
+    POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
     IMMICH_DB_PASSWORD="${IMMICH_DB_PASSWORD:-}" \
     LINKWARDEN_URL="${LINKWARDEN_URL:-}" \
+    JELLYFIN_URL="${JELLYFIN_URL:-}" \
     ansible-playbook -i "environments/$HL_ENV/hosts.ini" playbooks/deploy-core.yml \
     --check --diff >"$log" 2>&1
   local rc=$?
