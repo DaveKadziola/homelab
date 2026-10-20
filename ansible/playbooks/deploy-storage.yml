@@ -13,7 +13,7 @@
 # is never touched. nfs-server requires every mount, so a missing disk stops NFS
 # instead of exporting empty root-disk directories. DEV has no passthrough disks;
 # its exports live on the root fs.
-# Samba (st.samba): shares `share` and `media` for the homelab-admin login only.
+# Samba (st.samba): shares `share`, `media` and read-only `backups` for the homelab-admin login only.
 - name: Homelab storage — NFS server + Samba
   hosts: ubuntu_nas
   become: true
@@ -329,6 +329,15 @@
                  force user = {{ ansible_user }}
                  read only = no
                  veto files = /immich/.homelab-fs-*/lost+found/
+
+              # Read-only on purpose: a client with ransomware must not reach the only local
+              # backups. The session runs as homelab-smb, which owns nothing there either.
+              [backups]
+                 comment = Nightly backups, read-only (the apps host writes them over NFS)
+                 path = {{ st.export_root }}/backups
+                 valid users = {{ samba_unix_user }}
+                 read only = yes
+                 veto files = /.homelab-fs-*/
           notify: Restart smbd
 
         - name: Start smbd, keep nmbd off

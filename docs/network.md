@@ -79,6 +79,8 @@ Host names come from **AdGuard Home rewrites** on OPNsense (`/usr/local/AdGuardH
 
 **DNS rule of thumb:** a client must use the router address **on its own VLAN** as resolver (APP: `192.168.50.50`, IOT: `.20.1`, LAN: `.1.1`). AdGuard answers a UDP query sent to another VLAN's router address from its own VLAN's address, and the client drops it.
 | WAN | WAN address | 443 | HAProxy → Grocery (F2-05 / F4) |
+| WAN | WAN address | UDP 51820 | WireGuard |
+| WAN | WAN address | ~~TCP 80~~ | **Closed 2026-10-20** (`utils/f2-opnsense-wan-http.sh`): the rule passed to the firewall itself, where AdGuard Home listens on `*:80`, so its login page answered from WAN. Nothing needs it: HAProxy serves only 443 and every ACME certificate uses DNS-01 |
 
 ---
 

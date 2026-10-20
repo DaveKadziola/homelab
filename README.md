@@ -87,7 +87,7 @@ Laptop cache → GitHub Environment: `utils/sync-secrets-to-github.py --env dev`
 
 1. Register dev runner: `utils/setup-github-runner.sh --label homelab-dev`
 2. Nested Proxmox: [`docs/dev-proxmox.md`](docs/dev-proxmox.md) — `ensure-dev-proxmox.sh` + `bootstrap-dev-proxmox.sh`
-3. Push to `homelab-v2` → `infra-plan-dev.yml` / `infra-apply-dev.yml` (Terraform IaC, state in HCP workspace `homelab-dev`)
+3. PR to `homelab-v2` → `infra-plan-dev.yml`; push (merge) → `infra-apply-dev.yml` (Terraform IaC, state in HCP workspace `homelab-dev`)
 4. Apps: `apps-deploy-dev.yml` → `ubuntu-apps-dev` @ `192.168.122.50`
 
 ## Quick start — prod
@@ -103,7 +103,7 @@ Order (after F2–F3): OPNsense → Proxmox TF apply → Ansible → Compose. Pr
 | Workflow | Trigger | Runner |
 |----------|---------|--------|
 | `ci-validate.yml` | push/PR `homelab-v2` | `homelab-dev` |
-| `infra-plan-dev.yml` | push `homelab-v2` | `homelab-dev` |
+| `infra-plan-dev.yml` | PR → `homelab-v2` / manual | `homelab-dev` |
 | `infra-apply-dev.yml` | push `homelab-v2` / manual | `homelab-dev` |
 | `apps-deploy-dev.yml` | push `homelab-v2` | `homelab-dev` |
 | `infra-plan.yml` | PR → `main` | `homelab-prod` |
