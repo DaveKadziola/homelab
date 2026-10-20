@@ -121,9 +121,11 @@ ensure_local_endpoint() {
   [[ "$code" == "200" ]] || hl_die "endpoint creation failed (HTTP ${code})"
 }
 
+# redeploy_stack <jwt> <name> [<compose file> <running 0|1>]: with a file, its content replaces
+# the one Portainer stored at creation; exit 3 = file unchanged and running, nothing done.
 redeploy_stack() {
   local jwt="$1" name="$2"
-  HL_JWT="$jwt" HL_NAME="$name" HL_BASE="$BASE" python3 <<'PY'
+  HL_JWT="$jwt" HL_NAME="$name" HL_BASE="$BASE" HL_FILE="${3:-}" HL_RUNNING="${4:-0}" python3 <<'PY'
 import json, os, sys, urllib.request
 
 base, jwt, name = os.environ["HL_BASE"], os.environ["HL_JWT"], os.environ["HL_NAME"]
@@ -142,8 +144,11 @@ stack = next((s for s in call("GET", "/stacks") if s["Name"] == name), None)
 if not stack:
     sys.exit(1)
 content = call("GET", f"/stacks/{stack['Id']}/file")["StackFileContent"]
+new = open(os.environ["HL_FILE"]).read() if os.environ["HL_FILE"] else content
+if new == content and os.environ["HL_RUNNING"] == "1":
+    sys.exit(3)
 call("PUT", f"/stacks/{stack['Id']}?endpointId={stack['EndpointId']}",
-     {"stackFileContent": content, "env": stack.get("Env") or [], "prune": False, "pullImage": False})
+     {"stackFileContent": new, "env": stack.get("Env") or [], "prune": False, "pullImage": False})
 PY
 }
 
@@ -151,18 +156,21 @@ ensure_grocery_stack() {
   local jwt="$1" stacks compose_file endpoint_id code
   stacks="$(hl_curl -H "Authorization: Bearer ${jwt}" "${BASE}/api/stacks" |
     python3 -c 'import json,sys; print(" ".join(s["Name"] for s in json.load(sys.stdin)))')"
+  compose_file="$(hl_compose_dir)/grocery/docker-compose.yml"
   if [[ " ${stacks} " == *" ${GROCERY_STACK} "* ]]; then
-    if docker ps --format '{{.Names}}' | grep -q "^${GROCERY_STACK}-"; then
-      hl_log "stack ${GROCERY_STACK} present and running"
-      return 0
-    fi
-    # A stack can exist while its container never started (e.g. the image was missing on a
-    # fresh guest). "start" would try to pull the local-only image; redeploy without pulling.
-    hl_log "stack ${GROCERY_STACK} present but not running — redeploying without pull"
-    redeploy_stack "$jwt" "$GROCERY_STACK" || hl_die "redeploy of ${GROCERY_STACK} failed"
+    local running=0 rc=0
+    docker ps --format '{{.Names}}' | grep -q "^${GROCERY_STACK}-" && running=1
+    # Portainer keeps the file the stack was created with, so a changed compose/grocery file
+    # reaches the container only through an update with it. A stopped stack is redeployed too:
+    # "start" would try to pull the local-only image.
+    redeploy_stack "$jwt" "$GROCERY_STACK" "$([[ -f "$compose_file" ]] && echo "$compose_file")" "$running" || rc=$?
+    case $rc in
+      0) hl_log "stack ${GROCERY_STACK} redeployed without pull (compose file changed or not running)" ;;
+      3) hl_log "stack ${GROCERY_STACK} present, running and matching ${compose_file##*/compose/}" ;;
+      *) hl_die "redeploy of ${GROCERY_STACK} failed" ;;
+    esac
     return 0
   fi
-  compose_file="$(hl_compose_dir)/grocery/docker-compose.yml"
   if [[ ! -f "$compose_file" ]]; then
     hl_warn "stack ${GROCERY_STACK} missing and ${compose_file} not on this host — skipping"
     return 0
