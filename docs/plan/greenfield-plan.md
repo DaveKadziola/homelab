@@ -84,7 +84,7 @@ todos:
     content: "F10-A: zrobione na DEV 2026-10-20 - Uptime Kuma (dodatek HA) + utils/kuma-sync.py, świeżość backupów -> push Kuma, Diun mail, mailpit DEV (decyzja 0006); prod czeka na tokeny Proton SMTP i wydanie"
     status: in_progress
   - id: ai-log-analysis
-    content: "F10-B: analiza logów agentem AI z sanityzacją (allowlist, agregacja) — po prod i po audycie F9"
+    content: "F10-B (Paczka 2, operator 2026-10-20): streszczenia AI przez OpenRouter z oczyszczonych wyników audytu i logów (allowlist, agregacja); nic surowego do publicznego repo"
     status: pending
   - id: project-cleanup
     content: "Później (operator 2026-10-20): porządek w projekcie — stare worktree i zmergowane gałęzie, nieaktualne dokumenty, skrypty legacy"
@@ -119,6 +119,9 @@ todos:
   - id: backups-nas-pve
     content: "2026-10-20: luka 5 - HA i OPNsense z NAS, vzdump jako job PVE na NAS, RCLONE_CONFIG na hoście, świeżość -> Kuma; zostało: klucz OPNsense (utils/f2-opnsense-backup-key.sh) i HA_TOKEN prod"
     status: in_progress
+  - id: weekly-security-audit
+    content: "Paczka 2 (operator 2026-10-20): tygodniowy audyt na timerze - nmap S7 z IOT, Trivy obrazów, wersje, reguły OPNsense -> raport mailem i na NAS, nigdy w artefaktach publicznego repo"
+    status: pending
 isProject: false
 ---
 

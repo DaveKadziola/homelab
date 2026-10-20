@@ -58,6 +58,12 @@ Helper scripts:
 | `HA_ADMIN_PASSWORD` | dev | secret | `homelab/HA_ADMIN_PASSWORD/dev` | set 2026-10-20 | owner account `admin` of the DEV twin (onboarding) |
 | `HA_SSH_PRIV` | dev, prod | secret | `homelab/HA_SSH_PRIV/<env>` | set 2026-10-20 | ed25519 key of the Terminal & SSH add-on; public half derived |
 | `HA_BACKUP_PASSWORD` | dev, prod | secret | `homelab/HA_BACKUP_PASSWORD/<env>` | set 2026-10-20 | password of the Supervisor backups the NAS pulls; needed to restore |
+| `KUMA_ADMIN_PASSWORD` | dev, prod | secret | `homelab/KUMA_ADMIN_PASSWORD/<env>` | set 2026-10-20 | login `admin` of the Uptime Kuma add-on; `utils/kuma-sync.py` sets it up on a fresh Kuma |
+| `KUMA_PUSH_SECRET` | dev, prod | secret | `homelab/KUMA_PUSH_SECRET/<env>` | set 2026-10-20 | seed of the Kuma push tokens (backup freshness); the NAS gets it from the deploy |
+| `SMTP_USERNAME` | prod | secret | `homelab/SMTP_USERNAME/prod` | planned | Proton address on the alerts subdomain (owner); sender of Kuma, Diun, Beszel mail |
+| `SMTP_PASSWORD` | prod | secret | `homelab/SMTP_PASSWORD/prod` | planned | Proton SMTP token of `SMTP_USERNAME` (owner) |
+| `CLOUDFLARE_API_TOKEN` | prod | secret | `homelab/CLOUDFLARE_API_TOKEN/prod` | planned | Zone.DNS edit on `dkhomelabserver.xyz` only; Caddy wildcard certificate (owner); without it prod keeps proxy and auth off |
+| `OPNSENSE_BACKUP_SSH_PRIV` | prod | secret | `homelab/OPNSENSE_BACKUP_SSH_PRIV/prod` | planned | NAS key for `config.xml`, forced command on the router (`utils/f2-opnsense-backup-key.sh` makes it) |
 | `PORTAINER_ADMIN_PASSWORD` | dev | secret | `homelab/PORTAINER_ADMIN_PASSWORD/dev` | set | generated 2026-09-10 |
 | `PGADMIN_PASSWORD` | dev | secret | `homelab/PGADMIN_PASSWORD/dev` | set | generated 2026-09-10 |
 | `HOMARR_ADMIN_PASSWORD` | dev | secret | `homelab/HOMARR_ADMIN_PASSWORD/dev` | set | generated 2026-09-10; rotated same day |
