@@ -426,6 +426,9 @@ def cmd_export_ui(args):
             print(f"no change since {latest[0]}")
             return 0
     new = dest / stamp()
+    while new.exists():  # two runs in one second: the snapshot name is the second
+        time.sleep(1)
+        new = dest / stamp()
     new.mkdir()
     for name, content in files.items():
         (new / name).write_bytes(content)
