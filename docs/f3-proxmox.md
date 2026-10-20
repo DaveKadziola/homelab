@@ -210,8 +210,9 @@ unset plain
 (`terraform/main.tf:52`). Step 4 hashes it with the fixed salt of `utils/sync-secrets-to-github.py`.
 If the PR plan shows `proxmox_virtual_environment_file.cloud_config` replaced while nothing changed,
 `prod` was hashed with another salt: set the same value in `prod` too (repeat the last command with
-`--env prod`). The VMs ignore cloud-init changes (`terraform/main.tf:149-151`), so the next apply
-only rewrites the snippet.
+`--env prod`). Terraform ignores the VM's cloud-init settings (`terraform/main.tf:159-161`), but
+Proxmox hands the rewritten snippet to the VM at its next boot, so `Infra Apply Prod` treats the
+replace as risky and waits in `prod-gate` (decision 0004).
 
 Check: the next PR to `main` shows `Infra Plan Prod` green with the plan in its log.
 

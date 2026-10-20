@@ -36,10 +36,10 @@ reviewer once the new workflow has run on `main`.
 
 ## Consequences
 
-- Safe: no-op, read, create or update of `proxmox_virtual_environment_file`, replace of the
-  `cloud_config` snippet. Risky: any change to a VM, any other delete or replace, import, forget and
-  every type the script does not know. New resource types in `terraform/` are risky until the script
-  names them.
+- Safe: no-op, read, create or update of `proxmox_virtual_environment_file`. Risky: any change to
+  a VM, every delete or replace (also of the `cloud_config` snippet: Proxmox gives it to the VM at
+  each boot even though Terraform ignores `initialization`), import, forget and every type the script
+  does not know. New resource types in `terraform/` are risky until the script names them.
 - A digest mismatch fails the apply; the fix is "Re-run all jobs" (a failed-jobs re-run compares with
   the old digest again).
 - Every job has a timeout; a hung required check would otherwise block every PR.

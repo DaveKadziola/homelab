@@ -15,6 +15,11 @@ on:
 # that matches the gated one. Plan files and their JSON hold secrets: they stay in RUNNER_TEMP,
 # which the runner empties after every job, and are never uploaded or printed.
 
+# One run at a time and in order: an older approved run must not apply after a newer one.
+concurrency:
+  group: infra-apply-prod
+  cancel-in-progress: false
+
 jobs:
   plan:
     runs-on: [self-hosted, homelab-prod]
@@ -102,6 +107,11 @@ jobs:
           terraform plan -input=false -out="$RUNNER_TEMP/tfplan" -var-file=environments/prod/terraform.tfvars
           terraform show -json "$RUNNER_TEMP/tfplan" > "$RUNNER_TEMP/plan.json"
           digest="$(python3 ../utils/tf-plan-risk.py "$RUNNER_TEMP/plan.json" | sed -n 's/^digest=//p')"
+          # A push run whose commit is no longer the tip of main would roll prod back to it.
+          if [ "$GITHUB_EVENT_NAME" = push ] && [ "$(git ls-remote origin refs/heads/main | cut -f1)" != "$GITHUB_SHA" ]; then
+            echo "::error::main moved on since this run started - the newer run applies"
+            exit 1
+          fi
           if [ -z "$PLANNED" ] || [ "$digest" != "$PLANNED" ]; then
             echo "::error::the plan changed since the plan job (gated digest ${PLANNED:-none}, now ${digest:-none}) - use Re-run all jobs"
             exit 1

@@ -7,9 +7,10 @@
 
 Prints `risky=true|false` and `digest=<sha256>` on stdout and one line per change (address and
 actions, never values) on stderr. Safe: no-op and read; create or update of a
-proxmox_virtual_environment_file; replace of the cloud_config snippet (the VMs ignore
-`initialization`, main.tf lifecycle). Everything else is risky: any change to a VM (an update can
-reboot it), any other delete or replace, imports, forget, and every resource type not named here.
+proxmox_virtual_environment_file. Everything else is risky: any change to a VM (an update can
+reboot it), every delete or replace - also of the cloud_config snippet, which Proxmox hands to the
+VM at each boot although Terraform ignores `initialization` -, imports, forget, and every resource
+type not named here.
 The digest covers everything the verdict reads, so an equal digest means an equal verdict; the
 apply job re-plans and refuses to apply when the digest differs from the one that was gated.
 The plan JSON holds secrets in plain text: this script never prints anything from it but
@@ -32,11 +33,8 @@ def reason(rc):
         return "import"
     if acts in (["no-op"], ["read"]):
         return None
-    if rc["type"] == FILE:
-        if acts in (["create"], ["update"]):
-            return None
-        if rc["name"] == "cloud_config" and sorted(acts) == ["create", "delete"]:
-            return None
+    if rc["type"] == FILE and acts in (["create"], ["update"]):
+        return None
     return "/".join(acts)
 
 
@@ -102,8 +100,8 @@ def self_test():
     image = 'proxmox_virtual_environment_file.vm_image["apps"]'
     assert verdict() is False
     assert verdict(rc(vm, ["no-op"]), rc(snippet, ["no-op"])) is False
-    assert verdict(rc(snippet, ["delete", "create"])) is False
-    assert verdict(rc(snippet, ["create", "delete"])) is False
+    assert verdict(rc(snippet, ["delete", "create"])) is True
+    assert verdict(rc(snippet, ["create", "delete"])) is True
     assert verdict(rc(snippet, ["delete"])) is True
     assert verdict(rc(image, ["create"])) is False
     assert verdict(rc(image, ["update"])) is False
@@ -123,7 +121,7 @@ def self_test():
     assert digest(a) != digest([rc(vm, ["update"]), rc(snippet, ["delete", "create"])])
     assert digest(a) != digest([rc(vm, ["no-op"], importing=True), rc(snippet, ["delete", "create"])])
     risky, _, lines = classify({"format_version": "1.2", "resource_changes": a})
-    assert risky is False and lines == ['safe  delete/create  ' + snippet], lines
+    assert risky is True and lines == ['RISKY delete/create  ' + snippet], lines
 
     for bad in ({"format_version": "0.1"}, {"format_version": "1.2", "errored": True}, {}):
         try:
