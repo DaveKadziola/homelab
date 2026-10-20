@@ -1,6 +1,6 @@
 # Dev — nested Proxmox (libvirt) + Terraform IaC
 
-> **Status:** replaces `create-dev-vm.sh` (imperative) with TF + GHA.
+> **Status:** TF + GHA; the imperative `create-dev-vm.sh` it replaced was removed on 2026-10-20.
 
 ## Architecture
 

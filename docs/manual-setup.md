@@ -139,7 +139,6 @@ systemctl is-active libvirtd   # expected: active
 virsh net-list --all
 sudo virsh net-start default
 sudo virsh net-autostart default
-# alternative: ./utils/start_qemu_default_net
 ```
 
 **Definition of done:**

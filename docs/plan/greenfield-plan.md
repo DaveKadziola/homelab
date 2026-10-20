@@ -9,8 +9,8 @@ todos:
     content: "A10 ✅ Bitwarden PM + 2FA + folder homelab + TF_API_TOKEN/prod (user 2026-06-11)"
     status: completed
   - id: hardware
-    content: "A5 as-built ✅ 2026-06-30 (.20.20/.12/.13/.50.30, APP gw .50.50, WG 10.10.10, 3× NIC); MAC → F3"
-    status: in_progress
+    content: "A5 as-built ✅ 2026-06-30; MAC-i PVE i T620 na routerze (docs/network.md:43,45), prod zbudowany 2026-10-20 (VM 101/102, CT 110)"
+    status: completed
   - id: apps-decisions
     content: "Zamknięte iter. #2: P0/P1/P2, Trillium, Actual, Navidrome, Syncthing P1, Jellyfin P1, Zotify defer"
     status: completed
@@ -36,8 +36,8 @@ todos:
     content: "F1: GHA dual runner; homelab-v2→dev, main→prod; workflowy v2 (ci-validate, deploy-dev, …) — zaimplementowane; CI nie działa od 2026-07-01 (brak runnera) → R1 — ✅ 2026-10-18: CI Validate, Infra Plan/Apply Dev, Apps Deploy Dev i Tests Dev działają na runnerze homelab-dev"
     status: completed
   - id: gha-runner-bootstrap
-    content: "F1: setup-github-runner.sh — prod runner ubuntu-apps; dev runner laptop (homelab-dev) — dev runner zarejestrowany raz, na GitHub obecnie 0 runnerów → R1; prod po F3"
-    status: in_progress
+    content: "F1 ✅ dev runner laptop (systemd); prod runner w LXC CT 110 ci-runner na hoście PVE (utils/pve-ci-runner-lxc.sh, #60/#63), runner laptopowy wyrejestrowany"
+    status: completed
   - id: branch-v2
     content: "F0-09/10 ✅ homelab-v2 + docs commit 4d0ab71"
     status: completed
@@ -51,25 +51,25 @@ todos:
     content: "Gate F0→F1 ✅ 2026-06-11; A9 rclone OAuth → F5; A5 MAC → F3"
     status: completed
   - id: implement
-    content: "F1 ✅ skeleton CI; F2 docs OPNsense baseline — configure router manually"
-    status: in_progress
+    content: "F1 ✅ CI; F2 ✅ router skryptami f2 (#26-#33, #55); F3 ✅ prod zbudowany z main (#75)"
+    status: completed
   - id: identities
     content: "Iter. #3: config/identities.yml + generator credentiali (admin/prod/dev/notification) — F7 — ✅ e28840f, 5f37cd4; config suite PASS 2026-10-18"
     status: completed
   - id: config-as-code
-    content: "Iter. #3: macierz TAK/CZĘŚCIOWO/NIE per app + bootstrap/ skrypty idempotentne — F7 — zaimplementowane (9f8afe2); weryfikacja po R2"
-    status: in_progress
+    content: "Iter. #3 ✅ macierz + bootstrap/ (9f8afe2); prod: Apps Deploy Prod 39462592254 - tabela bootstrap Failed: 0"
+    status: completed
   - id: tests-auto
-    content: "Iter. #3: tests/ (smoke, infra drift, net, restore) + config/services.yml jako źródło prawdy — F7 — zaimplementowane (4c4cada); w CI nigdy nie przeszło → R1/R2"
-    status: in_progress
+    content: "Iter. #3 ✅ tests/ (smoke, infra, net, config, storage, ha, restore); prod 151/0/11 (39462592254), dev 147/0/16 (39460389233)"
+    status: completed
   - id: knowledge-base
     content: "Iter. #3: docs/kb/ + lessons-learned (append-only, wpisy z F3/F4 dev) — F8 — ✅ 151d4e4; od 2026-10-18 w knowledge/"
     status: completed
   - id: rebuild-runbook
-    content: "Iter. #3: docs/kb/rebuild.md — runbook migracji/odtworzenia + drill na nested dev — F8 — runbook knowledge/rebuild.md jest; drill → R3"
-    status: in_progress
+    content: "Iter. #3 ✅ knowledge/rebuild.md + drill na nested DEV (knowledge/rebuild-drill-2026-10-19b.md: pass bez zmian w kodzie)"
+    status: completed
   - id: audit-final
-    content: "Iter. #3: audyt bezpieczeństwa + audyt repo + gate „czy da się odtworzyć?” — F9 — audyty 2026-09-10 są; bramka merge FAIL → R3"
+    content: "F9: audyt prod 2026-10-20 (knowledge/security-audit-2026-10-20.md): S7 z LAN/IOT/APP ✅; zostało: skan z WG i WAN, poprawki S16-S27 (osobno, za zgodą)"
     status: in_progress
   - id: restore-ci
     content: "Iter. #4 R1: ponowna rejestracja runnera homelab-dev jako usługa; CI Validate + Infra Plan Dev zielone, Tests Dev się uruchamia — ✅ 2026-10-18: runner jako usługa systemd; CI Validate i Infra Plan Dev zielone; Tests Dev uruchamia się (#9–#13)"
@@ -78,11 +78,11 @@ todos:
     content: "Iter. #4 R2: nested Proxmox z IP (utils/ensure-dev-proxmox.sh) + ubuntu-apps-dev; run-tests --env dev --suite all bez FAIL — ✅ 2026-10-18: przyczyna zawieszeń = pełna pula LVM-thin; stan w HCP homelab-dev; run-tests 161 PASS / 0 FAIL"
     status: completed
   - id: f9-gate-dev
-    content: "Iter. #4 R3: rebuild DEV tylko z repo + vault, deploy GHA z pełnym zestawem sekretów, ponownie restore suite — przed F3 metal — 2026-10-18: deploy GHA z prawdziwymi sekretami ✅ (bootstrap jellyfin/navidrome → #14); rebuild z repo i restore suite otwarte — 2026-10-19: restore suite ✅; drill z prawdziwym wymazaniem DEV ✅ działa, 9 luk (#16–#19 + rebuild.md), wymaga powtórki bez poprawek (knowledge/rebuild-drill-2026-10-19.md)"
-    status: in_progress
+    content: "Iter. #4 R3 ✅ drill 10-19b z prawdziwym wymazaniem DEV przeszedł bez zmian w kodzie; restore suite ✅"
+    status: completed
   - id: monitoring-alerts
-    content: "F10-A: config/monitoring.yml — progi (dysk >80%, RAM, restart-loop, backup miss) + alerty na skrzynkę env"
-    status: pending
+    content: "F10-A: zrobione na DEV 2026-10-20 - Uptime Kuma (dodatek HA) + utils/kuma-sync.py, świeżość backupów -> push Kuma, Diun mail, mailpit DEV (decyzja 0006); prod czeka na tokeny Proton SMTP i wydanie"
+    status: in_progress
   - id: ai-log-analysis
     content: "F10-B: analiza logów agentem AI z sanityzacją (allowlist, agregacja) — po prod i po audycie F9"
     status: pending
@@ -96,20 +96,29 @@ todos:
     content: "Później (operator 2026-10-20): schematy draw.io — flow zmian (homelab-v2 → DEV, main → prod, approvals), sieć (VLAN-y, firewall, porty), backupy"
     status: pending
   - id: security-public-repo
-    content: "Później (operator 2026-10-20): bezpieczeństwo publicznego repo — runnery self-hosted na laptopie (fork PR: approval tylko dla first-time contributors), środowisko dev bez reviewera, co repo ujawnia (adresy, MAC, nazwy)"
-    status: pending
+    content: "2026-10-20: fork PR all_external_contributors, rulesety bez bypass, akcje przypięte do SHA (sha_pinning_required), model zagrożeń CI w knowledge/security.md; zostało: decyzje z przeglądu ujawnień (IP publiczny, maile)"
+    status: in_progress
   - id: security-audit-hosts
-    content: "Później (operator 2026-10-20): audyt bezpieczeństwa Proxmox (prod), OPNsense i całego homelabu"
-    status: pending
+    content: "Audyt prod 2026-10-20 zrobiony (knowledge/security-audit-2026-10-20.md, S16-S27); poprawki osobno, każda za zgodą"
+    status: in_progress
   - id: app-network-access
     content: "Później (operator 2026-10-20): dostęp aplikacji do podsieci (APP → NAS/IOT/LAN) i poza sieć (egress per aplikacja zamiast całego internetu)"
     status: pending
   - id: ci-autonomy
-    content: "Później (operator 2026-10-20): strategia workflow GitHub dla dev i prod — merge i deploymenty bez ręcznego zatwierdzania, gdy checki i testy są zielone (auto-merge PR do homelab-v2, mniej zatwierdzeń prod: dziś osobno Infra Apply, Apps Deploy i post-deploy-tests; zatwierdzenie tylko przy ryzyku, np. replace/destroy w planie Terraform)"
-    status: pending
+    content: "Zrobione 2026-10-20: auto-merge do homelab-v2 (ruleset validate+plan, bez bypass), bramka ryzyka na prod (utils/tf-plan-risk.py, env prod-gate, decyzja 0004); zostało: pierwsze wydanie, zdjęcie reviewera z prod, test bramki gate=true"
+    status: in_progress
   - id: homarr-links
-    content: "Później (operator 2026-10-20): prosty dashboard Homarr na prodzie — na razie tylko linki do postawionych aplikacji. Jest już: tablica z config/services.yml (utils/gen-homarr-board.sh → compose/core/homarr/board-prod.json, wgrywa utils/bootstrap/homarr.sh). Do zrobienia: sprawdzić tablicę na prodzie, usunąć kafelki aplikacji, których prod nie ma (Authelia, decyzja 0003), rozważyć nazwy zamiast IP:port; bootstrap ustawia homelab-<env> jako tablicę domową (2026-10-20 domową była tablica `dashboard` z onboardingu, więc seed był niewidoczny); login w repo zostaje `admin` (operator 2026-10-20), konto `admin` trzeba założyć w UI, bo onboarding utworzył `daveadmin`"
-    status: pending
+    content: "2026-10-20: kafelki tylko dla włączonych profili, linki po nazwach (Caddy), tablica domowa wymuszana przez bootstrap; zostało: konto admin w UI na prod"
+    status: in_progress
+  - id: ha-as-code
+    content: "2026-10-20: sterowanie HA (utils/ha.py), packages/ z repo, migawki YAML z UI na NAS, backup HA z NAS, DEV-bliźniak HAOS (decyzja 0005); prod czeka na HA_TOKEN i wydanie"
+    status: in_progress
+  - id: app-names-proxy
+    content: "2026-10-20: nazwy aplikacji przez Caddy + Authelia (decyzja 0007), DEV działa; prod czeka na CLOUDFLARE_API_TOKEN i rewrite'y AdGuard (utils/f2-adguard-rewrites.sh)"
+    status: in_progress
+  - id: backups-nas-pve
+    content: "2026-10-20: luka 5 - HA i OPNsense z NAS, vzdump jako job PVE na NAS, RCLONE_CONFIG na hoście, świeżość -> Kuma; zostało: klucz OPNsense (utils/f2-opnsense-backup-key.sh) i HA_TOKEN prod"
+    status: in_progress
 isProject: false
 ---
 

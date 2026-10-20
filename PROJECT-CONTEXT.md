@@ -32,8 +32,8 @@ Last reviewed: 2026-10-18
 
 ## 3. Constraints
 
-- Hard limits: the physical prod host is offline until F3 metal is done, so prod checks SKIP.
-  <!-- source: tests/README.md:50; README.md "Roadmap" -->
+- Hard limits: <ask>. Prod runs since F3: VMs 101, 102 and CT 110 on `192.168.20.20`.
+  <!-- source: qm list, pct list on 192.168.20.20 (2026-10-20) -->
 - Security: secret values never enter git; names only in `docs/secrets-inventory.md`. gitleaks
   runs in CI. OPNsense `config.xml` backups stay in the gitignored `opnsense/backups/`.
   The repository is **public**: anything committed is published.
@@ -97,7 +97,7 @@ Last reviewed: 2026-10-18
 | Name | Host / location | Purpose | Agent may change it? |
 | --- | --- | --- | --- |
 | dev | Laptop libvirt `192.168.122.0/24`; nested Proxmox; `ubuntu-apps-dev` `192.168.122.50` (SSH user `ubuntu-dev`, key `~/.ssh/homelab_dev_ed25519`) | DEV, branch `homelab-v2` | yes - tests, SSH, deploys (operator, 2026-10-18); deleting data or replacing a VM still asked each time (`AGENTS.md` section 11) |
-| prod | Proxmox host `192.168.20.20`; `ubuntu-apps` `192.168.50.30`; `ubuntu-nas` `192.168.20.12`; HA T620 `192.168.20.13` | prod, branch `main`; not built yet (F3 metal) | no |
+| prod | Proxmox host `192.168.20.20`; `ubuntu-apps` `192.168.50.30`; `ubuntu-nas` `192.168.20.12`; HA T620 `192.168.20.13` | prod, branch `main`; running (qm list, 2026-10-20) | no |
 | router | OPNsense, VLAN gateways in `docs/network.md:23-28` | home network | no |
 
 <!-- source: docs/network.md:10-12,23-47; ansible/environments/{dev,prod}/hosts.ini -->
@@ -114,11 +114,13 @@ Last reviewed: 2026-10-18
 
 ## 8. Open questions
 
-- APP network CIDR is written three ways; not to be guessed - fix at F3 metal.
-  <!-- source: knowledge/repo-audit-2026-09-10.md:158 -->
-- DEV Proxmox token ID: `utils/dev-apply-local.sh:21` and `tests/infra/run.sh:103` default to
-  `root@pam!terraform`, `utils/bootstrap-f1-secrets.sh:40` sets `homelab-dev@pam!terraform`;
-  which one nested DEV uses is unknown. Prod is `homelab-prod@pam!terraform`.
-  <!-- source: knowledge/repo-audit-2026-09-10.md:159, docs/f3-proxmox.md:25 -->
-- Plan todo statuses in `docs/plan/greenfield-plan.md` lag the code; to be reconciled in the plan
-  audit.
+- `utils/bootstrap-f1-secrets.sh` (F1 one-shot, no dry run) overwrites live `dev` and `prod` secrets
+  with random values and sets `PROXMOX_API_TOKEN_ID` to `homelab-<env>@pam!terraform`, a user the
+  nested DEV PVE does not have (DEV uses `root@pam!terraform`). Retire it or guard it - operator
+  decision.
+  <!-- source: utils/bootstrap-f1-secrets.sh:34-42; pveum user token list homelab-dev@pam on 192.168.122.219 (2026-10-20) -->
+- Is the ISP public address static? Nothing on the router updates the Cloudflare A record of
+  `grocery.dkhomelabserver.xyz` (no dynamic DNS section in `/conf/config.xml`, 2026-10-20).
+- `docs/wireguard.md` and `docs/opnsense-baseline.md` give APP as `192.168.50.0/24`, which also
+  covers the DMZ `.64/28`; APP is `192.168.50.0/26` (`ifconfig vlan07`, `config.xml` opt6). Should
+  WireGuard clients reach the DMZ? Operator decision before the docs change.
