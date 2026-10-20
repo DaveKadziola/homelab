@@ -30,6 +30,7 @@ concurrency:
 jobs:
   tests:
     runs-on: [self-hosted, homelab-dev]
+    timeout-minutes: 15
     environment: dev
     steps:
       - name: Checkout
