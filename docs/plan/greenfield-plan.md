@@ -104,6 +104,9 @@ todos:
   - id: app-network-access
     content: "Później (operator 2026-10-20): dostęp aplikacji do podsieci (APP → NAS/IOT/LAN) i poza sieć (egress per aplikacja zamiast całego internetu)"
     status: pending
+  - id: ci-autonomy
+    content: "Później (operator 2026-10-20): strategia workflow GitHub dla dev i prod — merge i deploymenty bez ręcznego zatwierdzania, gdy checki i testy są zielone (auto-merge PR do homelab-v2, mniej zatwierdzeń prod: dziś osobno Infra Apply, Apps Deploy i post-deploy-tests; zatwierdzenie tylko przy ryzyku, np. replace/destroy w planie Terraform)"
+    status: pending
 isProject: false
 ---
 
