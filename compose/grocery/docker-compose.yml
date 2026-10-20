@@ -11,6 +11,16 @@ name: easytodo-grocery
 services:
   easytodo:
     image: easy-todo-grocery-nodb:latest
+    # TEMP: run.py hard-codes socketio.run(debug=True), which serves the Werkzeug debugger (code
+    # execution) and a reloader behind the public URL. Remove once easytodo-grocery-list reads debug
+    # from the environment. grep stops the start if the line changed upstream.
+    entrypoint:
+      - /bin/sh
+      - -c
+      - >-
+        sed -i 's/socketio.run(app, debug=True,/socketio.run(app, debug=False,/' /main/run.py &&
+        grep -q 'socketio.run(app, debug=False,' /main/run.py &&
+        exec /entrypoint.sh
     restart: unless-stopped
     ports:
       - "8101:8101"
