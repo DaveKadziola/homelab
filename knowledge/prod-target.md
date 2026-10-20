@@ -86,9 +86,9 @@ Source: `config/storage.yml`, `utils/backup/run-all.sh`, `deploy-storage.yml`. D
 | postgres (both Postgres) | `pg-dump.sh` | apps |
 | volumes (named Docker volumes, not media) | `volumes.sh` | apps |
 | repo-zip | `repo-zip.sh` | apps |
-| opnsense `config.xml` | `opnsense.sh` | apps -> router SSH |
-| homeassistant `.tar` | `ha-pull.sh` (`HA_TOKEN`) | apps -> `.20.13` |
-| vzdump 101/102 | `vzdump.sh` | needs a Proxmox host |
+| opnsense `config.xml` | `opnsense.sh` (key with a forced command) | NAS -> router `.20.1` (same subnet) |
+| homeassistant full backup + UI YAML | `ha-pull.sh`, `ha-yaml.sh` (`HA_TOKEN`) | NAS -> `.20.13` (same subnet) |
+| vzdump 101/102 | Proxmox job `homelab-vms` (`utils/pve-backup-job.py`) | PVE -> NAS NFS `backups/vzdump` |
 | offsite | `rclone-offsite.sh` (`RCLONE_CONFIG`) | apps -> internet |
 
 Restore: `utils/backup/restore-pg.sh --replace` (`knowledge/rebuild.md` step 7).
@@ -111,7 +111,7 @@ Beszel hub (host metrics; agent off until keyed), Dozzle (logs), Diun (image upd
 2. ~~SSH user mismatch `ubuntu` vs `ubuntu-prod`~~ - fixed: inventory and `services.yml` use `ubuntu-prod` (#35).
 3. ~~Prod reused the DEV key and a June password~~ - fixed: own key `homelab_prod_ed25519`, new password hash, the prod deploy installs the key on the runner (#35).
 4. ~~NAS disks: no by-id, nothing formats or mounts them~~ - fixed in #35: serials, one-time wipe opt-in, LABEL mounts, `crossmnt`, nfs-server guard, Samba; tested on DEV with two test disks. Still to run on prod after `terraform apply`: attach, then the opt-in format.
-5. **Backups that cannot run from `ubuntu-apps`:** `vzdump.sh` needs a Proxmox host (timer on apps -> SKIP); `opnsense.sh` and `ha-pull.sh` need APP -> router SSH and APP -> `.20.13`, which the APP firewall blocks; `opnsense.sh` also needs a key on the router.
+5. ~~Backups that cannot run from `ubuntu-apps`~~ - moved (2026-10-20): Home Assistant and OPNsense run on the NAS (same subnet as both), VM dumps are a Proxmox job onto the NAS ([backup](backup.md)). Still open: `HA_TOKEN` (owner) and the router key (`utils/f2-opnsense-backup-key.sh`, owner's decision).
 6. ~~Authelia is configured for `homelab.local` (DEV) only~~ - prod runs without it until a proxy with forward-auth exists ([decision 0003](decisions/0003-prod-without-authelia.md)).
 7. **Monitoring alerts:** no notifier for Diun/Beszel; F10 not built.
 8. ~~Workflow Terraform version prod `1.15.6` vs DEV `1.16.3`~~ - all workflows and the HCP workspace `homelab` on 1.16.3 since 2026-10-19, before the first prod state.

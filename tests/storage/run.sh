@@ -10,6 +10,10 @@
 #   samba/login           the admin login lists the share, media and backups shares (from the NAS
 #                         itself: the CI runner is not an allowed client)
 #   samba/backups-ro      a write to the backups share is refused
+#   backup/fresh-<stream> the newest artefact of each stream in config/monitoring.yml is younger
+#                         than its max age, as check-fresh.py on the NAS sees it (dry run, no
+#                         push); a stream that never produced a file is SKIP (prerequisite missing
+#                         or first night)
 #
 # Read-only: listings and stat calls; the only write is the backups probe, which must be refused
 # (if it ever succeeds, the probe file is deleted again and the check fails).
@@ -92,6 +96,25 @@ else
   else
     report FAIL "nfs/guard" "nfs-server does not require ${missing[*]} (drop-in homelab-mounts.conf)"
   fi
+fi
+
+# --------------------------------------------------------------------------
+# Backup freshness (utils/backup/check-fresh.py on the NAS, no push)
+# --------------------------------------------------------------------------
+fresh="$(hl_nas_ssh "sudo -n env HOMELAB_CONFIG_DIR=/opt/homelab-nas/config python3 /opt/homelab-nas/utils/backup/check-fresh.py --env $HL_ENV --dry-run" 2>/dev/null)"
+if [[ -z "$fresh" ]]; then
+  report SKIP "backup/fresh" "check-fresh.py is not on the NAS yet (deploy-storage.yml)"
+else
+  while read -r verdict stream rest; do
+    [[ -z "$stream" ]] && continue
+    if [[ "$verdict" == "ok" ]]; then
+      report PASS "backup/fresh-$stream" "$rest"
+    elif [[ "$rest" == "no file matches"* ]]; then
+      report SKIP "backup/fresh-$stream" "$rest"
+    else
+      report FAIL "backup/fresh-$stream" "$rest"
+    fi
+  done <<<"$fresh"
 fi
 
 # --------------------------------------------------------------------------

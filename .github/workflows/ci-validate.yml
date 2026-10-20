@@ -61,3 +61,6 @@ jobs:
           python3 utils/pve-network.py --self-test
           python3 utils/bw-store.py --self-test
           python3 utils/tf-plan-risk.py --self-test
+          python3 utils/ha.py --self-test
+          python3 utils/backup/check-fresh.py --self-test
+          python3 utils/pve-backup-job.py --self-test

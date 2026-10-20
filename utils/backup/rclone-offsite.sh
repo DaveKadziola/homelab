@@ -29,4 +29,6 @@ chmod 600 "$cfg"
 ROOT="$(hl_storage backup_root)"
 REMOTE="$(hl_storage offsite)"
 rclone --config "$cfg" copy "$ROOT" "$REMOTE" --exclude 'media/**'
+# Freshness marker for check-fresh.py on the NAS (stream offsite in config/monitoring.yml).
+date -u +%Y-%m-%dT%H:%M:%SZ >"$ROOT/.offsite-ok"
 echo "rclone: copied ${ROOT} -> ${REMOTE}"

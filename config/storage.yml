@@ -22,6 +22,9 @@ environments:
     # DEV twin of the T620: HAOS VM in the laptop libvirt (utils/dev-haos-vm.sh).
     ha_url: http://192.168.122.60
     passthrough: []
+    # Proxmox job that dumps the VMs onto the NAS (utils/pve-backup-job.py). Created but disabled
+    # on DEV: the nested PVE has no room for a dump of ubuntu-apps-dev.
+    vzdump: { pve_host: 192.168.122.219, vmids: [101], schedule: "04:30", enabled: false }
     # Samba runs on the NAS guest; DEV reaches it from the libvirt network only.
     samba:
       share_path: /srv/homelab-share
@@ -47,6 +50,8 @@ environments:
           by_id: /dev/disk/by-id/ata-WD_Red_SA500_2.5_2TB_2525GTD00073 }
       - { name: purple, scsi: 2, ssd: false, serial: WD-WCC7K3KZKJKX, label: hl-purple, mount: /srv/purple,
           by_id: /dev/disk/by-id/ata-WDC_WD40PURZ-85TTDY0_WD-WCC7K3KZKJKX }
+    # CT 110 (ci-runner) is not dumped: utils/pve-ci-runner-lxc.sh rebuilds it.
+    vzdump: { pve_host: 192.168.20.20, vmids: [101, 102], schedule: "04:30", enabled: true }
     # Bind mounts that place part of a passthrough fs into the NFS tree.
     binds:
       - { from: /srv/purple/backups, to: /export/backups, label: hl-purple }

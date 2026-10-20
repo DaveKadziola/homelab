@@ -22,8 +22,8 @@ DR here means “the building burned / the disk died / I bought new hardware”,
 - Samba share and media — no homelab copy yet: the share (Purple) is never backed up, the media (SA500) pCloud backup is deferred ([decision 0002](decisions/0002-nas-layout-and-samba.md))
 - Offsite pCloud copy — `RCLONE_CONFIG` is not in GH prod
 - Home Assistant — T620 is not HAOS from this repo; `HA_TOKEN` unset
-- vzdump of prod VMs — script skips unless it runs on physical PVE
-- OPNsense live config — unless `opnsense.sh` reached the router or you exported `config.xml` yourself
+- VM dumps of prod — only if the Proxmox job `homelab-vms` ran (`/export/backups/vzdump/dump/` on the NAS, [backup](backup.md))
+- OPNsense live config — unless the NAS stream `opnsense.sh` ran (`/export/backups/opnsense/`) or you exported `config.xml` yourself
 
 ## Order after a total loss
 

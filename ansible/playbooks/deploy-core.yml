@@ -45,6 +45,8 @@
       - SYNCTHING_ADMIN_PASSWORD
       - BESZEL_ADMIN_PASSWORD
       - BESZEL_KEY
+      # Offsite copy (utils/backup/rclone-offsite.sh); prod only, rclone: false on DEV.
+      - RCLONE_CONFIG
     postgres_password: "{{ resolved_secrets.POSTGRES_PASSWORD }}"
     immich_db_password: "{{ resolved_secrets.IMMICH_DB_PASSWORD | default(postgres_password, true) }}"
     # Prod runs without Authelia until a proxy with forward-auth sits in front of the apps

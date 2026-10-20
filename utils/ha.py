@@ -422,12 +422,15 @@ def cmd_export_ui(args):
     if latest:
         old = {f.name: f.read_bytes() for f in (dest / latest[0]).iterdir() if f.is_file()}
         if sha_map(old) == sha_map(files):
+            (dest / ".last-run").write_text(stamp() + "\n")
             print(f"no change since {latest[0]}")
             return 0
     new = dest / stamp()
     new.mkdir()
     for name, content in files.items():
         (new / name).write_bytes(content)
+    # Freshness marker for check-fresh.py: snapshots are only written when something changed.
+    (dest / ".last-run").write_text(stamp() + "\n")
     print(f"snapshot {new.name}: {', '.join(sorted(files))}")
     for name in snapshots_to_drop([d.name for d in dest.iterdir() if d.is_dir()], args.keep):
         shutil.rmtree(dest / name)

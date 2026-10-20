@@ -12,7 +12,7 @@
 | NAS disks | found by serial, formatted once (blank, or the `nas_wipe` opt-in), mounted by LABEL; nfs-server stays down while a mount is missing; `crossmnt` + marker files checked by the client | `ansible/playbooks/deploy-storage.yml` |
 | Samba | shares `share` + `media`, one login `admin`, SMB3, `hosts allow` LAN + WireGuard ([details](../knowledge/storage.md#samba)) | `ansible/playbooks/deploy-storage.yml` |
 | Storage suite | disks, NFS markers, nfs-server guard, Samba | `tests/storage/` — part of `--suite all` |
-| Backup streams | pg_dump, volume tars, repo zip; HA / OPNsense / vzdump / rclone skip when missing | `utils/backup/` |
+| Backup streams | apps: pg_dump, volume tars, repo zip, rclone; NAS: HA backup + UI YAML, OPNsense; Proxmox job: VM dumps ([backup](../knowledge/backup.md)) | `utils/backup/`, `utils/pve-backup-job.py` |
 | Retention A15 | keep 2 newest per stream | `utils/backup/lib.sh` `hl_prune` |
 | Timer | `homelab-backup.timer` 03:15 | deploy-storage.yml |
 | Prod compose binds | Immich / Jellyfin / Navidrome / Syncthing → NFS | `compose/core/docker-compose.nfs.yml` (**not** used on DEV) |
@@ -49,7 +49,7 @@ SA500 = all media (`/export/media`), Purple = backups + Samba share (`/srv/purpl
 
 1. rclone OAuth; store `RCLONE_CONFIG` in GH env **prod** only
 2. Flash HAOS on the T620 `.20.13`; long-lived token → `HA_TOKEN`
-3. Cron or manual `vzdump` on the PVE host
+3. Proxmox job `homelab-vms` (`utils/pve-backup-job.py`, run by Apps Deploy) dumps VM 101/102 onto the NAS export `backups/vzdump`
 
 ## Gate notes
 

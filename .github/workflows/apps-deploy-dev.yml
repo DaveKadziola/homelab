@@ -33,8 +33,22 @@ jobs:
         env:
           HOMELAB_ENV: dev
           SAMBA_ADMIN_PASSWORD: ${{ secrets.SAMBA_ADMIN_PASSWORD }}
+          # NAS backup jobs (run-nas.sh, check-fresh.py); an empty value is not written.
+          HA_TOKEN: ${{ secrets.HA_TOKEN }}
+          HA_SSH_PRIV: ${{ secrets.HA_SSH_PRIV }}
+          HA_BACKUP_PASSWORD: ${{ secrets.HA_BACKUP_PASSWORD }}
+          KUMA_PUSH_SECRET: ${{ secrets.KUMA_PUSH_SECRET }}
+          OPNSENSE_BACKUP_SSH_PRIV: ${{ secrets.OPNSENSE_BACKUP_SSH_PRIV }}
         run: |
           ansible-playbook -i environments/dev/hosts.ini playbooks/deploy-storage.yml
+
+      # After deploy-storage: the NAS must export backups/vzdump before Proxmox mounts it.
+      - name: Proxmox backup job (VM dumps onto the NAS)
+        env:
+          PROXMOX_API_URL: ${{ vars.PROXMOX_API_URL }}
+          PROXMOX_API_TOKEN_ID: ${{ vars.PROXMOX_API_TOKEN_ID }}
+          PROXMOX_API_TOKEN_SECRET: ${{ secrets.PROXMOX_API_TOKEN_SECRET }}
+        run: python3 utils/pve-backup-job.py --env dev
 
       - name: Deploy compose/core
         working-directory: ansible

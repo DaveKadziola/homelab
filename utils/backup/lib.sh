@@ -19,8 +19,11 @@ elif cmd == "keep":
     print(doc["retention"]["keep"])
 elif cmd == "rclone":
     print("yes" if st.get("rclone") else "no")
-elif cmd == "ha_host":
-    print(st.get("ha_host") or "")
+elif cmd == "ha_url":
+    print(st.get("ha_url") or "")
+elif cmd == "nas_backup_root":
+    # The same directory the apps host sees as backup_root over NFS, as a local path on the NAS.
+    print(st["export_root"].rstrip("/") + "/backups")
 elif cmd == "offsite":
     print(doc["offsite"]["remote"])
 PY
@@ -35,7 +38,10 @@ hl_secret() {
   path="${HL_SECRETS_DIR}/${HOMELAB_ENV}/${name}"
   [[ -f "$path" ]] || path="${HL_SECRETS_DIR}/${name}"
   [[ -f "$path" ]] || return 1
-  tr -d '\r\n' <"$path"
+  # Trailing newlines and CRs go, inner newlines stay (RCLONE_CONFIG is a multi-line file).
+  local value
+  value="$(<"$path")"
+  printf '%s' "${value//$'\r'/}"
 }
 
 hl_prune() {

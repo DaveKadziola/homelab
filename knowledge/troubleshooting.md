@@ -46,7 +46,7 @@ Symptoms first. Root-cause write-ups go in [`lessons-learned.md`](lessons-learne
 | `/mnt/homelab` not NFS | `deploy-storage.yml` with `HOMELAB_ENV` set; `exportfs -v`; `showmount -e 127.0.0.1` |
 | Timer silent | `systemctl status homelab-backup.timer`; `journalctl -u homelab-backup` |
 | `run-all.sh` cannot read secrets | It must run as root (`HOMELAB_SECRETS_DIR=/opt/homelab/secrets`) |
-| rclone / HA / vzdump “failed” | They must SKIP with a reason on DEV, not fail the timer |
+| rclone / HA / OPNsense “failed” | A stream without its target or secret must SKIP with a reason, not fail the timer; real failures show in `journalctl -u homelab-nas-backup` (NAS) and as STALE in `check-fresh.py --dry-run` |
 | Immich photos vanished after compose | You applied `docker-compose.nfs.yml` on DEV. Do not. |
 
 ## CI

@@ -1,0 +1,53 @@
+---
+# Monitoring and alerts (F10-A, knowledge/monitoring.md, decision 0006). Values never include secrets.
+#
+#   Uptime Kuma  - add-on on Home Assistant (T620; DEV: the HAOS twin): service checks, backup
+#                  freshness (push monitors) and the alert mail. Synced by utils/kuma-sync.py.
+#   Beszel       - host metrics and the thresholds below (utils/bootstrap/beszel.sh).
+#   Diun         - new image tags, by mail.
+# Mail goes to environment_email in config/identities.yml through the env's SMTP relay: Proton
+# SMTP on prod (secrets SMTP_USERNAME / SMTP_PASSWORD), mailpit on DEV (compose profile devmail).
+
+version: 1
+
+environments:
+  dev:
+    kuma_url: http://192.168.122.60:3001
+    smtp: { host: 192.168.122.50, port: 1025, security: none }
+  prod:
+    kuma_url: http://192.168.20.13:3001
+    smtp: { host: smtp.protonmail.ch, port: 587, security: starttls }
+
+# Beszel alert thresholds (plan F10-A).
+thresholds:
+  disk_percent: 80
+  disk_percent_critical: 90
+  memory_percent: 90
+  memory_minutes: 10
+  cpu_percent: 80
+  cpu_minutes: 15
+
+# Backup freshness, checked on the NAS by utils/backup/check-fresh.py and pushed to one Kuma push
+# monitor per stream. `glob` is relative to the NAS backup root (<export_root>/backups); the newest
+# match counts. Push token = first 24 hex characters of sha256("<KUMA_PUSH_SECRET>:<stream>").
+backups:
+  - { stream: postgres,           glob: "postgres/*.sql.gz",                    max_age_hours: 26, envs: [dev, prod] }
+  - { stream: volumes,            glob: "volumes/*",                            max_age_hours: 26, envs: [dev, prod] }
+  - { stream: repo-zip,           glob: "repo-zip/*",                           max_age_hours: 26, envs: [dev, prod] }
+  - { stream: homeassistant,      glob: "homeassistant/ha-full-*.tar",          max_age_hours: 26, envs: [dev, prod] }
+  - { stream: homeassistant-yaml, glob: "homeassistant-yaml/.last-run",         max_age_hours: 26, envs: [dev, prod] }
+  - { stream: opnsense,           glob: "opnsense/config-*.xml",                max_age_hours: 26, envs: [prod] }
+  - { stream: vzdump,             glob: "vzdump/dump/vzdump-qemu-*.vma.zst",    max_age_hours: 26, envs: [prod] }
+  - { stream: offsite,            glob: ".offsite-ok",                          max_age_hours: 26, envs: [prod] }
+
+# Kuma checks besides one HTTP/TCP monitor per service in config/services.yml (profile-filtered like
+# the deploy). Types: http (url), port (host, port), ping (host).
+extra_monitors:
+  dev:
+    - { name: proxmox-dev, type: http, url: "https://192.168.122.219:8006", ignore_tls: true }
+    - { name: apps-dev-ssh, type: port, host: 192.168.122.50, port: 22 }
+  prod:
+    - { name: proxmox, type: http, url: "https://192.168.20.20:8006", ignore_tls: true }
+    - { name: nas-ssh, type: port, host: 192.168.20.12, port: 22 }
+    - { name: router, type: ping, host: 192.168.20.1 }
+    - { name: grocery-public, type: http, url: "https://grocery.dkhomelabserver.xyz" }

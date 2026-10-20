@@ -62,7 +62,7 @@ Last reviewed: 2026-10-18
 | Build | - | nothing to build |
 | Test (all) | `utils/run-tests.sh --env dev --suite all` | `README.md:119`; `restore` is opt-in and not in `all` |
 | Test (single) | `utils/run-tests.sh --env dev --suite <smoke\|infra\|net\|config\|restore>` | `utils/run-tests.sh:4`. Only `config` is static; the others reach DEV hosts over SSH |
-| Lint / format | `terraform fmt -check -recursive`; `terraform validate`; `ansible-lint ansible/playbooks/`; `docker compose --profile auth --profile media config` (in `compose/core`, needs placeholder env values); `./utils/pve-attach-nas-disks.sh --self-test`; `python3 utils/pve-network.py --self-test`; `python3 utils/bw-store.py --self-test`; `python3 utils/tf-plan-risk.py --self-test` | `.github/workflows/ci-validate.yml` (step "Script self-tests") |
+| Lint / format | `terraform fmt -check -recursive`; `terraform validate`; `ansible-lint ansible/playbooks/`; `docker compose --profile auth --profile media config` (in `compose/core`, needs placeholder env values); `./utils/pve-attach-nas-disks.sh --self-test`; `python3 utils/pve-network.py --self-test`; `python3 utils/bw-store.py --self-test`; `python3 utils/tf-plan-risk.py --self-test`; `python3 utils/ha.py --self-test`; `python3 utils/backup/check-fresh.py --self-test`; `python3 utils/pve-backup-job.py --self-test` | `.github/workflows/ci-validate.yml` (step "Script self-tests") |
 | Kit check | `python3 scripts/validate_kit.py` | agent kit |
 | Run locally | - | |
 | Deploy | through GitHub Actions on push | Never run by the agent without an explicit request |
