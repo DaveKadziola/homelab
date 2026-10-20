@@ -37,10 +37,10 @@ flowchart TB
     PVE[proxmox 192.168.20.20]
     AppsVM[ubuntu-apps 192.168.50.30]
     NASVM[ubuntu-nas 192.168.20.12]
-    RunnerProd[homelab-prod runner]
+    RunnerProd[ci-runner LXC 192.168.20.14 - homelab-prod runner]
     PVE --> AppsVM
     PVE --> NASVM
-    AppsVM --> RunnerProd
+    PVE --> RunnerProd
   end
   OPNsense[OPNsense router]
   HA[Home Assistant T620]
@@ -94,7 +94,7 @@ Laptop cache → GitHub Environment: `utils/sync-secrets-to-github.py --env dev`
 
 Order (after F2–F3): OPNsense → Proxmox TF apply → Ansible → Compose. Prod workflows require:
 
-- Self-hosted runner `homelab-prod` on `ubuntu-apps` (F3)
+- Self-hosted runner `homelab-prod` in the LXC container `ci-runner` (CT 110, `192.168.20.14`) on the Proxmox host: `utils/pve-ci-runner-lxc.sh`
 - TFC workspace `homelab` execution mode **Local**
 - GitHub Environment **prod** approval on `main`
 
@@ -111,7 +111,7 @@ Order (after F2–F3): OPNsense → Proxmox TF apply → Ansible → Compose. Pr
 | `apps-deploy-prod.yml` | after `infra-apply-prod` / manual | `homelab-prod` |
 | `tests-dev.yml` | push `homelab-v2` (tests, config) / manual; after a deploy: job in `apps-deploy-dev.yml` | `homelab-dev` |
 
-Bootstrap: [`utils/setup-github-runner.sh`](utils/setup-github-runner.sh)
+Bootstrap: [`utils/setup-github-runner.sh`](utils/setup-github-runner.sh); the prod runner container: [`utils/pve-ci-runner-lxc.sh`](utils/pve-ci-runner-lxc.sh)
 
 ## Applications
 

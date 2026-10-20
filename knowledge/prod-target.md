@@ -99,9 +99,9 @@ Beszel hub (host metrics; agent off until keyed), Dozzle (logs), Diun (image upd
 
 ## 8. How it is deployed
 
-1. Terraform from the laptop the first time (`TF_WORKSPACE=homelab`, `TF_VAR_*` from GH `prod` / Bitwarden): the prod runner lives on `ubuntu-apps`, so it cannot run its own first apply (`docs/f3-proxmox.md`).
+1. Terraform from the laptop the first time (`TF_WORKSPACE=homelab`, `TF_VAR_*` from GH `prod` / Bitwarden): there is no prod runner before the host exists (`docs/f3-proxmox.md`).
 2. Disks: `utils/pve-attach-nas-disks.sh --env prod` after `by_id` is filled.
-3. GitHub runner `homelab-prod` on `ubuntu-apps` (`setup-github-runner.sh`).
+3. GitHub runner `homelab-prod` in the LXC `ci-runner` on the Proxmox host (`utils/pve-ci-runner-lxc.sh`).
 4. From then on, merge to `main`: `infra-plan` / `infra-apply-prod` (Terraform) and `apps-deploy-prod` (Ansible `deploy-core` + `deploy-storage`, then tests) on `[self-hosted, homelab-prod]`, environment `prod`; the PR plan `infra-plan` uses `prod-plan` (`docs/f3-proxmox.md` "PR plan").
 5. Restore data (step 7 of `rebuild.md`), HAProxy check, `run-tests.sh --env prod`.
 

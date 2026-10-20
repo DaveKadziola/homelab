@@ -108,8 +108,8 @@ Ports live in `config/services.yml` **first**, then in compose, then in docs —
 - **Read-only.** `terraform plan` runs without `-out` and with `-lock=false`,
   ansible runs in `--check` mode, everything else is a fact query. Safe to run
   repeatedly; no app state is touched.
-- On the prod runner (which lives on `ubuntu-apps` itself) "remote" commands
-  detect that the target address is local and run directly instead of over SSH.
+- When the runner is the target host itself, "remote" commands detect that the
+  target address is local and run directly instead of over SSH.
 
 ### Secret scanning without gitleaks
 
