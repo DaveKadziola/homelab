@@ -53,7 +53,11 @@ Helper scripts:
 | `SSL_CHAIN` | prod | secret | `homelab/SSL_CHAIN/prod` | planned | optional |
 | `SSL_PKEY` | prod | secret | `homelab/SSL_PKEY/prod` | planned | optional |
 | `RCLONE_CONFIG` | prod | secret | `homelab/RCLONE_CONFIG/prod` | set | generated 2026-09-11 — `rclone.conf` in GH prod; copy to Bitwarden via cache |
-| `HA_TOKEN` | prod | secret | `homelab/HA_TOKEN/prod` | planned | F5 HA Supervisor pull; T620 not flashed from this repo |
+| `HA_TOKEN` | prod | secret | `homelab/HA_TOKEN/prod` | planned | long-lived token the owner creates in the HA profile; `utils/ha.py` (deploy, backup pull, tests) |
+| `HA_TOKEN` | dev | secret | `homelab/HA_TOKEN/dev` | set 2026-10-20 | made by `utils/ha.py --env dev bootstrap` on the HAOS twin |
+| `HA_ADMIN_PASSWORD` | dev | secret | `homelab/HA_ADMIN_PASSWORD/dev` | set 2026-10-20 | owner account `admin` of the DEV twin (onboarding) |
+| `HA_SSH_PRIV` | dev, prod | secret | `homelab/HA_SSH_PRIV/<env>` | set 2026-10-20 | ed25519 key of the Terminal & SSH add-on; public half derived |
+| `HA_BACKUP_PASSWORD` | dev, prod | secret | `homelab/HA_BACKUP_PASSWORD/<env>` | set 2026-10-20 | password of the Supervisor backups the NAS pulls; needed to restore |
 | `PORTAINER_ADMIN_PASSWORD` | dev | secret | `homelab/PORTAINER_ADMIN_PASSWORD/dev` | set | generated 2026-09-10 |
 | `PGADMIN_PASSWORD` | dev | secret | `homelab/PGADMIN_PASSWORD/dev` | set | generated 2026-09-10 |
 | `HOMARR_ADMIN_PASSWORD` | dev | secret | `homelab/HOMARR_ADMIN_PASSWORD/dev` | set | generated 2026-09-10; rotated same day |

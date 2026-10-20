@@ -19,7 +19,8 @@ environments:
     mount_root: /mnt/homelab
     export_clients: [192.168.122.0/24, 127.0.0.1]
     rclone: false
-    ha_host: ""
+    # DEV twin of the T620: HAOS VM in the laptop libvirt (utils/dev-haos-vm.sh).
+    ha_url: http://192.168.122.60
     passthrough: []
     # Samba runs on the NAS guest; DEV reaches it from the libvirt network only.
     samba:
@@ -34,7 +35,8 @@ environments:
     mount_root: /mnt/homelab
     export_clients: [192.168.50.0/26]
     rclone: true
-    ha_host: 192.168.20.13
+    # HA on the T620 serves its UI and API on port 80 (live probe 2026-10-20).
+    ha_url: http://192.168.20.13
     # Whole disks passed to ubuntu-nas (utils/pve-attach-nas-disks.sh --env prod). `serial` is
     # handed to the guest (qm serial=) so the playbook finds each disk by it; `label` names the
     # ext4 filesystem it gets once (one-time wipe opt-in, knowledge/storage.md) and fstab mounts

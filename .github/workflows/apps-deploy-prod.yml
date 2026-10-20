@@ -69,6 +69,17 @@ jobs:
         run: |
           ansible-playbook -i environments/prod/hosts.ini playbooks/deploy-core.yml
 
+      # T620: add-ons, then homeassistant/packages (knowledge/apps/homeassistant.md). The first deploy
+      # adds the packages include to configuration.yaml and restarts Home Assistant once.
+      - name: Home Assistant add-ons and packages
+        env:
+          HA_TOKEN: ${{ secrets.HA_TOKEN }}
+          HA_SSH_PRIV: ${{ secrets.HA_SSH_PRIV }}
+        run: |
+          if [ -z "$HA_TOKEN" ]; then echo "::warning::HA_TOKEN is not set in environment prod - Home Assistant left alone"; exit 0; fi
+          python3 utils/ha.py --env prod bootstrap
+          python3 utils/ha.py --env prod deploy
+
   # F7-C — a deploy is not done until its tests are green. Checks that need a
   # part of prod that is not online yet report SKIP, which is not a failure.
   post-deploy-tests:
@@ -94,6 +105,7 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           IMMICH_DB_PASSWORD: ${{ secrets.IMMICH_DB_PASSWORD }}
           SAMBA_ADMIN_PASSWORD: ${{ secrets.SAMBA_ADMIN_PASSWORD }}
+          HA_TOKEN: ${{ secrets.HA_TOKEN }}
           LINKWARDEN_URL: http://192.168.50.30:3001
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NO_COLOR: "1"

@@ -117,6 +117,16 @@ accounts:
     inject: bootstrap
     envs: [dev, prod]
 
+  - app: homeassistant
+    identity: homelab-admin
+    login: username
+    secret: HA_ADMIN_PASSWORD
+    inject: bootstrap
+    envs: [dev]
+    notes: >-
+      DEV twin only: utils/ha.py bootstrap does the onboarding. Prod HA is the owner's account on the
+      T620; the automation there uses HA_TOKEN.
+
   - app: zotify
     identity: homelab-admin
     login: none
@@ -156,3 +166,21 @@ service_secrets:
     envs: [dev, prod]
     issued_by: beszel
     notes: Issued by the hub — bootstrap reads it from the Beszel API, not generated locally.
+  - name: HA_TOKEN
+    used_by: [homeassistant]
+    envs: [dev, prod]
+    issued_by: homeassistant
+    notes: >-
+      Long-lived access token for utils/ha.py. DEV: utils/ha.py bootstrap creates it; prod: the owner
+      creates it in the HA profile.
+  - name: HA_SSH_PRIV
+    used_by: [homeassistant]
+    envs: [dev, prod]
+    issued_by: ssh-keygen
+    notes: >-
+      Key of the Terminal & SSH add-on (`ssh-keygen -t ed25519 -N ''`); utils/ha.py derives the public
+      half and installs it as the add-on's authorized key.
+  - name: HA_BACKUP_PASSWORD
+    used_by: [homeassistant]
+    envs: [dev, prod]
+    notes: Password of the Supervisor backups the NAS pulls (utils/ha.py backup); needed to restore one.

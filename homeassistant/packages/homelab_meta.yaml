@@ -1,0 +1,8 @@
+# Deployed by utils/ha.py from this repository. The deploy replaces @REVISION@ with the commit it
+# came from and reads the sensor back to prove that the packages were loaded.
+template:
+  - sensor:
+      - name: homelab_config_revision
+        unique_id: homelab_config_revision
+        icon: mdi:source-commit
+        state: "@REVISION@"

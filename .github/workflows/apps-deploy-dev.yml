@@ -8,6 +8,9 @@ on:
       - "ansible/**"
       - "config/storage.yml"
       - "config/identities.yml"
+      - "homeassistant/**"
+      - "utils/ha.py"
+      - "utils/dev-haos-vm.sh"
       - ".github/workflows/apps-deploy-dev.yml"
   workflow_dispatch:
 
@@ -61,6 +64,18 @@ jobs:
         run: |
           ansible-playbook -i environments/dev/hosts.ini playbooks/deploy-core.yml
 
+      # DEV twin of the T620 (HAOS VM on this laptop): add-ons, then homeassistant/packages.
+      - name: Home Assistant add-ons and packages
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HA_TOKEN: ${{ secrets.HA_TOKEN }}
+          HA_SSH_PRIV: ${{ secrets.HA_SSH_PRIV }}
+          HA_ADMIN_PASSWORD: ${{ secrets.HA_ADMIN_PASSWORD }}
+        run: |
+          ./utils/dev-haos-vm.sh
+          python3 utils/ha.py --env dev bootstrap
+          python3 utils/ha.py --env dev deploy
+
   post-deploy-tests:
     needs: deploy-dev
     runs-on: [self-hosted, homelab-dev]
@@ -74,6 +89,7 @@ jobs:
         env:
           HOMELAB_ENV: dev
           SAMBA_ADMIN_PASSWORD: ${{ secrets.SAMBA_ADMIN_PASSWORD }}
+          HA_TOKEN: ${{ secrets.HA_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NO_COLOR: "1"
         run: ./utils/run-tests.sh --env dev --suite all --json-out tests-dev-report.json
