@@ -27,7 +27,7 @@ Last reviewed: 2026-10-18
 | Infrastructure as code | Terraform `>= 1.8.0`, provider `bpg/proxmox` `0.77.1`; Terraform Cloud org `dkhomelabserver`, workspaces `homelab` (prod) and `homelab-dev` (DEV), chosen by `TF_WORKSPACE`, execution mode local | `terraform/versions.tf:2,6-7`; `terraform/cloud.tf` |
 | Configuration | Ansible (`ansible/playbooks/`, inventories `ansible/environments/{dev,prod}/hosts.ini`), ansible-lint profile `production`. Ansible version: not pinned | `ansible/ansible.cfg`; `.ansible-lint` |
 | Applications | Docker Compose (`compose/core`, `compose/grocery`); services declared once in `config/services.yml`, accounts and secret names in `config/identities.yml` | `README.md` "Applications" |
-| CI | GitHub Actions on self-hosted runners `homelab-dev` (laptop) and `homelab-prod` (`ubuntu-apps`) | `.github/workflows/*.yml` `runs-on` |
+| CI | GitHub Actions on self-hosted runners `homelab-dev` (laptop) and `homelab-prod` (LXC `ci-runner` on the prod Proxmox host) | `.github/workflows/*.yml` `runs-on`; `utils/pve-ci-runner-lxc.sh` |
 | Secrets | Generated locally -> Bitwarden `homelab/<NAME>/<env>` -> `gh secret set`; app secrets from `utils/gen-app-credentials.sh`; local copies in `~/.homelab-secrets/<env>/` | `README.md:76,78,146` |
 
 ## 3. Constraints

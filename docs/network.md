@@ -70,7 +70,7 @@ Host names come from **AdGuard Home rewrites** on OPNsense (`/usr/local/AdGuardH
 | Source | Destination | Ports | Purpose |
 |--------|-------------|-------|---------|
 | APP net `192.168.50.0/26` (`opt6`) | `192.168.20.12` | TCP 2049, 111 | NFS apps → NAS. Until 2026-10-19 both rules carried the port in a top-level `<destinationport>`, which pf ignores, so APP reached every TCP port of the NAS (`pfctl -sr`: `pass ... to 192.168.20.12` with no port). Fixed on the router by `utils/f2-opnsense-nas-ports.sh` (port in `<destination><port>`; pf now shows `port = nfsd` / `port = sunrpc`); the generator `utils/f2-opnsense-apply-remote.sh` is fixed the same way |
-| `192.168.50.30/32` (`opt6`) | `192.168.20.12` | TCP 22 | SSH from the prod runner on `ubuntu-apps`, which deploys the NAS; added by `utils/f2-opnsense-nas-ports.sh` on 2026-10-19 |
+| `192.168.50.30/32` (`opt6`) | `192.168.20.12` | TCP 22 | Added by `utils/f2-opnsense-nas-ports.sh` on 2026-10-19 for a prod runner on `ubuntu-apps`. Unused since the runner moved to the LXC `ci-runner` on IOT (2026-10-20), which reaches the NAS without the router; remove with the next router change |
 | LAN `192.168.1.0/24`, WireGuard `10.10.10.0/24` | `192.168.20.12` | TCP 445 | Samba on the NAS. Enforced by Samba `hosts allow` (`config/storage.yml`): IOT devices share the NAS subnet and the router cannot filter them |
 | IOT (`opt3`) | everything except HOME OFFICE + GUEST (`!NotForIOT`) | any | DNS to `opt3ip`; the old IOT `pass any -> any` is disabled since 2026-10-19 (`utils/f2-opnsense-iot.sh`) |
 | WireGuard `10.10.10.0/24` | IOT / APP / LAN | per rule | VPN |

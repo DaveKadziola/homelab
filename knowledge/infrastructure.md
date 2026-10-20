@@ -32,9 +32,11 @@ Cloud-init is first-boot only. The VM resource `lifecycle { ignore_changes = [in
 | Label | Host | Workflows |
 |-------|------|-----------|
 | `homelab-dev` | laptop / nested path | `ci-validate`, `infra-*-dev`, `apps-deploy-dev`, `tests-dev` |
-| `homelab-prod` | `ubuntu-apps` (F3) | `infra-*` / `apps-deploy-prod` on `main` |
+| `homelab-prod` | LXC `ci-runner` (CT 110, `192.168.20.14`, IOT VLAN 20) on the prod Proxmox host | `infra-*` / `apps-deploy-prod` on `main` |
 
 Start the DEV runner: `sudo ./svc.sh start` in `~/actions-runner-homelab`. Without sudo it goes quietly offline and CI never fires.
+
+The prod runner container is built and converged by `utils/pve-ci-runner-lxc.sh` (`--dry-run` first), outside the prod Terraform state: an apply that replaced its own runner would end the job half way. Unprivileged Debian 13, no SSH server (`pct enter 110` on the host), nftables drops all inbound traffic, the runner runs as user `runner` without sudo.
 
 ## Related
 
