@@ -21,7 +21,8 @@ DISK="$DIR/$NAME.qcow2"
 CACHE="$DIR/cache"
 ASSET="haos_ova-${VERSION}.qcow2.xz"
 URL="https://github.com/home-assistant/operating-system/releases/download/${VERSION}/${ASSET}"
-VIRSH=(virsh -c qemu:///system)
+# virsh prints states in the session language ("uruchomiona" on the runner); the checks need English.
+VIRSH=(env LC_ALL=C virsh -c qemu:///system)
 MODE=apply
 case "${1:-}" in --dry-run) MODE=dry ;; --undo) MODE=undo ;; "") ;; *) echo "unknown option: $1" >&2; exit 2 ;; esac
 
@@ -68,10 +69,11 @@ elif [[ "$("${VIRSH[@]}" domstate "$NAME")" != "running" ]]; then
 fi
 [[ $MODE == dry ]] && { echo "dry run - nothing changed"; exit 0; }
 
-# First boot pulls the HA core image; core is up when the onboarding endpoint returns its JSON step
-# list. HAOS 18.3 serves HA on port 80 (8123 only redirects there), on the T620 as here.
+# First boot pulls the HA core image; core is up when its API answers 401 without a token (the
+# landing page before it only redirects; /api/onboarding is gone once onboarding is done). HAOS 18.3
+# serves HA on port 80 (8123 only redirects there), on the T620 as here.
 for _ in $(seq 1 90); do
-  if curl -fs -m 5 "http://${IP}/api/onboarding" | grep -q '"step"'; then echo "HA answers on http://${IP}"; exit 0; fi
+  if [[ "$(curl -s -o /dev/null -m 5 -w '%{http_code}' "http://${IP}/api/")" == 401 ]]; then echo "HA answers on http://${IP}"; exit 0; fi
   sleep 10
 done
 echo "STOP: HA did not answer on http://${IP} within 15 minutes (virsh console $NAME)" >&2

@@ -571,7 +571,13 @@ def onboard(env, url):
         except urllib.error.HTTPError as e:
             raise Stop(f"POST {path}: HTTP {e.code}") from None
 
-    done = {s["step"]: s["done"] for s in json.loads(urllib.request.urlopen(url + "/api/onboarding", timeout=30).read())}
+    try:
+        steps = json.loads(urllib.request.urlopen(url + "/api/onboarding", timeout=30).read())
+    except urllib.error.HTTPError as e:
+        if e.code != 404:
+            raise Stop(f"GET /api/onboarding: HTTP {e.code}") from None
+        steps = []  # HA drops the onboarding API once every step is done
+    done = {s["step"]: s["done"] for s in steps} or {"user": True, "core_config": True, "analytics": True, "integration": True}
     if not done.get("user"):
         code = post("/api/onboarding/users", {"client_id": client, "name": "Homelab Admin", "username": "admin",
                                               "password": password, "language": "en"})["auth_code"]
