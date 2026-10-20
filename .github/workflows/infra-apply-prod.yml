@@ -4,13 +4,27 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      gate:
+        description: "Stop at the prod-gate approval even when the plan is safe"
+        type: boolean
+        default: false
+
+# Risk gate (knowledge/decisions/0004-ci-autonomy-and-prod-risk-gate.md): plan, classify with
+# utils/tf-plan-risk.py, wait in env prod-gate only when the plan is risky, then apply the plan
+# that matches the gated one. Plan files and their JSON hold secrets: they stay in RUNNER_TEMP,
+# which the runner empties after every job, and are never uploaded or printed.
 
 jobs:
-  apply:
+  plan:
     runs-on: [self-hosted, homelab-prod]
+    timeout-minutes: 20
     environment: prod
     env:
       TF_WORKSPACE: homelab
+    outputs:
+      risky: ${{ steps.plan.outputs.risky }}
+      digest: ${{ steps.plan.outputs.digest }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -20,14 +34,56 @@ jobs:
         # not downloaded per job: the setup-terraform download stalled again and again.
         run: v="$(terraform version | head -1)"; echo "$v"; test "$v" = "Terraform v1.16.3"
 
-      - name: Terraform init
+      - name: Terraform plan and risk
+        id: plan
         working-directory: terraform
         env:
           # HCP Terraform login: the CLI reads TF_TOKEN_<host>, so the token never lands in a file.
           TF_TOKEN_app_terraform_io: ${{ secrets.TF_API_TOKEN }}
-        run: terraform init
+          TF_VAR_environment: prod
+          TF_VAR_proxmox_node_name: proxmox
+          TF_VAR_proxmox_api_url: ${{ vars.PROXMOX_API_URL }}
+          TF_VAR_proxmox_api_token_id: ${{ vars.PROXMOX_API_TOKEN_ID }}
+          TF_VAR_proxmox_api_token_secret: ${{ secrets.PROXMOX_API_TOKEN_SECRET }}
+          TF_VAR_proxmox_ssh_username: ${{ vars.PROXMOX_SSH_USERNAME }}
+          TF_VAR_proxmox_ssh_password: ${{ secrets.PROXMOX_SSH_PASSWORD }}
+          TF_VAR_ubuntu_docker_password: ${{ secrets.UBUNTU_DOCKER_PASSWORD }}
+          TF_VAR_ubuntu_docker_ssh_pub: ${{ vars.UBUNTU_DOCKER_SSH_PUB }}
+        run: |
+          terraform init -input=false
+          terraform plan -input=false -out="$RUNNER_TEMP/tfplan" -var-file=environments/prod/terraform.tfvars
+          terraform show -json "$RUNNER_TEMP/tfplan" > "$RUNNER_TEMP/plan.json"
+          python3 ../utils/tf-plan-risk.py "$RUNNER_TEMP/plan.json" >> "$GITHUB_OUTPUT"
 
-      - name: Terraform apply
+  gate:
+    needs: plan
+    # Anything but an explicit "false" stops here, so a missing output cannot skip the gate.
+    if: needs.plan.outputs.risky != 'false' || inputs.gate
+    runs-on: [self-hosted, homelab-prod]
+    timeout-minutes: 5
+    environment: prod-gate
+    steps:
+      - name: Approved
+        run: echo "Approved plan digest ${{ needs.plan.outputs.digest }} (risky=${{ needs.plan.outputs.risky }}); the changes are listed in the plan job log."
+
+  apply:
+    needs: [plan, gate]
+    if: ${{ !cancelled() && needs.plan.result == 'success' && (needs.gate.result == 'success' || needs.gate.result == 'skipped') }}
+    runs-on: [self-hosted, homelab-prod]
+    # The provider itself waits up to 30 minutes for VM operations; a shorter job timeout would kill
+    # Terraform mid-apply and leave the HCP state lock held.
+    timeout-minutes: 60
+    environment: prod
+    env:
+      TF_WORKSPACE: homelab
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Check Terraform
+        run: v="$(terraform version | head -1)"; echo "$v"; test "$v" = "Terraform v1.16.3"
+
+      - name: Terraform apply of the gated plan
         working-directory: terraform
         env:
           TF_TOKEN_app_terraform_io: ${{ secrets.TF_API_TOKEN }}
@@ -40,4 +96,15 @@ jobs:
           TF_VAR_proxmox_ssh_password: ${{ secrets.PROXMOX_SSH_PASSWORD }}
           TF_VAR_ubuntu_docker_password: ${{ secrets.UBUNTU_DOCKER_PASSWORD }}
           TF_VAR_ubuntu_docker_ssh_pub: ${{ vars.UBUNTU_DOCKER_SSH_PUB }}
-        run: terraform apply -auto-approve -var-file=environments/prod/terraform.tfvars
+          PLANNED: ${{ needs.plan.outputs.digest }}
+        run: |
+          terraform init -input=false
+          terraform plan -input=false -out="$RUNNER_TEMP/tfplan" -var-file=environments/prod/terraform.tfvars
+          terraform show -json "$RUNNER_TEMP/tfplan" > "$RUNNER_TEMP/plan.json"
+          digest="$(python3 ../utils/tf-plan-risk.py "$RUNNER_TEMP/plan.json" | sed -n 's/^digest=//p')"
+          if [ -z "$PLANNED" ] || [ "$digest" != "$PLANNED" ]; then
+            echo "::error::the plan changed since the plan job (gated digest ${PLANNED:-none}, now ${digest:-none}) - use Re-run all jobs"
+            exit 1
+          fi
+          # A saved plan carries its variables: no -var-file here.
+          terraform apply -input=false "$RUNNER_TEMP/tfplan"

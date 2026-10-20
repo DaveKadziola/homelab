@@ -135,7 +135,7 @@ the admin hash in `compose/core/authelia/users_database.yml` by design.
 | Workflow | Trigger | Runner |
 |----------|---------|--------|
 | [`tests-dev.yml`](../.github/workflows/tests-dev.yml) | after `Apps Deploy Dev` (`workflow_run`), on push to `tests/`/`config/`, or manually | `homelab-dev` |
-| `post-deploy-tests` job in [`apps-deploy-prod.yml`](../.github/workflows/apps-deploy-prod.yml) | after the prod deploy job (post approval) | `homelab-prod` |
+| `post-deploy-tests` job in [`apps-deploy-prod.yml`](../.github/workflows/apps-deploy-prod.yml) | after the prod deploy job | `homelab-prod` |
 
 Both upload the JSON report as a build artifact.
 

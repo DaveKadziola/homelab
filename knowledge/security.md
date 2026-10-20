@@ -34,7 +34,7 @@ Generator: `utils/gen-app-credentials.sh` → GH Environment secret + `~/.homela
 
 Workflows run on self-hosted runners inside the home network, so every `uses:` in `.github/workflows/` is pinned to a commit SHA with the version as a comment: a moved or hijacked tag cannot change what runs there. To update an action, take the commit of the new tag (`gh api repos/<owner>/<action>/commits/<tag> --jq .sha`) and replace the SHA and the comment in every workflow.
 
-Workflows from fork PRs wait for the owner's approval for every external contributor (`approval_policy: all_external_contributors`, 2026-10-20). Rulesets without bypass: `main` accepts changes only through a PR (0 approvals) and refuses force pushes and deletion; `homelab-v2` refuses force pushes and deletion.
+Workflows from fork PRs wait for the owner's approval for every external contributor (`approval_policy: all_external_contributors`, 2026-10-20). Rulesets without bypass: `main` accepts changes only through a PR (0 approvals) and refuses force pushes and deletion; `homelab-v2` also accepts changes only through a PR, and only when the checks `validate` and `plan` passed. Risky Terraform plans on prod wait in environment `prod-gate` for the owner ([0004](decisions/0004-ci-autonomy-and-prod-risk-gate.md)); agents share the owner's account, so these settings stop mistakes, not an agent that breaks the rules in `PROJECT-CONTEXT.md`.
 
 ## Known sharp edges (will be in F9)
 

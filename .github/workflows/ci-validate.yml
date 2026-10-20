@@ -60,3 +60,4 @@ jobs:
           ./utils/pve-attach-nas-disks.sh --self-test
           python3 utils/pve-network.py --self-test
           python3 utils/bw-store.py --self-test
+          python3 utils/tf-plan-risk.py --self-test

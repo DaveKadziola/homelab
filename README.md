@@ -4,8 +4,8 @@ Self-hosted homelab on Proxmox: Terraform + Ansible + Docker Compose, deployed v
 
 | Branch | Environment | Effect |
 |--------|-------------|--------|
-| `homelab-v2` | **dev** | CI validate + deploy to dev VM (laptop libvirt) |
-| `main` | **prod** | Terraform apply + app deploy on Proxmox (approval required) |
+| `homelab-v2` | **dev** | CI validate + deploy to dev VM (laptop libvirt); PRs merge themselves when `validate` and `plan` pass |
+| `main` | **prod** | Terraform apply + app deploy on Proxmox; the owner merges the release PR, approval only for a risky Terraform plan ([0004](knowledge/decisions/0004-ci-autonomy-and-prod-risk-gate.md)) |
 
 Legacy pre-v2 code is tagged `legacy-pre-v2` on `main` before merge (see greenfield plan).
 
@@ -96,7 +96,7 @@ Order (after F2–F3): OPNsense → Proxmox TF apply → Ansible → Compose. Pr
 
 - Self-hosted runner `homelab-prod` in the LXC container `ci-runner` (CT 110, `192.168.20.14`) on the Proxmox host: `utils/pve-ci-runner-lxc.sh`
 - TFC workspace `homelab` execution mode **Local**
-- GitHub Environment **prod** approval on `main`
+- GitHub Environments **prod** (branch `main`) and **prod-gate** (owner approval, only for a risky Terraform plan: [0004](knowledge/decisions/0004-ci-autonomy-and-prod-risk-gate.md))
 
 ## CI/CD workflows
 

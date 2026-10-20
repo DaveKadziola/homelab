@@ -42,8 +42,12 @@ Last reviewed: 2026-10-18
 - Things the agent must never touch without an explicit request each time:
   - `main` and anything that triggers prod workflows (push to `main` applies Terraform and
     deploys apps on prod). <!-- source: .github/workflows/infra-apply-prod.yml, apps-deploy-prod.yml -->
-  - Pushes to `homelab-v2`: they trigger DEV Terraform apply and app deploy.
-    <!-- source: .github/workflows/infra-apply-dev.yml, apps-deploy-dev.yml -->
+  - Direct pushes to `homelab-v2` (they trigger DEV Terraform apply and app deploy). Changes reach
+    it only through a PR; the agent turns on auto-merge (`gh pr merge --auto --merge`) after
+    `Infra Plan Dev` shows no VM replace or destroy. Never `[skip ci]`.
+    <!-- source: .github/workflows/infra-apply-dev.yml, apps-deploy-dev.yml; knowledge/decisions/0004-ci-autonomy-and-prod-risk-gate.md -->
+  - Approving deployments (`prod`, `prod-gate`), editing rulesets, environments or repo settings,
+    and starting prod workflows. <!-- source: knowledge/decisions/0004-ci-autonomy-and-prod-risk-gate.md -->
   - `terraform apply` whose plan replaces `ubuntu-apps` - it wipes Docker volumes.
     <!-- source: knowledge/deployment.md:53 -->
   - The OPNsense router and its live configuration.
@@ -58,7 +62,7 @@ Last reviewed: 2026-10-18
 | Build | - | nothing to build |
 | Test (all) | `utils/run-tests.sh --env dev --suite all` | `README.md:119`; `restore` is opt-in and not in `all` |
 | Test (single) | `utils/run-tests.sh --env dev --suite <smoke\|infra\|net\|config\|restore>` | `utils/run-tests.sh:4`. Only `config` is static; the others reach DEV hosts over SSH |
-| Lint / format | `terraform fmt -check -recursive`; `terraform validate`; `ansible-lint ansible/playbooks/`; `docker compose --profile auth --profile media config` (in `compose/core`, needs placeholder env values); `./utils/pve-attach-nas-disks.sh --self-test`; `python3 utils/pve-network.py --self-test`; `python3 utils/bw-store.py --self-test` | `.github/workflows/ci-validate.yml:23,31,34,50,59-61` |
+| Lint / format | `terraform fmt -check -recursive`; `terraform validate`; `ansible-lint ansible/playbooks/`; `docker compose --profile auth --profile media config` (in `compose/core`, needs placeholder env values); `./utils/pve-attach-nas-disks.sh --self-test`; `python3 utils/pve-network.py --self-test`; `python3 utils/bw-store.py --self-test`; `python3 utils/tf-plan-risk.py --self-test` | `.github/workflows/ci-validate.yml` (step "Script self-tests") |
 | Kit check | `python3 scripts/validate_kit.py` | agent kit |
 | Run locally | - | |
 | Deploy | through GitHub Actions on push | Never run by the agent without an explicit request |
@@ -78,9 +82,11 @@ Last reviewed: 2026-10-18
   `config/services.yml` -> compose -> `knowledge/apps/<app>.md`. <!-- source: README.md:143 -->
 - Commits: `type(scope): subject`, scope = phase (`f1` ... `f10`) when there is one.
   <!-- source: git log main..homelab-v2 -->
-- Branching and review: `homelab-v2` = DEV, `main` = prod (approval required). Agent work happens
-  on a separate branch (currently `agent-takeover`) and reaches `homelab-v2` only by the
-  operator's decision. <!-- source: README.md:7-8; operator decision 2026-10-18 -->
+- Branching and review: `homelab-v2` = DEV, `main` = prod. Agent work happens on a feature branch
+  and reaches `homelab-v2` through a PR that merges itself when `validate` and `plan` pass (ruleset
+  without bypass). A release is a PR `homelab-v2` -> `main` that the operator merges; prod asks for
+  approval only when the Terraform plan is risky (environment `prod-gate`).
+  <!-- source: operator decisions 2026-10-18 and 2026-10-20; knowledge/decisions/0004-ci-autonomy-and-prod-risk-gate.md -->
 - Language: answers in the operator's language (Polish); repository content in English. The plan
   in `docs/plan/` is in Polish and stays so.
 - Deviations from `AGENTS.md`: none. The knowledge base keeps its own page layout, described in

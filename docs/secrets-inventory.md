@@ -21,7 +21,7 @@ Helper scripts:
 
 | Column | Meaning |
 |--------|---------|
-| **GH env** | `dev` \| `dev-plan` (PR plan only, [dev-proxmox.md](dev-proxmox.md) "PR plan") \| `prod` \| `prod-plan` (PR plan only, [f3-proxmox.md](f3-proxmox.md) "PR plan") \| `repo` \| — (not in GH) |
+| **GH env** | `dev` \| `dev-plan` (PR plan only, [dev-proxmox.md](dev-proxmox.md) "PR plan") \| `prod` \| `prod-plan` (PR plan only, [f3-proxmox.md](f3-proxmox.md) "PR plan") \| `prod-gate` (owner approval for a risky plan, holds no secrets) \| `repo` \| — (not in GH) |
 | **Type** | `secret` \| `variable` |
 | **Status** | `planned` \| `set` \| `N/A` |
 | **Bitwarden** | path in Password Manager |

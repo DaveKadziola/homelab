@@ -2,7 +2,7 @@
 
 ## Path of a change
 
-1. Commit on `homelab-v2` (dev) or `main` (prod, approval).
+1. PR into `homelab-v2` (dev; merges itself when `validate` and `plan` pass). Prod: the owner merges the PR `homelab-v2` -> `main`; approval only when the Terraform plan is risky ([0004](decisions/0004-ci-autonomy-and-prod-risk-gate.md)).
 2. GHA on the matching self-hosted runner.
 3. Terraform (infra workflows) and/or Ansible `deploy-core.yml` then `deploy-storage.yml` (apps workflows).
 4. Ansible syncs `compose/`, `config/`, `utils/bootstrap*` to `/opt/homelab/`, writes `.env` **without literal secret fallbacks**, copies secrets to `/opt/homelab/secrets/<env>/`, runs `utils/bootstrap-apps.sh` unless `HOMELAB_SKIP_BOOTSTRAP` is set.
