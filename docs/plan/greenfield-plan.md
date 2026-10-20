@@ -108,7 +108,7 @@ todos:
     content: "Później (operator 2026-10-20): strategia workflow GitHub dla dev i prod — merge i deploymenty bez ręcznego zatwierdzania, gdy checki i testy są zielone (auto-merge PR do homelab-v2, mniej zatwierdzeń prod: dziś osobno Infra Apply, Apps Deploy i post-deploy-tests; zatwierdzenie tylko przy ryzyku, np. replace/destroy w planie Terraform)"
     status: pending
   - id: homarr-links
-    content: "Później (operator 2026-10-20): prosty dashboard Homarr na prodzie — na razie tylko linki do postawionych aplikacji. Jest już: tablica z config/services.yml (utils/gen-homarr-board.sh → compose/core/homarr/board-prod.json, wgrywa utils/bootstrap/homarr.sh). Do zrobienia: sprawdzić tablicę na prodzie, usunąć kafelki aplikacji, których prod nie ma (Authelia, decyzja 0003), rozważyć nazwy zamiast IP:port"
+    content: "Później (operator 2026-10-20): prosty dashboard Homarr na prodzie — na razie tylko linki do postawionych aplikacji. Jest już: tablica z config/services.yml (utils/gen-homarr-board.sh → compose/core/homarr/board-prod.json, wgrywa utils/bootstrap/homarr.sh). Do zrobienia: sprawdzić tablicę na prodzie, usunąć kafelki aplikacji, których prod nie ma (Authelia, decyzja 0003), rozważyć nazwy zamiast IP:port; bootstrap ustawia homelab-<env> jako tablicę domową (2026-10-20 domową była tablica `dashboard` z onboardingu, więc seed był niewidoczny); login w repo zostaje `admin` (operator 2026-10-20), konto `admin` trzeba założyć w UI, bo onboarding utworzył `daveadmin`"
     status: pending
 isProject: false
 ---
