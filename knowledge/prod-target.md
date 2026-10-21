@@ -62,7 +62,7 @@ Source: `config/services.yml`, `compose/core/docker-compose.yml` (versions pinne
 | P0 | Caddy | 443 / 80 | profile `proxy`; names `<app>.dkhomelabserver.xyz`, Let's Encrypt wildcard through the Cloudflare DNS challenge ([0007](decisions/0007-app-names-caddy-authelia.md)) |
 | P0 | Authelia | 9091 | profile `auth`; plain HTTP behind Caddy, portal `https://auth.dkhomelabserver.xyz` ([0007](decisions/0007-app-names-caddy-authelia.md)) |
 | P0 | Omni-tools / IT Tools / Networking Toolbox / BentoPDF | 8083 / 8086 / 8087 / 8085 | DumbWhois replaced 2026-10-20 |
-| P0 | Grocery | 8101 | built on the guest from its repo at pinned `grocery_ref`; DB/role/schema by `deploy-core.yml`; **public** via HAProxy |
+| P0 | Grocery | 8101 | EasyToDo v2 built on the guest from its repo at pinned `grocery_ref`; DB `easytodo`, role password by `deploy-core.yml`; **public** via HAProxy |
 | P1 | Syncthing | 8384 (+22000, 21027) | peers by hand |
 | P1 | Navidrome | 4533 | music on NFS |
 | P1 | Jellyfin | 8096 | profile `media`; video on NFS |

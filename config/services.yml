@@ -273,14 +273,14 @@ services:
     container: easytodo-grocery-easytodo-1
     check: http
     port: 8101
-    path: /
+    path: /healthz
     expect: [200]
     config_as_code: yes
-    login: none
-    database: todo_grocery
+    login: email
+    database: easytodo
     public_url: https://grocery.dkhomelabserver.xyz
     dashboard: { group: apps, icon: grocy }
-    notes: Deployed from its own Git repo via Portainer, not from compose/core.
+    notes: EasyToDo v2, built from its own Git repo (grocery_ref) and deployed via Portainer, not from compose/core.
 
   # ---------- P1 ----------
   - name: syncthing

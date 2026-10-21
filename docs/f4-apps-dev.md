@@ -13,7 +13,7 @@ Ansible playbook `ansible/playbooks/deploy-core.yml` syncs `compose/core/` (+ gr
 |----------|---------|-------------|---------------|--------|
 | P0 | Caddy | 443 / 80 | Up | profile `proxy`; app names `<app>.dev.dkhomelabserver.xyz`, Authelia in front (decision 0007) |
 | P0 | Portainer | 9000 / 9443 | Up | UI + grocery stack |
-| P0 | Postgres 16 | 5432 | Up | Shared core DBs + grocery `todo_grocery` |
+| P0 | Postgres 16 | 5432 | Up | Shared core DBs + grocery `easytodo` |
 | P0 | pgAdmin | 5050 | Up | env mailbox / `PGADMIN_PASSWORD` |
 | P0 | Homarr | 7575 | Up | dashboard |
 | P0 | Dozzle | 8080 | Up | container logs |
@@ -25,7 +25,7 @@ Ansible playbook `ansible/playbooks/deploy-core.yml` syncs `compose/core/` (+ gr
 | P0 | Networking Toolbox | 8087 | Up | RDAP lookups (replaced DumbWhois) |
 | P0 | BentoPDF | 8085 | Up | |
 | P0 | Authelia | 9091 | Up | profile `auth`; plain HTTP behind Caddy, portal `https://auth.dev.dkhomelabserver.xyz` |
-| P0 | EasyTodo Grocery | 8101 | Up | Portainer stack from `compose/grocery/` (bridge) |
+| P0 | EasyTodo Grocery | 8101 | Up | EasyToDo v2, Portainer stack from `compose/grocery/` (bridge, `8101:8000`) |
 | P1 | Syncthing | 8384 / 22000 | Up | LAN sync UI + sync ports |
 | P1 | Navidrome | 4533 | Up | empty `/music` volume on DEV |
 | P1 | Jellyfin | 8096 | Up | profile `media`; empty library OK |

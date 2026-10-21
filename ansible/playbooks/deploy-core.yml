@@ -11,10 +11,11 @@
     utils_src: "{{ playbook_dir }}/../../utils"
     config_src: "{{ playbook_dir }}/../../config"
     homelab_root: /opt/homelab
-    # Grocery app (separate repo). Pinned: the image and the DDL come from this commit.
+    # Grocery app v2 (separate repo). Pinned: the image is built from this commit; a new ref
+    # gets a new image tag, so changing it rebuilds and redeploys.
     grocery_repo: https://github.com/DaveKadziola/easytodo-grocery-list
-    grocery_ref: 0fcbd9cbd0465cd83a39d8b0d89702af5317dbed
-    grocery_image: easy-todo-grocery-nodb:latest
+    grocery_ref: 5c603a1b7df0448d3843aa023f749687e7ad14ab
+    grocery_image: "easytodo-grocery:{{ grocery_ref[:12] }}"
     secrets_dest: /opt/homelab/secrets
     homelab_env: "{{ lookup('env', 'HOMELAB_ENV') | default('dev', true) }}"
     # Values come from the environment, else from the per-env cache that
@@ -29,6 +30,9 @@
       - POSTGRES_PASSWORD
       - IMMICH_DB_PASSWORD
       - GROCERY_DB_PASSWORD
+      - GROCERY_SECRET_KEY
+      - GROCERY_ADMIN_PASSWORD
+      - GROCERY_PROTON_SMTP_TOKEN
       - PGADMIN_PASSWORD
       - PORTAINER_ADMIN_PASSWORD
       - HOMARR_ADMIN_PASSWORD
@@ -108,6 +112,7 @@
           - resolved_secrets.HOMARR_SECRET_KEY | length > 0
           - resolved_secrets.LINKWARDEN_SECRET | length > 0
           - resolved_secrets.PGADMIN_PASSWORD | length > 0
+          - resolved_secrets.GROCERY_SECRET_KEY | length > 0
         fail_msg: >-
           Generate missing secrets with
           utils/gen-app-credentials.sh --env {{ homelab_env }} --all
@@ -387,52 +392,28 @@
     - name: Build the grocery image from the app repository
       ansible.builtin.command: >-
         docker build -t {{ grocery_image }}
-        -f docker/v1.0.0/no-db/Dockerfile
+        -f deploy/Dockerfile
         {{ grocery_repo }}.git#{{ grocery_ref }}
       when: grocery_image_check.rc != 0
       changed_when: true
 
-    # The password reaches psql through the environment (-e PW, \getenv), never argv.
+    # postgres-init creates the database and role `easytodo` with POSTGRES_PASSWORD; the app gets
+    # its own password. The password reaches psql through the environment (-e PW, \getenv), never argv.
     - name: Ensure the grocery role and database
       ansible.builtin.command:
         cmd: docker exec -i -e PW homelab-core-postgres-1 psql -U homelab -d postgres -v ON_ERROR_STOP=1
         stdin: |
           \getenv pw PW
-          SELECT 'CREATE ROLE prod_todo_grocery LOGIN' WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'prod_todo_grocery') \gexec
-          ALTER ROLE prod_todo_grocery PASSWORD :'pw';
-          SELECT 'CREATE DATABASE todo_grocery' WHERE NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = 'todo_grocery') \gexec
+          SELECT 'CREATE ROLE easytodo LOGIN' WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'easytodo') \gexec
+          ALTER ROLE easytodo PASSWORD :'pw';
+          SELECT 'CREATE DATABASE easytodo' WHERE NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = 'easytodo') \gexec
+          \c easytodo
+          GRANT ALL ON SCHEMA public TO easytodo;
       environment:
         PW: "{{ resolved_secrets.GROCERY_DB_PASSWORD }}"
       register: grocery_db
       changed_when: "'CREATE ROLE' in grocery_db.stdout or 'CREATE DATABASE' in grocery_db.stdout"
       no_log: true
-
-    - name: Check whether the grocery schema exists
-      ansible.builtin.command: >-
-        docker exec homelab-core-postgres-1 psql -U homelab -d todo_grocery -Atc
-        "SELECT count(*) FROM information_schema.schemata WHERE schema_name = 'prod'"
-      register: grocery_schema
-      changed_when: false
-      failed_when: false
-      check_mode: false
-
-    - name: Fetch the grocery DDL
-      ansible.builtin.get_url:
-        url: "{{ grocery_repo | replace('github.com', 'raw.githubusercontent.com') }}/{{ grocery_ref }}/ddl/3_3-ddl_prod.sql"
-        dest: "{{ grocery_dest }}/ddl_prod.sql"
-        mode: "0644"
-      when: grocery_schema.stdout | default('') | trim == '0'
-
-    # The upstream DDL assigns objects to role "postgres"; here the superuser is "homelab".
-    - name: Create the grocery schema
-      ansible.builtin.shell: >-
-        set -o pipefail &&
-        sed -E 's/(AUTHORIZATION|FOR ROLE|TO) postgres\b/\1 homelab/g' {{ grocery_dest }}/ddl_prod.sql |
-        docker exec -i homelab-core-postgres-1 psql -U homelab -d todo_grocery -v ON_ERROR_STOP=1 -q
-      args:
-        executable: /bin/bash
-      when: grocery_schema.stdout | default('') | trim == '0'
-      changed_when: true
 
     - name: Show running containers
       ansible.builtin.command: docker compose {{ compose_file_args }} --env-file {{ compose_dest }}/.env ps -a
@@ -452,6 +433,7 @@
         HOMELAB_SECRETS_DIR: "{{ secrets_dest }}"
         HOMELAB_CONFIG_DIR: "{{ homelab_root }}/config"
         HOMELAB_COMPOSE_DIR: "{{ homelab_root }}/compose"
+        GROCERY_IMAGE: "{{ grocery_image }}"
       register: bootstrap_apps
       changed_when: "'converged' in bootstrap_apps.stdout"
       when: run_bootstrap | bool
