@@ -357,10 +357,13 @@
         - "{{ utils_src }}/bootstrap"
         - "{{ utils_src }}/backup"
 
-    - name: Ensure docker compose plugin / v2 and the bootstrap dependencies
+    # docker-buildx: without it `docker build` falls back to the legacy builder, which rejects
+    # BuildKit syntax such as `ADD --chmod` in the Grocery v2 Dockerfile.
+    - name: Ensure docker compose plugin / v2, buildx and the bootstrap dependencies
       ansible.builtin.apt:
         name:
           - docker-compose-v2
+          - docker-buildx
           - python3-yaml
           - python3-pexpect
           - jq
