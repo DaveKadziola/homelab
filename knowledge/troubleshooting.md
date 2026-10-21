@@ -62,4 +62,5 @@ Symptoms first. Root-cause write-ups go in [`lessons-learned.md`](lessons-learne
 
 | Symptom | Check |
 |---------|--------|
+| Uploads to `ubuntu-apps` crawl, web UIs stall | Count CRC errors on the Proxmox NICs: `ethtool -S nic1` / `nic2`, `rx_crc_errors` against `rx_packets`. 2026-10-21 both igb ports showed 8-10 %, laptop -> apps <= 2.2 MiB/s, apps -> laptop 68 MiB/s. |
 | Host on IOT gets a DHCP lease, but the gateway stays `INCOMPLETE` in `ip neigh` and ping says `Destination Host Unreachable` | The switch port delivers VLAN 20 tagged. Use a VLAN 20 interface on the host, or make the port untagged VLAN 20 / PVID 20 (T620, 2026-10-20). |
