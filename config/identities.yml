@@ -110,6 +110,16 @@ accounts:
       Shares share + media + read-only backups on the NAS. The login maps to the Unix account homelab-smb
       (a Unix user named admin would get sudo through Ubuntu's %admin group).
 
+  - app: grocery
+    identity: homelab-admin
+    login: email
+    secret: GROCERY_ADMIN_PASSWORD
+    inject: bootstrap
+    envs: [dev, prod]
+    notes: >-
+      EasyToDo admin; utils/bootstrap/portainer.sh runs create-admin after the stack deploy. Other
+      people join through invite links (registration is closed).
+
   - app: beszel
     identity: homelab-notification
     login: email
@@ -146,6 +156,17 @@ service_secrets:
   - name: GROCERY_DB_PASSWORD
     used_by: [grocery]
     envs: [dev, prod]
+  - name: GROCERY_SECRET_KEY
+    used_by: [grocery]
+    envs: [dev, prod]
+    format: hex64
+  - name: GROCERY_PROTON_SMTP_TOKEN
+    used_by: [grocery]
+    envs: [dev, prod]
+    issued_by: proton
+    notes: >-
+      Proton SMTP token of todo-grocery@dkhomelabserver.xyz. Optional: without it the app keeps
+      the console mail backend.
   - name: HOMARR_SECRET_KEY
     used_by: [homarr]
     envs: [dev, prod]
