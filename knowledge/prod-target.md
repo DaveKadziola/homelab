@@ -61,7 +61,7 @@ Source: `config/services.yml`, `compose/core/docker-compose.yml` (versions pinne
 | P0 | Linkwarden | 3001 | |
 | P0 | Authelia | 9091 | profile `auth`; DEV only ([0003](decisions/0003-prod-without-authelia.md)) |
 | P0 | Omni-tools / DumbWhois / BentoPDF | 8083 / 8084 / 8085 | |
-| P0 | Grocery | 8101 | built on the guest from its repo at pinned `grocery_ref`; DB/role/schema by `deploy-core.yml`; **public** via HAProxy |
+| P0 | Grocery | 8101 | EasyToDo v2 built on the guest from its repo at pinned `grocery_ref`; DB `easytodo`, role password by `deploy-core.yml`; **public** via HAProxy |
 | P1 | Syncthing | 8384 (+22000, 21027) | peers by hand |
 | P1 | Navidrome | 4533 | music on NFS |
 | P1 | Jellyfin | 8096 | profile `media`; video on NFS |

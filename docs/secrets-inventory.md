@@ -70,6 +70,9 @@ Helper scripts:
 | `AUTHELIA_SESSION_SECRET` | dev | secret | `homelab/AUTHELIA_SESSION_SECRET/dev` | set | generated 2026-09-10 |
 | `AUTHELIA_STORAGE_KEY` | dev | secret | `homelab/AUTHELIA_STORAGE_KEY/dev` | set | generated 2026-09-10 |
 | `GROCERY_DB_PASSWORD` | dev | secret | `homelab/GROCERY_DB_PASSWORD/dev` | set | F4/F7 |
+| `GROCERY_SECRET_KEY` | dev | secret | `homelab/GROCERY_SECRET_KEY/dev` | pending | EasyToDo v2 data encryption key (hex64); keep stable |
+| `GROCERY_ADMIN_PASSWORD` | dev | secret | `homelab/GROCERY_ADMIN_PASSWORD/dev` | pending | EasyToDo v2 admin (`inject: bootstrap`, `portainer.sh`) |
+| `GROCERY_PROTON_SMTP_TOKEN` | dev | secret | `homelab/GROCERY_PROTON_SMTP_TOKEN/dev` | in Bitwarden, GH pending | Proton SMTP token of todo-grocery@dkhomelabserver.xyz; optional |
 | `IMMICH_DB_PASSWORD` | dev | secret | `homelab/IMMICH_DB_PASSWORD/dev` | set | F4/F7 |
 | `SAMBA_ADMIN_PASSWORD` | dev | secret | `homelab/SAMBA_ADMIN_PASSWORD/dev` | set 2026-10-19 | Samba login `admin` (`inject: ansible`, `deploy-storage.yml`); also in `~/.homelab-secrets/dev/`; Bitwarden copy by the operator |
 | `PORTAINER_ADMIN_PASSWORD` | prod | secret | `homelab/PORTAINER_ADMIN_PASSWORD/prod` | set | generated 2026-09-11 |
@@ -84,6 +87,9 @@ Helper scripts:
 | `BESZEL_ADMIN_PASSWORD` | prod | secret | `homelab/BESZEL_ADMIN_PASSWORD/prod` | set | generated 2026-09-11 |
 | `IMMICH_DB_PASSWORD` | prod | secret | `homelab/IMMICH_DB_PASSWORD/prod` | set | generated 2026-09-11 |
 | `GROCERY_DB_PASSWORD` | prod | secret | `homelab/GROCERY_DB_PASSWORD/prod` | set | generated 2026-09-11 |
+| `GROCERY_SECRET_KEY` | prod | secret | `homelab/GROCERY_SECRET_KEY/prod` | pending | EasyToDo v2 data encryption key (hex64); keep stable |
+| `GROCERY_ADMIN_PASSWORD` | prod | secret | `homelab/GROCERY_ADMIN_PASSWORD/prod` | pending | EasyToDo v2 admin (`inject: bootstrap`, `portainer.sh`) |
+| `GROCERY_PROTON_SMTP_TOKEN` | prod | secret | `homelab/GROCERY_PROTON_SMTP_TOKEN/prod` | in Bitwarden, GH pending | Proton SMTP token of todo-grocery@dkhomelabserver.xyz; optional |
 | `HOMARR_SECRET_KEY` | prod | secret | `homelab/HOMARR_SECRET_KEY/prod` | set | generated 2026-09-11 |
 | `LINKWARDEN_SECRET` | prod | secret | `homelab/LINKWARDEN_SECRET/prod` | set | generated 2026-09-11 |
 | `AUTHELIA_JWT_SECRET` | prod | secret | `homelab/AUTHELIA_JWT_SECRET/prod` | set | generated 2026-09-11 |
