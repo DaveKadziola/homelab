@@ -19,7 +19,7 @@ and `knowledge/rebuild.md` (order of steps).
 
 SMART 2026-10-19: SA500 PASSED, 37 h; Purple PASSED, 50 733 h (~5.8 years), no reallocated or pending sectors. Both carried NTFS partitions until their one-time format ([storage](storage.md#attach-and-format-run-order)).
 
-Proxmox network: `vmbr0` VLAN-aware on `bond0` (active-backup `nic1` + `nic0`, MAC `3c:49:37:19:71:ae`), management `vmbr0.20`; `vmbr1` VLAN-aware on `nic2` for APP. Disks passed through to the NAS VM 102 (`qm config 102`, 2026-10-20): WD Red SA500 2 TB (`ata-WD_Red_SA500_2.5_2TB_2525GTD00073`), WD Purple 4 TB (`ata-WDC_WD40PURZ-85TTDY0_WD-WCC7K3KZKJKX`).
+Proxmox network: `vmbr0` VLAN-aware on `bond0` (active-backup, primary `nic0` since 2026-10-21, backup `nic1`, MAC `3c:49:37:19:71:ae`), management `vmbr0.20`; `vmbr1` VLAN-aware on `nic2` for APP. Disks passed through to the NAS VM 102 (`qm config 102`, 2026-10-20): WD Red SA500 2 TB (`ata-WD_Red_SA500_2.5_2TB_2525GTD00073`), WD Purple 4 TB (`ata-WDC_WD40PURZ-85TTDY0_WD-WCC7K3KZKJKX`).
 
 ## 2. Virtual machines (Terraform)
 

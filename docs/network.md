@@ -55,8 +55,8 @@ As-built 2026-10-19 (PVE 9.2.2, `proxmox.dkhomelabserver.xyz`, interface names p
 
 | NIC | MAC | Role |
 |-----|-----|------|
-| `nic1` Intel igb | `3c:49:37:19:71:ae` | `bond0` primary -> `vmbr0` (VLAN-aware) |
-| `nic0` Realtek r8169 | `70:85:c2:53:e0:ac` | `bond0` backup (active-backup, takes over when `nic1` loses link; failover tested) |
+| `nic1` Intel igb | `3c:49:37:19:71:ae` | `bond0` -> `vmbr0` (VLAN-aware); backup since 2026-10-21, while it receives frames with CRC errors (`knowledge/troubleshooting.md`) |
+| `nic0` Realtek r8169 | `70:85:c2:53:e0:ac` | `bond0` primary since 2026-10-21 (active-backup, the other slave takes over on link loss; failover tested) |
 | `nic2` Intel igb | `3c:49:37:19:71:af` | `vmbr1` (VLAN-aware, no host IP) -> APP VLAN 51 -> `ubuntu-apps` `.50.30` |
 
 `nic1` and `nic2` are the two ports of one Intel 82575EB card (PCI `04:00.0` / `04:00.1`).

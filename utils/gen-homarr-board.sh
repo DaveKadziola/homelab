@@ -88,9 +88,9 @@ def base_url(service: dict) -> str:
 
 
 def href_for(service: dict) -> str:
-    """Where a click should land — a health path under /api is not a UI."""
+    """Where a click should land — a health path under /api or /health is not a UI."""
     path = service.get("path", "/")
-    if path.startswith("/api"):
+    if path.startswith(("/api", "/health")):
         path = "/"
     if by_name and service["name"] == "authelia":
         return f"https://auth.{env['domain']}/"

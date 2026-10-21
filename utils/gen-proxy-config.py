@@ -41,7 +41,11 @@ def proxied(services, env, profiles):
 def caddyfile(services, env, env_name, profiles):
     domain = env["domain"]
     if env_name == "prod":
-        tls = "\ttls {\n\t\tdns cloudflare {env.CLOUDFLARE_API_TOKEN}\n\t\tresolvers 1.1.1.1\n\t}"
+        # Port 53 from APP is redirected to AdGuard (docs/network.md), which answered SERVFAIL for the
+        # challenge TXT record, so Caddy's own propagation check never passed. Let's Encrypt queries
+        # Cloudflare itself; Caddy only waits before it asks.
+        tls = ("\ttls {\n\t\tdns cloudflare {env.CLOUDFLARE_API_TOKEN}\n\t\tresolvers 1.1.1.1\n"
+               "\t\tpropagation_delay 60s\n\t\tpropagation_timeout -1\n\t}")
     else:
         tls = "\ttls internal"
     lines = [
@@ -156,7 +160,9 @@ def self_test():
     assert "import authelia" in hm, hm
     assert "reverse_proxy https://host.docker.internal:9443 {" in c and "tls_insecure_skip_verify" in c
     assert c.count("{") == c.count("}"), "unbalanced braces"
-    assert "dns cloudflare {env.CLOUDFLARE_API_TOKEN}" in caddyfile(services, env, "prod", "auth,media")
+    p = caddyfile(services, env, "prod", "auth,media")
+    assert "dns cloudflare {env.CLOUDFLARE_API_TOKEN}" in p and "\t\tpropagation_timeout -1\n" in p
+    assert p.count("{") == p.count("}"), "unbalanced braces (prod)"
 
     a = authelia(services, env, "dev", "auth,media")
     import yaml  # noqa: PLC0415 - parse what Authelia will parse

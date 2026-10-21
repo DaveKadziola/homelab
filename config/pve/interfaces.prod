@@ -7,13 +7,14 @@ iface nic1 inet manual
 
 iface nic2 inet manual
 
-# active-backup: nic1 (Intel) carries traffic, nic0 (Realtek) takes over if nic1 loses link.
+# active-backup: nic0 (Realtek) carries traffic, nic1 (Intel) takes over if nic0 loses link.
 # Both switch ports deliver IOT as VLAN 20 tagged.
 auto bond0
 iface bond0 inet manual
 	bond-slaves nic1 nic0
 	bond-mode active-backup
-	bond-primary nic1
+	# TEMP: nic0 while nic1 receives ~7 % frames with CRC errors (2026-10-21); back to nic1 once fixed.
+	bond-primary nic0
 	bond-miimon 100
 	# fixed MAC (nic1): otherwise the bond takes whichever slave is enslaved first
 	hwaddress 3c:49:37:19:71:ae

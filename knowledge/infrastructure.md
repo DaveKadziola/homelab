@@ -21,7 +21,7 @@ Cloud-init is first-boot only. The VM resource `lifecycle { ignore_changes = [in
 
 | Piece | Detail |
 |-------|--------|
-| Proxmox host | `192.168.20.20` · node `proxmox` · `proxmox.dkhomelabserver.xyz` · PVE 9.2.2 · mgmt `vmbr0.20` on `bond0` (nic1 + nic0 backup) |
+| Proxmox host | `192.168.20.20` · node `proxmox` · `proxmox.dkhomelabserver.xyz` · PVE 9.2.2 · mgmt `vmbr0.20` on `bond0` (nic0 + nic1 backup since 2026-10-21) |
 | NAS | `ubuntu-nas` · `192.168.20.12` · 4 GiB · NFS + Samba · SA500 2 TB SSD (`scsi1`) = all media, Purple 4 TB HDD (`scsi2`) = backups + Samba share (`config/storage.yml`; attached by `pve-attach-nas-disks.sh`, `qm config 102` 2026-10-20) |
 | Apps | `ubuntu-apps` · `192.168.50.30` · 8192 MiB · 48G · `cpu_type=host` |
 | TF | HCP TFC workspace `homelab` via `terraform/cloud.tf` + `TF_WORKSPACE=homelab` |
