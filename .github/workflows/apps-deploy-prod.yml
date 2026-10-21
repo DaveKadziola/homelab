@@ -13,6 +13,7 @@ jobs:
   deploy-prod:
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: [self-hosted, homelab-prod]
+    timeout-minutes: 30
     environment: prod
     steps:
       - name: Checkout
@@ -37,8 +38,26 @@ jobs:
         env:
           HOMELAB_ENV: prod
           SAMBA_ADMIN_PASSWORD: ${{ secrets.SAMBA_ADMIN_PASSWORD }}
+          # NAS backup jobs (run-nas.sh, check-fresh.py); an empty value is not written.
+          HA_TOKEN: ${{ secrets.HA_TOKEN }}
+          HA_SSH_PRIV: ${{ secrets.HA_SSH_PRIV }}
+          HA_BACKUP_PASSWORD: ${{ secrets.HA_BACKUP_PASSWORD }}
+          KUMA_PUSH_SECRET: ${{ secrets.KUMA_PUSH_SECRET }}
+          OPNSENSE_BACKUP_SSH_PRIV: ${{ secrets.OPNSENSE_BACKUP_SSH_PRIV }}
         run: |
           ansible-playbook -i environments/prod/hosts.ini playbooks/deploy-storage.yml
+
+      # After deploy-storage: the NAS must export backups/vzdump before Proxmox mounts it.
+      - name: Proxmox backup job (VM dumps onto the NAS)
+        # The prod token's right to create storage and backup jobs (Datastore.Allocate, Sys.Modify) was
+        # not checked before the first run: a refusal must not stop the app deploy; the vzdump stream
+        # then turns STALE in Uptime Kuma.
+        continue-on-error: true
+        env:
+          PROXMOX_API_URL: ${{ vars.PROXMOX_API_URL }}
+          PROXMOX_API_TOKEN_ID: ${{ vars.PROXMOX_API_TOKEN_ID }}
+          PROXMOX_API_TOKEN_SECRET: ${{ secrets.PROXMOX_API_TOKEN_SECRET }}
+        run: python3 utils/pve-backup-job.py --env prod
 
       - name: Deploy compose/core
         working-directory: ansible
@@ -67,15 +86,31 @@ jobs:
           NAVIDROME_ADMIN_PASSWORD: ${{ secrets.NAVIDROME_ADMIN_PASSWORD }}
           SYNCTHING_ADMIN_PASSWORD: ${{ secrets.SYNCTHING_ADMIN_PASSWORD }}
           BESZEL_ADMIN_PASSWORD: ${{ secrets.BESZEL_ADMIN_PASSWORD }}
-          BESZEL_KEY: ${{ secrets.BESZEL_KEY }}
+          RCLONE_CONFIG: ${{ secrets.RCLONE_CONFIG }}
+          # Alert mail and the proxy certificate; empty until the owner adds them (decisions 0006, 0007).
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           ansible-playbook -i environments/prod/hosts.ini playbooks/deploy-core.yml
+
+      # T620: add-ons, then homeassistant/packages (knowledge/apps/homeassistant.md). The first deploy
+      # adds the packages include to configuration.yaml and restarts Home Assistant once.
+      - name: Home Assistant add-ons and packages
+        env:
+          HA_TOKEN: ${{ secrets.HA_TOKEN }}
+          HA_SSH_PRIV: ${{ secrets.HA_SSH_PRIV }}
+        run: |
+          if [ -z "$HA_TOKEN" ]; then echo "::warning::HA_TOKEN is not set in environment prod - Home Assistant left alone"; exit 0; fi
+          python3 utils/ha.py --env prod bootstrap
+          python3 utils/ha.py --env prod deploy
 
   # F7-C — a deploy is not done until its tests are green. Checks that need a
   # part of prod that is not online yet report SKIP, which is not a failure.
   post-deploy-tests:
     needs: deploy-prod
     runs-on: [self-hosted, homelab-prod]
+    timeout-minutes: 10
     environment: prod
     steps:
       - name: Checkout
@@ -95,6 +130,8 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           IMMICH_DB_PASSWORD: ${{ secrets.IMMICH_DB_PASSWORD }}
           SAMBA_ADMIN_PASSWORD: ${{ secrets.SAMBA_ADMIN_PASSWORD }}
+          HA_TOKEN: ${{ secrets.HA_TOKEN }}
+          AUTHELIA_ADMIN_PASSWORD: ${{ secrets.AUTHELIA_ADMIN_PASSWORD }}
           LINKWARDEN_URL: http://192.168.50.30:3001
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NO_COLOR: "1"

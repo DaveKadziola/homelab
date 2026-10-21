@@ -39,4 +39,4 @@ Not exercised (same as before): volume-tar restore, Homarr password, Zotify OAut
 
 - [x] Nested rebuild using only repo + vault + `rebuild.md` - this drill; the two gaps above were
       runbook wording, resolved from the runbook itself (step 6 prefix) and the operator's own copy
-- [ ] nmap from WG/IOT/APP (S7) - needs prod
+- [x] nmap from LAN/IOT/APP (S7) on prod - [security-audit-2026-10-20](security-audit-2026-10-20.md); WireGuard and WAN not scanned yet

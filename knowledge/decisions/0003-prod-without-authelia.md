@@ -1,4 +1,4 @@
-Status: verified
+Status: superseded by 0007-app-names-caddy-authelia.md
 Last reviewed: 2026-10-20
 Scope: whether prod runs Authelia before a proxy puts it in front of the apps
 

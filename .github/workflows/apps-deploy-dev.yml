@@ -8,12 +8,23 @@ on:
       - "ansible/**"
       - "config/storage.yml"
       - "config/identities.yml"
+      # The deploy builds the Caddyfile, Authelia rules, Homarr board and Beszel/backup config from these.
+      - "config/services.yml"
+      - "config/monitoring.yml"
+      - "utils/bootstrap/**"
+      - "utils/backup/**"
+      - "utils/gen-proxy-config.py"
+      - "utils/gen-homarr-board.sh"
+      - "homeassistant/**"
+      - "utils/ha.py"
+      - "utils/dev-haos-vm.sh"
       - ".github/workflows/apps-deploy-dev.yml"
   workflow_dispatch:
 
 jobs:
   deploy-dev:
     runs-on: [self-hosted, homelab-dev]
+    timeout-minutes: 30
     environment: dev
     steps:
       - name: Checkout
@@ -29,8 +40,22 @@ jobs:
         env:
           HOMELAB_ENV: dev
           SAMBA_ADMIN_PASSWORD: ${{ secrets.SAMBA_ADMIN_PASSWORD }}
+          # NAS backup jobs (run-nas.sh, check-fresh.py); an empty value is not written.
+          HA_TOKEN: ${{ secrets.HA_TOKEN }}
+          HA_SSH_PRIV: ${{ secrets.HA_SSH_PRIV }}
+          HA_BACKUP_PASSWORD: ${{ secrets.HA_BACKUP_PASSWORD }}
+          KUMA_PUSH_SECRET: ${{ secrets.KUMA_PUSH_SECRET }}
+          OPNSENSE_BACKUP_SSH_PRIV: ${{ secrets.OPNSENSE_BACKUP_SSH_PRIV }}
         run: |
           ansible-playbook -i environments/dev/hosts.ini playbooks/deploy-storage.yml
+
+      # After deploy-storage: the NAS must export backups/vzdump before Proxmox mounts it.
+      - name: Proxmox backup job (VM dumps onto the NAS)
+        env:
+          PROXMOX_API_URL: ${{ vars.PROXMOX_API_URL }}
+          PROXMOX_API_TOKEN_ID: ${{ vars.PROXMOX_API_TOKEN_ID }}
+          PROXMOX_API_TOKEN_SECRET: ${{ secrets.PROXMOX_API_TOKEN_SECRET }}
+        run: python3 utils/pve-backup-job.py --env dev
 
       - name: Deploy compose/core
         working-directory: ansible
@@ -59,13 +84,25 @@ jobs:
           NAVIDROME_ADMIN_PASSWORD: ${{ secrets.NAVIDROME_ADMIN_PASSWORD }}
           SYNCTHING_ADMIN_PASSWORD: ${{ secrets.SYNCTHING_ADMIN_PASSWORD }}
           BESZEL_ADMIN_PASSWORD: ${{ secrets.BESZEL_ADMIN_PASSWORD }}
-          BESZEL_KEY: ${{ secrets.BESZEL_KEY }}
         run: |
           ansible-playbook -i environments/dev/hosts.ini playbooks/deploy-core.yml
+
+      # DEV twin of the T620 (HAOS VM on this laptop): add-ons, then homeassistant/packages.
+      - name: Home Assistant add-ons and packages
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HA_TOKEN: ${{ secrets.HA_TOKEN }}
+          HA_SSH_PRIV: ${{ secrets.HA_SSH_PRIV }}
+          HA_ADMIN_PASSWORD: ${{ secrets.HA_ADMIN_PASSWORD }}
+        run: |
+          ./utils/dev-haos-vm.sh
+          python3 utils/ha.py --env dev bootstrap
+          python3 utils/ha.py --env dev deploy
 
   post-deploy-tests:
     needs: deploy-dev
     runs-on: [self-hosted, homelab-dev]
+    timeout-minutes: 15
     environment: dev
     steps:
       - name: Checkout
@@ -75,6 +112,8 @@ jobs:
         env:
           HOMELAB_ENV: dev
           SAMBA_ADMIN_PASSWORD: ${{ secrets.SAMBA_ADMIN_PASSWORD }}
+          HA_TOKEN: ${{ secrets.HA_TOKEN }}
+          AUTHELIA_ADMIN_PASSWORD: ${{ secrets.AUTHELIA_ADMIN_PASSWORD }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NO_COLOR: "1"
         run: ./utils/run-tests.sh --env dev --suite all --json-out tests-dev-report.json

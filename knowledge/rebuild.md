@@ -1,5 +1,5 @@
 Status: draft
-Last reviewed: 2026-10-20
+Last reviewed: 2026-10-21
 Scope: rebuild order from OPNsense to tests, for prod metal and nested DEV
 
 # Rebuild / migration runbook
@@ -8,11 +8,9 @@ Scenario: *clean Proxmox, new hardware, different storage, or a nested DEV rebui
 
 Do this in order. A later step will fail if an earlier one is skipped.
 
-**Do not run:** `utils/create-dev-vm.sh` (fights `ubuntu-apps-dev` on `.50`), `ansible/docker-containers.yml`, `ansible/user-setup.yml`, leftover `ansible/hosts.ini`.
-
 **Before step 4:** `./utils/gen-app-credentials.sh --env <env> --all` (or restore `~/.homelab-secrets/<env>/` from Bitwarden). GH cannot read secrets back.
 
-**DEV Authelia:** add `192.168.122.50 authelia.homelab.local homelab.local` on the **client**. Nested PVE itself is not created by this repo — `ensure-dev-proxmox.sh` only starts an existing libvirt domain named `Proxmox`.
+**DEV app names:** `auth.dev.dkhomelabserver.xyz` and `<app>.dev.dkhomelabserver.xyz` resolve through the AdGuard rewrites (`utils/f2-adguard-rewrites.sh`) or, until those exist, the client's `/etc/hosts` -> `192.168.122.50` ([`docs/f4-apps-dev.md`](../docs/f4-apps-dev.md)). Nested PVE itself is not created by this repo — `ensure-dev-proxmox.sh` only starts an existing libvirt domain named `Proxmox`.
 
 **Grocery:** image `easy-todo-grocery-nodb:latest` is built from `DaveKadziola/easytodo-grocery-list` (pinned `grocery_ref` in `deploy-core.yml`), not this repo. DB `todo_grocery`, its role and schema are created by `deploy-core.yml`, not by `postgres-init` (step 5).
 
@@ -52,7 +50,7 @@ Without the router, VLANs, DHCP statics, WireGuard, and HAProxy do not exist.
 
 ## 3. Terraform VMs — **auto**
 
-- Prod: TFC workspace `homelab`, apply on `main` (approval).
+- Prod: TFC workspace `homelab`, apply on `main` (approval only for a risky plan, [0004](decisions/0004-ci-autonomy-and-prod-risk-gate.md)).
 - Dev: `utils/dev-apply-local.sh`, state in HCP workspace `homelab-dev`.
 - Secrets: `UBUNTU_DOCKER_PASSWORD`, SSH key pair.
 - Data from backup: none on first apply. Prod: after the apply and a clean `terraform plan`, attach SA500/Purple with `utils/pve-attach-nas-disks.sh --env prod --dry-run`, then without `--dry-run` (slot, serial and by-id from `config/storage.yml` `passthrough[]`); `terraform plan` again must show no changes. New disks: update `passthrough[]` first, do not invent by-id. Do not apply a NAS VM on nested DEV.
@@ -92,7 +90,7 @@ sudo env HOMELAB_SECRETS_DIR=/opt/homelab/secrets \
   /opt/homelab/utils/bootstrap-apps.sh --env <env> --host 127.0.0.1
 ```
 
-- Manual leftovers: Zotify OAuth ([`apps/zotify.md`](apps/zotify.md)), Homarr password if CLI hangs, Syncthing **peers** (device IDs).
+- Manual leftovers: Homarr password if CLI hangs, Syncthing **peers** (device IDs).
 - Verify: table in [`operations.md`](operations.md).
 - Time: 5–15 min.
 
@@ -128,7 +126,7 @@ $R --db todo_grocery --file $B/todo_grocery-….sql.gz --replace   # grocery sta
 
 DEV proof: `./utils/run-tests.sh --env dev --suite restore` (throwaway DB). On 2026-10-19 the commands above restored linkwarden (18 tables, owner `linkwarden`, app 200) and immich (row counts equal to the dump, `isInitialized` true) over the databases of a fresh deploy. Copy `/mnt/homelab/backups` off a DEV guest before wiping it: the DEV NFS export lives on the same guest (`ssh … 'sudo tar -C /mnt/homelab -czf - backups' > backups.tar.gz`). Run `restore-pg.sh` from a file or a terminal, not inside a script piped to `ssh … bash -s`: its `docker exec -i` reads the rest of that script as input.
 
-Still missing on a **prod** rebuild until metal exists: SA500 libraries, rclone pull, HA `.tar`, vzdump. A rebuild without those artefacts still gives empty media libraries with known passwords.
+On a **prod** rebuild the artefacts come from the NAS backup directory (or pCloud): Postgres dumps, volume tars, the HA full backup (`HA_BACKUP_PASSWORD`), VM dumps; the SA500 libraries are not in the backups. A rebuild without those artefacts still gives empty media libraries with known passwords.
 
 The Samba share on Purple (`/srv/purple/share`) is in no backup and no offsite copy: if Purple is lost, the share is not recoverable. The media on SA500 has no homelab copy yet either (pCloud media backup deferred, [decision 0002](decisions/0002-nas-layout-and-samba.md)).
 
@@ -156,4 +154,4 @@ The Samba share on Purple (`/srv/purple/share`) is in no backup and no offsite c
 
 ## Related
 
-- [`architecture.md`](architecture.md) · [`dr.md`](dr.md) · [`lessons-learned.md`](lessons-learned.md) · drills: [`2026-09-10`](rebuild-drill-2026-09-10.md), [`2026-10-19`](rebuild-drill-2026-10-19.md)
+- [`architecture.md`](architecture.md) · [`dr.md`](dr.md) · [`lessons-learned.md`](lessons-learned.md) · drills: [`2026-09-10`](rebuild-drill-2026-09-10.md), [`2026-10-19`](rebuild-drill-2026-10-19.md), [`2026-10-19b`](rebuild-drill-2026-10-19b.md)

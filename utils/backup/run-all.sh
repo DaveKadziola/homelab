@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Nightly orchestrator (F5). Safe to run by hand. rclone/HA/vzdump/OPNsense
-# skip when the target is missing — they must not fail the timer on DEV.
+# Nightly orchestrator on the apps host (F5). Safe to run by hand. Home Assistant and OPNsense run on
+# the NAS (run-nas.sh), the VM dumps are a Proxmox job (utils/pve-backup-job.py). rclone skips when
+# the target is missing — it must not fail the timer on DEV.
 set -euo pipefail
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -17,8 +18,5 @@ echo "=== homelab backup env=${HOMELAB_ENV} $(date -Is) ==="
 "$DIR/pg-dump.sh"
 "$DIR/volumes.sh"
 "$DIR/repo-zip.sh" || true
-"$DIR/opnsense.sh" || true
-"$DIR/ha-pull.sh" || true
-"$DIR/vzdump.sh" || true
 "$DIR/rclone-offsite.sh" || true
 echo "=== done ==="

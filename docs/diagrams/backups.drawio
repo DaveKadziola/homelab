@@ -1,0 +1,122 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="backups" name="backups">
+    <mxGraphModel dx="1400" dy="820" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="820" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="nas" value="ubuntu-nas 192.168.20.12 - homelab-nas-backup.timer 02:30 (run-nas.sh)" style="rounded=0;whiteSpace=wrap;html=1;container=1;collapsible=0;verticalAlign=top;align=left;spacingLeft=8;fontStyle=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="250" y="110" width="570" height="450" as="geometry" />
+        </mxCell>
+        <mxCell id="apps" value="ubuntu-apps 192.168.50.30 - homelab-backup.timer 03:15 (run-all.sh)" style="rounded=0;whiteSpace=wrap;html=1;container=1;collapsible=0;verticalAlign=top;align=left;spacingLeft=8;fontStyle=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="870" y="110" width="500" height="410" as="geometry" />
+        </mxCell>
+        <mxCell id="ha" value="Home Assistant&lt;br&gt;T620 192.168.20.13&lt;br&gt;(DEV: HAOS twin)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="20" y="170" width="170" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="opns" value="OPNsense&lt;br&gt;192.168.20.1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="20" y="350" width="170" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="haf" value="ha-pull.sh: full backup ha-full-*.tar&lt;br&gt;utils/ha.py backup, HA_TOKEN" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="nas">
+          <mxGeometry x="20" y="60" width="250" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="hay" value="ha-yaml.sh: UI YAML snapshots, keep 30&lt;br&gt;utils/ha.py export-ui, HA_SSH_PRIV" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="nas">
+          <mxGeometry x="20" y="150" width="250" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="opx" value="opnsense.sh: config.xml&lt;br&gt;forced-command key, prod only" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="nas">
+          <mxGeometry x="20" y="240" width="250" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="store" value="Purple 4 TB: /srv/purple/backups&lt;br&gt;bind-mounted to /export/backups&lt;br&gt;keep 2 newest per name prefix" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=12;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="nas">
+          <mxGeometry x="310" y="60" width="240" height="250" as="geometry" />
+        </mxCell>
+        <mxCell id="chk" value="check-fresh.py&lt;br&gt;homelab-backup-check.timer 06:00&lt;br&gt;max ages: config/monitoring.yml" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="nas">
+          <mxGeometry x="310" y="350" width="240" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="pg" value="pg-dump.sh: Postgres shared + Immich" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="apps">
+          <mxGeometry x="20" y="60" width="220" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="vol" value="volumes.sh: app volumes, not media" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="apps">
+          <mxGeometry x="20" y="140" width="220" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="zip" value="repo-zip.sh: deployed /opt/homelab" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="apps">
+          <mxGeometry x="20" y="220" width="220" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="mnt" value="NFS mount /mnt/homelab/backups&lt;br&gt;(= /export/backups on the NAS)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="apps">
+          <mxGeometry x="270" y="60" width="210" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="rcl" value="rclone-offsite.sh, prod only&lt;br&gt;copies the tree except media&lt;br&gt;writes .offsite-ok" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="apps">
+          <mxGeometry x="270" y="310" width="210" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="pcloud" value="pCloud pcloud:homelab-backups&lt;br&gt;offsite, DR only" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="1140" y="570" width="210" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="pve" value="Proxmox 192.168.20.20&lt;br&gt;job homelab-vms 04:30&lt;br&gt;vzdump VM 101, 102, keep-last=2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="880" y="570" width="220" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="kuma" value="Uptime Kuma on Home Assistant :3001&lt;br&gt;one push monitor per stream" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="560" y="620" width="240" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="mail" value="mail to the environment mailbox&lt;br&gt;prod: Proton SMTP, DEV: mailpit" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="560" y="740" width="240" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="b1" value="API" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;exitX=1;exitY=0.2333;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="ha" target="haf">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="b2" value="SSH add-on" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;exitX=1;exitY=0.8333;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="ha" target="hay">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="b3" value="SSH" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="opns" target="opx">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="b4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.14;entryDx=0;entryDy=0;" edge="1" parent="1" source="haf" target="store">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="b5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="hay" target="store">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="b6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.86;entryDx=0;entryDy=0;" edge="1" parent="1" source="opx" target="store">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="b7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.1364;entryDx=0;entryDy=0;" edge="1" parent="1" source="pg" target="mnt">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="b8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="vol" target="mnt">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="b9" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.8636;entryDx=0;entryDy=0;" edge="1" parent="1" source="zip" target="mnt">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="b10" value="NFS, APP to NAS TCP 2049, 111" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="mnt" target="store">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1245" y="80" />
+              <mxPoint x="680" y="80" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="b11" value="reads" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;" edge="1" parent="1" source="mnt" target="rcl">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="b12" value="upload" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;" edge="1" parent="1" source="rcl" target="pcloud">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="b13" value="NFS storage nas-backups&lt;br&gt;(backups/vzdump)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="pve" target="store">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="845" y="615" />
+              <mxPoint x="845" y="295" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="b14" value="age of the newest file per stream" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;" edge="1" parent="1" source="store" target="chk">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="b15" value="push up or down per stream" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;" edge="1" parent="1" source="chk" target="kuma">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="b16" value="alert" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;" edge="1" parent="1" source="kuma" target="mail">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

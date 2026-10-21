@@ -187,15 +187,7 @@ print(value)
 PY
 }
 
-hl_env_host() {
-  python3 - "$(hl_config_dir)/services.yml" "$HOMELAB_ENV" <<'PY'
-import sys, yaml
-
-path, env = sys.argv[1:3]
-doc = yaml.safe_load(open(path))
-print(doc["environments"][env]["host"])
-PY
-}
+hl_env_host() { hl_env_field host; }
 
 # hl_env_field <key> -> config/services.yml environments.<env>.<key> (empty when missing)
 hl_env_field() {

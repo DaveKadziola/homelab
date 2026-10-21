@@ -139,7 +139,6 @@ systemctl is-active libvirtd   # expected: active
 virsh net-list --all
 sudo virsh net-start default
 sudo virsh net-autostart default
-# alternative: ./utils/start_qemu_default_net
 ```
 
 **Definition of done:**
@@ -236,6 +235,55 @@ EOF
 - [x] Prod requires approval before deploy
 - [x] Prod accepts deploy only from branch `main`
 - [x] `gh secret set --env dev` works (v2 secrets in F1)
+
+### CI autonomy (2026-10-20)
+
+[Decision 0004](../knowledge/decisions/0004-ci-autonomy-and-prod-risk-gate.md): PRs into `homelab-v2`
+merge themselves after `validate` and `plan`; prod approval only for a risky Terraform plan. One-time
+settings, run by the owner (agents must not change repo settings). A ruleset PUT replaces the whole
+rule list, so it repeats `deletion` and `non_fast_forward`.
+
+```bash
+gh api -X PATCH repos/DaveKadziola/homelab -F allow_auto_merge=true -F delete_branch_on_merge=true
+
+gh api -X PUT repos/DaveKadziola/homelab/rulesets/25494699 --input - <<'EOF'
+{
+  "name": "homelab-v2: PR with green validate and plan, no force push or deletion",
+  "target": "branch",
+  "enforcement": "active",
+  "bypass_actors": [],
+  "conditions": {"ref_name": {"include": ["refs/heads/homelab-v2"], "exclude": []}},
+  "rules": [
+    {"type": "deletion"},
+    {"type": "non_fast_forward"},
+    {"type": "pull_request", "parameters": {"allowed_merge_methods": ["merge", "squash", "rebase"],
+      "dismiss_stale_reviews_on_push": false, "require_code_owner_review": false,
+      "require_last_push_approval": false, "required_approving_review_count": 0,
+      "required_review_thread_resolution": false}},
+    {"type": "required_status_checks", "parameters": {"strict_required_status_checks_policy": false,
+      "do_not_enforce_on_create": false, "required_status_checks": [
+        {"context": "validate", "integration_id": 15368}, {"context": "plan", "integration_id": 15368}]}}
+  ]
+}
+EOF
+
+# Before the new infra-apply-prod.yml reaches main: a job naming a missing environment creates it
+# without protection.
+gh api -X PUT repos/DaveKadziola/homelab/environments/prod-gate --input - <<'EOF'
+{"wait_timer": 0, "prevent_self_review": false, "reviewers": [{"type": "User", "id": 194847688}],
+ "deployment_branch_policy": {"protected_branches": false, "custom_branch_policies": true}}
+EOF
+gh api -X POST repos/DaveKadziola/homelab/environments/prod-gate/deployment-branch-policies -f name=main -f type=branch
+
+# After the first release with the new workflow is green: prod without reviewer, branch policy kept.
+gh api -X PUT repos/DaveKadziola/homelab/environments/prod --input - <<'EOF'
+{"reviewers": [], "deployment_branch_policy": {"protected_branches": false, "custom_branch_policies": true}}
+EOF
+gh api repos/DaveKadziola/homelab/environments/prod/deployment-branch-policies --jq '.branch_policies[].name'  # main
+```
+
+Proof of the gate: `gh workflow run "Infra Apply Prod" --ref main -f gate=true` must stop in
+`prod-gate` until the owner approves; a normal release must skip the `gate` job.
 
 ---
 

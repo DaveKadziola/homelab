@@ -2,7 +2,7 @@
 
 ## Path of a change
 
-1. Commit on `homelab-v2` (dev) or `main` (prod, approval).
+1. PR into `homelab-v2` (dev; merges itself when `validate` and `plan` pass). Prod: the owner merges the PR `homelab-v2` -> `main`; approval only when the Terraform plan is risky ([0004](decisions/0004-ci-autonomy-and-prod-risk-gate.md)).
 2. GHA on the matching self-hosted runner.
 3. Terraform (infra workflows) and/or Ansible `deploy-core.yml` then `deploy-storage.yml` (apps workflows).
 4. Ansible syncs `compose/`, `config/`, `utils/bootstrap*` to `/opt/homelab/`, writes `.env` **without literal secret fallbacks**, copies secrets to `/opt/homelab/secrets/<env>/`, runs `utils/bootstrap-apps.sh` unless `HOMELAB_SKIP_BOOTSTRAP` is set.
@@ -11,10 +11,12 @@ Manual DEV deploy from the laptop:
 
 ```bash
 export HOMELAB_ENV=dev
-export COMPOSE_PROFILES=auth,media
+# No COMPOSE_PROFILES: config/services.yml environments.dev.profiles decides, as in CI.
 export LINKWARDEN_URL=http://192.168.122.50:3001
+export JELLYFIN_URL=http://192.168.122.50:8096
 while IFS= read -r f; do
-  export "$(basename "$f")=$(tr -d '\r\n' < "$f")"
+  # $(<file) keeps inner newlines (SSH keys, RCLONE_CONFIG); only the final one goes.
+  export "$(basename "$f")=$(<"$f")"
 done < <(find ~/.homelab-secrets/dev -type f)
 
 ansible-playbook -i ansible/environments/dev/hosts.ini ansible/playbooks/deploy-core.yml

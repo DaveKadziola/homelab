@@ -13,6 +13,8 @@
 
 Deployed automatically: `deploy-core.yml` builds `easytodo-grocery:<ref[:12]>` from `deploy/Dockerfile` at `grocery_ref` (a new ref is a new tag, so it rebuilds) and sets the password of role `easytodo`. `utils/bootstrap/portainer.sh` creates or updates the Portainer stack `easytodo-grocery` with the compose file and its env (image, DB password, `GROCERY_SECRET_KEY`, public URL, mail), then runs `create-admin`. The container runs the DB migrations on start.
 
+`create-admin` creates the admin or makes an existing account admin; it never changes an existing password. `GROCERY_ADMIN_PASSWORD` is therefore only the first password: once the admin changes it in the app, the stored value no longer signs in. Before the exec the bootstrap waits until the container runs `GROCERY_IMAGE` and answers `/healthz`, because the Portainer stack update can return while the old container still answers (DEV deploy 2026-10-21).
+
 Portainer stack `easytodo-grocery`, **bridge**, `8101:8000`, `DB_HOST` = `host.docker.internal`. The public URL is the only origin the app accepts for forms and WebSockets: prod `https://grocery.dkhomelabserver.xyz`, dev `http://192.168.122.50:8101`.
 
 Client address: on prod the app trusts `X-Forwarded-For`/`X-Forwarded-Proto` only from `192.168.50.50` (`environments.prod.public_proxy` in `config/services.yml`), the OPNsense HAProxy. HAProxy backend `grocery` (server `grocery-app`, `192.168.50.30:8101`) sends `option forwardfor` and `X-Forwarded-Proto: https` since 2026-10-21 (`utils/f2-opnsense-grocery-xff.sh`); before that the app saw every public client as the router.

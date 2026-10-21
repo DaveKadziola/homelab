@@ -1,17 +1,13 @@
-# Home Assistant (T620)
+# Home Assistant configuration
 
-HAOS is **not** deployed from this repo. The T620 at `192.168.20.13` is a separate appliance.
+Only `packages/` is managed from this repository: `utils/ha.py --env dev|prod deploy` replaces
+`<config>/packages` on Home Assistant with it, checks the config and reloads. Everything the UI
+writes stays on Home Assistant and is snapshotted, not overwritten
+([knowledge/apps/homeassistant.md](../knowledge/apps/homeassistant.md)).
 
-This directory is a placeholder for any config-as-code we later export. Do not put tokens here.
-
-## What this repo does (F5)
-
-- `utils/backup/ha-pull.sh` copies the newest Supervisor backup when `ha_host` is set and `HA_TOKEN` exists.
-- On DEV `ha_host` is empty — the job SKIPs.
-- You cannot flash HAOS from the laptop. Install it on the T620, then create a long-lived token in the HA UI and store it as `homelab/HA_TOKEN/prod` + GH env prod.
-
-## After HAOS is up
-
-1. Create a Supervisor backup in the UI (or `ha backups new`).
-2. Store `HA_TOKEN`: `printf '%s' "$t" | utils/bw-store.py --env prod --stdin HA_TOKEN` (laptop cache `~/.homelab-secrets/prod/` and Bitwarden).
-3. Nightly `homelab-backup.timer` on `ubuntu-apps` will pull the newest `.tar` into `/mnt/homelab/backups/homeassistant`.
+- One topic per package file; a package can hold any integration keys (`template:`, `automation:`,
+  `sensor:`, ...). Keys that only load at start need a restart (`utils/ha.py call homeassistant.restart`).
+- `homelab_meta.yaml` carries the deployed commit (`@REVISION@` is replaced by the deploy) - keep it.
+- Never put tokens, passwords or personal data here: the repository is public. Use `!secret` and
+  the `secrets.yaml` on Home Assistant.
+- Try a change on the DEV twin first: `utils/ha.py --env dev deploy --dry-run`, then without.

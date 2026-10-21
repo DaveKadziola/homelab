@@ -126,15 +126,16 @@ Legacy VMs on Proxmox with the same **vmid** or names must be **stopped and dest
 ## Bootstrap order (first prod apply)
 
 Prod is built from `main` only (owner, 2026-10-19): `Infra Apply Prod` on a push to `main`, then
-`Apps Deploy Prod` after it (`workflow_run`), both in the GitHub environment `prod` that needs the
-owner's approval. The prod runner is an LXC container on the host, made by a script and not by
+`Apps Deploy Prod` after it (`workflow_run`), both in the GitHub environment `prod`. `Infra Apply Prod`
+waits in `prod-gate` for the owner only when the Terraform plan is risky
+([0004](../knowledge/decisions/0004-ci-autonomy-and-prod-risk-gate.md)). The prod runner is an LXC container on the host, made by a script and not by
 Terraform, so it exists before the first apply:
 
 1. `./utils/bootstrap-f3-proxmox.sh --upgrade` (post-install, API URL, `snippets` on datastore `local`).
 2. Runner: `./utils/pve-ci-runner-lxc.sh --dry-run`, then without `--dry-run` (CT 110 `ci-runner`, `192.168.20.14`, registered as `homelab-prod-ci-runner`).
-3. Tag the old `main` as `legacy-pre-v2`, open the PR `homelab-v2` -> `main` (`Infra Plan Prod` runs the plan), merge, approve `Infra Apply Prod`.
+3. Tag the old `main` as `legacy-pre-v2`, open the PR `homelab-v2` -> `main` (`Infra Plan Prod` runs the plan), merge (approve `Infra Apply Prod` if it stops in `prod-gate`).
 4. Attach and format the NAS disks as in [`knowledge/storage.md`](../knowledge/storage.md#attach-and-format-run-order), never in CI.
-5. Approve `Apps Deploy Prod` (or re-run it with workflow_dispatch after step 4).
+5. Re-run `Apps Deploy Prod` with workflow_dispatch after step 4.
 
 ---
 
@@ -166,8 +167,8 @@ only the branch `main`: GitHub rejected the job on PR #38 with `Branch "refs/pul
 allowed to deploy to prod`. It uses `prod-plan` instead: no reviewers, every branch allowed, and only
 what a plan reads. Because every branch can use it, its Proxmox token is read-only (`PVEAuditor`);
 `TF_API_TOKEN` is the only value in it that can write (HCP state). The SSH password is a dummy in the
-workflow: plan does not connect over SSH. `Infra Apply Prod` and `Apps Deploy Prod` stay in `prod`
-with the approval.
+workflow: plan does not connect over SSH. `Infra Apply Prod` and `Apps Deploy Prod` stay in `prod`;
+the apply plans again with refresh and stops in `prod-gate` when that plan is risky.
 
 The plan runs with `-refresh=false`. With refresh the read-only token failed on PR #42:
 `Permission check failed (/vms/101, VM.Config.Disk)` for the VM disks, and both cloud-init snippets
@@ -209,8 +210,9 @@ unset plain
 (`terraform/main.tf:52`). Step 4 hashes it with the fixed salt of `utils/sync-secrets-to-github.py`.
 If the PR plan shows `proxmox_virtual_environment_file.cloud_config` replaced while nothing changed,
 `prod` was hashed with another salt: set the same value in `prod` too (repeat the last command with
-`--env prod`). The VMs ignore cloud-init changes (`terraform/main.tf:149-151`), so the next apply
-only rewrites the snippet.
+`--env prod`). Terraform ignores the VM's cloud-init settings (`terraform/main.tf:159-161`), but
+Proxmox hands the rewritten snippet to the VM at its next boot, so `Infra Apply Prod` treats the
+replace as risky and waits in `prod-gate` (decision 0004).
 
 Check: the next PR to `main` shows `Infra Plan Prod` green with the plan in its log.
 

@@ -5,12 +5,13 @@
 
 ## What is deployed
 
-Ansible playbook `ansible/playbooks/deploy-core.yml` syncs `compose/core/` (+ grocery compose) to `/opt/homelab/compose/` and runs `docker compose up -d` with profiles `auth,media` by default.
+Ansible playbook `ansible/playbooks/deploy-core.yml` syncs `compose/core/` (+ grocery compose) to `/opt/homelab/compose/` and runs `docker compose up -d` with profiles `auth,media,devmail` by default (devmail: the DEV mail sink).
 
 ### Port table (DEV `.50`)
 
 | Priority | Service | Port (host) | Status target | Notes |
 |----------|---------|-------------|---------------|--------|
+| P0 | Caddy | 443 / 80 | Up | profile `proxy`; app names `<app>.dev.dkhomelabserver.xyz`, Authelia in front (decision 0007) |
 | P0 | Portainer | 9000 / 9443 | Up | UI + grocery stack |
 | P0 | Postgres 16 | 5432 | Up | Shared core DBs + grocery `easytodo` |
 | P0 | pgAdmin | 5050 | Up | env mailbox / `PGADMIN_PASSWORD` |
@@ -20,18 +21,19 @@ Ansible playbook `ansible/playbooks/deploy-core.yml` syncs `compose/core/` (+ gr
 | P0 | Actual | 5006 | Up | budget |
 | P0 | Linkwarden | 3001 | Up | bookmarks |
 | P0 | Omni-tools | 8083 | Up | |
-| P0 | DumbWhois | 8084 | Up | |
+| P0 | IT Tools | 8086 | Up | |
+| P0 | Networking Toolbox | 8087 | Up | RDAP lookups (replaced DumbWhois) |
 | P0 | BentoPDF | 8085 | Up | |
-| P0 | Authelia | **9091** (HTTPS) | Up | profile `auth`; see below |
+| P0 | Authelia | 9091 | Up | profile `auth`; plain HTTP behind Caddy, portal `https://auth.dev.dkhomelabserver.xyz` |
 | P0 | EasyTodo Grocery | 8101 | Up | EasyToDo v2, Portainer stack from `compose/grocery/` (bridge, `8101:8000`) |
 | P1 | Syncthing | 8384 / 22000 | Up | LAN sync UI + sync ports |
 | P1 | Navidrome | 4533 | Up | empty `/music` volume on DEV |
 | P1 | Jellyfin | 8096 | Up | profile `media`; empty library OK |
 | P1 | Immich | 2283 | Up | profile `media`; own Postgres+Redis; **local volumes** (not NFS) |
 | P2 | Beszel hub | 8090 | Up | metrics UI |
-| P2 | Beszel agent | (host net :45876) | Optional | profile `beszel-agent` + `BESZEL_KEY` after hub setup |
-| P2 | Diun | — | Up | image-update watcher; stdout logs |
-| P2 | Zotify | 4381 | Up | CLI helper; Spotify OAuth on 4381 during login only |
+| P2 | Beszel agent | (host net :45876) | Up | profile `beszel-agent`; key and token written by the Beszel bootstrap |
+| P2 | Diun | — | Up | image-update watcher; mail through mailpit on DEV |
+| P2 | Mailpit | 8025 / 1025 | Up | profile `devmail`; DEV mail sink, UI 8025, SMTP 1025 |
 
 **Grocery** is not in core compose; use `compose/grocery/docker-compose.yml` via Portainer (synced to `/opt/homelab/compose/grocery`).
 
@@ -55,8 +57,7 @@ Laptop libvirt “Proxmox” guest stayed at 8 GiB — do not add more guests wi
 export POSTGRES_PASSWORD="$(cat ~/.homelab-secrets/dev/POSTGRES_PASSWORD)"
 export IMMICH_DB_PASSWORD="$(cat ~/.homelab-secrets/dev/IMMICH_DB_PASSWORD)"
 export LINKWARDEN_URL=http://192.168.122.50:3001
-# Default profiles in playbook: auth,media
-# Optional: BESZEL_KEY=… after hub bootstrap; ZOTIFY_* unused (interactive login)
+# Default profiles in playbook: auth,media,devmail
 
 cd ansible
 ansible-playbook -i environments/dev/hosts.ini playbooks/deploy-core.yml
@@ -64,28 +65,18 @@ ansible-playbook -i environments/dev/hosts.ini playbooks/deploy-core.yml
 
 Or push to `homelab-v2` (paths under `compose/` / `ansible/`) with runner label `homelab-dev` online → `apps-deploy-dev.yml`.
 
-### Authelia (DEV)
+### Authelia and app names (DEV)
 
-- URL: `https://192.168.122.50:9091` (self-signed — accept browser warning) or `https://authelia.homelab.local:9091`
-- User: `admin`
-- Password file: `~/.homelab-secrets/dev/AUTHELIA_ADMIN_PASSWORD` (not in git)
-- Config: `compose/core/authelia/` (file users + sqlite); TLS cert generated on deploy under `authelia/certs/`
-- Cookie domain `homelab.local` — for SSO cookies add to client `/etc/hosts`:
-  `192.168.122.50 authelia.homelab.local homelab.local`
-- Disable: `COMPOSE_PROFILES=media` (drop `auth`) before deploy.
-
-### Zotify (DEV)
-
-- No web UI. Volumes hold music + `~/.zotify` credentials after first login.
-- OAuth during Spotify login: host port **4381**
-- Usage:
-
-  ```bash
-  ssh -i ~/.ssh/homelab_dev_ed25519 ubuntu-dev@192.168.122.50
-  docker exec -it homelab-core-zotify-1 zotify '<spotify-url>'
-  ```
-
-- **Blocker:** needs a Spotify account and interactive browser login (callback to `:4381`). Do not put Spotify secrets in git.
+- Every app answers as `https://<app>.dev.dkhomelabserver.xyz` through Caddy (internal CA - accept the
+  browser warning or trust Caddy's root), Authelia first: portal `https://auth.dev.dkhomelabserver.xyz`
+  ([decision 0007](../knowledge/decisions/0007-app-names-caddy-authelia.md)).
+- Names resolve once the AdGuard rewrites exist (`utils/f2-adguard-rewrites.sh`, owner's decision);
+  until then add them to the laptop `/etc/hosts` -> `192.168.122.50`, or test with
+  `curl -k --resolve homarr.dev.dkhomelabserver.xyz:443:192.168.122.50 https://homarr.dev.dkhomelabserver.xyz/`.
+- User: `admin`; password file `~/.homelab-secrets/dev/AUTHELIA_ADMIN_PASSWORD` (not in git).
+- Config: `compose/core/authelia/configuration.yml` (shared) + `access.yml` (session cookie and rules,
+  generated by `utils/gen-proxy-config.py` at deploy).
+- Disable: `COMPOSE_PROFILES=media,devmail` (drop `auth` and `proxy`) before deploy.
 
 ### Portainer first-admin (dev)
 
@@ -119,13 +110,12 @@ Upstream grocery Git compose uses `network_mode: host` → Portainer shows **no*
 
 1. [x] Portainer `:9000`
 2. [x] Homarr `:7575` / Dozzle `:8080` / pgAdmin `:5050`
-3. [x] Linkwarden `:3001` / Trilium `:8082` / Actual `:5006` / Omni `:8083` / DumbWhois `:8084` / BentoPDF `:8085`
+3. [x] Linkwarden `:3001` / Trilium `:8082` / Actual `:5006` / Omni `:8083` / IT Tools `:8086` / Networking Toolbox `:8087` / BentoPDF `:8085`
 4. [x] Grocery `:8101` with Published Ports visible
-5. [x] Authelia `https://authelia.homelab.local:9091` — `admin` / `~/.homelab-secrets/dev/AUTHELIA_ADMIN_PASSWORD`
+5. [x] Authelia `https://auth.dev.dkhomelabserver.xyz` (through Caddy) — `admin` / `~/.homelab-secrets/dev/AUTHELIA_ADMIN_PASSWORD`
 6. [x] Syncthing `:8384` / Navidrome `:4533` / Jellyfin `:8096` / Immich `:2283` (+ ML healthy with CPU=host)
-7. [x] Beszel hub `:8090` / Diun running / Zotify container Up
-8. [ ] Optional: Beszel agent (`COMPOSE_PROFILES=…,beszel-agent` + `BESZEL_KEY` from hub UI)
-9. [ ] Optional: Spotify login for Zotify (`docker exec -it … zotify`)
+7. [x] Beszel hub `:8090` / Diun running
+8. [x] Beszel agent (key and token from the hub, written by the bootstrap)
 
 When all OK → prod rollout.
 

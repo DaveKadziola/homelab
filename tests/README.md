@@ -29,12 +29,13 @@ in `/tmp/homelab-tests-<env>/` and referenced from the failure message.
 
 | Suite | Proves | Needs |
 |-------|--------|-------|
-| `smoke/` | every service in `config/services.yml` exists as a container, is `Up` (not `Restarting`), publishes its declared host port, answers with one of its `expect` codes, and is not in a restart loop / OOM-killing processes | SSH to the env host, `docker` group |
+| `smoke/` | every service in `config/services.yml` exists as a container, is `Up` (not `Restarting`), publishes its declared host port, answers with one of its `expect` codes, and is not in a restart loop / OOM-killing processes; with compose profile `proxy`, per app name of `utils/gen-proxy-config.py` (`curl --resolve`, no DNS needed): http redirects to https, the name redirects to `https://auth.<domain>/` or, under `auth_bypass`, answers without Authelia, and one Authelia login reaches an app (`smoke/proxy/*`). DEV 2026-10-21: 113 PASS | SSH to the env host, `docker` group; `AUTHELIA_ADMIN_PASSWORD` for `smoke/proxy/login` |
 | `infra/` | `terraform plan` reports no changes; terraform state matches the tfvars it was applied with; `ansible-playbook --check` changes nothing; the guest really has the RAM/CPU/disk/IP from `terraform.tfvars`; IP, gateway, VLAN and prefix match `docs/network.md`; the Proxmox LVM-thin pool is below 85 % (`HL_THIN_POOL_MAX_PCT`) and set to error when full (DEV only) | terraform, ansible, Proxmox API token, deploy secrets, root SSH key on the nested Proxmox |
 | `net/` | public and host-side DNS resolve; a WireGuard peer has a recent handshake; the public HAProxy endpoint (`public_url` plus the service's `path`) answers with its `expect` codes and its TLS certificate is not about to expire; APP→NAS `2049/111` is open and other APP→IOT paths are blocked | prod network for the firewall and HAProxy checks |
 | `config/` | every secret named in `config/identities.yml` exists in the matching GitHub environment; no secret value is committed; no deployed file carries a literal fallback secret; `config/services.yml` agrees with `compose/` and with the port tables in `docs/` | `gh` authenticated; nothing else |
 | `storage/` | from `config/storage.yml`: each NAS passthrough filesystem and bind is mounted with its LABEL (`disk/<label>@<path>`); the apps host sees each filesystem's marker through NFS, not the empty root-disk directory under the mount (`nfs/marker-<label>`); nfs-server requires every NAS mount (`nfs/guard`); smbd runs, `hosts allow` matches the config and the admin login lists `share`, `media` and `backups`, and a write to `backups` is refused (`samba/smbd`, `samba/hosts-allow`, `samba/login`, `samba/backups-ro`, run on the NAS itself with `smbclient`, password over stdin). Read-only except the refused backups probe. DEV: 3 PASS 3 SKIP; with two test disks on DEV 9 PASS (2026-10-19) | SSH to the NAS (on DEV the apps guest), `SAMBA_ADMIN_PASSWORD` in the environment or `~/.homelab-secrets/<env>/` |
-| `restore/` | NFS mount + backup timer + one `run-all.sh` + scratch Postgres dump→restore. rclone/HA/vzdump SKIP on DEV with reasons | SSH, `sudo -n`, F5 deployed |
+| `ha/` | Home Assistant through `utils/ha.py` (`config/storage.yml` `ha_url`): the API answers to `HA_TOKEN` (`api`), the core config check is valid (`config`), `sensor.homelab_config_revision` holds a commit of the checkout, i.e. `homeassistant/packages` is deployed (`revision`), Terminal & SSH and Uptime Kuma are started (`addon-<slug>`). Read-only. DEV twin: 5 PASS (2026-10-20) | `HA_TOKEN` in the environment or `~/.homelab-secrets/<env>/`, else SKIP |
+| `restore/` | NFS mount + backup timer + one `run-all.sh` + scratch Postgres dump→restore. rclone SKIP on DEV with a reason; the age of the NAS-side streams (HA, OPNsense, VM dumps) is in `storage/backup/fresh-*` | SSH, `sudo -n`, F5 deployed |
 
 ### Test ids
 
@@ -48,20 +49,23 @@ A skip always carries its reason. The ones that are expected today:
 
 | Skip | Why |
 |------|-----|
-| `smoke/*`, `infra/vm/*`, `net/firewall/*` on `--env prod` | the physical host `192.168.50.30` is offline until F3 |
+| `smoke/*`, `infra/vm/*`, `net/firewall/*` on `--env prod` | the physical host `192.168.50.30` is not reachable from the machine running the tests |
+| `smoke/proxy/all` | compose profile `proxy` is not enabled on the host (prod without `CLOUDFLARE_API_TOKEN` in environment `prod`) |
+| `smoke/proxy/login` | `AUTHELIA_ADMIN_PASSWORD` is not in the environment or `~/.homelab-secrets/<env>/` |
 | `net/public/*` | the public endpoint goes through HAProxy on OPNsense, which needs the prod backend |
 | `net/wireguard/handshake` | `wg0` runs on OPNsense; there is no WireGuard interface on the machine running the tests |
 | `net/wireguard/gateway` | the prod CI runner `ci-runner` sits on IOT VLAN 20 and has no route to `10.10.10.1`; it passed from the laptop runner on LAN (2026-10-20) |
 | `net/dns/internal` | dev has no internal DNS zone (`homelabdev.local` has no server) |
 | `infra/terraform/plan` | no Proxmox API token, or the nested PVE is not running (`utils/ensure-dev-proxmox.sh`) |
 | `infra/ansible/check` | One of the secrets `deploy-core.yml` asserts (`POSTGRES_PASSWORD`, `HOMARR_SECRET_KEY`, `LINKWARDEN_SECRET`, `PGADMIN_PASSWORD`) is neither in the environment nor in `~/.homelab-secrets/<env>/` - the case on the prod CI runner -, so the playbook stops before the rendered `.env` can be compared |
-| `<service>/port`, `<service>/endpoint` for `check: container` | Diun, Zotify and the Beszel agent have no HTTP listener to probe |
+| `<service>/port`, `<service>/endpoint` for `check: container` | Diun and the Beszel agent have no HTTP listener to probe |
 | a service whose `profile` is not in `COMPOSE_PROFILES` | it is intentionally not deployed |
 | a service with `optional: true` that is missing | it needs a manual step first (Beszel agent needs a hub key) |
 | `storage/disk/all`, `storage/nfs/markers`, `storage/nfs/guard` on `--env dev` | `passthrough` is empty for DEV in `config/storage.yml`: no SA500/Purple there |
-| `storage/nas/reachable` on `--env prod` | `ubuntu-nas` `192.168.20.12` is not reachable yet |
+| `storage/nas/reachable` on `--env prod` | `ubuntu-nas` `192.168.20.12` is not reachable from the machine running the tests |
 | `storage/samba/all` | the environment has no `samba` block in `config/storage.yml` |
 | `storage/samba/login` | `SAMBA_ADMIN_PASSWORD` is not in the environment or `~/.homelab-secrets/<env>/` |
+| `ha/all` | `HA_TOKEN` is not in the environment or `~/.homelab-secrets/<env>/` (prod until the owner created it) |
 
 ## Add a service — one edit
 
@@ -135,7 +139,7 @@ the admin hash in `compose/core/authelia/users_database.yml` by design.
 | Workflow | Trigger | Runner |
 |----------|---------|--------|
 | [`tests-dev.yml`](../.github/workflows/tests-dev.yml) | after `Apps Deploy Dev` (`workflow_run`), on push to `tests/`/`config/`, or manually | `homelab-dev` |
-| `post-deploy-tests` job in [`apps-deploy-prod.yml`](../.github/workflows/apps-deploy-prod.yml) | after the prod deploy job (post approval) | `homelab-prod` |
+| `post-deploy-tests` job in [`apps-deploy-prod.yml`](../.github/workflows/apps-deploy-prod.yml) | after the prod deploy job | `homelab-prod` |
 
 Both upload the JSON report as a build artifact.
 
@@ -145,9 +149,6 @@ Both upload the JSON report as a build artifact.
   proves a scratch Postgres round-trip and that the F5 timer/artefacts exist.
   Replaying OPNsense XML or restoring a vzdump archive still needs metal. The
   suite is **not** part of `--suite all` (monthly / after a backup change).
-- **Authelia SSO coverage** — that a protected service actually redirects to
-  Authelia is not asserted; the dev cookie domain is `homelab.local`, which only
-  works with a hosts entry.
 - **Application-level content** — the suites check that Immich, Jellyfin and
   friends answer, not that libraries, users or dashboards are correct. Whatever
   a bootstrap script creates should be verified by that script.

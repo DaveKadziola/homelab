@@ -18,12 +18,11 @@ DR here means “the building burned / the disk died / I bought new hardware”,
 
 ## What you cannot recover yet
 
-- Prod NAS contents — SA500/Purple are known (`config/storage.yml`: serial, by-id, slot, label) but not attached or formatted yet
 - Samba share and media — no homelab copy yet: the share (Purple) is never backed up, the media (SA500) pCloud backup is deferred ([decision 0002](decisions/0002-nas-layout-and-samba.md))
-- Offsite pCloud copy — `RCLONE_CONFIG` is not in GH prod
-- Home Assistant — T620 is not HAOS from this repo; `HA_TOKEN` unset
-- vzdump of prod VMs — script skips unless it runs on physical PVE
-- OPNsense live config — unless `opnsense.sh` reached the router or you exported `config.xml` yourself
+- Offsite pCloud copy — only if `rclone-offsite.sh` ran on prod (`.offsite-ok` in `/mnt/homelab/backups`); `RCLONE_CONFIG` is in GH env `prod` and reaches the apps host through `deploy-core.yml` `homelab_secrets`
+- Home Assistant — only if the NAS stream `ha-pull.sh` ran (`ha-full-*.tar`); HAOS 18.3 runs on the T620, but without `HA_TOKEN` in environment `prod` the stream skips (`utils/backup/ha-pull.sh:13-14`)
+- VM dumps of prod — only if the Proxmox job `homelab-vms` ran (`/export/backups/vzdump/dump/` on the NAS, [backup](backup.md))
+- OPNsense live config — unless the NAS stream `opnsense.sh` ran (`/export/backups/opnsense/`) or you exported `config.xml` yourself
 
 ## Order after a total loss
 
@@ -31,7 +30,7 @@ Follow [`rebuild.md`](rebuild.md). After F7 bootstrap: restore Postgres dumps, t
 
 Never pass `nas_wipe` to `deploy-storage.yml` in a rebuild: a surviving disk that carries its LABEL is mounted as it is.
 
-A nested-PVE **wipe** on the laptop is still the F9 merge gate. F5 on DEV is not that wipe.
+The F9 nested-PVE wipe drill passed on 2026-10-19 with no code change ([`rebuild-drill-2026-10-19b.md`](rebuild-drill-2026-10-19b.md)); prod was built from `main` by release #75 (2026-10-20).
 
 ## Related
 

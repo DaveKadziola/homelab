@@ -79,8 +79,20 @@ def current_rows(db, seed):
     return apps, items, layouts
 
 
+def home_board(db):
+    """homeBoardId of the server setting `board`, or None."""
+    row = db.execute("SELECT value FROM serverSetting WHERE setting_key = 'board'").fetchone()
+    try:
+        return json.loads(row[0])["json"].get("homeBoardId") if row else None
+    except (ValueError, KeyError, TypeError):
+        return None
+
+
 def matches(db, seed):
     if not db.execute("SELECT 1 FROM board WHERE id = ?", (seed["board"]["id"],)).fetchone():
+        return False
+    # A home board picked in the UI (onboarding makes one) hid the seeded board on 2026-10-20.
+    if home_board(db) != seed["board"]["id"]:
         return False
     want_apps, want_items, want_layouts = desired_rows(seed)
     have_apps, have_items, have_layouts = current_rows(db, seed)
