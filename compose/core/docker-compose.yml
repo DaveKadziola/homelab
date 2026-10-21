@@ -19,11 +19,17 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    # Each probe is an exec through dockerd/containerd; on the J4205 apps VM probes every 5-10 s
+    # cost ~20 % of a core at idle. start_interval keeps depends_on fast while the service starts.
+    # -h 127.0.0.1: on a fresh volume the entrypoint's init server listens on the socket only and
+    # must not count as ready, or postgres-init connects over TCP too early.
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U homelab -d homelab"]
-      interval: 5s
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U homelab -d homelab"]
+      interval: 30s
       timeout: 5s
-      retries: 10
+      retries: 3
+      start_period: 60s
+      start_interval: 2s
     mem_limit: 512m
 
   postgres-init:
@@ -300,9 +306,9 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
+      interval: 30s
       timeout: 5s
-      retries: 5
+      retries: 3
     mem_limit: 128m
     profiles: ["media"]
 
@@ -320,10 +326,13 @@ services:
     # 512m OOMs during Immich geodata/metadata init on DEV → crash loop
     mem_limit: 768m
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d immich"]
-      interval: 5s
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d immich"]
+      interval: 30s
       timeout: 5s
-      retries: 10
+      retries: 3
+      # Same value as the image's own healthcheck; covers the first initdb.
+      start_period: 300s
+      start_interval: 2s
     profiles: ["media"]
 
   # --- P2 ---
