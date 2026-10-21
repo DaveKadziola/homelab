@@ -1,5 +1,5 @@
 Status: verified
-Last reviewed: 2026-10-21
+Last reviewed: 2026-10-22
 Scope: what the prod rollout (F3-F5) creates, from which file, with which settings; open gaps before `terraform apply`
 
 # Prod target - what gets deployed
@@ -12,7 +12,7 @@ and `knowledge/rebuild.md` (order of steps).
 
 | Box | What | Address | Source |
 |-----|------|---------|--------|
-| OPNsense 26.1.9 | router, VLANs, DHCP, firewall, AdGuard DNS, HAProxy, WireGuard | LAN `192.168.1.1`, IOT `.20.1`, APP `.50.50`, WAN `192.168.100.2/30` | `docs/network.md` |
+| OPNsense 26.1.9 | router, VLANs, DHCP, firewall, AdGuard DNS, HAProxy, WireGuard; package `suricata` 8.0.5, no `os-suricata`; IDS mode=`netmap`, interfaces `lan`,`wan`, process `suricata -D --netmap` since 2026-06-14 (`opnsense-version`, `pkg info`, `config.xml` `OPNsense/IDS/general`, 2026-10-22) | LAN `192.168.1.1`, IOT `.20.1`, APP `.50.50`, WAN `192.168.100.2/30` | `docs/network.md` |
 | NETGEAR GS308EP | switch; IOT VLAN 20 tagged to Proxmox ports, VLAN 51 tagged to router + `nic2` | `192.168.1.2` | `docs/network.md` |
 | Proxmox VE 9.2.2 | Pentium J4205 (4 cores), 15 GiB RAM; system on Crucial MX500 250 GB (`local` 66 GiB, `local-lvm` 137 GiB thin) | `192.168.20.20`, `proxmox.dkhomelabserver.xyz` | live host |
 | HP t620 | Home Assistant OS 18.3 (installed 2026-10-20) | `192.168.20.13`, `hass.dkhomelabserver.xyz` | DHCP map, AdGuard rewrite |

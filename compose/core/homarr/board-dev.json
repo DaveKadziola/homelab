@@ -1,5 +1,5 @@
 {
-  "generatedFrom": "config/services.yml",
+  "generatedFrom": "config/services.yml + config/storage.yml ha_url",
   "environment": "dev",
   "board": {
     "id": "e7fg8nyxgo25heltcy6ivsut",
@@ -75,6 +75,14 @@
       "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/beszel.svg",
       "href": "https://beszel.dev.dkhomelabserver.xyz/",
       "pingUrl": "http://192.168.122.50:8090/"
+    },
+    {
+      "id": "rzcs9qtmowkenpw7zw9odz48",
+      "name": "Home Assistant",
+      "description": "infra",
+      "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/home-assistant.svg",
+      "href": "http://192.168.122.60/",
+      "pingUrl": "http://192.168.122.60/"
     },
     {
       "id": "ywi01u9abx7p0lz8ghqpyqid",
@@ -233,6 +241,15 @@
       "kind": "app",
       "appId": "j5tmih76pj2fhs69l7936ec7",
       "xOffset": 2,
+      "yOffset": 1,
+      "width": 2,
+      "height": 1
+    },
+    {
+      "id": "xah0rp1vm0pcnm0rimefj2zr",
+      "kind": "app",
+      "appId": "rzcs9qtmowkenpw7zw9odz48",
+      "xOffset": 4,
       "yOffset": 1,
       "width": 2,
       "height": 1
