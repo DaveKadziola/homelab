@@ -6,7 +6,8 @@
 #   config         the core config check is valid
 #   revision       sensor.homelab_config_revision names the deployed commit, and its
 #                  homeassistant/packages equal this checkout's
-#   addon-<slug>   Terminal & SSH and Uptime Kuma are started
+#   addon-<slug>   Terminal & SSH and Uptime Kuma are started (prod: a stopped Kuma is SKIP, the
+#                  deploy leaves it stopped until the owner claims it, knowledge/monitoring.md)
 #
 # Read-only. SKIP without HA_TOKEN (prod until the owner created it).
 
@@ -53,6 +54,9 @@ for slug in core_ssh a0d7b954_uptime-kuma; do
   state="$(jq -r --arg s "$slug" '.addons[$s] // "missing"' <<<"$status_json")"
   if [[ "$state" == "started" ]]; then
     report PASS "addon-$slug" "started"
+  elif [[ "$HL_ENV" == prod && "$slug" == a0d7b954_uptime-kuma && "$state" == stopped ]]; then
+    # Supervisor shows no claim: a claimed Kuma that stopped looks the same.
+    report SKIP "addon-$slug" "stopped - waits for the owner's claim (knowledge/monitoring.md)"
   else
     report FAIL "addon-$slug" "state $state (utils/ha.py --env $HL_ENV bootstrap)"
   fi
