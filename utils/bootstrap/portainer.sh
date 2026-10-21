@@ -241,15 +241,30 @@ print(json.dumps({"name": os.environ["HL_STACK_NAME"],
 
 # create-admin creates the account, or makes an existing one admin without touching its password.
 ensure_grocery_admin() {
-  local container="${GROCERY_STACK}-easytodo-1" email
+  local container="${GROCERY_STACK}-easytodo-1" email out attempt
   hl_has_secret GROCERY_ADMIN_PASSWORD || { hl_warn "GROCERY_ADMIN_PASSWORD unavailable — grocery admin not ensured"; return 0; }
   email="$(hl_account grocery email)"
-  hl_wait_http "http://${HOMELAB_HOST}:$(hl_service grocery port)/healthz" "200" 120 ||
-    hl_die "grocery not healthy after deploy"
-  hl_secret GROCERY_ADMIN_PASSWORD |
-    docker exec -i "$container" python -m easytodo.cli create-admin --email "$email" --password-stdin >/dev/null ||
-    hl_die "grocery create-admin failed"
-  hl_log "grocery admin ${email} ensured"
+  # The stack update can return while the old container still answers and is about to be replaced
+  # (deploy 2026-10-21): wait for the declared image, then for health; retry the exec once or twice.
+  for attempt in 1 2 3; do
+    if [[ -n "${GROCERY_IMAGE:-}" ]]; then
+      local waited=0
+      until [[ "$(docker inspect -f '{{.Config.Image}} {{.State.Running}}' "$container" 2>/dev/null)" == "${GROCERY_IMAGE} true" ]]; do
+        (( waited >= 180 )) && hl_die "${container} is not running ${GROCERY_IMAGE} after 180 s"
+        sleep 5; waited=$((waited + 5))
+      done
+    fi
+    hl_wait_http "http://${HOMELAB_HOST}:$(hl_service grocery port)/healthz" "200" 120 ||
+      hl_die "grocery not healthy after deploy"
+    if out="$(hl_secret GROCERY_ADMIN_PASSWORD |
+      docker exec -i "$container" python -m easytodo.cli create-admin --email "$email" --password-stdin 2>&1)"; then
+      hl_log "grocery admin ${email} ensured"
+      return 0
+    fi
+    hl_warn "grocery create-admin attempt ${attempt} failed: $(tail -n1 <<<"$out")"
+    sleep 10
+  done
+  hl_die "grocery create-admin failed"
 }
 
 JWT="$(login "$PASSWORD")"
