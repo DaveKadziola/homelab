@@ -14,7 +14,7 @@
     # Grocery app v2 (separate repo). Pinned: the image is built from this commit; a new ref
     # gets a new image tag, so changing it rebuilds and redeploys.
     grocery_repo: https://github.com/DaveKadziola/easytodo-grocery-list
-    grocery_ref: 14fd1d0e9aee449f82771c714cd991ca18c7772e
+    grocery_ref: bb37f507a2beef956806c76848c39ddc79599cd5  # tag v2.0.0
     grocery_image: "easytodo-grocery:{{ grocery_ref[:12] }}"
     secrets_dest: /opt/homelab/secrets
     homelab_env: "{{ lookup('env', 'HOMELAB_ENV') | default('dev', true) }}"
