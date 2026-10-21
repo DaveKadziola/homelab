@@ -14,6 +14,12 @@ services:
       - "8101:8000"
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    # The test comes from the image (a Python one-liner, ~0.9 s CPU per run on the apps VM);
+    # only its timing is set here.
+    healthcheck:
+      interval: 60s
+      start_period: 60s
+      start_interval: 2s
     environment:
       EASYTODO_DATABASE_URL: postgresql+asyncpg://easytodo:${DB_PASSWORD:?set DB_PASSWORD}@host.docker.internal:5432/easytodo
       EASYTODO_SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY}
