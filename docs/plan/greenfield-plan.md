@@ -131,6 +131,12 @@ todos:
   - id: nfs-root-squash
     content: "Do zbadania (operator 2026-10-21): eksport NFS /export ma no_root_squash - każdy root na ubuntu-apps, w tym każdy kontener działający jako root (np. Jellyfin), ma pełne prawa do całego /export; sprawdzić, które aplikacje tego potrzebują (root_squash / all_squash z anonuid, uid w kontenerach). Przy okazji: Jellyfin założył video/movies i video/music jako root, Samba (force user ubuntu-prod) nie mogła tam pisać - na prod chown ręcznie 2026-10-21, trwale ma to załatwić deploy-storage"
     status: pending
+  - id: authelia-ip-bypass
+    content: "Kolejny PR (operator 2026-10-22): Authelia tylko przed aplikacjami bez własnego logowania (Dozzle, Mailpit na DEV, Omni Tools, IT Tools, Networking Toolbox, BentoPDF). Homarr, Portainer, pgAdmin, Immich, Linkwarden, Syncthing, Navidrome, Beszel, Grocery, Trilium i Actual mają własne hasło - auth_bypass all, jak Jellyfin. Wejście po IP:port omija Authelię, bo ciasteczko jest na domenie (knowledge/networking.md) - to luka; PR ma ją zamknąć, nie tylko zdjąć Authelię z apek z hasłem."
+    status: pending
+  - id: homarr-ha-domain
+    content: "Kolejny PR (operator 2026-10-22): kafelek Home Assistant w Homarr ma prowadzić na nazwę w domenie, nie na IP. Dziś href bierze ha_url z config/storage.yml (prod http://192.168.20.13, DEV http://192.168.122.60); na prod ping jest wyłączony, bo host aplikacji nie dostał odpowiedzi w 5 s. Nazwa jak pozostałe kafelki, przez Caddy."
+    status: pending
 isProject: false
 ---
 
