@@ -11,7 +11,8 @@ Kuma: config/monitoring.yml environments.<env>.kuma_url. Desired state, every na
     TLS) or tcp, when its compose profile is enabled for the env (COMPOSE_PROFILES, else the
     profiles of config/services.yml environments.<env>); `optional: true`
     services are left out, as the smoke suite never fails them
-  - extra_monitors.<env> (http, port, ping); all of these every 60 s with 1 retry
+  - extra_monitors.<env> (http, port, ping); interval 60 s. HTTP: 3 retries and
+    request timeout 60 s; port and ping: 1 retry
   - a push monitor `homelab:backup-<stream>` per backups[] stream of the env, heartbeat interval
     max_age_hours, push token = first 24 hex of sha256("<KUMA_PUSH_SECRET>:<stream>")
   - SMTP notification `homelab: mail` to environment_email.<env> (config/identities.yml), the
@@ -47,6 +48,7 @@ PREFIX = "homelab:"
 MAIL = "homelab: mail"
 ADMIN = "admin"
 CHECK = {"interval": 60, "retryInterval": 60, "maxretries": 1}
+HTTP_CHECK = {**CHECK, "maxretries": 3, "timeout": 60}
 HTTP_OK = ["200-299", "300-399"]
 
 
@@ -126,7 +128,7 @@ def desired_monitors(env, services, monitoring, profiles, push_secret, notificat
         out[PREFIX + name] = {**fields, "notificationIDList": [notification_id] if notification_id else []}
 
     def http(url, ignore_tls):
-        return {"type": "http", "url": url, "ignoreTls": ignore_tls, "accepted_statuscodes": HTTP_OK, **CHECK}
+        return {"type": "http", "url": url, "ignoreTls": ignore_tls, "accepted_statuscodes": HTTP_OK, **HTTP_CHECK}
 
     for s in services["services"]:
         if s.get("optional") or (s.get("profile") and s["profile"] not in profiles):
@@ -390,7 +392,7 @@ def self_test():
     dev = desired_monitors("dev", services, monitoring, enabled_profiles("dev", {}, book), "s3cret", 7)
     assert sorted(dev) == ["homelab:backup-postgres", "homelab:db", "homelab:photos", "homelab:sso", "homelab:web"], sorted(dev)
     assert dev["homelab:web"] == {"type": "http", "url": "http://10.0.0.5:80/x", "ignoreTls": False,
-                                  "accepted_statuscodes": HTTP_OK, "notificationIDList": [7], **CHECK}, dev["homelab:web"]
+                                  "accepted_statuscodes": HTTP_OK, "notificationIDList": [7], **HTTP_CHECK}, dev["homelab:web"]
     assert dev["homelab:sso"]["url"] == "https://10.0.0.5:9091/" and dev["homelab:sso"]["ignoreTls"] is True
     assert dev["homelab:db"] == {"type": "port", "hostname": "10.0.0.5", "port": 5432, "notificationIDList": [7], **CHECK}
     assert dev["homelab:backup-postgres"] == {"type": "push", "pushToken": "8505c6f6f220ca8194e4e435", "interval": 93600,

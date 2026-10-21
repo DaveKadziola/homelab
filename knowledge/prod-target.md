@@ -1,5 +1,5 @@
 Status: verified
-Last reviewed: 2026-10-21
+Last reviewed: 2026-10-22
 Scope: what the prod rollout (F3-F5) creates, from which file, with which settings; open gaps before `terraform apply`
 
 # Prod target - what gets deployed
@@ -12,14 +12,14 @@ and `knowledge/rebuild.md` (order of steps).
 
 | Box | What | Address | Source |
 |-----|------|---------|--------|
-| OPNsense 26.1.9 | router, VLANs, DHCP, firewall, AdGuard DNS, HAProxy, WireGuard | LAN `192.168.1.1`, IOT `.20.1`, APP `.50.50`, WAN `192.168.100.2/30` | `docs/network.md` |
+| OPNsense 26.1.9 | router, VLANs, DHCP, firewall, AdGuard DNS, HAProxy, WireGuard; package `suricata` 8.0.5, no `os-suricata`; IDS mode=`netmap`, interfaces `lan`,`wan`, process `suricata -D --netmap` since 2026-06-14 (`opnsense-version`, `pkg info`, `config.xml` `OPNsense/IDS/general`, 2026-10-22) | LAN `192.168.1.1`, IOT `.20.1`, APP `.50.50`, WAN `192.168.100.2/30` | `docs/network.md` |
 | NETGEAR GS308EP | switch; IOT VLAN 20 tagged to Proxmox ports, VLAN 51 tagged to router + `nic2` | `192.168.1.2` | `docs/network.md` |
 | Proxmox VE 9.2.2 | Pentium J4205 (4 cores), 15 GiB RAM; system on Crucial MX500 250 GB (`local` 66 GiB, `local-lvm` 137 GiB thin) | `192.168.20.20`, `proxmox.dkhomelabserver.xyz` | live host |
 | HP t620 | Home Assistant OS 18.3 (installed 2026-10-20) | `192.168.20.13`, `hass.dkhomelabserver.xyz` | DHCP map, AdGuard rewrite |
 
 SMART 2026-10-19: SA500 PASSED, 37 h; Purple PASSED, 50 733 h (~5.8 years), no reallocated or pending sectors. Both carried NTFS partitions until their one-time format ([storage](storage.md#attach-and-format-run-order)).
 
-Proxmox network: `vmbr0` VLAN-aware on `bond0` (active-backup `nic1` + `nic0`, MAC `3c:49:37:19:71:ae`), management `vmbr0.20`; `vmbr1` VLAN-aware on `nic2` for APP. Disks passed through to the NAS VM 102 (`qm config 102`, 2026-10-20): WD Red SA500 2 TB (`ata-WD_Red_SA500_2.5_2TB_2525GTD00073`), WD Purple 4 TB (`ata-WDC_WD40PURZ-85TTDY0_WD-WCC7K3KZKJKX`).
+Proxmox network: `vmbr0` VLAN-aware on `bond0` (active-backup, primary `nic0` since 2026-10-21, backup `nic1`, MAC `3c:49:37:19:71:ae`), management `vmbr0.20`; `vmbr1` VLAN-aware on `nic2` for APP. Disks passed through to the NAS VM 102 (`qm config 102`, 2026-10-20): WD Red SA500 2 TB (`ata-WD_Red_SA500_2.5_2TB_2525GTD00073`), WD Purple 4 TB (`ata-WDC_WD40PURZ-85TTDY0_WD-WCC7K3KZKJKX`).
 
 ## 2. Virtual machines (Terraform)
 

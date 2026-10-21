@@ -1,5 +1,5 @@
 {
-  "generatedFrom": "config/services.yml",
+  "generatedFrom": "config/services.yml + config/storage.yml ha_url",
   "environment": "prod",
   "board": {
     "id": "lkmv1qnfkp2jrpczn7e7wicv",
@@ -69,6 +69,14 @@
       "pingUrl": "http://192.168.50.30:8090/"
     },
     {
+      "id": "rzcs9qtmowkenpw7zw9odz48",
+      "name": "Home Assistant",
+      "description": "infra",
+      "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/home-assistant.svg",
+      "href": "http://192.168.20.13/",
+      "pingUrl": null
+    },
+    {
       "id": "ywi01u9abx7p0lz8ghqpyqid",
       "name": "Trilium Notes",
       "description": "apps · P0",
@@ -98,7 +106,7 @@
       "description": "apps · P0",
       "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/grocy.svg",
       "href": "https://grocery.dkhomelabserver.xyz/",
-      "pingUrl": "https://grocery.dkhomelabserver.xyz/"
+      "pingUrl": "https://grocery.dkhomelabserver.xyz/healthz"
     },
     {
       "id": "5924fks08i00ij4urakzefln",
@@ -216,6 +224,15 @@
       "kind": "app",
       "appId": "j5tmih76pj2fhs69l7936ec7",
       "xOffset": 0,
+      "yOffset": 1,
+      "width": 2,
+      "height": 1
+    },
+    {
+      "id": "xah0rp1vm0pcnm0rimefj2zr",
+      "kind": "app",
+      "appId": "rzcs9qtmowkenpw7zw9odz48",
+      "xOffset": 2,
       "yOffset": 1,
       "width": 2,
       "height": 1

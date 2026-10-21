@@ -3,10 +3,14 @@
 #
 # The board is never hand-maintained: every tile comes from the service list,
 # ordered by `dashboard.group`, skipping `dashboard.hidden` entries and services
-# whose compose profile is off. IDs are derived from the service name, so
-# regenerating produces a stable diff and utils/bootstrap/homarr.sh can apply the
-# seed idempotently. With profile proxy a tile links to https://<name>.<domain>
-# (same names as utils/gen-proxy-config.py); the status ping stays on host:port.
+# whose compose profile is off, plus a Home Assistant tile from
+# config/storage.yml environments.<env>.ha_url (same source as utils/ha.py).
+# HA is not a services.yml row: that list also feeds Caddy, AdGuard, Kuma and
+# smoke tests. IDs are derived from the service name, so regenerating produces
+# a stable diff and utils/bootstrap/homarr.sh can apply the seed idempotently.
+# With profile proxy a tile links to https://<name>.<domain> (same names as
+# utils/gen-proxy-config.py); the status ping stays on host:port. The HA ping
+# is omitted on prod: the apps host cannot reach the T620 on IOT.
 #
 # Usage:
 #   ./utils/gen-homarr-board.sh --env dev
@@ -19,6 +23,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SERVICES="${ROOT}/config/services.yml"
+STORAGE="${ROOT}/config/storage.yml"
 
 ENVIRONMENT=""
 OUTPUT=""
@@ -26,7 +31,7 @@ OUTPUT=""
 PROFILES=""
 
 usage() {
-  sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'
   exit "${1:-0}"
 }
 
@@ -43,23 +48,26 @@ done
 [[ -n "$ENVIRONMENT" ]] || { echo "--env dev|prod is required" >&2; exit 1; }
 [[ "$ENVIRONMENT" == "dev" || "$ENVIRONMENT" == "prod" ]] || { echo "--env must be dev or prod" >&2; exit 1; }
 [[ -f "$SERVICES" ]] || { echo "Missing ${SERVICES}" >&2; exit 1; }
+[[ -f "$STORAGE" ]] || { echo "Missing ${STORAGE}" >&2; exit 1; }
 
 OUTPUT="${OUTPUT:-${ROOT}/compose/core/homarr/board-${ENVIRONMENT}.json}"
 mkdir -p "$(dirname "$OUTPUT")"
 
-python3 - "$SERVICES" "$ENVIRONMENT" "$OUTPUT" "$PROFILES" <<'PY'
+python3 - "$SERVICES" "$STORAGE" "$ENVIRONMENT" "$OUTPUT" "$PROFILES" <<'PY'
 import hashlib
 import json
 import sys
 
 import yaml
 
-services_path, environment, output_path, profiles = sys.argv[1:5]
+services_path, storage_path, environment, output_path, profiles = sys.argv[1:6]
 doc = yaml.safe_load(open(services_path))
+storage = yaml.safe_load(open(storage_path))
 env = doc["environments"][environment]
 host = env["host"]
 enabled = set((profiles or env.get("profiles", "")).split(","))
 by_name = "proxy" in enabled and env.get("domain")
+ha_url = ((storage.get("environments") or {}).get(environment) or {}).get("ha_url")
 
 GROUP_ORDER = ["infra", "apps", "media", "tools"]
 COLUMNS = 10
@@ -88,9 +96,11 @@ def base_url(service: dict) -> str:
 
 
 def href_for(service: dict) -> str:
-    """Where a click should land — a health path under /api is not a UI."""
+    """Where a click should land — a health path under /api or /health is not a UI."""
+    if service.get("href"):
+        return service["href"]
     path = service.get("path", "/")
-    if path.startswith("/api"):
+    if path.startswith(("/api", "/health")):
         path = "/"
     if by_name and service["name"] == "authelia":
         return f"https://auth.{env['domain']}/"
@@ -101,6 +111,8 @@ def href_for(service: dict) -> str:
 
 
 def ping_for(service: dict) -> str | None:
+    if "pingUrl" in service:
+        return service["pingUrl"]
     if service.get("check") not in ("http", "https"):
         return None
     return f"{base_url(service)}{service.get('path', '/')}"
@@ -118,6 +130,17 @@ for group in GROUP_ORDER:
         and service.get("port")
         and (not service.get("profile") or service["profile"] in enabled)
     ]
+    if group == "infra" and ha_url:
+        href = ha_url.rstrip("/") + "/"
+        # Homarr pings from the apps host. Prod APP cannot reach the T620 (IOT);
+        # curl --max-time 5 from 192.168.50.30 to this URL timed out (2026-10-22).
+        members.append({
+            "name": "homeassistant",
+            "title": "Home Assistant",
+            "dashboard": {"group": "infra", "icon": "home-assistant"},
+            "href": href,
+            "pingUrl": None if environment == "prod" else href,
+        })
     if not members:
         continue
     if column:  # start every group on a fresh row
@@ -150,7 +173,7 @@ for group in GROUP_ORDER:
 
 board_name = f"homelab-{environment}"
 seed = {
-    "generatedFrom": "config/services.yml",
+    "generatedFrom": "config/services.yml + config/storage.yml ha_url",
     "environment": environment,
     "board": {
         "id": stable_id("board", board_name),
