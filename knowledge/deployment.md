@@ -42,7 +42,7 @@ sudo env HOMELAB_SECRETS_DIR=/opt/homelab/secrets \
 
 ## Grocery
 
-Not in `compose/core`. Portainer stack `easytodo-grocery` from `compose/grocery/` (bridge `8101:8101`, `DB_HOST=host.docker.internal`). Repo: `DaveKadziola/easytodo-grocery-list`.
+Not in `compose/core`. Portainer stack `easytodo-grocery` from `compose/grocery/` (bridge `8101:8000`, database `easytodo` in core Postgres via `host.docker.internal`). Repo: `DaveKadziola/easytodo-grocery-list`, pinned by `grocery_ref`; details in [`apps/grocery.md`](apps/grocery.md).
 
 ## Local Terraform (dev)
 

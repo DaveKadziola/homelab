@@ -1,40 +1,34 @@
-# EasyTodo Grocery — DEV Portainer / compose override
-# Bridge + published ports so Portainer shows IP:port (upstream Git compose uses network_mode: host).
-# Image is built once from DaveKadziola/easytodo-grocery-list (or reuse easy-todo-grocery-nodb on the host).
-# Reachable at http://192.168.122.50:8101 — same URL as host-network deploy.
-#
-# Postgres: published on the Docker host :5432 → host.docker.internal
-# Env vars: set in Portainer stack env (or .env next to this file).
+# EasyToDo Grocery v2 — Portainer stack `easytodo-grocery` (utils/bootstrap/portainer.sh)
+# Image: built by deploy-core.yml from DaveKadziola/easytodo-grocery-list at grocery_ref
+# (deploy/Dockerfile); never pushed to a registry. The container runs the DB migrations on start.
+# Database: `easytodo` in core Postgres, reached through host.docker.internal (published :5432).
+# Variables: the Portainer stack env, written by utils/bootstrap/portainer.sh.
 
 name: easytodo-grocery
 
 services:
   easytodo:
-    image: easy-todo-grocery-nodb:latest
-    # TEMP: run.py hard-codes socketio.run(debug=True), which serves the Werkzeug debugger (code
-    # execution) and a reloader behind the public URL. Remove once easytodo-grocery-list reads debug
-    # from the environment. grep stops the start if the line changed upstream.
-    entrypoint:
-      - /bin/sh
-      - -c
-      - >-
-        sed -i 's/socketio.run(app, debug=True,/socketio.run(app, debug=False,/' /main/run.py &&
-        grep -q 'socketio.run(app, debug=False,' /main/run.py &&
-        exec /entrypoint.sh
+    image: ${GROCERY_IMAGE:?set GROCERY_IMAGE}
     restart: unless-stopped
     ports:
-      - "8101:8101"
+      - "8101:8000"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:
-      DB_HOST: ${DB_HOST:-host.docker.internal}
-      DB_PORT: ${DB_PORT:-5432}
-      DB_NAME: ${DB_NAME:-todo_grocery}
-      DB_USER: ${DB_USER:-prod_todo_grocery}
-      DB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD}
-      DB_SCHEMA: ${DB_SCHEMA:-prod}
-      APP_HOST_NAME: ${APP_HOST_NAME:-0.0.0.0}
-      APP_HOST_PORT: ${APP_HOST_PORT:-8101}
-      SOCKETIO_HOST: ${SOCKETIO_HOST:-192.168.122.50}
-      SOCKETIO_PORT: ${SOCKETIO_PORT:-8101}
+      EASYTODO_DATABASE_URL: postgresql+asyncpg://easytodo:${DB_PASSWORD:?set DB_PASSWORD}@host.docker.internal:5432/easytodo
+      EASYTODO_SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY}
+      EASYTODO_PUBLIC_URL: ${PUBLIC_URL:?set PUBLIC_URL}
+      EASYTODO_ENV: prod
+      # Prod: the OPNsense HAProxy address that reaches the app host (its X-Forwarded-* headers).
+      EASYTODO_FORWARDED_ALLOW_IPS: ${FORWARDED_ALLOW_IPS:-127.0.0.1}
+      # Public on prod: accounts only through an invite link.
+      EASYTODO_REGISTRATION_OPEN: "false"
+      # smtp once GROCERY_PROTON_SMTP_TOKEN exists for the env, else console (links in the app log).
+      EASYTODO_MAIL_BACKEND: ${MAIL_BACKEND:-console}
+      EASYTODO_SMTP_HOST: smtp.protonmail.ch
+      EASYTODO_SMTP_PORT: "587"
+      EASYTODO_SMTP_STARTTLS: "true"
+      EASYTODO_SMTP_USER: todo-grocery@dkhomelabserver.xyz
+      EASYTODO_SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      EASYTODO_SMTP_FROM: EasyToDo <todo-grocery@dkhomelabserver.xyz>
     mem_limit: 512m
