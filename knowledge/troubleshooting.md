@@ -24,6 +24,7 @@ Symptoms first. Root-cause write-ups go in [`lessons-learned.md`](lessons-learne
 | Immich postgres restart | mem_limit ≥ 768m. |
 | BentoPDF connection reset | Map `8085:8080`, not `:80`. |
 | Grocery ports invisible in Portainer | Do not use `network_mode: host`. Use `compose/grocery` bridge. |
+| Grocery image build fails on `ADD --chmod` | Ubuntu's `docker.io` ships without buildx, and the legacy builder rejects `--chmod`. `deploy-core.yml` installs `docker-buildx` since 2026-10-21. |
 | Portainer “timed out for security purposes” | Create/reset admin immediately after first start (`utils/bootstrap/portainer.sh`). Helper line is `login: \`password\``. |
 | Portainer login fails after bootstrap | Helper reset ate the old password. Re-run portainer bootstrap; use `~/.homelab-secrets/dev/PORTAINER_ADMIN_PASSWORD`, not `~/.homelab-portainer-dev-pass`. |
 
@@ -54,6 +55,7 @@ Symptoms first. Root-cause write-ups go in [`lessons-learned.md`](lessons-learne
 | Symptom | Check |
 |---------|--------|
 | Workflows queued forever | Runner `homelab-dev` offline → `sudo ./svc.sh start`. |
+| A merge to `homelab-v2` starts no workflow at all | GitHub webhook incident (githubstatus.com, "Webhooks"; seen 2026-10-21). Start Apps Deploy Dev by hand (`workflow_dispatch`). |
 | Beszel agent restarts after a fresh deploy | Normal until `utils/bootstrap/beszel.sh` has written `beszel-agent.env`; it runs at the end of the same deploy. |
 | `Check Terraform` fails (`Terraform vX` instead of the expected version) | The runner's Terraform differs from the workflows'. Laptop: `apt policy terraform` (the apt package can move on); `ci-runner`: re-run `utils/pve-ci-runner-lxc.sh`. Upgrade all places together (`knowledge/infrastructure.md` "Runners"). |
 | Setup Terraform hangs: the downloaded zip in `_work/_temp` stops 2-3 KB short of the full file, the socket to HashiCorp's CDN sits in `FIN-WAIT-1` (seen 2026-10-20 on the laptop and on `ci-runner`, five times) | Gone with the step: the workflows no longer download Terraform, it is installed on the runners. Root cause unknown: curl downloads of the same file from both hosts never stalled. |
