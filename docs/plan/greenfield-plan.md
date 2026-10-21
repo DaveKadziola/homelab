@@ -122,6 +122,9 @@ todos:
   - id: weekly-security-audit
     content: "Paczka 2 (operator 2026-10-20): tygodniowy audyt na timerze - nmap S7 z IOT, Trivy obrazów, wersje, reguły OPNsense -> raport mailem i na NAS, nigdy w artefaktach publicznego repo"
     status: pending
+  - id: nic-error-metrics
+    content: "Później (operator 2026-10-21): błędy sieci jako metryki z alertem - rx_crc_errors, rx_errors, drop i zmiany linku kart PVE (nic0-2), VM i switcha; 2026-10-21 oba porty igb 82575EB miały 8-10 % ramek z błędem CRC, upload laptop -> apps <= 2.2 MiB/s"
+    status: pending
 isProject: false
 ---
 
