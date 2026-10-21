@@ -5,7 +5,7 @@
 #   dns/host-resolver   the target host resolves names through its own resolver
 #   dns/internal        the router/internal zone resolves from the target host
 #   wireguard/*         a WireGuard peer has a recent handshake; wg gateway up
-#   public/<name>       public_url in config/services.yml answers as expected
+#   public/<name>       public_url + the service's path answers with its expect codes
 #   public/tls-expiry   the ACME certificate behind it is not about to expire
 #   firewall/nas-*      allowed APP -> NAS NFS paths (2049/111)
 #   firewall/denied-*   paths that must stay blocked
@@ -100,7 +100,7 @@ fi
 # public endpoints from config/services.yml (HAProxy + ACME on OPNsense)
 # --------------------------------------------------------------------------
 published=0
-while IFS="$HL_FS" read -r name _priority _stack _container _check _port _path expect _profile _optional _extra public_url; do
+while IFS="$HL_FS" read -r name _priority _stack _container _check _port path expect _profile _optional _extra public_url; do
   [[ -z "$public_url" ]] && continue
   published=1
   host="${public_url#*://}"
@@ -114,11 +114,14 @@ while IFS="$HL_FS" read -r name _priority _stack _container _check _port _path e
     continue
   fi
 
-  code="$(hl_http_code "$public_url")"
+  # expect is declared for path, so the public probe asks for the same path: Grocery's / sends a
+  # signed-out visitor to /login (303), its /healthz answers 200.
+  url="${public_url%/}${path}"
+  code="$(hl_http_code "$url")"
   if hl_in_list "$code" "${expect:-200}"; then
-    report PASS "public/$name" "$public_url -> $code"
+    report PASS "public/$name" "$url -> $code"
   else
-    report FAIL "public/$name" "$public_url -> $code, expected ${expect:-200}"
+    report FAIL "public/$name" "$url -> $code, expected ${expect:-200}"
   fi
 
   not_after="$(echo | timeout 10 openssl s_client -connect "${host}:443" -servername "$host" 2>/dev/null |
