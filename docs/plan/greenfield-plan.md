@@ -128,6 +128,9 @@ todos:
   - id: ubuntu-2604
     content: "Po wydaniu PR #78 (operator 2026-10-21): VM-ki apps i NAS z Ubuntu 24.04 na 26.04 - najpierw DEV z ćwiczeniem przebudowy i odtworzenia, potem prod jako osobne wydanie; zmiana obrazu (terraform/environments/*/terraform.tfvars image_url) to najpewniej wymiana VM (bramka ryzyka). Nie naprawia rclone: 26.04 ma w apt nadal 1.60.1, narzędzia przypinać do wersji upstream"
     status: pending
+  - id: nfs-root-squash
+    content: "Do zbadania (operator 2026-10-21): eksport NFS /export ma no_root_squash - każdy root na ubuntu-apps, w tym każdy kontener działający jako root (np. Jellyfin), ma pełne prawa do całego /export; sprawdzić, które aplikacje tego potrzebują (root_squash / all_squash z anonuid, uid w kontenerach). Przy okazji: Jellyfin założył video/movies i video/music jako root, Samba (force user ubuntu-prod) nie mogła tam pisać - na prod chown ręcznie 2026-10-21, trwale ma to załatwić deploy-storage"
+    status: pending
 isProject: false
 ---
 
