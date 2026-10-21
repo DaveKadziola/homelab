@@ -20,6 +20,8 @@ environments:
     identity: homelab-dev
   prod:
     host: 192.168.50.30
+    # OPNsense HAProxy as seen from the APP VLAN; Grocery trusts its X-Forwarded-* headers.
+    public_proxy: 192.168.50.50
     inventory: ansible/environments/prod/hosts.ini
     ssh_user: ubuntu-prod
     identity: homelab-prod

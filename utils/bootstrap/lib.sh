@@ -197,6 +197,17 @@ print(doc["environments"][env]["host"])
 PY
 }
 
+# hl_env_field <key> -> config/services.yml environments.<env>.<key> (empty when missing)
+hl_env_field() {
+  python3 - "$(hl_config_dir)/services.yml" "$HOMELAB_ENV" "$1" <<'PY'
+import sys, yaml
+
+path, env, key = sys.argv[1:4]
+doc = yaml.safe_load(open(path))
+print(doc["environments"][env].get(key) or "")
+PY
+}
+
 # --- docker ------------------------------------------------------------------
 
 hl_container_running() {
