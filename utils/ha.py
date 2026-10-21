@@ -3,7 +3,7 @@
 
   utils/ha.py --env prod state [entity_id]
   utils/ha.py --env prod call light.turn_on --data '{"entity_id": "light.desk"}'
-  utils/ha.py --env prod status                 core version, add-on states, deployed revision (JSON)
+  utils/ha.py --env prod status                 core version, add-on states and boot, deployed revision (JSON)
   utils/ha.py --env prod check                  core config check (exit 1 when not valid)
   utils/ha.py --env prod reload                 reload every YAML integration that can reload
   utils/ha.py --env dev deploy [--dry-run]      homeassistant/packages -> <config>/packages, check, reload
@@ -332,15 +332,17 @@ def check(api):
 
 
 def cmd_status(args):
-    """Core version, add-on states and the deployed revision, as JSON (read-only)."""
+    """Core version, add-on states and boot settings and the deployed revision, as JSON (read-only)."""
     api = api_for(args.env)
     core = api.supervisor("GET", "/core/info")
     addons = {a["slug"]: a.get("state") for a in api.supervisor("GET", "/addons").get("addons", [])}
+    # The add-on list carries no boot setting; only the per-add-on info does.
+    boot = {slug: api.supervisor("GET", f"/addons/{slug}/info").get("boot") for slug in addons}
     try:
         revision = api.call("GET", f"/api/states/{REVISION_ENTITY}").get("state")
     except Stop:
         revision = None
-    print(json.dumps({"core": core.get("version"), "addons": addons, "revision": revision}))
+    print(json.dumps({"core": core.get("version"), "addons": addons, "boot": boot, "revision": revision}))
     return 0
 
 
@@ -511,7 +513,7 @@ def cmd_backup(args):
 
 def ensure_addon(api, slug, options, dry_run, network=None, start=True):
     """Install, configure and run an add-on. start=False: install only and leave a stopped add-on
-    stopped (an unclaimed Uptime Kuma makes its first visitor the admin)."""
+    stopped, also at boot (an unclaimed Uptime Kuma makes its first visitor the admin)."""
     info = None
     try:
         info = api.supervisor("GET", f"/addons/{slug}/info")
@@ -524,6 +526,11 @@ def ensure_addon(api, slug, options, dry_run, network=None, start=True):
         api.supervisor("POST", f"/store/addons/{slug}/install", timeout=1800)
         info = api.supervisor("GET", f"/addons/{slug}/info")
     if not start and info.get("state") != "started":
+        # Kuma installs with boot `auto` (its boot_config), so a host reboot would start it unclaimed.
+        if info.get("boot") != "manual":
+            print(f"{slug}: no start at boot")
+            if not dry_run:
+                api.supervisor("POST", f"/addons/{slug}/options", {"boot": "manual"})
         print(f"{slug}: installed, left stopped - start it right before utils/kuma-sync.py claims it")
         return
     changed = False
@@ -624,7 +631,8 @@ def cmd_bootstrap(args):
     if not kuma:
         raise Stop("Uptime Kuma is not in the add-on store (Home Assistant Community Add-ons repository)")
     # DEV: the twin is claimed by kuma-sync in the same session. Prod: a started Kuma is claimed;
-    # a fresh one stays stopped until the owner runs the two commands in knowledge/monitoring.md.
+    # a fresh one stays stopped, also at boot, until the owner runs the two commands in
+    # knowledge/monitoring.md; the first deploy after that sets it to start at boot.
     ensure_addon(api, kuma[0], None, args.dry_run, start=args.env == "dev")
     print("bootstrap done" if not args.dry_run else "dry run - nothing changed")
     return 0

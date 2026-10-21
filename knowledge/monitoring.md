@@ -40,7 +40,7 @@ utils/kuma-sync.py --setup-venv          # once: venv ~/.local/share/homelab/kum
   itself. Review the script before upgrading the library or the add-on.
 - Login `admin` / `KUMA_ADMIN_PASSWORD`; a fresh Kuma is set up (SQLite, admin) by the first sync. An
   unclaimed Kuma makes its first visitor the admin, so on prod the deploy installs the add-on and
-  leaves it stopped; claim it from the laptop in one go:
+  leaves it stopped, also at boot (`boot: manual`); claim it from the laptop in one go:
   `utils/ha.py --env prod call hassio.addon_start --data '{"addon": "a0d7b954_uptime-kuma"}'` and
   right after it `~/.local/share/homelab/kuma-venv/bin/python utils/kuma-sync.py --env prod`. The next
   deploy sees it started and keeps it running at boot.

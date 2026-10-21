@@ -6,8 +6,9 @@
 #   config         the core config check is valid
 #   revision       sensor.homelab_config_revision names the deployed commit, and its
 #                  homeassistant/packages equal this checkout's
-#   addon-<slug>   Terminal & SSH and Uptime Kuma are started (prod: a stopped Kuma is SKIP, the
-#                  deploy leaves it stopped until the owner claims it, knowledge/monitoring.md)
+#   addon-<slug>   Terminal & SSH and Uptime Kuma are started (prod: SKIP for a Kuma that is stopped
+#                  with boot manual - the deploy leaves it so until the owner claims it,
+#                  knowledge/monitoring.md)
 #
 # Read-only. SKIP without HA_TOKEN (prod until the owner created it).
 
@@ -52,11 +53,13 @@ fi
 
 for slug in core_ssh a0d7b954_uptime-kuma; do
   state="$(jq -r --arg s "$slug" '.addons[$s] // "missing"' <<<"$status_json")"
+  boot="$(jq -r --arg s "$slug" '.boot[$s] // "unknown"' <<<"$status_json")"
   if [[ "$state" == "started" ]]; then
     report PASS "addon-$slug" "started"
-  elif [[ "$HL_ENV" == prod && "$slug" == a0d7b954_uptime-kuma && "$state" == stopped ]]; then
-    # Supervisor shows no claim: a claimed Kuma that stopped looks the same.
-    report SKIP "addon-$slug" "stopped - waits for the owner's claim (knowledge/monitoring.md)"
+  elif [[ "$HL_ENV" == prod && "$slug" == a0d7b954_uptime-kuma && "$state" == stopped && "$boot" == manual ]]; then
+    # Only bootstrap sets boot manual, on a Kuma that waits for its claim; the first deploy after
+    # the claim sets auto, so a claimed Kuma that stopped fails.
+    report SKIP "addon-$slug" "stopped, boot manual - waits for the owner's claim (knowledge/monitoring.md)"
   else
     report FAIL "addon-$slug" "state $state (utils/ha.py --env $HL_ENV bootstrap)"
   fi
