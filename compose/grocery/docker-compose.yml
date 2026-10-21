@@ -19,6 +19,8 @@ services:
       EASYTODO_SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY}
       EASYTODO_PUBLIC_URL: ${PUBLIC_URL:?set PUBLIC_URL}
       EASYTODO_ENV: prod
+      # Prod: the OPNsense HAProxy address that reaches the app host (its X-Forwarded-* headers).
+      EASYTODO_FORWARDED_ALLOW_IPS: ${FORWARDED_ALLOW_IPS:-127.0.0.1}
       # Public on prod: accounts only through an invite link.
       EASYTODO_REGISTRATION_OPEN: "false"
       # smtp once GROCERY_PROTON_SMTP_TOKEN exists for the env, else console (links in the app log).

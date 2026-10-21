@@ -25,6 +25,8 @@ environments:
   prod:
     host: 192.168.50.30
     domain: dkhomelabserver.xyz
+    # OPNsense HAProxy as seen from the APP VLAN; Grocery trusts its X-Forwarded-* headers.
+    public_proxy: 192.168.50.50
     # auth and proxy only with CLOUDFLARE_API_TOKEN: Caddy needs it for the certificate (deploy-core.yml).
     profiles: media,auth,proxy,beszel-agent
     inventory: ansible/environments/prod/hosts.ini

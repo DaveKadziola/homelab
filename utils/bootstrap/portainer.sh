@@ -132,6 +132,7 @@ grocery_env() {
     public_url="http://$(hl_env_host):$(hl_service grocery port)"
   fi
   HL_JWT="$jwt" HL_BASE="$BASE" HL_NAME="$GROCERY_STACK" HL_PUBLIC_URL="$public_url" \
+  HL_PUBLIC_PROXY="$(hl_env_field public_proxy)" \
   HL_DB_PASSWORD="$(hl_secret GROCERY_DB_PASSWORD)" \
   HL_SECRET_KEY="$(hl_secret GROCERY_SECRET_KEY)" \
   HL_SMTP_PASSWORD="$(hl_has_secret GROCERY_PROTON_SMTP_TOKEN && hl_secret GROCERY_PROTON_SMTP_TOKEN)" \
@@ -152,6 +153,7 @@ env = {
     "DB_PASSWORD": os.environ["HL_DB_PASSWORD"],
     "SECRET_KEY": os.environ["HL_SECRET_KEY"],
     "PUBLIC_URL": os.environ["HL_PUBLIC_URL"],
+    "FORWARDED_ALLOW_IPS": os.environ["HL_PUBLIC_PROXY"] or "127.0.0.1",
     "MAIL_BACKEND": "smtp" if smtp else "console",
     "SMTP_PASSWORD": smtp,
 }
