@@ -27,6 +27,7 @@ utils/kuma-sync.py --setup-venv          # once: venv ~/.local/share/homelab/kum
 ```
 
 - Only monitors named `homelab:...` are touched; anything else in Kuma is left alone.
+- HTTP monitors synced by `kuma-sync.py` use interval 60 s, maxretries 3, timeout 60 s (prod apply 2026-10-22; `homelab:portainer` read-back).
 - Profiles come from `config/services.yml` `environments.<env>.profiles`. Prod runs `auth` and `proxy`
   only with `CLOUDFLARE_API_TOKEN`; until then sync prod with `COMPOSE_PROFILES=media,beszel-agent`,
   or Kuma watches an Authelia and a Caddy that do not run.
