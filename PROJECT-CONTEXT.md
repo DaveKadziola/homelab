@@ -88,6 +88,11 @@ Last reviewed: 2026-10-21
   without bypass). A release is a PR `homelab-v2` -> `main` that the operator merges; prod asks for
   approval only when the Terraform plan is risky (environment `prod-gate`).
   <!-- source: operator decisions 2026-10-18 and 2026-10-20; knowledge/decisions/0004-ci-autonomy-and-prod-risk-gate.md -->
+- Tools that talk to outside services (rclone, Terraform, ...): the newest stable upstream release,
+  pinned by version and SHA256 (Terraform: `utils/pve-ci-runner-lxc.sh`, rclone:
+  `ansible/playbooks/deploy-storage.yml`), not the distribution package, which lags years behind
+  (Ubuntu ships rclone 1.60.1 from 2022, also in 26.04).
+  <!-- source: operator 2026-10-21 -->
 - Language: answers in the operator's language (Polish); repository content in English. The plan
   in `docs/plan/` is in Polish and stays so.
 - Deviations from `AGENTS.md`: none. The knowledge base keeps its own page layout, described in

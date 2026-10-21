@@ -39,7 +39,11 @@ while IFS= read -r stream; do
   [[ -n "$stream" ]] && filters+=(--include "/${stream}/**")
 done < <(hl_storage offsite_include)
 [[ ${#filters[@]} -gt 0 ]] || { echo "rclone: offsite.include is empty — skip"; exit 0; }
-rclone --config "$cfg" copy "$ROOT" "$REMOTE" "${filters[@]}"
+# Some rclone requests to pCloud get no answer (seen 2026-10-21 with 1.60.1 and 1.75.2, ~40 % of
+# calls, while the same API calls from Python never stalled); a short idle timeout and retries turn
+# each stall into ~1 min instead of the default 5, and the outer limit keeps the nightly job finite.
+timeout --kill-after=60 6h rclone --config "$cfg" copy "$ROOT" "$REMOTE" "${filters[@]}" \
+  --timeout 60s --contimeout 30s --low-level-retries 10 --retries 3
 # Freshness marker for check-fresh.py on the NAS (stream offsite in config/monitoring.yml).
 date -u +%Y-%m-%dT%H:%M:%SZ >"$ROOT/.offsite-ok"
 echo "rclone: copied ${ROOT} -> ${REMOTE}"

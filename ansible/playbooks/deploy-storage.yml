@@ -540,6 +540,8 @@
     st: "{{ storage.environments[homelab_env] }}"
     utils_src: "{{ playbook_dir }}/../../utils"
     config_src: "{{ playbook_dir }}/../../config"
+    rclone_version: "1.75.2"
+    rclone_sha256: 349ac8fba6ff65d6247043f1750cdcb518ec5d500ef91463a10d37c0ccdf3702
     # Marker files the NAS play writes, as seen through the NFS mount.
     client_markers: >-
       {{ ((st.passthrough | default([]) | selectattr('mount', 'match', st.export_root ~ '/')
@@ -552,9 +554,53 @@
   tasks:
     - name: Install NFS client and backup tools
       ansible.builtin.apt:
-        name: [nfs-common, rclone, zip, python3-yaml]
+        name: [nfs-common, zip, unzip, python3-yaml]
         state: present
         update_cache: true
+
+    # The Ubuntu package is rclone 1.60.1 (2022, also in 26.04), older than pCloud's current API.
+    # Upgrade: new version and the sha256 of its linux-amd64 zip from the release's SHA256SUMS.
+    - name: Remove the distribution rclone
+      ansible.builtin.apt:
+        name: rclone
+        state: absent
+
+    - name: Read the installed rclone version
+      ansible.builtin.command: /usr/local/bin/rclone version
+      register: rclone_installed
+      changed_when: false
+      failed_when: false
+
+    - name: Install the pinned rclone release
+      when: ('rclone v' ~ rclone_version) not in (rclone_installed.stdout_lines | default([''], true) | first)
+      block:
+        - name: Download the rclone release zip
+          ansible.builtin.get_url:
+            url: "https://github.com/rclone/rclone/releases/download/v{{ rclone_version }}/rclone-v{{ rclone_version }}-linux-amd64.zip"
+            dest: "/tmp/rclone-v{{ rclone_version }}.zip"
+            checksum: "sha256:{{ rclone_sha256 }}"
+            mode: "0644"
+
+        - name: Unpack the rclone release
+          ansible.builtin.unarchive:
+            src: "/tmp/rclone-v{{ rclone_version }}.zip"
+            dest: /tmp
+            remote_src: true
+
+        - name: Put rclone into /usr/local/bin
+          ansible.builtin.copy:
+            src: "/tmp/rclone-v{{ rclone_version }}-linux-amd64/rclone"
+            dest: /usr/local/bin/rclone
+            remote_src: true
+            owner: root
+            group: root
+            mode: "0755"
+
+    - name: Check the rclone version
+      ansible.builtin.command: /usr/local/bin/rclone version
+      register: rclone_now
+      changed_when: false
+      failed_when: ('rclone v' ~ rclone_version) not in rclone_now.stdout_lines[0]
 
     - name: Create the NFS mount point
       ansible.builtin.file:
