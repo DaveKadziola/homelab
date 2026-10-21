@@ -137,6 +137,9 @@ todos:
   - id: homarr-ha-domain
     content: "Kolejny PR (operator 2026-10-22): kafelek Home Assistant w Homarr ma prowadzić na nazwę w domenie, nie na IP. Dziś href bierze ha_url z config/storage.yml (prod http://192.168.20.13, DEV http://192.168.122.60); na prod ping jest wyłączony, bo host aplikacji nie dostał odpowiedzi w 5 s. Nazwa jak pozostałe kafelki, przez Caddy."
     status: pending
+  - id: pr78-merge-checklist
+    content: "Do zweryfikowania (operator 2026-10-22): checkboxy PR #78 w sekcjach The merge i After a green run są nadal puste. The merge: Infra Apply Prod (plan i apply, środowisko prod) oraz Apps Deploy Prod (deploy-prod i post-deploy-tests) z risky=false, gate pominięty, 0 zmian Terraform; skutki przy ustawionym HA_TOKEN: jeden restart HA (packages), dodatek Terminal & SSH, Kuma zainstalowana jako zatrzymana, znikają DumbWhois i Zotify (wolumeny zostają), startują IT Tools, Networking Toolbox i agent Beszel, powstaje job Proxmox homelab-vms. After a green run: zdjąć reviewera ze środowiska prod (docs/manual-setup.md, CI autonomy) - 2026-10-22 przy wydaniu #100 job plan nadal czekał na akceptację DaveKadziola; test bramki: gh workflow run Infra Apply Prod --ref main -f gate=true, akceptacja prod-gate, potem Apps Deploy Prod bez akceptacji; claim Kuma (zrobiony 2026-10-21 - potwierdzić, nie powtarzać); router: utils/f2-opnsense-backup-key.sh i klucz OPNSENSE_BACKUP_SSH_PRIV oraz rewrite AdGuard (rewrite uruchomione 2026-10-21 - potwierdzić); decyzje o wolumenach Zotify i starym BESZEL_KEY. Wynik dopisać przy tym todo. Nie odhaczać punktów w #78 bez dowodu."
+    status: pending
 isProject: false
 ---
 
