@@ -125,6 +125,9 @@ todos:
   - id: nic-error-metrics
     content: "Później (operator 2026-10-21): błędy sieci jako metryki z alertem - rx_crc_errors, rx_errors, drop i zmiany linku kart PVE (nic0-2), VM i switcha; 2026-10-21 oba porty igb 82575EB miały 8-10 % ramek z błędem CRC, upload laptop -> apps <= 2.2 MiB/s"
     status: pending
+  - id: ubuntu-2604
+    content: "Po wydaniu PR #78 (operator 2026-10-21): VM-ki apps i NAS z Ubuntu 24.04 na 26.04 - najpierw DEV z ćwiczeniem przebudowy i odtworzenia, potem prod jako osobne wydanie; zmiana obrazu (terraform/environments/*/terraform.tfvars image_url) to najpewniej wymiana VM (bramka ryzyka). Nie naprawia rclone: 26.04 ma w apt nadal 1.60.1, narzędzia przypinać do wersji upstream"
+    status: pending
 isProject: false
 ---
 
