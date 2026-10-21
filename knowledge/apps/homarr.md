@@ -15,3 +15,9 @@
 Password is stored as bcrypt in sqlite. If login fails after a rotation, set it once in the UI or update the `user.password` hash and restart the container.
 
 Board tiles come from `config/services.yml` `dashboard:` groups.
+
+The seed on the host is written by every deploy ("Write the Homarr board seed",
+`ansible/playbooks/deploy-core.yml:230`) from `config/services.yml` and the profiles that deploy
+enables, so `compose/core/homarr/board-<env>.json` in git can lag behind it; regenerate with
+`./utils/gen-homarr-board.sh --env <env>`. A tile links to the service `path` unless it starts with
+`/api` or `/health` (then `/`); the ping always uses `path`.

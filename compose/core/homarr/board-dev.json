@@ -106,7 +106,7 @@
       "description": "apps · P0",
       "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/grocy.svg",
       "href": "https://grocery.dkhomelabserver.xyz/",
-      "pingUrl": "https://grocery.dkhomelabserver.xyz/"
+      "pingUrl": "https://grocery.dkhomelabserver.xyz/healthz"
     },
     {
       "id": "5924fks08i00ij4urakzefln",
