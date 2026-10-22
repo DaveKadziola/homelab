@@ -73,7 +73,39 @@
       "name": "Home Assistant",
       "description": "infra",
       "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/home-assistant.svg",
-      "href": "http://192.168.20.13/",
+      "href": "http://hass.dkhomelabserver.xyz/",
+      "pingUrl": null
+    },
+    {
+      "id": "1p1no7na6qdlna2j8xsjndzo",
+      "name": "Proxmox",
+      "description": "infra",
+      "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/proxmox.svg",
+      "href": "https://proxmox.dkhomelabserver.xyz:8006/",
+      "pingUrl": null
+    },
+    {
+      "id": "b2fhg5y3h7zfvd0szdji8e7r",
+      "name": "AdGuard",
+      "description": "infra",
+      "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/adguard-home.svg",
+      "href": "http://adguard.dkhomelabserver.xyz/",
+      "pingUrl": null
+    },
+    {
+      "id": "9pmoibbupj9k2fe1zyb6xfpm",
+      "name": "Switch",
+      "description": "infra",
+      "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/netgear.svg",
+      "href": "http://switch.dkhomelabserver.xyz/",
+      "pingUrl": null
+    },
+    {
+      "id": "tjdue7yhm4h1wa0bjqi1dv2u",
+      "name": "Access point",
+      "description": "infra",
+      "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/networking-toolbox.svg",
+      "href": "http://ap.dkhomelabserver.xyz/",
       "pingUrl": null
     },
     {
@@ -238,11 +270,47 @@
       "height": 1
     },
     {
+      "id": "0002prve2ago2agbf6s9htxe",
+      "kind": "app",
+      "appId": "1p1no7na6qdlna2j8xsjndzo",
+      "xOffset": 4,
+      "yOffset": 1,
+      "width": 2,
+      "height": 1
+    },
+    {
+      "id": "7apkmbwo2j8fpndtlbs53xcd",
+      "kind": "app",
+      "appId": "b2fhg5y3h7zfvd0szdji8e7r",
+      "xOffset": 6,
+      "yOffset": 1,
+      "width": 2,
+      "height": 1
+    },
+    {
+      "id": "a2l3xme5fuerj2dl7yoi2a05",
+      "kind": "app",
+      "appId": "9pmoibbupj9k2fe1zyb6xfpm",
+      "xOffset": 8,
+      "yOffset": 1,
+      "width": 2,
+      "height": 1
+    },
+    {
+      "id": "7w74fq5x7xr83d8ye00230v4",
+      "kind": "app",
+      "appId": "tjdue7yhm4h1wa0bjqi1dv2u",
+      "xOffset": 0,
+      "yOffset": 2,
+      "width": 2,
+      "height": 1
+    },
+    {
       "id": "k26xo29ha3729lpbo08d38zx",
       "kind": "app",
       "appId": "ywi01u9abx7p0lz8ghqpyqid",
       "xOffset": 0,
-      "yOffset": 2,
+      "yOffset": 3,
       "width": 2,
       "height": 1
     },
@@ -251,7 +319,7 @@
       "kind": "app",
       "appId": "dg5tkcklmjd2h33xcvc9ugsc",
       "xOffset": 2,
-      "yOffset": 2,
+      "yOffset": 3,
       "width": 2,
       "height": 1
     },
@@ -260,7 +328,7 @@
       "kind": "app",
       "appId": "xqbh0s9az2ilafkdr9gyvjif",
       "xOffset": 4,
-      "yOffset": 2,
+      "yOffset": 3,
       "width": 2,
       "height": 1
     },
@@ -269,7 +337,7 @@
       "kind": "app",
       "appId": "qfnklg3p10wercx5930w5i2n",
       "xOffset": 6,
-      "yOffset": 2,
+      "yOffset": 3,
       "width": 2,
       "height": 1
     },
@@ -278,7 +346,7 @@
       "kind": "app",
       "appId": "5924fks08i00ij4urakzefln",
       "xOffset": 8,
-      "yOffset": 2,
+      "yOffset": 3,
       "width": 2,
       "height": 1
     },
@@ -287,7 +355,7 @@
       "kind": "app",
       "appId": "byi2xwhgfchqure1raf0wpxo",
       "xOffset": 0,
-      "yOffset": 3,
+      "yOffset": 4,
       "width": 2,
       "height": 1
     },
@@ -296,7 +364,7 @@
       "kind": "app",
       "appId": "0uiahk2bhbjciqg2v2x68217",
       "xOffset": 2,
-      "yOffset": 3,
+      "yOffset": 4,
       "width": 2,
       "height": 1
     },
@@ -305,7 +373,7 @@
       "kind": "app",
       "appId": "snwqgi2dgx2srbwxzm3t2uqi",
       "xOffset": 4,
-      "yOffset": 3,
+      "yOffset": 4,
       "width": 2,
       "height": 1
     },
@@ -314,7 +382,7 @@
       "kind": "app",
       "appId": "jqc2rg30sqlymii57n9i6nmz",
       "xOffset": 0,
-      "yOffset": 4,
+      "yOffset": 5,
       "width": 2,
       "height": 1
     },
@@ -323,7 +391,7 @@
       "kind": "app",
       "appId": "10bqiht2g1noad7cecx85in0",
       "xOffset": 2,
-      "yOffset": 4,
+      "yOffset": 5,
       "width": 2,
       "height": 1
     },
@@ -332,7 +400,7 @@
       "kind": "app",
       "appId": "5wkvvxvfv3sk1uez1bdz4cpi",
       "xOffset": 4,
-      "yOffset": 4,
+      "yOffset": 5,
       "width": 2,
       "height": 1
     },
@@ -341,7 +409,7 @@
       "kind": "app",
       "appId": "1nqk1e16kh07ezjyvvub1skc",
       "xOffset": 6,
-      "yOffset": 4,
+      "yOffset": 5,
       "width": 2,
       "height": 1
     }

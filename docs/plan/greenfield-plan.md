@@ -131,6 +131,33 @@ todos:
   - id: nfs-root-squash
     content: "Do zbadania (operator 2026-10-21): eksport NFS /export ma no_root_squash - każdy root na ubuntu-apps, w tym każdy kontener działający jako root (np. Jellyfin), ma pełne prawa do całego /export; sprawdzić, które aplikacje tego potrzebują (root_squash / all_squash z anonuid, uid w kontenerach). Przy okazji: Jellyfin założył video/movies i video/music jako root, Samba (force user ubuntu-prod) nie mogła tam pisać - na prod chown ręcznie 2026-10-21, trwale ma to załatwić deploy-storage"
     status: pending
+  - id: authelia-ip-bypass
+    content: "Kolejny PR (operator 2026-10-22): Authelia tylko przed aplikacjami bez własnego logowania (Dozzle, Mailpit na DEV, Omni Tools, IT Tools, Networking Toolbox, BentoPDF). Homarr, Portainer, pgAdmin, Immich, Linkwarden, Syncthing, Navidrome, Beszel, Grocery, Trilium i Actual mają własne hasło - auth_bypass all, jak Jellyfin. Wejście po IP:port omija Authelię, bo ciasteczko jest na domenie (knowledge/networking.md) - to luka; PR ma ją zamknąć, nie tylko zdjąć Authelię z apek z hasłem."
+    status: pending
+  - id: homarr-ha-domain
+    content: "Kolejny PR (operator 2026-10-22): kafelek Home Assistant w Homarr ma prowadzić na nazwę w domenie, nie na IP. Dziś href bierze ha_url z config/storage.yml (prod http://192.168.20.13, DEV http://192.168.122.60); na prod ping jest wyłączony, bo host aplikacji nie dostał odpowiedzi w 5 s. Nazwa jak pozostałe kafelki, przez Caddy."
+    status: pending
+  - id: pr78-merge-checklist
+    content: "Do zweryfikowania (operator 2026-10-22): checkboxy PR #78 w sekcjach The merge i After a green run są nadal puste. The merge: Infra Apply Prod (plan i apply, środowisko prod) oraz Apps Deploy Prod (deploy-prod i post-deploy-tests) z risky=false, gate pominięty, 0 zmian Terraform; skutki przy ustawionym HA_TOKEN: jeden restart HA (packages), dodatek Terminal & SSH, Kuma zainstalowana jako zatrzymana, znikają DumbWhois i Zotify (wolumeny zostają), startują IT Tools, Networking Toolbox i agent Beszel, powstaje job Proxmox homelab-vms. After a green run: zdjąć reviewera ze środowiska prod (docs/manual-setup.md, CI autonomy) - 2026-10-22 przy wydaniu #100 job plan nadal czekał na akceptację DaveKadziola; test bramki: gh workflow run Infra Apply Prod --ref main -f gate=true, akceptacja prod-gate, potem Apps Deploy Prod bez akceptacji; claim Kuma (zrobiony 2026-10-21 - potwierdzić, nie powtarzać); router: utils/f2-opnsense-backup-key.sh i klucz OPNSENSE_BACKUP_SSH_PRIV oraz rewrite AdGuard (rewrite uruchomione 2026-10-21 - potwierdzić); decyzje o wolumenach Zotify i starym BESZEL_KEY. Wynik dopisać przy tym todo. Nie odhaczać punktów w #78 bez dowodu."
+    status: pending
+  - id: deploy-prod-timeout
+    content: "Pierwsze po merge PR #100 (operator 2026-10-22): Apps Deploy Prod #15 przekroczył maximum execution time 30m0s i przeszedł dopiero za trzecim razem. Hotfix na main podniósł job deploy-prod do timeout-minutes 75 i #16 przeszedł; homelab-v2 nadal ma 30 (.github/workflows/apps-deploy-prod.yml), więc kolejne wydanie cofnie hotfix, jeśli ten PR nie wejdzie wcześniej. Docelowo 120 minut na deploy-prod, żeby starczył zapas przy stawianiu maszyny od zera (upgrade obrazu Ubuntu, todo ubuntu-2604). Jobów nie rozbijać, chyba że 120 nadal nie wystarcza. post-deploy-tests (10 min) nie ruszać."
+    status: pending
+  - id: ansible-python-interpreter
+    content: "Do rozwiązania (operator 2026-10-22): warning Ansible przy deployu - host ubuntu-apps używa wykrytego interpretera /usr/bin/python3.12 i przyszła instalacja innego Pythona może go zmienić (interpreter discovery, ansible-core 2.19). Przypiąć ansible_python_interpreter w inventory dla hostów, które ten warning zgłaszają, po sprawdzeniu ścieżki na hoście. Prod: ansible/environments/prod/hosts.ini, wiersz ubuntu-apps. W repo nie ma jeszcze ansible_python_interpreter."
+    status: pending
+  - id: homarr-network-tiles
+    content: "Kolejny PR (operator 2026-10-22): kafelki Homarr do Proxmoxa, AdGuarda, switcha Netgear GS308EP i access pointa. Nazwy z rewrite AdGuard, docs/network.md:64: proxmox.dkhomelabserver.xyz -> 192.168.20.20, adguard. -> 192.168.1.1, switch. -> 192.168.1.2, ap. -> 192.168.1.3. Pełne FQDN adguard, switch i ap odczytać z AdGuardHome.yaml przy PR, nie zgadywać. To nie są wpisy services.yml: link zewnętrzny, bez Caddy, monitora i nowego rewrite."
+    status: pending
+  - id: diun-updates
+    content: "Kolejny PR (operator 2026-10-22): powiadomienia o aktualizacjach. Diun 4.33.0 ogląda tylko obrazy Dockera (compose/core/diun/diun.yml: provider docker, watchRepo, co 6 h) i mail idzie przez diun.env, gdy jest SMTP; bez SMTP tylko log (knowledge/monitoring.md). Kontenery: potwierdzić, że mail na prod dochodzi. System i obraz VM: Diun tego nie umie - osobne sprawdzenie na ten sam mail, nie udawać że robi to Diun."
+    status: pending
+  - id: diun-homarr-access
+    content: "Kolejny PR (operator 2026-10-22): sprawdzić, czy do Diun da się wejść z Homarra. knowledge/apps/diun.md mówi UI: none; w services.yml kafelek jest hidden, check to container, brak portu. Jeśli 4.33.0 nie ma GUI, nie dodawać martwego kafelka - wejście to Dozzle (log) albo skrzynka z powiadomieniami. Wynik dopisać przy tym todo."
+    status: pending
+  - id: homarr-dashboard-widgets
+    content: "Kolejny PR (operator 2026-10-22): rozbudować dashboard Homarr ponad same ikony. Generator utils/gen-homarr-board.sh zapisuje tylko kind app i empty; obraz to homarr:v2.6.0. Propozycje do sprawdzenia w tej wersji, nie wdrażać na ślepo: pogoda bez klucza API (Open-Meteo, jeśli jest taki widget), metryki z Beszel który już stoi (nie stawiać Grafany - baza jest zarezerwowana, aplikacji nie ma w compose), iframe tylko stron które już mamy i bez sekretu w URL (Proxmox, AdGuard), Google Maps tylko gdy da się wstawić bez klucza API w publicznym repo. Widget, którego generator nie umie zapisać, wymaga rozszerzenia gen-homarr-board.sh w tym samym PR."
+    status: pending
 isProject: false
 ---
 

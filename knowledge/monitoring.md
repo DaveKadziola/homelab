@@ -27,7 +27,7 @@ utils/kuma-sync.py --setup-venv          # once: venv ~/.local/share/homelab/kum
 ```
 
 - Only monitors named `homelab:...` are touched; anything else in Kuma is left alone.
-- HTTP monitors synced by `kuma-sync.py` use interval 60 s, maxretries 3, timeout 60 s (prod apply 2026-10-22; `homelab:portainer` read-back).
+- A service check of `http` or `https` is a TCP port monitor. Kuma's HTTP client on the T620 aborts the response body (`response stream aborted`) and then mails that a live app is down (2026-10-22). Extra `http` monitors keep interval 60 s, maxretries 3, timeout 60 s.
 - Profiles come from `config/services.yml` `environments.<env>.profiles`. Prod runs `auth` and `proxy`
   only with `CLOUDFLARE_API_TOKEN`; until then sync prod with `COMPOSE_PROFILES=media,beszel-agent`,
   or Kuma watches an Authelia and a Caddy that do not run.
