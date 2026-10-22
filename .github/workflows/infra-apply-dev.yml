@@ -65,8 +65,23 @@ jobs:
             echo "deploy=false" >> "$GITHUB_OUTPUT"
           fi
 
-  deploy:
+  # Own workflow run, so the test job is not a job of this apply. workflow_run
+  # cannot do it: that run is main, and environment dev allows only homelab-v2.
+  start-deploy:
     needs: apply
     if: needs.apply.outputs.deploy == 'true'
-    uses: ./.github/workflows/apps-deploy-dev.yml
-    secrets: inherit
+    runs-on: [self-hosted, homelab-dev]
+    timeout-minutes: 5
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - name: Start Apps Deploy Dev
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          curl -fsS -X POST \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/apps-deploy-dev.yml/dispatches" \
+            -d "{\"ref\":\"homelab-v2\",\"inputs\":{\"sha\":\"${{ github.sha }}\"}}"
