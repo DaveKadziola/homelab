@@ -2,8 +2,8 @@
 # Apply homelab v2 F2 changes on OPNsense via SSH (interactive password or key auth).
 #
 # Usage:
-#   OPNSENSE_HOST=192.168.1.1 ./utils/f2-opnsense-apply.sh
-#   ./utils/f2-opnsense-apply.sh --backup-only
+#   OPNSENSE_HOST=192.168.1.1 ./utils/opnsense-apply.sh
+#   ./utils/opnsense-apply.sh --backup-only
 #
 # Steps: remote config backup → F2-03 NFS firewall → local config.xml copy (F2-06).
 
@@ -13,7 +13,7 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 HOST="${OPNSENSE_HOST:-192.168.1.1}"
 USER="${OPNSENSE_USER:-root}"
 SSH_OPTS="${OPNSENSE_SSH_OPTS:--o StrictHostKeyChecking=accept-new}"
-REMOTE="${REPO_ROOT}/utils/f2-opnsense-apply-remote.sh"
+REMOTE="${REPO_ROOT}/utils/opnsense-apply-remote.sh"
 
 backup_only=false
 if [[ "${1:-}" == "--backup-only" ]]; then

@@ -3,8 +3,8 @@
 # or auto-revert. Only backend "grocery" changes.
 #
 # Usage:
-#   ./utils/f2-opnsense-grocery-xff.sh --dry-run
-#   ./utils/f2-opnsense-grocery-xff.sh
+#   ./utils/opnsense-grocery-xff.sh --dry-run
+#   ./utils/opnsense-grocery-xff.sh
 
 set -euo pipefail
 
@@ -16,7 +16,7 @@ DRY_RUN=0
 [[ "${1:-}" == "--dry-run" ]] && DRY_RUN=1
 R=(ssh -o StrictHostKeyChecking=accept-new -i "$KEY" "root@${LAN_HOST}")
 
-"${R[@]}" "env DRY_RUN=${DRY_RUN} REVERT_AFTER=${REVERT_AFTER} sh -s" < "${REPO_ROOT}/utils/f2-opnsense-grocery-xff-remote.sh"
+"${R[@]}" "env DRY_RUN=${DRY_RUN} REVERT_AFTER=${REVERT_AFTER} sh -s" < "${REPO_ROOT}/utils/opnsense-grocery-xff-remote.sh"
 [[ $DRY_RUN == 1 ]] && exit 0
 
 sleep 3

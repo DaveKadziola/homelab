@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
-# F2-05 on OPNsense: ACME cert for grocery.dkhomelabserver.xyz (DNS-01 via existing CF).
-# HAProxy frontend/backend — enable service; full grocery routing in F4/UI if needed.
+# ACME cert for grocery.dkhomelabserver.xyz (DNS-01 via the existing Cloudflare token).
+# Enables the HAProxy service. Grocery routing beyond that stays in the UI.
 # Run ON router as root (piped via SSH).
 
 set -eu
@@ -8,7 +8,7 @@ set -eu
 CONFIG=/conf/config.xml
 DOMAIN=grocery.dkhomelabserver.xyz
 STAMP=$(date +%Y%m%d-%H%M%S)
-BACKUP="/conf/config.xml.f2-05-${STAMP}"
+BACKUP="/conf/config.xml.haproxy-acme-${STAMP}"
 
 cp "$CONFIG" "$BACKUP"
 echo "Backup: $BACKUP"
@@ -68,9 +68,9 @@ else:
         name_el.text = DOMAIN
     desc = new_cert.find("description")
     if desc is not None:
-        desc.text = "Grocery public HTTPS (homelab v2 F2-05)"
+        desc.text = "Grocery public HTTPS"
     else:
-        ET.SubElement(new_cert, "description").text = "Grocery public HTTPS (homelab v2 F2-05)"
+        ET.SubElement(new_cert, "description").text = "Grocery public HTTPS"
     certs.append(new_cert)
     print(f"Added ACME cert entry: {DOMAIN} uuid={cert_uuid}")
 

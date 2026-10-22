@@ -10,7 +10,7 @@
 | Bootstrap | `utils/bootstrap/authelia.sh` |
 | Profile | `auth`, together with `proxy` (Caddy) on DEV and prod; prod enables both only when `CLOUDFLARE_API_TOKEN` is in environment `prod` ([decision 0007](../decisions/0007-app-names-caddy-authelia.md)) |
 
-Authelia listens on plain HTTP `:9091` behind Caddy, which asks it (`/api/authz/forward-auth`) for every app name except the paths a service lists in `auth_bypass` (`compose/core/authelia/configuration.yml`, `utils/gen-proxy-config.py`). The session cookie domain (`environments.<env>.domain` in `config/services.yml`) and the access rules are generated at deploy into `compose/core/authelia/access.yml` (`ansible/playbooks/deploy-core.yml`). A login by IP does not keep a session: use the name. Names resolve through the AdGuard rewrites (`utils/f2-adguard-rewrites.sh`, owner's decision); until those exist, add them to the laptop `/etc/hosts` ([`docs/f4-apps-dev.md`](../../docs/f4-apps-dev.md)):
+Authelia listens on plain HTTP `:9091` behind Caddy, which asks it (`/api/authz/forward-auth`) for every app name except the paths a service lists in `auth_bypass` (`compose/core/authelia/configuration.yml`, `utils/gen-proxy-config.py`). The session cookie domain (`environments.<env>.domain` in `config/services.yml`) and the access rules are generated at deploy into `compose/core/authelia/access.yml` (`ansible/playbooks/deploy-core.yml`). A login by IP does not keep a session: use the name. Names resolve through the AdGuard rewrites (`utils/adguard-rewrites.sh`, owner's decision); until those exist, add them to the laptop `/etc/hosts` ([`docs/f4-apps-dev.md`](../../docs/f4-apps-dev.md)):
 
 ```
 192.168.122.50 auth.dev.dkhomelabserver.xyz homarr.dev.dkhomelabserver.xyz

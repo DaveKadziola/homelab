@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Copy OPNsense config.xml onto the NAS (F5). Runs on the NAS (run-nas.sh): it reaches the router on
 # its IOT address without a firewall rule. The key OPNSENSE_BACKUP_SSH_PRIV is installed on the router
-# with a forced command that can only print config.xml (utils/f2-opnsense-backup-key.sh). Skips
+# with a forced command that can only print config.xml (utils/opnsense-backup-key.sh). Skips
 # until that key exists or when the router is unreachable.
 set -euo pipefail
 # shellcheck source=lib.sh

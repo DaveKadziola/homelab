@@ -43,7 +43,7 @@ By-id paths are in `config/storage.yml` `passthrough[]`. The share (`/srv/purple
 
 `ubuntu-nas` `.20.12` exports `/export`. `ubuntu-apps` `.50.30` mounts it at `/mnt/homelab`. Compose then uses [`compose/core/docker-compose.nfs.yml`](../compose/core/docker-compose.nfs.yml).
 
-Firewall APP → NAS `:2049` / `:111` is an F2 rule — see [`docs/network.md`](../docs/network.md). Until 2026-10-19 the rules carried the port where pf ignores it and passed every TCP port; `utils/f2-opnsense-nas-ports.sh` fixed them on the router and added SSH `:22` from `192.168.50.30` only. SMB `:445` is limited by Samba `hosts allow`, not by the router.
+Firewall APP → NAS `:2049` / `:111` is an F2 rule — see [`docs/network.md`](../docs/network.md). Until 2026-10-19 the rules carried the port where pf ignores it and passed every TCP port; `utils/opnsense-nas-ports.sh` fixed them on the router and added SSH `:22` from `192.168.50.30` only. SMB `:445` is limited by Samba `hosts allow`, not by the router.
 
 ### Attach and format (run order)
 

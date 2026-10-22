@@ -2,8 +2,8 @@
 # Let APP reach the internet, check from a test client on VLAN 51 behind Proxmox, keep or auto-revert.
 #
 # Usage:
-#   ./utils/f2-opnsense-app-egress.sh --dry-run
-#   ./utils/f2-opnsense-app-egress.sh
+#   ./utils/opnsense-app-egress.sh --dry-run
+#   ./utils/opnsense-app-egress.sh
 
 set -euo pipefail
 
@@ -16,7 +16,7 @@ DRY_RUN=0
 [[ "${1:-}" == "--dry-run" ]] && DRY_RUN=1
 R=(ssh -o StrictHostKeyChecking=accept-new -i "$KEY" "root@${LAN_HOST}")
 
-"${R[@]}" "env DRY_RUN=${DRY_RUN} REVERT_AFTER=${REVERT_AFTER} sh -s" < "${REPO_ROOT}/utils/f2-opnsense-app-egress-remote.sh"
+"${R[@]}" "env DRY_RUN=${DRY_RUN} REVERT_AFTER=${REVERT_AFTER} sh -s" < "${REPO_ROOT}/utils/opnsense-app-egress-remote.sh"
 [[ $DRY_RUN == 1 ]] && exit 0
 
 sleep 3

@@ -2,8 +2,8 @@
 # Move APP from QinQ to a plain VLAN 51, check from Proxmox nic2, keep or let it auto-revert.
 #
 # Usage:
-#   ./utils/f2-opnsense-app-vlan.sh --dry-run
-#   ./utils/f2-opnsense-app-vlan.sh
+#   ./utils/opnsense-app-vlan.sh --dry-run
+#   ./utils/opnsense-app-vlan.sh
 
 set -euo pipefail
 
@@ -16,7 +16,7 @@ DRY_RUN=0
 [[ "${1:-}" == "--dry-run" ]] && DRY_RUN=1
 R=(ssh -o StrictHostKeyChecking=accept-new -i "$KEY" "root@${LAN_HOST}")
 
-"${R[@]}" "env DRY_RUN=${DRY_RUN} REVERT_AFTER=${REVERT_AFTER} sh -s" < "${REPO_ROOT}/utils/f2-opnsense-app-vlan-remote.sh"
+"${R[@]}" "env DRY_RUN=${DRY_RUN} REVERT_AFTER=${REVERT_AFTER} sh -s" < "${REPO_ROOT}/utils/opnsense-app-vlan-remote.sh"
 [[ $DRY_RUN == 1 ]] && exit 0
 
 sleep 3

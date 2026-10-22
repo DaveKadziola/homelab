@@ -14,7 +14,7 @@ Last reviewed: 2026-10-21
 - Plan and phases: the backlog is the frontmatter of `docs/plan/greenfield-plan.md`.
   The F0-F10 write-up is `docs/plan/greenfield-notes.md` and is not the current procedure.
   Current status: `README.md` "Status".
-  <!-- source: docs/plan/greenfield-plan.md frontmatter; docs/plan/greenfield-notes.md "Fazy / sprinty"; README.md "Status" -->
+  <!-- source: docs/plan/greenfield-plan.md frontmatter; docs/plan/greenfield-notes.md "Phases / sprints"; README.md "Status" -->
 - Who uses it: the operator (user and admin); later 1-2 occasional users of single apps such as
   the photo gallery and the shopping list. <!-- source: operator, 2026-10-18 -->
 - What is out of scope: <ask>
@@ -94,8 +94,8 @@ Last reviewed: 2026-10-21
   `ansible/playbooks/deploy-storage.yml`), not the distribution package, which lags years behind
   (Ubuntu ships rclone 1.60.1 from 2022, also in 26.04).
   <!-- source: operator 2026-10-21 -->
-- Language: answers in the operator's language (Polish); repository content in English. The plan
-  in `docs/plan/` is in Polish and stays so.
+- Language: answers in the operator's language (Polish); repository content in English,
+  including `docs/plan/`.
 - Deviations from `AGENTS.md`: none. The knowledge base keeps its own page layout, described in
   `knowledge/README.md`.
 
@@ -113,19 +113,19 @@ Last reviewed: 2026-10-21
 
 | Term | Meaning here | Source |
 | --- | --- | --- |
-| F0-F10 | Plan phases (F0 manual setup ... F9 audits and merge gate, F10 monitoring after prod) | `docs/plan/greenfield-notes.md` "Fazy / sprinty" |
+| F0-F10 | Plan phases (F0 manual setup ... F9 audits and merge gate, F10 monitoring after prod) | `docs/plan/greenfield-notes.md` "Phases / sprints" |
 | P0 / P1 / P2 | Application priority tiers | `docs/apps-sources.md:8,25` |
-| greenfield / v2 | The rebuild on `homelab-v2`; pre-v2 code is legacy | `README.md` title; `docs/plan/greenfield-notes.md` "Strategia Git — gałąź `homelab-v2`" |
+| greenfield / v2 | The rebuild on `homelab-v2`; pre-v2 code is legacy | `README.md` title; `docs/plan/greenfield-notes.md` "Git strategy — branch `homelab-v2`" |
 | F9 gate | Conditions for merging `homelab-v2` into `main` | `knowledge/rebuild-drill-2026-09-10.md:7,48-55` |
 | IOT / APP / WireGuard | Prod VLANs and the VPN network | `docs/network.md:23-28` |
 
 ## 8. Open questions
 
-- `utils/bootstrap-f1-secrets.sh` (F1 one-shot, no dry run) overwrites live `dev` and `prod` secrets
+- `utils/bootstrap-secrets.sh` (F1 one-shot, no dry run) overwrites live `dev` and `prod` secrets
   with random values and sets `PROXMOX_API_TOKEN_ID` to `homelab-<env>@pam!terraform`, a user the
   nested DEV PVE does not have (DEV uses `root@pam!terraform`). Retire it or guard it - operator
   decision.
-  <!-- source: utils/bootstrap-f1-secrets.sh:34-42; pveum user token list homelab-dev@pam on 192.168.122.219 (2026-10-20) -->
+  <!-- source: utils/bootstrap-secrets.sh:34-42; pveum user token list homelab-dev@pam on 192.168.122.219 (2026-10-20) -->
 - Is the ISP public address static? Nothing on the router updates the Cloudflare A record of
   `grocery.dkhomelabserver.xyz` (no dynamic DNS section in `/conf/config.xml`, 2026-10-20).
 - `docs/wireguard.md` and `docs/opnsense-baseline.md` give APP as `192.168.50.0/24`, which also

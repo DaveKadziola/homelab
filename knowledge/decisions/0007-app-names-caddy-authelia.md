@@ -37,7 +37,7 @@ through Authelia (`auth.<domain>`, one factor) except what a service lists in `a
 - API clients keep working through `auth_bypass`: Jellyfin entirely, Immich, Linkwarden and Trilium
   `/api`, Navidrome `/rest` (Subsonic); each app still checks its own login there.
 - Names resolve through AdGuard rewrites (one per app, generated: `gen-proxy-config.py --file adguard`);
-  the router change is `utils/f2-adguard-rewrites.sh`, run by the owner's decision.
+  the router change is `utils/adguard-rewrites.sh`, run by the owner's decision.
 - Authelia runs plain HTTP behind Caddy; the DEV self-signed certificate is gone.
 - Supersedes [0003](0003-prod-without-authelia.md).
 

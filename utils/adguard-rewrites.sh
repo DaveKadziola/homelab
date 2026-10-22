@@ -5,8 +5,8 @@
 # a live router change, run by the owner's decision (AGENTS.md section 11).
 #
 # Usage:
-#   ./utils/f2-adguard-rewrites.sh --dry-run
-#   ./utils/f2-adguard-rewrites.sh
+#   ./utils/adguard-rewrites.sh --dry-run
+#   ./utils/adguard-rewrites.sh
 
 set -euo pipefail
 
@@ -20,7 +20,7 @@ R=(ssh -o StrictHostKeyChecking=accept-new -i "$KEY" "root@${LAN_HOST}")
 
 rewrites="$(for env in prod dev; do python3 "${REPO_ROOT}/utils/gen-proxy-config.py" --env "$env" --file adguard; done)"
 # The router's root shell is csh: the multi-line list goes in front of the script, not on its command line.
-{ printf "REWRITES='%s'\nexport REWRITES\n" "$rewrites"; cat "${REPO_ROOT}/utils/f2-adguard-rewrites-remote.sh"; } |
+{ printf "REWRITES='%s'\nexport REWRITES\n" "$rewrites"; cat "${REPO_ROOT}/utils/adguard-rewrites-remote.sh"; } |
   "${R[@]}" "env DRY_RUN=${DRY_RUN} REVERT_AFTER=${REVERT_AFTER} sh -s"
 [[ $DRY_RUN == 1 ]] && exit 0
 

@@ -63,7 +63,7 @@
 | | |
 |--|--|
 | Severity | **medium** |
-| Path | `utils/gen-app-credentials.sh` (current) vs `utils/bootstrap-f1-secrets.sh` + `utils/export-secrets-for-bitwarden.sh` (F1, infra-only names) |
+| Path | `utils/gen-app-credentials.sh` (current) vs `utils/bootstrap-secrets.sh` + `utils/export-secrets-for-bitwarden.sh` (F1, infra-only names) |
 | Rec | README should name **one** entry: `gen-app-credentials.sh`. Point F1 scripts at “infra leftovers only”. |
 
 ### R6 — Bitwarden is mandatory in docs, optional in practice
@@ -134,7 +134,7 @@
 | `ansible/docker-containers.yml` | delete / legacy/ |
 | `ansible/user-setup.yml` | same (cloud-init + deploy-core superseded it) |
 | `docs/manual-setup.md` | archive as F0 |
-| `utils/bootstrap-f1-secrets.sh` | infra-only; don’t run `--all` over F7 |
+| `utils/bootstrap-secrets.sh` | infra-only; don’t run `--all` over F7 |
 | `opnsense/backups/*.xml` | not in git; shred after Bitwarden |
 | `ansible/hosts.ini` | leftover; `.219` labelled as Docker host |
 | `utils/start_qemu_default_net` | undocumented one-liner |

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # F3 verification — Proxmox + GH prod placeholders (no secrets printed).
 #
-# Usage: ./utils/f3-verify.sh
+# Usage: ./utils/proxmox-verify.sh
 
 set -euo pipefail
 
@@ -40,16 +40,16 @@ if command -v gh &>/dev/null; then
   if [[ -n "$url" && "$url" != *example* && "$url" == *":8006"* ]]; then
     ok "PROXMOX_API_URL prod set"
   else
-    warn_msg "PROXMOX_API_URL prod still placeholder — run bootstrap-f3-proxmox.sh"
+    warn_msg "PROXMOX_API_URL prod still placeholder — run bootstrap-proxmox.sh"
   fi
 else
   warn_msg "gh CLI not installed"
 fi
 echo ""
 
-echo "--- F2 prep (still required) ---"
-if [[ -x "$(dirname "$0")/f2-verify.sh" ]]; then
-  "$(dirname "$0")/f2-verify.sh" || true
+echo "--- OPNsense checks ---"
+if [[ -x "$(dirname "$0")/opnsense-verify.sh" ]]; then
+  "$(dirname "$0")/opnsense-verify.sh" || true
 fi
 echo ""
 
