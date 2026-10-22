@@ -22,6 +22,7 @@ environments:
     beszel_agents:
       - { name: prod-nas, host: 192.168.20.12, port: 45876 }
       - { name: prod-pve, host: 192.168.20.20, port: 45876 }
+      - { name: prod-hass, host: 192.168.20.13, port: 45876 }
 
 # Beszel alert thresholds (plan F10-A).
 thresholds:
