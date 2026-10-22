@@ -117,14 +117,14 @@ todos:
     content: "Zrobione 2026-10-22: CLOUDFLARE_API_TOKEN jest w środowisku prod, rewrite AdGuard są od 2026-10-21, nazwy HTTPS odpowiadają."
     status: completed
   - id: backups-nas-pve
-    content: "Zrobione 2026-10-22: klucz OPNsense jest na routerze (wymuszona komenda), w GitHub env prod i na NAS. Pierwszy zrzut: /srv/purple/nas-backups/opnsense/config-20261022T131513Z.xml (mode 600). Bitwarden czeka na odblokowanie sejfu. HA_TOKEN prod był już wcześniej."
+    content: "Zrobione 2026-10-22: klucz OPNsense jest na routerze (wymuszona komenda), w GitHub env prod, w Bitwarden i na NAS. Pierwszy zrzut: /srv/purple/nas-backups/opnsense/config-20261022T131513Z.xml (mode 600). HA_TOKEN prod był już wcześniej."
     status: completed
   - id: weekly-security-audit
     content: "Paczka 2 (operator 2026-10-20): tygodniowy audyt na timerze - nmap S7 z IOT, Trivy obrazów, wersje, reguły OPNsense -> raport mailem i na NAS, nigdy w artefaktach publicznego repo"
     status: pending
   - id: nic-error-metrics
-    content: "Częściowo 2026-10-22: utils/nic-errors.sh jest na PVE w /usr/local/sbin, cron /etc/cron.d/homelab-nic-errors codziennie 06:15. Wzrost liczników idzie do syslog (tag homelab-nic), nie mailem Proton. Baza: nic1 crc 1062187, nic2 crc 215206. Cofnięcie: rm /etc/cron.d/homelab-nic-errors /usr/local/sbin/nic-errors.sh /var/lib/homelab/nic-errors.prev"
-    status: pending
+    content: "Zrobione 2026-10-22: cron na PVE codziennie 06:15. Wzrost idzie mailem przez SSH na host aplikacji (wymuszona komenda, sekret SMTP zostaje na 192.168.50.30). Istniejące liczniki nie alarmują, tylko wzrost. Cofnięcie: rm /etc/cron.d/homelab-nic-errors /usr/local/sbin/nic-errors.sh /var/lib/homelab/nic-errors.prev /root/.ssh/homelab-nic-mail /root/.ssh/homelab-nic-mail.pub i linia homelab-nic-mail w authorized_keys ubuntu-prod."
+    status: completed
   - id: ubuntu-2604
     content: "Po wydaniu PR #78 (operator 2026-10-21): VM-ki apps i NAS z Ubuntu 24.04 na 26.04 - najpierw DEV z ćwiczeniem przebudowy i odtworzenia, potem prod jako osobne wydanie; zmiana obrazu (terraform/environments/*/terraform.tfvars image_url) to najpewniej wymiana VM (bramka ryzyka). Nie naprawia rclone: 26.04 ma w apt nadal 1.60.1, narzędzia przypinać do wersji upstream"
     status: pending
