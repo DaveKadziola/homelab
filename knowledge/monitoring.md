@@ -1,17 +1,17 @@
 Status: draft
-Last reviewed: 2026-10-20
+Last reviewed: 2026-10-22
 Scope: alerts and checks - Uptime Kuma, backup freshness, Beszel, Diun and the mail path per env
 
 # Monitoring
 
-Decision: [0006](decisions/0006-alerts-kuma-proton-smtp.md). Config: [`config/monitoring.yml`](../config/monitoring.yml).
+Decision: [0006](decisions/0006-alerts-kuma-proton-smtp.md) for the mail path, [0008](decisions/0008-keep-kuma-diun-and-beszel.md) for why these stay three tools. Config: [`config/monitoring.yml`](../config/monitoring.yml).
 
 | Piece | Where | What it alerts on | Config |
 |--|--|--|--|
 | Uptime Kuma | add-on on Home Assistant (prod T620 `:3001`, DEV twin `192.168.122.60:3001`) | a service, PVE, NAS, router or public Grocery does not answer; a backup stream is stale or silent | `utils/kuma-sync.py` from `monitoring.yml` + `services.yml` |
 | Backup freshness | NAS, `homelab-backup-check.timer` 06:00 | pushes `up`/`down` per stream to its Kuma push monitor | `monitoring.yml` `backups` |
-| Beszel | hub on the apps host | disk, RAM, CPU thresholds | `monitoring.yml` `thresholds`, `utils/bootstrap/beszel.sh` |
-| Diun | apps host | new image tags (information, not an alert) | `compose/core/diun/diun.yml`, `diun.env` from deploy |
+| Beszel | hub on the apps host | host metrics: disk, RAM, CPU, NIC throughput. A newer container tag is shown, not mailed | `monitoring.yml` `thresholds`, `utils/bootstrap/beszel.sh` |
+| Diun | apps host | mails a new image tag | `compose/core/diun/diun.yml`, `diun.env` from deploy |
 | NIC error growth | Proxmox cron 06:15, mail via the apps host | `rx_crc_errors`, `rx_errors` or `rx_dropped` grew since yesterday | `utils/nic-errors.sh`, `utils/alert-mail.sh` |
 
 Mail: to `environment_email` (`config/identities.yml`). Prod: Proton SMTP (`smtp.protonmail.ch:587`,
