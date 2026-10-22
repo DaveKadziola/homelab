@@ -67,3 +67,4 @@ jobs:
           python3 utils/gen-proxy-config.py --self-test
           python3 utils/kuma-sync.py --self-test
           python3 utils/bootstrap/beszel_config.py --self-test
+          python3 utils/prepare-infra.py --self-test
