@@ -243,20 +243,20 @@ prod and into mailpit on DEV. A dead T620, router or uplink sends nothing (decis
 ## Repository layout
 
 ```
-.github/workflows/  CI and deploy workflows
+.github/workflows/  CI and deploy. Map: .github/workflows/README.md
 agents/             agent role definitions (AGENTS.md section 13)
-ansible/            playbooks and inventories per environment
-compose/            Docker Compose: core stack, Grocery
-config/             single sources: services, identities, storage, monitoring, Proxmox network
-docs/               setup notes, network map, secret names, diagrams, audits; plan/ in Polish
-homeassistant/      Home Assistant packages deployed by utils/ha.py
-knowledge/          operator knowledge base - start here
-opnsense/           router baseline and restore notes
+ansible/            playbooks and inventories. Map: ansible/README.md
+compose/            Docker Compose. Map: compose/README.md
+config/             services, identities, storage, monitoring, Proxmox network. Map: config/README.md
+docs/               network map, secret names, bring-up notes. Map: docs/README.md
+homeassistant/      packages deployed by utils/ha.py. Map: homeassistant/README.md
+knowledge/          operator knowledge base. Start here. Map: knowledge/README.md
+opnsense/           router restore notes. Map: opnsense/README.md
 prompts/ rules/     agent prompt templates and rules read on demand
 scripts/            agent kit sync and check
-terraform/          Proxmox guests; environments dev and prod
-tests/              suites run by utils/run-tests.sh
-utils/              bootstrap, deploy, backup, router and secret scripts
+terraform/          Proxmox guests. Map: terraform/README.md
+tests/              suites run by utils/run-tests.sh. Map: tests/README.md
+utils/              laptop and host scripts. Map: utils/README.md
 ```
 
 ## Status (2026-10-22)
