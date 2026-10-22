@@ -1,6 +1,6 @@
 Status: draft
 Last reviewed: 2026-10-22
-Scope: why Uptime Kuma, Diun and Beszel stay three tools
+Scope: why Uptime Kuma, Diun and Beszel stay, and why not Prometheus or ELK
 
 # 0008 - Keep Kuma, Diun and Beszel separate
 
@@ -19,10 +19,12 @@ Scope: why Uptime Kuma, Diun and Beszel stay three tools
 | --- | --- | --- |
 | Move Kuma and Diun into Beszel | one UI, one mail path | no mail on a new image tag; no backup-freshness or per-app port check; apt on the apps host and `pkg` on the router are invisible |
 | Keep the three tools | each one already covers the gap the others have | two places show "a newer image exists" (Diun's mail and Beszel's container flag) |
+| Prometheus + Grafana instead | longer history and thresholds than Beszel's 60 second sample | several exporters, plus Alertmanager; still no mail for a new image tag; backup freshness stays a custom metric |
+| ELK instead | search logs across hosts | built for logs, not for these checks; Elasticsearch is heavy on RAM and disk |
 
 ## Decision
 
-Kuma stays the uptime mailer. Diun stays the image-tag mailer. Beszel stays the host metrics board (CPU, memory, disk, NIC throughput, and SMART where a physical disk answers). Do not add Beszel network monitors for checks Kuma already makes.
+Kuma stays the uptime mailer. Diun stays the image-tag mailer. Beszel stays the host metrics board (CPU, memory, disk, NIC throughput, and SMART where a physical disk answers). Do not add Beszel network monitors for checks Kuma already makes. Do not replace the three with Prometheus, Grafana or ELK: on this homelab the installed set is the one that fits the resource budget (operator, 2026-10-22). Revisit Prometheus when the question is history and correlation, not "is it up". Revisit ELK when Dozzle is not enough to search logs.
 
 ## Consequences
 
@@ -33,4 +35,5 @@ Kuma stays the uptime mailer. Diun stays the image-tag mailer. Beszel stays the 
 ## Sources
 
 - Beszel tag `v0.21.0`: `agent/docker_image_updates.go`, `agent/package_updates.go`, `agent/agent.go` (`defaultDataCacheTimeMs`), `internal/alerts/alerts.go`, `internal/hub/systems/system_smart.go` (SMART default one hour)
-- Decided by the operator, 2026-10-22, after asking whether the three could be unified
+- Decided by the operator, 2026-10-22, after asking whether the three could be unified, and again the same day: given resource use, the installed set stays
+- General knowledge, not measured on this homelab: Elasticsearch's RAM and disk footprint, and that Alertmanager can send mail. The DEV apps disk did fill while rebuilding Caddy (`knowledge/troubleshooting.md`)

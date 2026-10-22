@@ -4,7 +4,7 @@ Scope: alerts and checks - Uptime Kuma, backup freshness, Beszel, Diun and the m
 
 # Monitoring
 
-Decision: [0006](decisions/0006-alerts-kuma-proton-smtp.md) for the mail path, [0008](decisions/0008-keep-kuma-diun-and-beszel.md) for why these stay three tools. Config: [`config/monitoring.yml`](../config/monitoring.yml).
+Decision: [0006](decisions/0006-alerts-kuma-proton-smtp.md) for the mail path, [0008](decisions/0008-keep-kuma-diun-and-beszel.md) for why these stay three tools and why Prometheus, Grafana and ELK are not installed. Config: [`config/monitoring.yml`](../config/monitoring.yml).
 
 | Piece | Where | What it alerts on | Config |
 |--|--|--|--|
