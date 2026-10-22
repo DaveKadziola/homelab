@@ -1,34 +1,60 @@
 name: Apps Deploy Dev
 
+# After Infra Apply Dev, never next to it. Same split as Apps Deploy Prod:
+# this workflow is its own run, and the tests are a job here.
+# GitHub reads this trigger from the default branch (main).
 on:
-  push:
+  workflow_run:
+    workflows: ["Infra Apply Dev"]
+    types: [completed]
     branches: [homelab-v2]
-    paths:
-      - "compose/**"
-      - "ansible/**"
-      - "config/storage.yml"
-      - "config/identities.yml"
-      # The deploy builds the Caddyfile, Authelia rules, Homarr board and Beszel/backup config from these.
-      - "config/services.yml"
-      - "config/monitoring.yml"
-      - "utils/bootstrap/**"
-      - "utils/backup/**"
-      - "utils/gen-proxy-config.py"
-      - "utils/gen-homarr-board.sh"
-      - "homeassistant/**"
-      - "utils/ha.py"
-      - "utils/dev-haos-vm.sh"
-      - ".github/workflows/apps-deploy-dev.yml"
   workflow_dispatch:
+    inputs:
+      sha:
+        description: "Commit to deploy. Empty means the tip of the selected branch."
+        required: false
+        type: string
 
 jobs:
+  # A README under ansible/ or compose/ is not a deploy. Run 39834821761
+  # started one and failed in Deploy compose/core.
+  paths:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: [self-hosted, homelab-dev]
+    outputs:
+      run: ${{ steps.gate.outputs.run }}
+    steps:
+      - name: Deploy paths only
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          sha="${{ github.event.workflow_run.head_sha }}"
+          parent="$(gh api "repos/${{ github.repository }}/commits/${sha}" --jq '.parents[0].sha')"
+          files="$(gh api "repos/${{ github.repository }}/compare/${parent}...${sha}" --jq '.files[].filename')"
+          if printf '%s\n' "$files" | grep -Eq '^(ansible/(playbooks/|environments/|ansible\.cfg)|compose/(core|grocery)/|config/(storage|identities|services|monitoring)\.yml|utils/bootstrap/|utils/backup/|utils/gen-proxy-config\.py|utils/gen-homarr-board\.sh|homeassistant/|utils/ha\.py|utils/dev-haos-vm\.sh|\.github/workflows/apps-deploy-dev\.yml)'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
   deploy-dev:
+    needs: paths
+    if: needs.paths.outputs.run == 'true'
     runs-on: [self-hosted, homelab-dev]
     timeout-minutes: 30
     environment: dev
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || inputs.sha || github.sha }}
 
       - name: Ping ubuntu-apps-dev
         working-directory: ansible
@@ -107,13 +133,20 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || inputs.sha || github.sha }}
 
       - name: Run test suites
         env:
           HOMELAB_ENV: dev
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          IMMICH_DB_PASSWORD: ${{ secrets.IMMICH_DB_PASSWORD }}
           SAMBA_ADMIN_PASSWORD: ${{ secrets.SAMBA_ADMIN_PASSWORD }}
           HA_TOKEN: ${{ secrets.HA_TOKEN }}
           AUTHELIA_ADMIN_PASSWORD: ${{ secrets.AUTHELIA_ADMIN_PASSWORD }}
+          HOMARR_SECRET_KEY: ${{ secrets.HOMARR_SECRET_KEY }}
+          LINKWARDEN_SECRET: ${{ secrets.LINKWARDEN_SECRET }}
+          PGADMIN_PASSWORD: ${{ secrets.PGADMIN_PASSWORD }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NO_COLOR: "1"
         run: ./utils/run-tests.sh --env dev --suite all --json-out tests-dev-report.json
