@@ -17,6 +17,11 @@ environments:
   prod:
     kuma_url: http://192.168.20.13:3001
     smtp: { host: smtp.protonmail.ch, port: 587, security: starttls }
+    # Agents installed on the hosts (beszel-agent 0.21.0). The hub record is
+    # recreated here; the binary on the host is not.
+    beszel_agents:
+      - { name: prod-nas, host: 192.168.20.12, port: 45876 }
+      - { name: prod-pve, host: 192.168.20.20, port: 45876 }
 
 # Beszel alert thresholds (plan F10-A).
 thresholds:
