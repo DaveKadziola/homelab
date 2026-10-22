@@ -57,7 +57,7 @@ Without the router, VLANs, DHCP statics, WireGuard, and HAProxy do not exist.
 - Verify: guests ping; **plan must not say `must be replaced`**.
 - Time: 15–30 min.
 - **Abort** if the plan destroys `ubuntu-apps`.
-- A merge to `homelab-v2` starts `Infra Apply Dev` and, for `ansible/**` / `compose/**`, `Apps Deploy Dev` by itself; check the Actions tab before applying by hand, or the two runs race (drill 2026-10-19).
+- A merge to `homelab-v2` starts `Infra Apply Dev`. When that apply succeeds and the push changed a deploy path, the same workflow calls `Apps Deploy Dev`. Do not start a second apply or deploy by hand while that run is going (drill 2026-10-19).
 - A recreated guest has a new SSH host key: `ssh-keygen -R <guest-ip>` on the laptop and the runner, or tests fail on the old `known_hosts` entry.
 
 ## 4. Ansible base — **auto**
