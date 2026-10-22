@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
-# List packages apt would upgrade. With --mail, send that list once through the
-# env SMTP relay and say nothing when there is nothing to upgrade. Diun already
-# mails new image tags; it does not see apt or the VM image.
+# List packages apt would upgrade, and say when the published Ubuntu cloud
+# image serial is newer than this guest. With --mail, send that once through
+# the env SMTP relay and say nothing when both are current. Diun mails new
+# container tags; it does not see apt or this image. A newer image is a VM
+# rebuild, not an apt upgrade.
 #
 #   sudo ./utils/host-updates.sh
 #   HOMELAB_ENV=dev HOMELAB_SECRETS_DIR=/opt/homelab/secrets ./utils/host-updates.sh --mail
@@ -22,18 +24,36 @@ if ! command -v apt-get >/dev/null; then
 fi
 
 list="$(apt-get -s upgrade 2>/dev/null | awk '/^Inst /{print $2}')"
-if [[ -z "$list" ]]; then
+image_line=""
+if [[ -r /etc/os-release && -r /etc/cloud/build.info ]] && command -v curl >/dev/null; then
+  codename="$(awk -F= '/^VERSION_CODENAME=/{print $2}' /etc/os-release)"
+  local_serial="$(awk -F'[=:] *' '/^serial/{print $2; exit}' /etc/cloud/build.info)"
+  if [[ -n "$codename" && -n "$local_serial" ]]; then
+    remote="$(curl -fsSL --max-time 20 "https://cloud-images.ubuntu.com/${codename}/current/unpacked/build-info.txt" || true)"
+    remote_serial="$(printf '%s\n' "$remote" | awk -F= '/^serial=/{print $2; exit}')"
+    if [[ -z "$remote_serial" ]]; then
+      echo "cloud image serial: not fetched" >&2
+    elif [[ "$remote_serial" != "$local_serial" ]]; then
+      image_line="cloud image ${codename} serial ${local_serial} -> ${remote_serial} (rebuilding the VM, not apt)"
+    fi
+  fi
+fi
+report="$list"
+if [[ -n "$image_line" ]]; then
+  report="${report:+$report$'\n'}${image_line}"
+fi
+if [[ -z "$report" ]]; then
   echo "none"
   exit 0
 fi
-printf '%s\n' "$list"
+printf '%s\n' "$report"
 [[ "$mail" == 1 ]] || exit 0
 
 : "${HOMELAB_ENV:?HOMELAB_ENV is required for --mail}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 export HOMELAB_CONFIG_DIR="${HOMELAB_CONFIG_DIR:-$ROOT/config}"
 export HOMELAB_SECRETS_DIR="${HOMELAB_SECRETS_DIR:-$HOME/.homelab-secrets}"
-export HOST_UPDATE_LIST="$list"
+export HOST_UPDATE_LIST="$report"
 python3 - <<'PY'
 import os
 import smtplib
@@ -60,7 +80,7 @@ sender = user or to
 msg = EmailMessage()
 msg["From"] = sender
 msg["To"] = to
-msg["Subject"] = f"homelab {env}: apt updates"
+msg["Subject"] = f"homelab {env}: host updates"
 msg.set_content(os.environ["HOST_UPDATE_LIST"] + "\n")
 try:
     with smtplib.SMTP(smtp["host"], int(smtp["port"]), timeout=30) as server:

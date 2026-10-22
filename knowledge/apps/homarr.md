@@ -17,7 +17,7 @@ Password is stored as bcrypt in sqlite. If login fails after a rotation, set it 
 Board tiles come from `config/services.yml` `dashboard:` groups, plus tiles that are not
 services. Prod Home Assistant opens `http://hass.dkhomelabserver.xyz/` (the AdGuard
 rewrite). DEV still uses `config/storage.yml` `ha_url`. Prod also links Proxmox (`:8006`), AdGuard (`https://adguard.dkhomelabserver.xyz:8443/`),
-OPNsense (`https://router.dkhomelabserver.xyz/`), the switch and the access point. None of those are pinged: the
+OPNsense (`https://router.dkhomelabserver.xyz/`), Uptime Kuma (`http://kuma.dkhomelabserver.xyz:3001/`), the switch and the access point. None of those are pinged: the
 apps host cannot reach the T620 or the LAN addresses.
 
 The seed on the host is written by every deploy ("Write the Homarr board seed",
