@@ -197,6 +197,34 @@ def wait_up(hub, system, since, timeout=150):
         time.sleep(5)
 
 
+def ensure_remote_agents(hub, user, monitoring, env):
+    """Hub records for agents that run on other hosts. Does not touch the local agent."""
+    for spec in (monitoring["environments"].get(env) or {}).get("beszel_agents") or []:
+        name, host, port = spec["name"], spec["host"], str(spec["port"])
+        record = hub.first("systems", f"name = {q(name)}")
+        owners = (record or {}).get("users", [])
+        if user["id"] not in owners:
+            owners = [*owners, user["id"]]
+        system = hub.ensure(
+            "systems", record, {"name": name, "host": host, "port": port, "users": owners},
+            f"system {name}",
+        )
+        hub.ensure(
+            "fingerprints",
+            hub.first("fingerprints", f"system = {q(system['id'])}"),
+            {"system": system["id"]},
+            f"agent token of {name}",
+            {"token": secrets.token_hex(16)},
+        )
+        for alert_name, values in desired_alerts(monitoring["thresholds"]).items():
+            hub.ensure(
+                "alerts",
+                hub.first("alerts", f"user = {q(user['id'])} && system = {q(system['id'])} && name = {q(alert_name)}"),
+                {"user": user["id"], "system": system["id"], "name": alert_name, **values},
+                f"alert {alert_name} > {values['value']}% for {values['min']} min on {name}",
+            )
+
+
 def converge(args):
     with open(os.path.join(args.config, "monitoring.yml"), encoding="utf-8") as handle:
         monitoring = yaml.safe_load(handle)
@@ -263,6 +291,7 @@ def converge(args):
             log(f"{label}: already set")
 
     wait_up(hub, system, since)
+    ensure_remote_agents(hub, user, monitoring, args.env)
 
 
 def self_test():
