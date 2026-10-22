@@ -264,6 +264,7 @@ utils/              laptop and host scripts. Map: utils/README.md
 
 Prod has been running since release #75 (VMs 101 and 102, CT 110). What is still
 open is the frontmatter of [`docs/plan/greenfield-plan.md`](docs/plan/greenfield-plan.md).
+Completed items are in [`docs/plan/greenfield-completed.md`](docs/plan/greenfield-completed.md).
 
 ## Diagrams
 
