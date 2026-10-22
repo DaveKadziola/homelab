@@ -16,6 +16,8 @@
     grocery_repo: https://github.com/DaveKadziola/easytodo-grocery-list
     grocery_ref: bb37f507a2beef956806c76848c39ddc79599cd5  # tag v2.0.0
     grocery_image: "easytodo-grocery:{{ grocery_ref[:12] }}"
+    # Same tag as compose/core/docker-compose.yml service caddy. Local build, not a registry image.
+    caddy_image: homelab-caddy:2.11.7-cloudflare-0.2.4
     secrets_dest: /opt/homelab/secrets
     homelab_env: "{{ lookup('env', 'HOMELAB_ENV') | default('dev', true) }}"
     # Values come from the environment, else from the per-env cache that
@@ -192,6 +194,7 @@
             owner: "{{ ansible_user }}"
             group: docker
             mode: "0644"
+          register: caddy_dockerfile
 
         - name: Write the Caddyfile
           ansible.builtin.copy:
@@ -408,12 +411,31 @@
         state: present
         update_cache: true
 
-    - name: Pull/build and start core stack
+    # After the compose plugin exists. `up` does not build; a Dockerfile change or a missing
+    # image is the only reason to compile Caddy (the builder base is pulled only then).
+    - name: Check whether the Caddy image exists
+      ansible.builtin.command: docker image inspect {{ caddy_image }}
+      register: caddy_image_check
+      changed_when: false
+      failed_when: false
+      check_mode: false
+      when: "'proxy' in compose_profiles.split(',')"
+
+    - name: Build the Caddy image
       ansible.builtin.command:
-        cmd: docker compose {{ compose_file_args }} --env-file {{ compose_dest }}/.env up -d --build --remove-orphans
+        cmd: docker compose {{ compose_file_args }} --env-file {{ compose_dest }}/.env build caddy
+        chdir: "{{ compose_dest }}"
+      changed_when: true
+      when:
+        - "'proxy' in compose_profiles.split(',')"
+        - (caddy_dockerfile.changed | default(false)) or ((caddy_image_check.rc | default(1)) != 0)
+
+    - name: Start core stack
+      ansible.builtin.command:
+        cmd: docker compose {{ compose_file_args }} --env-file {{ compose_dest }}/.env up -d --remove-orphans
         chdir: "{{ compose_dest }}"
       register: compose_up
-      changed_when: "'Started' in compose_up.stderr or 'Created' in compose_up.stderr or 'Running' in compose_up.stderr or compose_up.rc == 0"
+      changed_when: "'Started' in compose_up.stderr or 'Created' in compose_up.stderr or 'Recreated' in compose_up.stderr"
 
     # Now, not at the end of the play: a later failure (bootstrap) would drop the restarts.
     - name: Restart what changed config needs before the bootstrap
@@ -485,7 +507,7 @@
       when: run_bootstrap | bool
 
   # Bind-mounted config: compose does not recreate a container when only the file changed. Handlers
-  # run after "Pull/build and start core stack", so the containers exist.
+  # run after "Start core stack", so the containers exist.
   handlers:
     - name: Restart caddy
       ansible.builtin.command:
