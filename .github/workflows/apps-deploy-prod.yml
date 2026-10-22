@@ -13,7 +13,7 @@ jobs:
   deploy-prod:
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: [self-hosted, homelab-prod]
-    timeout-minutes: 30
+    timeout-minutes: 75
     environment: prod
     steps:
       - name: Checkout
