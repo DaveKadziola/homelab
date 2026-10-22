@@ -96,8 +96,8 @@ python3 utils/tf-plan-risk.py --self-test    # one of the script self-tests CI V
    classifies the plan with `utils/tf-plan-risk.py`. A safe plan with `gate` false skips `prod-gate`
    and the apply job runs without a second click. A risky plan, or a manual run with `gate=true`,
    waits in `prod-gate`. The apply job applies only a plan with the same digest.
-5. Apps Deploy Prod follows a successful Infra Apply Prod, asks once on its first job, and ends
-   with the post-deploy tests.
+5. Apps Deploy Prod follows a successful Infra Apply Prod with no second click, and ends with
+   the post-deploy tests. A manual run of this workflow asks once (`prod-approve`).
 
 No direct pushes to `homelab-v2` or `main`. Decision
 [0004](knowledge/decisions/0004-ci-autonomy-and-prod-risk-gate.md); settings in

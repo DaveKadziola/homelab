@@ -86,7 +86,7 @@ Last reviewed: 2026-10-21
 - Branching and review: `homelab-v2` = DEV, `main` = prod. Agent work happens on a feature branch
   and reaches `homelab-v2` through a PR that merges itself when `validate` and `plan` pass (ruleset
   without bypass). A release is a PR `homelab-v2` -> `main` that the operator merges; prod asks for
-  one approval on the first job (`prod-approve`), plus `prod-gate` when the Terraform plan is risky.
+  one approval on Infra Apply Prod (`prod-approve`), plus `prod-gate` when the Terraform plan is risky. A successful apply starts Apps Deploy Prod with no second click.
   <!-- source: operator decisions 2026-10-18 and 2026-10-20; knowledge/decisions/0004-ci-autonomy-and-prod-risk-gate.md -->
 - Tools that talk to outside services (rclone, Terraform, ...): the newest stable upstream release,
   pinned by version and SHA256 (Terraform: `utils/pve-ci-runner-lxc.sh`, rclone:
