@@ -15,7 +15,8 @@ Current procedure is `knowledge/`. This directory is the map, the secret names, 
 | `manual-setup.md` | The one-time laptop and GitHub setup |
 | `opnsense-baseline.md` | Router checklist. Several addresses in it are older than `network.md` |
 | `opnsense-ui-walkthrough.md` | Click path in the router UI. The banner at the top says which addresses are wrong |
-| `plan/greenfield-plan.md` | The backlog. Only the frontmatter |
+| `plan/greenfield-plan.md` | Open backlog (pending and in progress). Only the frontmatter |
+| `plan/greenfield-completed.md` | Closed items, moved here from the plan when done |
 | `plan/greenfield-notes.md` | June and July 2026 notes. Not a procedure |
 | `audit/` | Read-only reviews from the takeover. A snapshot of that date |
 | `diagrams/` | draw.io copies of the diagrams in the root README |

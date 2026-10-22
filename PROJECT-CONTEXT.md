@@ -11,10 +11,11 @@ Last reviewed: 2026-10-21
 - What this project is for: self-hosted homelab on Proxmox - Terraform + Ansible + Docker
   Compose, deployed through GitHub Actions with two self-hosted runners.
   <!-- source: README.md first paragraph -->
-- Plan and phases: the backlog is the frontmatter of `docs/plan/greenfield-plan.md`.
+- Plan and phases: the open backlog is the frontmatter of `docs/plan/greenfield-plan.md`.
+  Completed items are in `docs/plan/greenfield-completed.md`.
   The F0-F10 write-up is `docs/plan/greenfield-notes.md` and is not the current procedure.
   Current status: `README.md` "Status".
-  <!-- source: docs/plan/greenfield-plan.md frontmatter; docs/plan/greenfield-notes.md "Phases / sprints"; README.md "Status" -->
+  <!-- source: docs/plan/greenfield-plan.md frontmatter; docs/plan/greenfield-completed.md frontmatter; docs/plan/greenfield-notes.md "Phases / sprints"; README.md "Status" -->
 - Who uses it: the operator (user and admin); later 1-2 occasional users of single apps such as
   the photo gallery and the shopping list. <!-- source: operator, 2026-10-18 -->
 - What is out of scope: <ask>

@@ -1,13 +1,14 @@
 # Greenfield notes
 
-This file is not a procedure and not the backlog. The backlog is the frontmatter of
-[`greenfield-plan.md`](greenfield-plan.md). The notes below are the June and July 2026 write-up, unshortened.
+This file is not a procedure and not the backlog. The open backlog is the frontmatter of
+[`greenfield-plan.md`](greenfield-plan.md). Completed items are in
+[`greenfield-completed.md`](greenfield-completed.md). The notes below are the June and July 2026 write-up, unshortened.
 
 
 # Homelab — greenfield plan (dummy)
 
 > **Status:** working draft — fill in the *Assumptions* and *Problems* sections as decisions are made.
-> **Backlog:** the todos in the frontmatter of [`greenfield-plan.md`](greenfield-plan.md) are the single source of truth (do not duplicate them in separate plans).
+> **Backlog:** the open todos in the frontmatter of [`greenfield-plan.md`](greenfield-plan.md) are the single source of truth (do not duplicate them in separate plans). Completed items are in [`greenfield-completed.md`](greenfield-completed.md).
 > **Working branch:** `homelab-v2` — **entirely new, clean code**. Until the merge, `main` stays legacy (read-only); after the merge **`main` = v2 contents only** — the old code disappears from the default branch (history under the tag `legacy-pre-v2`).
 
 ### Todos — status (2026-10-18, takeover audit)
