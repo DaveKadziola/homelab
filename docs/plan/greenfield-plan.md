@@ -149,6 +149,15 @@ todos:
   - id: homarr-network-tiles
     content: "Kolejny PR (operator 2026-10-22): kafelki Homarr do Proxmoxa, AdGuarda, switcha Netgear GS308EP i access pointa. Nazwy z rewrite AdGuard, docs/network.md:64: proxmox.dkhomelabserver.xyz -> 192.168.20.20, adguard. -> 192.168.1.1, switch. -> 192.168.1.2, ap. -> 192.168.1.3. Pełne FQDN adguard, switch i ap odczytać z AdGuardHome.yaml przy PR, nie zgadywać. To nie są wpisy services.yml: link zewnętrzny, bez Caddy, monitora i nowego rewrite."
     status: pending
+  - id: diun-updates
+    content: "Kolejny PR (operator 2026-10-22): powiadomienia o aktualizacjach. Diun 4.33.0 ogląda tylko obrazy Dockera (compose/core/diun/diun.yml: provider docker, watchRepo, co 6 h) i mail idzie przez diun.env, gdy jest SMTP; bez SMTP tylko log (knowledge/monitoring.md). Kontenery: potwierdzić, że mail na prod dochodzi. System i obraz VM: Diun tego nie umie - osobne sprawdzenie na ten sam mail, nie udawać że robi to Diun."
+    status: pending
+  - id: diun-homarr-access
+    content: "Kolejny PR (operator 2026-10-22): sprawdzić, czy do Diun da się wejść z Homarra. knowledge/apps/diun.md mówi UI: none; w services.yml kafelek jest hidden, check to container, brak portu. Jeśli 4.33.0 nie ma GUI, nie dodawać martwego kafelka - wejście to Dozzle (log) albo skrzynka z powiadomieniami. Wynik dopisać przy tym todo."
+    status: pending
+  - id: homarr-dashboard-widgets
+    content: "Kolejny PR (operator 2026-10-22): rozbudować dashboard Homarr ponad same ikony. Generator utils/gen-homarr-board.sh zapisuje tylko kind app i empty; obraz to homarr:v2.6.0. Propozycje do sprawdzenia w tej wersji, nie wdrażać na ślepo: pogoda bez klucza API (Open-Meteo, jeśli jest taki widget), metryki z Beszel który już stoi (nie stawiać Grafany - baza jest zarezerwowana, aplikacji nie ma w compose), iframe tylko stron które już mamy i bez sekretu w URL (Proxmox, AdGuard), Google Maps tylko gdy da się wstawić bez klucza API w publicznym repo. Widget, którego generator nie umie zapisać, wymaga rozszerzenia gen-homarr-board.sh w tym samym PR."
+    status: pending
 isProject: false
 ---
 
