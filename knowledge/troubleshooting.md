@@ -10,7 +10,7 @@ Symptoms first. Root-cause write-ups go in [`lessons-learned.md`](lessons-learne
 | `cloud {}` / TFC error on laptop (`No workspace selected`, 401) | Set `TF_WORKSPACE=homelab-dev` (DEV) or `homelab` (prod); run `terraform login` once. `utils/dev-apply-local.sh` sets it. |
 | Wrong node | Nested PVE node is `dev`, not `pve`. |
 | Immich ML crash-loop / `Illegal instruction` | Guest `cpu_type` must be `host`. |
-| Disk full / image pull fails | DEV guest is 27G; `docker system df`. |
+| Disk full / image pull fails | DEV guest is 33G (was 27G, grown 2026-10-22); `docker system df`. The nested thin pool has no free extents left in the volume group, so the disk cannot grow again until the pool itself is larger. |
 | Nested Proxmox and `ubuntu-apps-dev` stop answering, one vCPU at 100 %, journal just stops | LVM-thin pool `pve/data` full: `lvs pve/data` on the nested PVE. With `when full = queue` every write waits forever. Set `lvchange --errorwhenfull y pve/data`, free space, then `virsh destroy` + `utils/ensure-dev-proxmox.sh`. Test: `infra/storage/thin-pool`. |
 
 ## Compose / host

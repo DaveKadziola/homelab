@@ -42,7 +42,7 @@ Ansible playbook `ansible/playbooks/deploy-core.yml` syncs `compose/core/` (+ gr
 Nested Proxmox host has **~8 GiB**. To fit Immich + Jellyfin + the rest:
 
 - `ubuntu-apps-dev` raised to **6144 MiB** (was 4096); TF `environments/dev/terraform.tfvars` matches.
-- Disk raised to **27G** (was 16G) on nested `local-lvm` — Immich/Jellyfin images need it; TF `storage_size = 27`.
+- Disk raised to **33G** (was 16G, then 27G) on nested `local-lvm`. TF `storage_size = 33`. A Caddy rebuild filled 27G on 2026-10-22.
 - CPU set to **`host`** on nested PVE (was `qemu64`) so Immich ML NumPy gets x86-64-v2/SSE4.2.
 - `home-assistant-dev` temporarily set to **2048 MiB** on nested PVE to free headroom (not managed by this repo’s TF).
 - Compose uses strict `mem_limit` on every service; Immich/Jellyfin behind profile `media`.
