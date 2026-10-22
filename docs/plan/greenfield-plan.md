@@ -147,7 +147,7 @@ todos:
     content: "Zrobione 2026-10-22: ansible_python_interpreter=/usr/bin/python3 w inventory prod i dev. Ten sam Apps Deploy Prod przeszedł Ansible bez warningu discovery."
     status: completed
   - id: homarr-network-tiles
-    content: "Zrobione 2026-10-22: kafelki Proxmox :8006, AdGuard, switch i access point są na prod boardzie, bez pingu. AdGuard i AP odpowiadają po nazwie. Switch na porcie 80 z laptopa nie odpowiedział."
+    content: "Zrobione 2026-10-22: kafelki Proxmox :8006, AdGuard https://adguard.dkhomelabserver.xyz:8443/, OPNsense https://router.dkhomelabserver.xyz/, switch i access point. Bez pingu. AdGuard :8443 zwraca 302, router HEAD 403. Switch na porcie 80 z laptopa nie odpowiedział. Na prod wchodzą z następnym deployem po tym commicie."
     status: completed
   - id: diun-updates
     content: "Kolejny PR (operator 2026-10-22): powiadomienia o aktualizacjach. Diun 4.33.0 ogląda tylko obrazy Dockera (compose/core/diun/diun.yml: provider docker, watchRepo, co 6 h) i mail idzie przez diun.env, gdy jest SMTP; bez SMTP tylko log (knowledge/monitoring.md). Kontenery: potwierdzić, że mail na prod dochodzi. System i obraz VM: Diun tego nie umie - osobne sprawdzenie na ten sam mail, nie udawać że robi to Diun."
