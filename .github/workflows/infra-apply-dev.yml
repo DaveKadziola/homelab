@@ -10,8 +10,6 @@ jobs:
     runs-on: [self-hosted, homelab-dev]
     timeout-minutes: 60
     environment: dev
-    outputs:
-      deploy: ${{ steps.gate.outputs.deploy }}
     env:
       TF_WORKSPACE: homelab-dev
     steps:
@@ -26,7 +24,7 @@ jobs:
         # not downloaded per job: the setup-terraform download stalled again and again.
         run: v="$(terraform version | head -1)"; echo "$v"; test "$v" = "Terraform v1.16.3"
 
-      - name: Terraform apply (state in HCP Terraform workspace homelab-dev)
+      - name: Terraform apply
         working-directory: terraform
         env:
           # HCP Terraform login: the CLI reads TF_TOKEN_<host>, so the token never lands in a file.
@@ -44,44 +42,3 @@ jobs:
           terraform init -input=false
           terraform apply -auto-approve -input=false \
             -var-file=environments/dev/terraform.tfvars
-
-      # Same paths Apps Deploy Dev used to trigger on. A match calls that
-      # workflow after this job, so the deploy does not start beside the apply.
-      - name: Decide whether this push deploys apps
-        id: gate
-        if: github.event_name == 'push'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          before="${{ github.event.before }}"
-          if [ -z "$before" ] || [ "$before" = "0000000000000000000000000000000000000000" ]; then
-            echo "deploy=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          files="$(gh api "repos/${{ github.repository }}/compare/${before}...${{ github.sha }}" --jq '.files[].filename')"
-          if printf '%s\n' "$files" | grep -Eq '^(compose/|ansible/|config/(storage|identities|services|monitoring)\.yml|utils/bootstrap/|utils/backup/|utils/gen-proxy-config\.py|utils/gen-homarr-board\.sh|homeassistant/|utils/ha\.py|utils/dev-haos-vm\.sh|\.github/workflows/apps-deploy-dev\.yml)'; then
-            echo "deploy=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "deploy=false" >> "$GITHUB_OUTPUT"
-          fi
-
-  # Own workflow run, so the test job is not a job of this apply. workflow_run
-  # cannot do it: that run is main, and environment dev allows only homelab-v2.
-  start-deploy:
-    needs: apply
-    if: needs.apply.outputs.deploy == 'true'
-    runs-on: [self-hosted, homelab-dev]
-    timeout-minutes: 5
-    permissions:
-      actions: write
-      contents: read
-    steps:
-      - name: Start Apps Deploy Dev
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          curl -fsS -X POST \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/apps-deploy-dev.yml/dispatches" \
-            -d "{\"ref\":\"homelab-v2\",\"inputs\":{\"sha\":\"${{ github.sha }}\"}}"

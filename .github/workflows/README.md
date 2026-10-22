@@ -2,7 +2,7 @@
 
 CI Validate does not touch a host. It runs beside the others.
 
-A push to `homelab-v2` starts Infra Apply Dev. If that push also changes a deploy path, Apps Deploy Dev starts at the same time, not after the apply. The tests inside Apps Deploy Dev run only after that deploy job. Tests Dev starts only for a push that changes test files and does not also deploy.
+A push to `homelab-v2` starts Infra Apply Dev. When that apply succeeds, Apps Deploy Dev starts as its own run, the same way Apps Deploy Prod follows Infra Apply Prod. Its tests are the next job. A README under `ansible/` or `compose/` does not deploy. Tests Dev starts only for a push that changes test files and does not also deploy. GitHub reads the dev deploy trigger from `main`.
 
 On `main`, Infra Apply Prod runs after the one approval. A successful apply starts Apps Deploy Prod, and its tests run after the deploy.
 
@@ -13,6 +13,6 @@ On `main`, Infra Apply Prod runs after the one approval. A successful apply star
 | `infra-plan.yml` | Read-only plan of the prod workspace. Required before a merge to `main` |
 | `infra-apply-dev.yml` | Apply the dev workspace on every push to `homelab-v2`, or by hand |
 | `infra-apply-prod.yml` | Apply prod. Asks once. A risky plan asks again |
-| `apps-deploy-dev.yml` | Ansible, Compose, and Home Assistant on DEV, then the tests. On a push that changes a deploy path, or by hand |
+| `apps-deploy-dev.yml` | Ansible, Compose, and Home Assistant on DEV, then the tests. After Infra Apply Dev succeeds, or by hand. A README does not deploy |
 | `apps-deploy-prod.yml` | The same on prod, after a successful prod apply, or by hand (that hand run asks once) |
 | `tests-dev.yml` | The DEV suites when no deploy is going to run, or by hand |

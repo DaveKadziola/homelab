@@ -46,7 +46,7 @@ jobs:
             exit 0
           fi
           files="$(git diff --name-only "$before" "${{ github.sha }}")"
-          if printf '%s\n' "$files" | grep -Eq '^(compose/|ansible/|config/(storage|identities|services|monitoring)\.yml|utils/bootstrap/|utils/backup/|utils/gen-proxy-config\.py|utils/gen-homarr-board\.sh|homeassistant/|utils/ha\.py|utils/dev-haos-vm\.sh|\.github/workflows/apps-deploy-dev\.yml)'; then
+          if printf '%s\n' "$files" | grep -Eq '^(ansible/(playbooks/|environments/|ansible\.cfg)|compose/(core|grocery)/|config/(storage|identities|services|monitoring)\.yml|utils/bootstrap/|utils/backup/|utils/gen-proxy-config\.py|utils/gen-homarr-board\.sh|homeassistant/|utils/ha\.py|utils/dev-haos-vm\.sh|\.github/workflows/apps-deploy-dev\.yml)'; then
             echo "This push also starts Apps Deploy Dev. Tests run there after the deploy."
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else
