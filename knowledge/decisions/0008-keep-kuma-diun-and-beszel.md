@@ -36,4 +36,4 @@ Kuma stays the uptime mailer. Diun stays the image-tag mailer. Beszel stays the 
 
 - Beszel tag `v0.21.0`: `agent/docker_image_updates.go`, `agent/package_updates.go`, `agent/agent.go` (`defaultDataCacheTimeMs`), `internal/alerts/alerts.go`, `internal/hub/systems/system_smart.go` (SMART default one hour)
 - Decided by the operator, 2026-10-22, after asking whether the three could be unified, and again the same day: given resource use, the installed set stays
-- General knowledge, not measured on this homelab: Elasticsearch's RAM and disk footprint, and that Alertmanager can send mail. The DEV apps disk did fill while rebuilding Caddy (`knowledge/troubleshooting.md`)
+- General knowledge, not measured on this homelab: Elasticsearch's RAM and disk footprint, and that Alertmanager can send mail. The DEV apps disk is 33G and cannot grow until the thin pool is larger (`knowledge/troubleshooting.md`)
