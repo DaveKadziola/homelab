@@ -105,8 +105,8 @@ todos:
     content: "Odczyt 2026-10-22, bez zmiany reguł. APP (vlan07) ma NFS i SSH na NAS oraz pass do wszystkiego poza PrivateNetworks, czyli cały VLAN wychodzi do internetu, nie pojedyncza aplikacja. Osobny audyt WAN (tylko WireGuard i Grocery) jest opnsense-wan-audit i czeka na końcu."
     status: pending
   - id: ci-autonomy
-    content: "Reviewer środowiska prod zostaje. Test gate=true nie był uruchomiony w tym commicie: to osobny przebieg Infra Apply Prod, czeka na akceptację prod-gate."
-    status: in_progress
+    content: "Zrobione 2026-10-22: reviewer zszedł ze środowiska prod. Infra Apply pyta raz (prod-approve), ryzykowny plan albo gate=true staje na prod-gate. Udany apply puszcza Apps Deploy bez drugiego kliknięcia (run 39806560198, job approve skipped). Ręczny deploy aplikacji nadal pyta raz."
+    status: completed
   - id: homarr-links
     content: "Zrobione 2026-10-22: kafelki po nazwach, seed z deployu. Operator wszedł na prod Homarr (widget Beszela), więc konto admin w UI jest."
     status: completed
@@ -138,7 +138,7 @@ todos:
     content: "Zrobione 2026-10-22: prod kafelek Home Assistant to http://hass.dkhomelabserver.xyz/ (board na hoście, ping wyłączony)."
     status: completed
   - id: pr78-merge-checklist
-    content: "2026-10-22: reviewer zszedł z prod, zostaje na pierwszym jobie Infra Apply (prod-approve). Udany apply puszcza Apps Deploy bez drugiego kliknięcia; ręczny deploy aplikacji nadal pyta raz. Punkt bramki w #78 czeka na jeden taki przebieg. Wolumeny Zotify i BESZEL_KEY zdjęte."
+    content: "Zamknięte 2026-10-22: checklista #78 cała odhaczona. Bramka po tym, jak Apps Deploy 39806560198 ruszył z jobem approve skipped. Wolumeny Zotify i BESZEL_KEY zdjęte."
     status: completed
   - id: deploy-prod-timeout
     content: "Zrobione 2026-10-22: job deploy-prod ma timeout-minutes 120. Apps Deploy Prod 39746487452 skończył deploy-prod w 21m45s, poniżej limitu."
@@ -150,8 +150,8 @@ todos:
     content: "Zrobione 2026-10-22: na hoście prod są Proxmox :8006, AdGuard https://adguard.dkhomelabserver.xyz:8443/, OPNsense https://router.dkhomelabserver.xyz/, switch i access point. Deploy 39755554518. Switch na porcie 80 z laptopa nie odpowiedział."
     status: completed
   - id: diun-updates
-    content: "Częściowo 2026-10-22: obrazy Dockera ogląda Diun (mail w diun.env). System: utils/host-updates.sh --mail i timer homelab-host-updates (niedziela 06:15) wchodzą z deploy-core. Na hoście timera jeszcze nie ma, dopóki nie przejdzie deploy. Obrazu VM nikt nie sprawdza."
-    status: pending
+    content: "Zrobione 2026-10-22: Diun mailuje nowe tagi kontenerów. Timer homelab-host-updates (niedziela 06:15) mailuje paczki apt i nowszy serial obrazu Ubuntu, gdy /etc/cloud/build.info różni się od cloud-images.ubuntu.com. Na prod apps i NAS serial to 20261017, taki sam jak opublikowany. Nowy serial to przebudowa VM, nie apt."
+    status: completed
   - id: diun-homarr-access
     content: "Zrobione 2026-10-22: Diun 4.33.0 nie ma GUI (knowledge/apps/diun.md). Martwego kafelka nie ma. Wejście to log w Dozzle albo skrzynka. Przez 48 h Diun nie wysłał maila."
     status: completed
