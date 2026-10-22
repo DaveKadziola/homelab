@@ -72,7 +72,7 @@ Without the router, VLANs, DHCP statics, WireGuard, and HAProxy do not exist.
 
 ## 5. Compose + grocery — **auto / Portainer**
 
-- Core: Ansible `docker compose up`.
+- Core: Ansible `docker compose up` without `--build`. The Caddy image is built only when `compose/core/caddy/Dockerfile` changed or the local image is missing.
 - Grocery: automated since 2026-10-19 (`deploy-core.yml` + `portainer.sh`):
   - the image `easy-todo-grocery-nodb:latest` is built on the guest from the app repo at the pinned `grocery_ref` when it is missing (it is never pushed to a registry);
   - role `prod_todo_grocery` (password `GROCERY_DB_PASSWORD`) and database `todo_grocery` are created when missing;
