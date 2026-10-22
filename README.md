@@ -89,8 +89,9 @@ python3 utils/tf-plan-risk.py --self-test    # one of the script self-tests CI V
 
 1. A feature branch opens a PR into `homelab-v2`. It merges itself when the required checks
    `validate` (CI Validate) and `plan` (Infra Plan Dev) pass; the ruleset has no bypass.
-2. The push to `homelab-v2` runs Infra Apply Dev, Apps Deploy Dev with post-deploy tests and Tests
-   Dev against DEV.
+2. The push to `homelab-v2` runs Infra Apply Dev and, when deploy paths change, Apps Deploy
+   Dev. Its tests run only after that deploy succeeds. Tests Dev runs when the push changes
+   tests and does not also deploy.
 3. A release is a PR `homelab-v2` -> `main` (CI Validate, Infra Plan Prod); the owner merges it.
 4. Infra Apply Prod asks once, on its first job (`prod-approve`). It then plans with refresh and
    classifies the plan with `utils/tf-plan-risk.py`. A safe plan with `gate` false skips `prod-gate`
@@ -120,7 +121,7 @@ flowchart TB
     pld["Infra Plan Dev - job plan<br/>env dev-plan, read-only token"]
     apd["Infra Apply Dev<br/>env dev"]
     dpd["Apps Deploy Dev + post-deploy-tests<br/>env dev, when deploy paths change"]
-    td["Tests Dev<br/>env dev, when tests or config change"]
+    td["Tests Dev<br/>env dev, test files only<br/>skipped when this push also deploys"]
   end
   subgraph rprod ["runner homelab-prod - CT 110 ci-runner 192.168.20.14 on the prod Proxmox host"]
     plp["Infra Plan Prod - job plan<br/>env prod-plan, read-only token, -refresh=false"]
@@ -135,8 +136,8 @@ flowchart TB
   prv2 -->|"required check plan"| pld
   prv2 -->|"auto-merge when both pass"| v2
   v2 -->|"push"| apd
-  v2 --> dpd
-  v2 --> td
+  v2 -->|"deploy paths"| dpd
+  v2 -->|"test files only"| td
   apd -->|"terraform apply"| devt
   dpd -->|"Ansible, Compose, HA"| devt
   td -->|"tests"| devt
@@ -159,7 +160,7 @@ flowchart TB
 | Infra Plan Dev (`infra-plan-dev.yml`) | PR into `homelab-v2`; manual | `homelab-dev` | `dev-plan` |
 | Infra Apply Dev (`infra-apply-dev.yml`) | push `homelab-v2`; manual | `homelab-dev` | `dev` |
 | Apps Deploy Dev (`apps-deploy-dev.yml`) | push `homelab-v2` on deploy paths (compose, Ansible, HA, storage and identity config); manual | `homelab-dev` | `dev` |
-| Tests Dev (`tests-dev.yml`) | push `homelab-v2` on tests or config; manual | `homelab-dev` | `dev` |
+| Tests Dev (`tests-dev.yml`) | push `homelab-v2` on test files, unless that push also deploys; manual | `homelab-dev` | `dev` |
 | Infra Plan Prod (`infra-plan.yml`) | PR into `main` | `homelab-prod` | `prod-plan` |
 | Infra Apply Prod (`infra-apply-prod.yml`) | push `main`; manual, input `gate` | `homelab-prod` | `prod`; `prod-gate` for a risky plan |
 | Apps Deploy Prod (`apps-deploy-prod.yml`) | Infra Apply Prod succeeded on `main`; manual | `homelab-prod` | `prod` |
