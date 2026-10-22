@@ -87,8 +87,8 @@ todos:
     content: "F10-B (Paczka 2, operator 2026-10-20): streszczenia AI przez OpenRouter z oczyszczonych wyników audytu i logów (allowlist, agregacja); nic surowego do publicznego repo"
     status: pending
   - id: project-cleanup
-    content: "Częściowo 2026-10-22: zmergowane gałęzie zdalne skasowane. Usunięte worktree homelab-grocery-v2 i homelab-wt-batch (czyste, remote już nie istniał). Został homelab-grocery-prod na feat/grocery-v2-prod, gałąź jest na origin. Dokumentów i skryptów legacy nie ruszano."
-    status: pending
+    content: "Zrobione 2026-10-22: worktree homelab-grocery-prod zdjęte. Z origin zeszły feat/grocery-v2-prod (ta sama poprawka jest na homelab-v2 jako 6c13608) i fix/grocery-no-debug (zdanie o rewrite grocery jest w docs/network.md). Lokalne gałęzie po zmergowanych PR skasowane. ansible/docker-containers.yml, utils/create-dev-vm.sh i ansible/user-setup.yml nie ma w drzewie od 07bb30e. origin/dev zostaje: 26 commitów nie wchodzi w tag legacy-pre-v2. docs/opnsense-ui-walkthrough.md zostaje, bo baseline i f2-verify na niego wskazują."
+    status: completed
   - id: docs-readme
     content: "Zrobione 2026-10-22: README.md już mówi co to jest, jak jest zbudowane i od czego zacząć. Osobnego przepisywania nie było."
     status: completed
