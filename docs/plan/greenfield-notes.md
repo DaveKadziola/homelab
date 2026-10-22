@@ -7,7 +7,7 @@ This file is not a procedure and not the backlog. The backlog is the frontmatter
 # Homelab — greenfield plan (dummy)
 
 > **Status:** working draft — fill in the *Assumptions* and *Problems* sections as decisions are made.
-> **Backlog:** todos in the **frontmatter** of this file = the single source of truth (do not duplicate them in separate plans).
+> **Backlog:** the todos in the frontmatter of [`greenfield-plan.md`](greenfield-plan.md) are the single source of truth (do not duplicate them in separate plans).
 > **Working branch:** `homelab-v2` — **entirely new, clean code**. Until the merge, `main` stays legacy (read-only); after the merge **`main` = v2 contents only** — the old code disappears from the default branch (history under the tag `legacy-pre-v2`).
 
 ### Todos — status (2026-10-18, takeover audit)
