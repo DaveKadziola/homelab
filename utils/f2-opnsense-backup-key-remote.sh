@@ -56,8 +56,8 @@ PY
 [ "$(cat /tmp/homelab-backupkey-changed)" = 1 ] || { rm -f "$BACKUP"; echo "nothing to change"; exit 0; }
 
 rm -f "$KEEP"
-/usr/local/sbin/configctl auth sync.user root
+/usr/local/sbin/configctl auth sync user root
 echo "authorized_keys of root: $(grep -c . /root/.ssh/authorized_keys) keys"
-daemon -f -P /tmp/homelab-backupkey-revert.pid sh -c "sleep ${REVERT_AFTER}; [ -f ${KEEP} ] || { cp ${BACKUP} ${CONFIG}; /usr/local/sbin/configctl auth sync.user root; echo reverted > /tmp/homelab-backupkey-reverted; }"
+daemon -f -P /tmp/homelab-backupkey-revert.pid sh -c "sleep ${REVERT_AFTER}; [ -f ${KEEP} ] || { cp ${BACKUP} ${CONFIG}; /usr/local/sbin/configctl auth sync user root; echo reverted > /tmp/homelab-backupkey-reverted; }"
 echo "auto-revert armed: ${REVERT_AFTER}s, cancel with: touch ${KEEP}"
-echo "manual revert: cp ${BACKUP} ${CONFIG} && configctl auth sync.user root"
+echo "manual revert: cp ${BACKUP} ${CONFIG} && configctl auth sync user root"

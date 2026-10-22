@@ -1,6 +1,6 @@
 # F5 — NAS / NFS / backups
 
-> **Status:** implemented on DEV (loopback NFS + Samba + timer + C4 restore suite + storage suite). Prod (since 2026-10-20): SA500/Purple attached and mounted by LABEL, `RCLONE_CONFIG` in GH env `prod`, HAOS 18.3 on the T620. In code, checked on DEV, not yet released to `main` (README "Status"): HA and OPNsense streams on the NAS (`utils/backup/run-nas.sh`), VM dumps as the Proxmox job `homelab-vms` (`utils/pve-backup-job.py`), freshness to Uptime Kuma (`utils/backup/check-fresh.py`). Still the owner's: `HA_TOKEN` in env `prod`, the OPNsense backup key.  
+> **Status:** implemented on DEV (loopback NFS + Samba + timer + C4 restore suite + storage suite). Prod (since 2026-10-20): SA500/Purple attached and mounted by LABEL, `RCLONE_CONFIG` in GH env `prod`, HAOS 18.3 on the T620. In code, checked on DEV, not yet released to `main` (README "Status"): HA and OPNsense streams on the NAS (`utils/backup/run-nas.sh`), VM dumps as the Proxmox job `homelab-vms` (`utils/pve-backup-job.py`), freshness to Uptime Kuma (`utils/backup/check-fresh.py`). Still the owner's: `HA_TOKEN` in env `prod`. The OPNsense backup key was installed 2026-10-22.  
 > **Related:** [`knowledge/storage.md`](../knowledge/storage.md), [`knowledge/backup.md`](../knowledge/backup.md), [`config/storage.yml`](../config/storage.yml)
 
 ## What landed
