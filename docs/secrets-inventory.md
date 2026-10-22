@@ -63,7 +63,7 @@ Helper scripts:
 | `SMTP_USERNAME` | prod | secret | `homelab/SMTP_USERNAME/prod` | set 2026-10-21 | Proton address `homelab-prod@dkhomelabserver.xyz` (owner); sender of Kuma, Diun, Beszel mail |
 | `SMTP_PASSWORD` | prod | secret | `homelab/SMTP_PASSWORD/prod` | set 2026-10-21 | Proton SMTP token of `SMTP_USERNAME` (owner) |
 | `CLOUDFLARE_API_TOKEN` | prod | secret | `homelab/CLOUDFLARE_API_TOKEN/prod` | planned | Zone.DNS edit on `dkhomelabserver.xyz` only; Caddy wildcard certificate (owner); without it prod keeps proxy and auth off |
-| `OPNSENSE_BACKUP_SSH_PRIV` | prod | secret | `homelab/OPNSENSE_BACKUP_SSH_PRIV/prod` | planned | NAS key for `config.xml`, forced command on the router (`utils/f2-opnsense-backup-key.sh` makes it) |
+| `OPNSENSE_BACKUP_SSH_PRIV` | prod | secret | `homelab/OPNSENSE_BACKUP_SSH_PRIV/prod` | set 2026-10-22 | NAS key for `config.xml`, forced command on the router. GitHub env prod has it. Bitwarden is queued until the vault is unlocked. |
 | `PORTAINER_ADMIN_PASSWORD` | dev | secret | `homelab/PORTAINER_ADMIN_PASSWORD/dev` | set | generated 2026-09-10 |
 | `PGADMIN_PASSWORD` | dev | secret | `homelab/PGADMIN_PASSWORD/dev` | set | generated 2026-09-10 |
 | `HOMARR_ADMIN_PASSWORD` | dev | secret | `homelab/HOMARR_ADMIN_PASSWORD/dev` | set | generated 2026-09-10; rotated same day |
