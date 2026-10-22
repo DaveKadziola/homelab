@@ -81,17 +81,17 @@ todos:
     content: "Iter. #4 R3 ✅ drill 10-19b z prawdziwym wymazaniem DEV przeszedł bez zmian w kodzie; restore suite ✅"
     status: completed
   - id: monitoring-alerts
-    content: "F10-A: zrobione na DEV 2026-10-20 - Uptime Kuma (dodatek HA) + utils/kuma-sync.py, świeżość backupów -> push Kuma, Diun mail, mailpit DEV (decyzja 0006); prod czeka na tokeny Proton SMTP i wydanie"
+    content: "Częściowo 2026-10-22: SMTP_USERNAME i SMTP_PASSWORD są w środowisku prod (same nazwy, bez odczytu wartości). Dostarczenia maila nie sprawdzano ponownie. Diun w logu z 48 h nie wysłał powiadomienia."
     status: in_progress
   - id: ai-log-analysis
     content: "F10-B (Paczka 2, operator 2026-10-20): streszczenia AI przez OpenRouter z oczyszczonych wyników audytu i logów (allowlist, agregacja); nic surowego do publicznego repo"
     status: pending
   - id: project-cleanup
-    content: "Później (operator 2026-10-20): porządek w projekcie — stare worktree i zmergowane gałęzie, nieaktualne dokumenty, skrypty legacy"
+    content: "Częściowo 2026-10-22: zmergowane gałęzie zdalne są skasowane (git fetch --prune). Zostały lokalne worktree: homelab-grocery-prod, homelab-grocery-v2, homelab-wt-batch. Nieaktualnych dokumentów i skryptów legacy nie ruszano."
     status: pending
   - id: docs-readme
-    content: "Później (operator 2026-10-20): README i opis projektu od nowa — co to jest, jak jest zbudowane, od czego zacząć"
-    status: pending
+    content: "Zrobione 2026-10-22: README.md już mówi co to jest, jak jest zbudowane i od czego zacząć. Osobnego przepisywania nie było."
+    status: completed
   - id: docs-diagrams
     content: "Później (operator 2026-10-20): schematy draw.io — flow zmian (homelab-v2 → DEV, main → prod, approvals), sieć (VLAN-y, firewall, porty), backupy"
     status: pending
@@ -105,17 +105,17 @@ todos:
     content: "Później (operator 2026-10-20): dostęp aplikacji do podsieci (APP → NAS/IOT/LAN) i poza sieć (egress per aplikacja zamiast całego internetu)"
     status: pending
   - id: ci-autonomy
-    content: "Zrobione 2026-10-20: auto-merge do homelab-v2 (ruleset validate+plan, bez bypass), bramka ryzyka na prod (utils/tf-plan-risk.py, env prod-gate, decyzja 0004); zostało: pierwsze wydanie, zdjęcie reviewera z prod, test bramki gate=true"
+    content: "Reviewer środowiska prod zostaje (DaveKadziola). Zdjęcie go osłabiłoby bramkę, a 2026-10-22 merge wszedł przy czerwonym deploy-dev. Został test gate=true, nieuruchomiony."
     status: in_progress
   - id: homarr-links
-    content: "2026-10-20: kafelki tylko dla włączonych profili, linki po nazwach (Caddy), tablica domowa wymuszana przez bootstrap; zostało: konto admin w UI na prod"
-    status: in_progress
+    content: "Zrobione 2026-10-22: kafelki po nazwach, seed z deployu. Operator wszedł na prod Homarr (widget Beszela), więc konto admin w UI jest."
+    status: completed
   - id: ha-as-code
-    content: "2026-10-20: sterowanie HA (utils/ha.py), packages/ z repo, migawki YAML z UI na NAS, backup HA z NAS, DEV-bliźniak HAOS (decyzja 0005); prod czeka na HA_TOKEN i wydanie"
-    status: in_progress
+    content: "Zrobione 2026-10-22: HA_TOKEN jest w środowisku prod, deploy odpala utils/ha.py, testy prod ha 5 PASS / 0 FAIL."
+    status: completed
   - id: app-names-proxy
-    content: "2026-10-20: nazwy aplikacji przez Caddy + Authelia (decyzja 0007), DEV działa; prod czeka na CLOUDFLARE_API_TOKEN i rewrite'y AdGuard (utils/f2-adguard-rewrites.sh)"
-    status: in_progress
+    content: "Zrobione 2026-10-22: CLOUDFLARE_API_TOKEN jest w środowisku prod, rewrite AdGuard są od 2026-10-21, nazwy HTTPS odpowiadają."
+    status: completed
   - id: backups-nas-pve
     content: "2026-10-20: luka 5 - HA i OPNsense z NAS, vzdump jako job PVE na NAS, RCLONE_CONFIG na hoście, świeżość -> Kuma; zostało: klucz OPNsense (utils/f2-opnsense-backup-key.sh) i HA_TOKEN prod"
     status: in_progress
@@ -129,16 +129,16 @@ todos:
     content: "Po wydaniu PR #78 (operator 2026-10-21): VM-ki apps i NAS z Ubuntu 24.04 na 26.04 - najpierw DEV z ćwiczeniem przebudowy i odtworzenia, potem prod jako osobne wydanie; zmiana obrazu (terraform/environments/*/terraform.tfvars image_url) to najpewniej wymiana VM (bramka ryzyka). Nie naprawia rclone: 26.04 ma w apt nadal 1.60.1, narzędzia przypinać do wersji upstream"
     status: pending
   - id: nfs-root-squash
-    content: "Do zbadania (operator 2026-10-21): eksport NFS /export ma no_root_squash - każdy root na ubuntu-apps, w tym każdy kontener działający jako root (np. Jellyfin), ma pełne prawa do całego /export; sprawdzić, które aplikacje tego potrzebują (root_squash / all_squash z anonuid, uid w kontenerach). Przy okazji: Jellyfin założył video/movies i video/music jako root, Samba (force user ubuntu-prod) nie mogła tam pisać - na prod chown ręcznie 2026-10-21, trwale ma to załatwić deploy-storage"
+    content: "Odczyt 2026-10-22, bez zmiany eksportu: /export 192.168.50.0/26(rw,sync,no_subtree_check,no_root_squash,crossmnt) oraz vzdump dla 192.168.20.20 też no_root_squash. Root w kontenerze na apps ma pełny zapis. Przełączenie na root_squash nie było, bo psuje zapis (Jellyfin)."
     status: pending
   - id: authelia-ip-bypass
-    content: "Częściowo 2026-10-22: aplikacje z własnym logowaniem mają auth_bypass all i na prod nie idą na Authelię (beszel, portainer, homarr HTTP 200; dozzle i it-tools nadal 302 na auth). Zostało: zamknąć wejście po IP:port dla aplikacji bez logowania (bind 127.0.0.1) tak, żeby smoke i Kuma dalej miały jak sprawdzić, że żyją."
+    content: "Częściowo 2026-10-22: aplikacje z własnym logowaniem mają auth_bypass all (prod: beszel, portainer, homarr HTTP 200; dozzle i it-tools 302 na auth). Portów nie zwijano na 127.0.0.1: Kuma na T620 sprawdza te porty TCP i uznałaby żywe aplikacje za down."
     status: pending
   - id: homarr-ha-domain
     content: "Zrobione 2026-10-22: prod kafelek Home Assistant to http://hass.dkhomelabserver.xyz/ (board na hoście, ping wyłączony)."
     status: completed
   - id: pr78-merge-checklist
-    content: "Do zweryfikowania (operator 2026-10-22): checkboxy PR #78 w sekcjach The merge i After a green run są nadal puste. The merge: Infra Apply Prod (plan i apply, środowisko prod) oraz Apps Deploy Prod (deploy-prod i post-deploy-tests) z risky=false, gate pominięty, 0 zmian Terraform; skutki przy ustawionym HA_TOKEN: jeden restart HA (packages), dodatek Terminal & SSH, Kuma zainstalowana jako zatrzymana, znikają DumbWhois i Zotify (wolumeny zostają), startują IT Tools, Networking Toolbox i agent Beszel, powstaje job Proxmox homelab-vms. After a green run: zdjąć reviewera ze środowiska prod (docs/manual-setup.md, CI autonomy) - 2026-10-22 przy wydaniu #100 job plan nadal czekał na akceptację DaveKadziola; test bramki: gh workflow run Infra Apply Prod --ref main -f gate=true, akceptacja prod-gate, potem Apps Deploy Prod bez akceptacji; claim Kuma (zrobiony 2026-10-21 - potwierdzić, nie powtarzać); router: utils/f2-opnsense-backup-key.sh i klucz OPNSENSE_BACKUP_SSH_PRIV oraz rewrite AdGuard (rewrite uruchomione 2026-10-21 - potwierdzić); decyzje o wolumenach Zotify i starym BESZEL_KEY. Wynik dopisać przy tym todo. Nie odhaczać punktów w #78 bez dowodu."
+    content: "Częściowo 2026-10-22, checkboxów w #78 nie odhaczano. Potwierdzone: HA_TOKEN i SMTP są w env prod, Kuma jest uruchomiona (nie stopped), rewrite AdGuard są, reviewer prod nadal jest. Niepotwierdzone: job homelab-vms, zniknięcie DumbWhois/Zotify, test gate=true, klucz backupu OPNsense, wolumeny Zotify, stary BESZEL_KEY."
     status: pending
   - id: deploy-prod-timeout
     content: "Zrobione 2026-10-22: job deploy-prod ma timeout-minutes 120. Apps Deploy Prod 39746487452 skończył deploy-prod w 21m45s, poniżej limitu."
@@ -147,16 +147,16 @@ todos:
     content: "Zrobione 2026-10-22: ansible_python_interpreter=/usr/bin/python3 w inventory prod i dev. Ten sam Apps Deploy Prod przeszedł Ansible bez warningu discovery."
     status: completed
   - id: homarr-network-tiles
-    content: "Zrobione 2026-10-22: kafelki Proxmox :8006, AdGuard https://adguard.dkhomelabserver.xyz:8443/, OPNsense https://router.dkhomelabserver.xyz/, switch i access point. Bez pingu. AdGuard :8443 zwraca 302, router HEAD 403. Switch na porcie 80 z laptopa nie odpowiedział. Na prod wchodzą z następnym deployem po tym commicie."
+    content: "Zrobione 2026-10-22: na hoście prod są Proxmox :8006, AdGuard https://adguard.dkhomelabserver.xyz:8443/, OPNsense https://router.dkhomelabserver.xyz/, switch i access point. Deploy 39755554518. Switch na porcie 80 z laptopa nie odpowiedział."
     status: completed
   - id: diun-updates
-    content: "Kolejny PR (operator 2026-10-22): powiadomienia o aktualizacjach. Diun 4.33.0 ogląda tylko obrazy Dockera (compose/core/diun/diun.yml: provider docker, watchRepo, co 6 h) i mail idzie przez diun.env, gdy jest SMTP; bez SMTP tylko log (knowledge/monitoring.md). Kontenery: potwierdzić, że mail na prod dochodzi. System i obraz VM: Diun tego nie umie - osobne sprawdzenie na ten sam mail, nie udawać że robi to Diun."
+    content: "Kontenery: Diun 4.33.0 już ogląda obrazy Dockera i ma SMTP w env prod. W logu 48 h były błędy rejestru, zero wysłanych maili. Systemu i obrazu VM Diun nie sprawdza. Osobnego skryptu apt nie dodano."
     status: pending
   - id: diun-homarr-access
     content: "Zrobione 2026-10-22: Diun 4.33.0 nie ma GUI (knowledge/apps/diun.md). Martwego kafelka nie ma. Wejście to log w Dozzle albo skrzynka. Przez 48 h Diun nie wysłał maila."
     status: completed
   - id: homarr-dashboard-widgets
-    content: "Kolejny PR (operator 2026-10-22): rozbudować dashboard Homarr ponad same ikony. Generator utils/gen-homarr-board.sh zapisuje tylko kind app i empty; obraz to homarr:v2.6.0. Propozycje do sprawdzenia w tej wersji, nie wdrażać na ślepo: pogoda bez klucza API (Open-Meteo, jeśli jest taki widget), metryki z Beszel który już stoi (nie stawiać Grafany - baza jest zarezerwowana, aplikacji nie ma w compose), iframe tylko stron które już mamy i bez sekretu w URL (Proxmox, AdGuard), Google Maps tylko gdy da się wstawić bez klucza API w publicznym repo. Widget, którego generator nie umie zapisać, wymaga rozszerzenia gen-homarr-board.sh w tym samym PR."
+    content: "Niewdrożone. utils/bootstrap/homarr_board.py zapisuje item tylko jako kafelek aplikacji (options.appId). Widget (pogoda, Beszel, iframe, mapy) wymaga potwierdzonego kształtu options w Homarr 2.6.0. Nie zgadywano go."
     status: pending
 isProject: false
 ---
