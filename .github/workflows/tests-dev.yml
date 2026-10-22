@@ -1,9 +1,8 @@
 name: Tests Dev
 
-# F7-C — automated verification of the dev environment.
-# Runs when tests or config change, and on demand. After a deploy the tests run in the
-# post-deploy-tests job of Apps Deploy Dev; a workflow_run trigger here ran on the default
-# branch main, which environment dev rejects.
+# Verification of DEV when this push does not deploy. A push that changes a deploy
+# path is tested by post-deploy-tests in Apps Deploy Dev, after that deploy succeeds.
+# A workflow_run trigger here ran as the default branch main, which environment dev rejects.
 
 on:
   push:
@@ -11,9 +10,6 @@ on:
     paths:
       - "tests/**"
       - "utils/run-tests.sh"
-      - "config/services.yml"
-      - "config/identities.yml"
-      - "config/storage.yml"
       - ".github/workflows/tests-dev.yml"
   workflow_dispatch:
     inputs:
@@ -35,13 +31,36 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      # Same paths as on.push.paths in apps-deploy-dev.yml. A push of both starts
+      # that workflow; testing here would compare the host before the copy lands.
+      - name: Skip when this push also deploys
+        id: deploy
+        if: github.event_name == 'push'
+        run: |
+          before="${{ github.event.before }}"
+          if [ -z "$before" ] || [ "$before" = "0000000000000000000000000000000000000000" ]; then
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          files="$(git diff --name-only "$before" "${{ github.sha }}")"
+          if printf '%s\n' "$files" | grep -Eq '^(compose/|ansible/|config/(storage|identities|services|monitoring)\.yml|utils/bootstrap/|utils/backup/|utils/gen-proxy-config\.py|utils/gen-homarr-board\.sh|homeassistant/|utils/ha\.py|utils/dev-haos-vm\.sh|\.github/workflows/apps-deploy-dev\.yml)'; then
+            echo "This push also starts Apps Deploy Dev. Tests run there after the deploy."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Check Terraform
+        if: steps.deploy.outputs.skip != 'true'
         # Installed on the runners (laptop: apt package terraform; ci-runner: utils/pve-ci-runner-lxc.sh),
         # not downloaded per job: the setup-terraform download stalled again and again.
         run: v="$(terraform version | head -1)"; echo "$v"; test "$v" = "Terraform v1.16.3"
 
       - name: Run test suites
+        if: steps.deploy.outputs.skip != 'true'
         env:
           # The infra suite compares the rendered .env against the host, so it
           # needs the same secrets the deploy uses.

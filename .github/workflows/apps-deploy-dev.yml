@@ -111,9 +111,14 @@ jobs:
       - name: Run test suites
         env:
           HOMELAB_ENV: dev
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          IMMICH_DB_PASSWORD: ${{ secrets.IMMICH_DB_PASSWORD }}
           SAMBA_ADMIN_PASSWORD: ${{ secrets.SAMBA_ADMIN_PASSWORD }}
           HA_TOKEN: ${{ secrets.HA_TOKEN }}
           AUTHELIA_ADMIN_PASSWORD: ${{ secrets.AUTHELIA_ADMIN_PASSWORD }}
+          HOMARR_SECRET_KEY: ${{ secrets.HOMARR_SECRET_KEY }}
+          LINKWARDEN_SECRET: ${{ secrets.LINKWARDEN_SECRET }}
+          PGADMIN_PASSWORD: ${{ secrets.PGADMIN_PASSWORD }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NO_COLOR: "1"
         run: ./utils/run-tests.sh --env dev --suite all --json-out tests-dev-report.json
