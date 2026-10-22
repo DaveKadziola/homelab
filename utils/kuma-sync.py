@@ -7,10 +7,12 @@
 
 Kuma: config/monitoring.yml environments.<env>.kuma_url. Desired state, every name prefixed
 `homelab:` - monitors without the prefix are never read for changes, edited or deleted:
-  - one monitor per service in config/services.yml with check http/https (2xx-3xx, https ignores
-    TLS) or tcp, when its compose profile is enabled for the env (COMPOSE_PROFILES, else the
-    profiles of config/services.yml environments.<env>); `optional: true`
-    services are left out, as the smoke suite never fails them
+  - one monitor per service in config/services.yml. http/https services are checked as a TCP
+    port: Kuma's HTTP client on the T620 aborts the response body on apps that answer a plain
+    GET, and the mail then says down. tcp stays a port check. A service is included when its
+    compose profile is enabled for the env (COMPOSE_PROFILES, else the profiles of
+    config/services.yml environments.<env>); `optional: true` services are left out, as the
+    smoke suite never fails them
   - extra_monitors.<env> (http, port, ping); interval 60 s. HTTP: 3 retries and
     request timeout 60 s; port and ping: 1 retry
   - a push monitor `homelab:backup-<stream>` per backups[] stream of the env, heartbeat interval
@@ -134,7 +136,8 @@ def desired_monitors(env, services, monitoring, profiles, push_secret, notificat
         if s.get("optional") or (s.get("profile") and s["profile"] not in profiles):
             continue
         if s["check"] in ("http", "https"):
-            put(s["name"], http(f"{s['check']}://{host}:{s['port']}{s.get('path') or '/'}", s["check"] == "https"))
+            # HTTP from the T620 aborts the body (response stream aborted) on a live app.
+            put(s["name"], {"type": "port", "hostname": host, "port": s["port"], **CHECK})
         elif s["check"] == "tcp":
             put(s["name"], {"type": "port", "hostname": host, "port": s["port"], **CHECK})
         elif s["check"] != "container":
@@ -391,9 +394,10 @@ def self_test():
 
     dev = desired_monitors("dev", services, monitoring, enabled_profiles("dev", {}, book), "s3cret", 7)
     assert sorted(dev) == ["homelab:backup-postgres", "homelab:db", "homelab:photos", "homelab:sso", "homelab:web"], sorted(dev)
-    assert dev["homelab:web"] == {"type": "http", "url": "http://10.0.0.5:80/x", "ignoreTls": False,
-                                  "accepted_statuscodes": HTTP_OK, "notificationIDList": [7], **HTTP_CHECK}, dev["homelab:web"]
-    assert dev["homelab:sso"]["url"] == "https://10.0.0.5:9091/" and dev["homelab:sso"]["ignoreTls"] is True
+    assert dev["homelab:web"] == {"type": "port", "hostname": "10.0.0.5", "port": 80,
+                                  "notificationIDList": [7], **CHECK}, dev["homelab:web"]
+    assert dev["homelab:sso"] == {"type": "port", "hostname": "10.0.0.5", "port": 9091,
+                                  "notificationIDList": [7], **CHECK}
     assert dev["homelab:db"] == {"type": "port", "hostname": "10.0.0.5", "port": 5432, "notificationIDList": [7], **CHECK}
     assert dev["homelab:backup-postgres"] == {"type": "push", "pushToken": "8505c6f6f220ca8194e4e435", "interval": 93600,
                                               "retryInterval": 3600, "maxretries": 0, "notificationIDList": [7]}
@@ -401,7 +405,7 @@ def self_test():
     prod = desired_monitors("prod", services, monitoring, enabled_profiles("prod", {}, book), "s3cret", 7)
     assert sorted(prod) == ["homelab:backup-postgres", "homelab:backup-vzdump", "homelab:db", "homelab:photos",
                             "homelab:pve", "homelab:router", "homelab:web"], sorted(prod)
-    assert prod["homelab:web"]["url"] == "http://10.0.1.5:80/x"
+    assert prod["homelab:web"]["hostname"] == "10.0.1.5" and prod["homelab:web"]["port"] == 80
     assert prod["homelab:pve"]["ignoreTls"] is True and prod["homelab:router"]["type"] == "ping"
     assert prod["homelab:backup-vzdump"]["interval"] == 30 * 3600
     for bad in ({"name": "web", "type": "ping", "host": "x"}, {"name": "x", "type": "dns", "host": "x"}):

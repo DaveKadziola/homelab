@@ -131,9 +131,9 @@ for group in GROUP_ORDER:
         and (not service.get("profile") or service["profile"] in enabled)
     ]
     if group == "infra" and ha_url:
-        href = ha_url.rstrip("/") + "/"
-        # Homarr pings from the apps host. Prod APP cannot reach the T620 (IOT);
-        # curl --max-time 5 from 192.168.50.30 to this URL timed out (2026-10-22).
+        # Prod name is the AdGuard rewrite (docs/network.md), not the raw ha_url.
+        # Homarr pings from the apps host. Prod APP cannot reach the T620 (IOT).
+        href = "http://hass.dkhomelabserver.xyz/" if environment == "prod" else ha_url.rstrip("/") + "/"
         members.append({
             "name": "homeassistant",
             "title": "Home Assistant",
@@ -141,6 +141,21 @@ for group in GROUP_ORDER:
             "href": href,
             "pingUrl": None if environment == "prod" else href,
         })
+    if group == "infra" and environment == "prod":
+        # Names from AdGuard rewrites, read 2026-10-22. No ping: the apps host is not on LAN.
+        for name, title, icon, href in (
+            ("proxmox", "Proxmox", "proxmox", "https://proxmox.dkhomelabserver.xyz:8006/"),
+            ("adguard", "AdGuard", "adguard-home", "http://adguard.dkhomelabserver.xyz/"),
+            ("switch", "Switch", "netgear", "http://switch.dkhomelabserver.xyz/"),
+            ("access-point", "Access point", "networking-toolbox", "http://ap.dkhomelabserver.xyz/"),
+        ):
+            members.append({
+                "name": name,
+                "title": title,
+                "dashboard": {"group": "infra", "icon": icon},
+                "href": href,
+                "pingUrl": None,
+            })
     if not members:
         continue
     if column:  # start every group on a fresh row

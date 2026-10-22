@@ -43,8 +43,8 @@ environments:
 # login:            email | username | none  (how the app identifies the admin)
 # subdomain:        name under environments.<env>.domain (default: the service name); proxy: false
 #                   keeps a service off Caddy. A public_url service stays on the OPNsense HAProxy.
-# auth_bypass:      all | [path regexes] - what Authelia lets through without its login, for the
-#                   app's own API clients (mobile apps, sync, browser extensions)
+# auth_bypass:      all | [path regexes] - what Authelia lets through without its login.
+#                   all: the app has its own login. A list: only those paths (API clients).
 services:
   # ---------- P0 ----------
   - name: postgres
@@ -72,6 +72,7 @@ services:
     config_as_code: partial
     bootstrap: utils/bootstrap/portainer.sh
     login: username
+    auth_bypass: all
     secret: PORTAINER_ADMIN_PASSWORD
     dashboard: { group: infra }
     notes: Admin must be created shortly after first start or Portainer locks itself.
@@ -87,6 +88,7 @@ services:
     expect: [200, 302]
     config_as_code: yes
     login: email
+    auth_bypass: all
     secret: PGADMIN_PASSWORD
     dashboard: { group: infra }
     notes: Rejects reserved TLDs such as .local in the login email.
@@ -103,6 +105,7 @@ services:
     config_as_code: partial
     bootstrap: utils/bootstrap/homarr.sh
     login: username
+    auth_bypass: all
     secret: HOMARR_ADMIN_PASSWORD
     dashboard: { group: infra }
     notes: Board seeded from this file; app state lives in its own database.
@@ -159,7 +162,7 @@ services:
     stack: core
     container: homelab-core-trilium-1
     check: http
-    auth_bypass: ['^/api([/?].*)?$']
+    auth_bypass: all
     port: 8082
     path: /
     expect: [200]
@@ -178,6 +181,7 @@ services:
     expect: [200]
     config_as_code: partial
     login: none
+    auth_bypass: all
     dashboard: { group: apps, icon: actual-budget }
 
   - name: linkwarden
@@ -186,7 +190,7 @@ services:
     stack: core
     container: homelab-core-linkwarden-1
     check: http
-    auth_bypass: ['^/api([/?].*)?$']
+    auth_bypass: all
     port: 3001
     path: /
     expect: [200]
@@ -298,6 +302,7 @@ services:
     config_as_code: partial
     bootstrap: utils/bootstrap/syncthing.sh
     login: username
+    auth_bypass: all
     secret: SYNCTHING_ADMIN_PASSWORD
     dashboard: { group: apps }
     notes: Device IDs are generated on first start; peers are wired up afterwards.
@@ -308,7 +313,7 @@ services:
     stack: core
     container: homelab-core-navidrome-1
     check: http
-    auth_bypass: ['^/rest([/?].*)?$']
+    auth_bypass: all
     port: 4533
     path: /
     expect: [200, 302]
@@ -348,7 +353,7 @@ services:
     profile: media
     container: homelab-core-immich-server-1
     check: http
-    auth_bypass: ['^/api([/?].*)?$']
+    auth_bypass: all
     port: 2283
     path: /api/server/ping
     expect: [200]
@@ -372,6 +377,7 @@ services:
     config_as_code: partial
     bootstrap: utils/bootstrap/beszel.sh
     login: email
+    auth_bypass: all
     secret: BESZEL_ADMIN_PASSWORD
     dashboard: { group: infra }
 
