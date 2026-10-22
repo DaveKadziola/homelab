@@ -219,7 +219,7 @@ Severity: high / medium / low / info. Status: `open`, `accepted`, `mitigated`, `
 | S5 | Images on `:latest` | all running images tagged; omni-tools `latest@sha256` digest; two local builds | **fixed** (holds on prod) |
 | S6 | Guest has no firewall | NAS and apps: `ufw` inactive, `INPUT` ACCEPT; Proxmox: `pve-firewall` disabled. Every port is open to LAN and IOT (S7 tables) | **open**, high |
 | S7 | nmap from prod networks | this report: LAN, IOT, APP done; WG and WAN not | **done** for LAN/IOT/APP; WG/WAN open |
-| S8 | Leftover credentials in `ansible/docker-containers.yml` | file still there with `PGADMIN_DEFAULT_PASSWORD: admin` (line 32), header marks it DEPRECATED, "delete after F9 close" | **open**, medium |
+| S8 | Leftover credentials in `ansible/docker-containers.yml` | file still there on 2026-10-20 with `PGADMIN_DEFAULT_PASSWORD: admin` (line 32) | **closed** 2026-10-21 (`07bb30e` deletes the file; absent on `homelab-v2`) |
 | S9 | OPNsense `config.xml` copies on the laptop | `opnsense/backups/` in the main checkout: 15 files (3 from 2026-07-01, 12 from 2026-10-19/20), all `0600`, gitignored (`.gitignore:12`), 0 tracked | **open**, medium - grew from 3 to 15 |
 | S10 | Secrets on the guest; Bitwarden copy | `/opt/homelab/secrets` `root:root 0700`, files `0600`; `.env` `0640`; vault sync verified 2026-10-20 (`security.md`, operator) | **fixed** |
 | S11 | Apps without accounts | Actual `"bootstrapped":false`, Trilium `"isInitialized":false` on prod: whoever opens them first from LAN, IOT or WG sets the password. Omni-tools, DumbWhois, BentoPDF: no auth by design | **open**, raised to high on prod |
