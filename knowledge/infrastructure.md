@@ -8,7 +8,7 @@
 | Nested PVE UI | `https://192.168.122.219:8006` (IP can move; `utils/ensure-dev-proxmox.sh`) |
 | Node name | **`dev`**, not `pve` — `proxmox_node_name` in tfvars |
 | Apps guest | `ubuntu-apps-dev` VMID 101 · `192.168.122.50` |
-| Sizing | 6144 MiB RAM · 2 cores · `cpu_type=host` · 27G `local-lvm` |
+| Sizing | 6144 MiB RAM · 2 cores · `cpu_type=host` · 33G `local-lvm` |
 | SSH | `ubuntu-dev@192.168.122.50` · `~/.ssh/homelab_dev_ed25519` |
 | TF state | HCP Terraform workspace **`homelab-dev`** (execution mode local; `TF_WORKSPACE`) |
 | Helper | `utils/dev-apply-local.sh` — plan + apply with `TF_WORKSPACE=homelab-dev` |

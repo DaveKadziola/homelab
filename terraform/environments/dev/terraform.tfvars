@@ -35,8 +35,9 @@ vm_config = {
     cloud_init_dns     = "192.168.122.1"
     storage_type       = "local-lvm"
     storage_interface  = "scsi0"
-    # Immich+Jellyfin+P0–P2 images need >16G; resized live to 27G on nested PVE (local-lvm headroom).
-    storage_size     = 27
+    # Immich+Jellyfin+P0-P2 images need >16G. 27G filled up on a Caddy rebuild
+    # (2026-10-22). Grown live to 33G; the thin pool has no VG free space beyond that.
+    storage_size     = 33
     ssd_enabled      = true
     image_url        = "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
     img_file_format  = "qcow2"
