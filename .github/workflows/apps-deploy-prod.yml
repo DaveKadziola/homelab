@@ -10,19 +10,25 @@ on:
   workflow_dispatch:
 
 jobs:
-  # One click for the whole run. deploy-prod and the tests use prod for secrets only.
+  # A successful Infra Apply is the prod go-ahead, so this workflow does not ask again.
+  # A manual run has no fresh apply, so it asks once.
   approve:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    if: github.event_name == 'workflow_dispatch'
     runs-on: [self-hosted, homelab-prod]
     timeout-minutes: 5
     environment: prod-approve
     steps:
       - name: Approved
-        run: echo "prod pipeline approved"
+        run: echo "manual apps deploy approved"
 
   deploy-prod:
     needs: approve
-    if: needs.approve.result == 'success'
+    if: >-
+      always() &&
+      (needs.approve.result == 'success' ||
+       (github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        needs.approve.result == 'skipped'))
     runs-on: [self-hosted, homelab-prod]
     timeout-minutes: 120
     environment: prod

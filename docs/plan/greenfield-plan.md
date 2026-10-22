@@ -138,7 +138,7 @@ todos:
     content: "Zrobione 2026-10-22: prod kafelek Home Assistant to http://hass.dkhomelabserver.xyz/ (board na hoście, ping wyłączony)."
     status: completed
   - id: pr78-merge-checklist
-    content: "2026-10-22: klucz OPNsense jest. gate=true (39765656498) przeszedł, ale Apps Deploy nadal ma własną akceptację, więc punkt bramki w #78 zostaje. Reviewer zostaje na pierwszym jobie (prod-approve); z prod schodzi dopiero gdy ten workflow jest na main. Wolumeny Zotify zdjęte z prod i DEV. BESZEL_KEY zdjęty z laptopa i z DEV."
+    content: "2026-10-22: reviewer zszedł z prod, zostaje na pierwszym jobie Infra Apply (prod-approve). Udany apply puszcza Apps Deploy bez drugiego kliknięcia; ręczny deploy aplikacji nadal pyta raz. Punkt bramki w #78 czeka na jeden taki przebieg. Wolumeny Zotify i BESZEL_KEY zdjęte."
     status: completed
   - id: deploy-prod-timeout
     content: "Zrobione 2026-10-22: job deploy-prod ma timeout-minutes 120. Apps Deploy Prod 39746487452 skończył deploy-prod w 21m45s, poniżej limitu."
