@@ -5,7 +5,7 @@
 >
 > Step-by-step for **OPNsense web UI**. English labels match default OPNsense menus.  
 > **Checklist:** [opnsense-baseline.md](opnsense-baseline.md)  
-> **Verify from laptop:** `utils/f2-verify.sh`
+> **Verify from laptop:** `utils/opnsense-verify.sh`
 
 Access: `https://192.168.1.1` or `https://192.168.20.1` (your LAN/IOT gateway).
 
@@ -27,7 +27,7 @@ Access: `https://192.168.1.1` or `https://192.168.20.1` (your LAN/IOT gateway).
    - Enable, IPv4: Static, `192.168.50.1/24`
 5. **Save → Apply changes**
 
-**Verify:** `./utils/f2-verify.sh` — ping `192.168.20.1` and `192.168.50.1`
+**Verify:** `./utils/opnsense-verify.sh` — ping `192.168.20.1` and `192.168.50.1`
 
 ---
 
@@ -84,8 +84,8 @@ Export client config from peer UI → store in Bitwarden.
 **SSH scripts:**
 
 ```bash
-OPNSENSE_HOST=192.168.1.1 ./utils/f2-opnsense-apply.sh      # F2-03 NFS + backup
-OPNSENSE_HOST=192.168.1.1 ./utils/f2-opnsense-f05.sh        # F2-05 ACME grocery + HAProxy enable
+OPNSENSE_HOST=192.168.1.1 ./utils/opnsense-apply.sh      # F2-03 NFS + backup
+OPNSENSE_HOST=192.168.1.1 ./utils/opnsense-haproxy-acme.sh        # F2-05 ACME grocery + HAProxy enable
 ```
 
 **Prerequisite:** DNS A record `grocery.dkhomelabserver.xyz` → WAN public IP (script prints `ifconfig.me`).
@@ -131,7 +131,7 @@ Edit [network.md](network.md) — replace `aa:bb:cc:dd:ee:0x` placeholders.
 
 When done:
 
-- [ ] `./utils/f2-verify.sh` — gateways OK
+- [ ] `./utils/opnsense-verify.sh` — gateways OK
 - [ ] DHCP reservations entered (MACs real or updated after F3)
 - [ ] At least one `config.xml` backup
 - [ ] WireGuard OR LAN route to future Proxmox `192.168.20.10`

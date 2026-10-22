@@ -10,7 +10,7 @@ Do this in order. A later step will fail if an earlier one is skipped.
 
 **Before step 4:** `./utils/gen-app-credentials.sh --env <env> --all` (or restore `~/.homelab-secrets/<env>/` from Bitwarden). GH cannot read secrets back.
 
-**DEV app names:** `auth.dev.dkhomelabserver.xyz` and `<app>.dev.dkhomelabserver.xyz` resolve through the AdGuard rewrites (`utils/f2-adguard-rewrites.sh`) or, until those exist, the client's `/etc/hosts` -> `192.168.122.50` ([`docs/f4-apps-dev.md`](../docs/f4-apps-dev.md)). Nested PVE itself is not created by this repo — `ensure-dev-proxmox.sh` only starts an existing libvirt domain named `Proxmox`.
+**DEV app names:** `auth.dev.dkhomelabserver.xyz` and `<app>.dev.dkhomelabserver.xyz` resolve through the AdGuard rewrites (`utils/adguard-rewrites.sh`) or, until those exist, the client's `/etc/hosts` -> `192.168.122.50` ([`docs/f4-apps-dev.md`](../docs/f4-apps-dev.md)). Nested PVE itself is not created by this repo — `ensure-dev-proxmox.sh` only starts an existing libvirt domain named `Proxmox`.
 
 **Grocery:** image `easy-todo-grocery-nodb:latest` is built from `DaveKadziola/easytodo-grocery-list` (pinned `grocery_ref` in `deploy-core.yml`), not this repo. DB `todo_grocery`, its role and schema are created by `deploy-core.yml`, not by `postgres-init` (step 5).
 
@@ -42,9 +42,9 @@ Without the router, VLANs, DHCP statics, WireGuard, and HAProxy do not exist.
 
 - Install PVE and put it on its network as in [`docs/f3-proxmox.md`](../docs/f3-proxmox.md#bare-metal-install): installer values, VLAN 20 by hand on the console, then `config/pve/interfaces.prod` copied to the host and one reboot (unverified: bare-metal path not run end to end). Reinstalling the running host erases VMs 101/102 on `local-lvm`; read that section first. Node name in prod tfvars is `proxmox`.
 - Later host network changes: `utils/pve-network.py --env prod` (diff, backup, auto-revert) (unverified: apply and revert path not run on any host yet; DEV control runs pending, only `--dry-run` was run).
-- API tokens `homelab-prod@pam!terraform` (`prod`) and `homelab-prod@pam!plan` (`prod-plan`, read-only), then `utils/bootstrap-f3-proxmox.sh --upgrade` (post-install: `pve-no-subscription`, no subscription notice, HA off).
+- API tokens `homelab-prod@pam!terraform` (`prod`) and `homelab-prod@pam!plan` (`prod-plan`, read-only), then `utils/bootstrap-proxmox.sh --upgrade` (post-install: `pve-no-subscription`, no subscription notice, HA off).
 - Secrets: `PROXMOX_API_TOKEN_SECRET` (`prod`, `prod-plan`), `PROXMOX_SSH_PASSWORD` (the new root password). The command that creates each one also writes the laptop cache and Bitwarden (`utils/bw-store.py --stdin`, as in `docs/f3-proxmox.md`), then `gh secret set` reads the cache file; `utils/bw-store.py --pending` stores what waited for a locked vault. Variable: `PROXMOX_API_URL`.
-- Verify: `utils/pve-network.py --env prod --dry-run` prints `no change`; `utils/f3-verify.sh` / `utils/f3-proxmox-preflight.sh`.
+- Verify: `utils/pve-network.py --env prod --dry-run` prints `no change`; `utils/proxmox-verify.sh` / `utils/proxmox-preflight.sh`.
 - Time: 1–2 h.
 - **DEV variant:** `utils/ensure-dev-proxmox.sh` + `utils/bootstrap-dev-proxmox.sh --set-token`. Node name **`dev`**. Host network: `config/pve/interfaces.dev`, written by `PVE_KEY=~/.ssh/homelab_dev_ed25519 ./utils/pve-network.py --env dev`; DEV is where the apply and revert path is tried before any prod apply.
 

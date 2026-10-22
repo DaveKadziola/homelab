@@ -53,8 +53,8 @@ reviewer once the new workflow has run on `main`.
 
 ## Sources
 
-- decided by the operator, 2026-10-20 (options "bramka ryzyka z ochroną main" and "auto-merge tak,
-  bez obejścia")
+- decided by the operator, 2026-10-20 (options "risk gate that protects main" and "auto-merge
+  yes, with no bypass")
 - `.github/workflows/infra-apply-prod.yml`, `utils/tf-plan-risk.py --self-test`; a DEV plan through the
   classifier gave `risky=false` (2026-10-20)
 - to verify on the first release: the gate skipped for a safe plan, a `gate=true` run that stops in

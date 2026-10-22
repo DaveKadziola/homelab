@@ -65,7 +65,7 @@ Over an existing database: `--replace` (drop + create), with `--owner ROLE` when
 - Attaching SA500/Purple (`utils/pve-attach-nas-disks.sh --env prod`) and their one-time format (`nas_wipe`, [`storage.md`](storage.md#attach-and-format-run-order))
 - Interactive rclone OAuth → `rclone config create pcloud pcloud` then `utils/setup-rclone-pcloud.sh --push-gh` (see [`security.md`](security.md))
 - A long-lived `HA_TOKEN` on the T620 (owner, HA profile)
-- The router side of the OPNsense stream was installed 2026-10-22 (`utils/f2-opnsense-backup-key.sh`). Revert that config from `/conf/config.xml.homelab-v2-20261022-151335` with `configctl auth sync user root`.
+- The router side of the OPNsense stream was installed 2026-10-22 (`utils/opnsense-backup-key.sh`). Revert that config from `/conf/config.xml.homelab-v2-20261022-151335` with `configctl auth sync user root`.
 
 ## Related
 

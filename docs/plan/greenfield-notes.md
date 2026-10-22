@@ -1,96 +1,96 @@
-# Notatki greenfield
+# Greenfield notes
 
-To nie jest instrukcja ani backlog. Backlog jest we frontmatterze
-[`greenfield-plan.md`](greenfield-plan.md). Poniżej zostały notatki z czerwca i lipca 2026 bez skracania.
+This file is not a procedure and not the backlog. The backlog is the frontmatter of
+[`greenfield-plan.md`](greenfield-plan.md). The notes below are the June and July 2026 write-up, unshortened.
 
 
-# Homelab — plan greenfield (dummy)
+# Homelab — greenfield plan (dummy)
 
-> **Status:** szkic roboczy — uzupełniaj sekcje *Założenia* i *Problemy* w miarę decyzji.  
-> **Backlog:** todos w **frontmatter** tego pliku = jedyne źródło prawdy (nie duplikować w osobnych planach).  
-> **Gałąź robocza:** `homelab-v2` — **całkowicie nowy, czysty kod**. Do merge `main` zostaje legacy (tylko odczyt); po merge **`main` = wyłącznie zawartość v2** — stary kod znika z domyślnej gałęzi (historia pod tagiem `legacy-pre-v2`).
+> **Status:** working draft — fill in the *Assumptions* and *Problems* sections as decisions are made.
+> **Backlog:** todos in the **frontmatter** of this file = the single source of truth (do not duplicate them in separate plans).
+> **Working branch:** `homelab-v2` — **entirely new, clean code**. Until the merge, `main` stays legacy (read-only); after the merge **`main` = v2 contents only** — the old code disappears from the default branch (history under the tag `legacy-pre-v2`).
 
-### Todos — stan (2026-10-18, audyt przejęcia)
+### Todos — status (2026-10-18, takeover audit)
 
-Szczegóły i dowody: `docs/audit/2026-10-18-plan-audit.md`. Kolejność: `knowledge/decisions/0001-restore-ci-and-dev-before-f3-metal.md`.
+Details and evidence: `docs/audit/2026-10-18-plan-audit.md`. Order: `knowledge/decisions/0001-restore-ci-and-dev-before-f3-metal.md`.
 
-| ID | Status | Co zostało |
+| ID | Status | What is left |
 |----|--------|------------|
 | `gha-cleanup-secrets`, `apps-*`, `backup-dr`, `phases`, `manual-setup-f0`, `preflight`, `secrets-*`, `security`, `branch-v2` | ✅ | — |
 | `readme-docs`, `identities`, `knowledge-base` | ✅ | — |
 | `gha-pipelines` | ✅ | — |
-| `gha-runner-bootstrap` | 🔄 | dev ✅ (usługa systemd); prod po F3 |
-| `config-as-code`, `tests-auto` | 🔄 | weryfikacja na działającym DEV → **R2** |
-| `rebuild-runbook`, `audit-final` | 🔄 | drill i bramka F9 po stronie DEV → **R3** |
-| `restore-ci`, `restore-dev` | ✅ | iteracja #4 (2026-10-18) |
-| `f9-gate-dev` | 🔄 | rebuild DEV z repo + vault, ponownie `--suite restore`; bootstrap 2 appek → #14 |
+| `gha-runner-bootstrap` | 🔄 | dev ✅ (systemd service); prod after F3 |
+| `config-as-code`, `tests-auto` | 🔄 | verification on a working DEV → **R2** |
+| `rebuild-runbook`, `audit-final` | 🔄 | drill and the F9 gate on the DEV side → **R3** |
+| `restore-ci`, `restore-dev` | ✅ | iteration #4 (2026-10-18) |
+| `f9-gate-dev` | 🔄 | rebuild DEV from the repo + vault, run `--suite restore` again; bootstrap of 2 apps → #14 |
 | `hardware`, `implement` | 🔄 | F3 metal, F5 prod |
-| `monitoring-alerts`, `ai-log-analysis` | ⏳ | F10, po prod |
+| `monitoring-alerts`, `ai-log-analysis` | ⏳ | F10, after prod |
 
 ---
 
-## Strategia Git — gałąź `homelab-v2`
+## Git strategy — branch `homelab-v2`
 
-**Decyzja:** `homelab-v2` to **greenfield** — nowa struktura repo (Compose, workflowy, TF, docs), **bez** utrzymywania legacy plików. Nie refactor „w miejscu” na `dev` ani stopniowe łączenie ze starym `master`.
+**Decision:** `homelab-v2` is **greenfield** — a new repo structure (Compose, workflows, TF, docs), **without** keeping legacy files. Not an in-place refactor on `dev`, and not a gradual merge with the old `master`.
 
-**Decyzja merge:** po weryfikacji prod `**homelab-v2` zastępuje `master`** — merge to **zamiana drzewa**, nie integracja dwóch wersji. Stara zawartość `master` **nie pozostaje** na domyślnej gałęzi po merge.
+**Merge decision:** after prod verification, **`homelab-v2` replaces `master`** — the merge is a **tree replacement**, not an integration of two versions. The old `master` contents **do not remain** on the default branch after the merge.
 
-### Kroki (jednorazowo, przed F1)
+### Steps (one time, before F1)
 
-**0. Wyczyść stare secrets i variables Actions** (legacy test pipeline) — patrz sekcja **Czyszczenie GH secrets/variables** poniżej. Zrób to **przed** wgrywaniem nowych wartości pod v2.
+**0. Clean out the old Actions secrets and variables** (legacy test pipeline) — see the **GH secrets/variables cleanup** section below. Do this **before** uploading the new values for v2.
 
 ```bash
 git fetch origin
-git checkout master          # jeśli domyślna gałąź to main: git checkout main
+git checkout master          # if the default branch is main: git checkout main
 git pull
 git checkout -b homelab-v2
 git push -u origin homelab-v2
 ```
 
 
-| Gałąź                 | Rola                                                                                                       |
+| Branch                 | Role                                                                                                       |
 | --------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `master` (lub `main`) | **Do merge:** legacy, zamrożona — **zero** commitów v2. **Po merge:** identyczna z `homelab-v2` (tylko v2) |
-| `dev`                 | Stary pipeline testowy — **zamrożona**; po merge v2: **usunąć** lub zarchiwizować tagiem                   |
-| `**homelab-v2`**      | **Jedyne źródło prawdy** na czas budowy: czysty kod greenfield — tu commity                                |
+| `master` (or `main`) | **Until the merge:** legacy, frozen — **zero** v2 commits. **After the merge:** identical to `homelab-v2` (v2 only) |
+| `dev`                 | Old test pipeline — **frozen**; after the v2 merge: **delete** or archive with a tag                   |
+| **`homelab-v2`**      | **Single source of truth** for the duration of the build: clean greenfield code — commits go here                                |
 
 
-### Zasady na `homelab-v2`
+### Rules on `homelab-v2`
 
-- Commity **tylko** na `homelab-v2`; PR → `master` dopiero gdy prod działa i gate F0→F1 zamknięty.
-- **Push `homelab-v2`** → Actions deploy **dev** (test). **Merge / push `master`** → Actions deploy **prod** — nigdy odwrotnie.
-- Na v2 **usuń** legacy z drzewa (stary `[setup-proxmox-node-vms.yml](.github/workflows/setup-proxmox-node-vms.yml)`, stare playbooki, stary layout) — docelowe pliki **tylko** z v2; merge ma dać czysty stan, nie „v2 + resztki mastera”.
-- **GitHub Environments** `dev` / `prod`: workflow dev na `**homelab-v2`**; workflow prod wyłącznie na `**master`**.
-- **Terraform Cloud:** workspace **`homelab`** (org `dkhomelabserver`) — **bez** importu starego tfstate.
+- Commits **only** on `homelab-v2`; a PR → `master` only when prod works and the F0→F1 gate is closed.
+- **Push `homelab-v2`** → Actions deploy **dev** (test). **Merge / push `master`** → Actions deploy **prod** — never the other way around.
+- On v2 **remove** legacy from the tree (the old `[setup-proxmox-node-vms.yml](.github/workflows/setup-proxmox-node-vms.yml)`, old playbooks, old layout) — target files **only** from v2; the merge must produce a clean state, not "v2 + leftovers from master".
+- **GitHub Environments** `dev` / `prod`: the dev workflow on **`homelab-v2`**; the prod workflow only on **`master`**.
+- **Terraform Cloud:** workspace **`homelab`** (org `dkhomelabserver`) — **no** import of the old tfstate.
 
-### Merge v2 → master (zamiana, nie integracja)
+### Merge v2 → master (replacement, not integration)
 
-**Cel:** po merge `git ls-tree master` = `git ls-tree homelab-v2` — **zero** legacy plików na domyślnej gałęzi.
+**Goal:** after the merge `git ls-tree master` = `git ls-tree homelab-v2` — **zero** legacy files on the default branch.
 
 
-| Krok | Akcja                                                                                                            |
+| Step | Action                                                                                                            |
 | ---- | ---------------------------------------------------------------------------------------------------------------- |
-| 1    | Tag `**legacy-pre-v2`** na ostatnim commicie `master` **przed** merge (odtwarzalność starego kodu)               |
-| 2    | PR `homelab-v2` → `master` — review: diff pokazuje **usunięcie** legacy + **nowe** pliki v2                      |
-| 3    | Merge PR (merge commit lub squash — oba OK, o ile drzewo = v2)                                                   |
-| 4    | Weryfikacja: na `master` **nie ma** starych ścieżek (`setup-proxmox-node-vms.yml`, stary `ansible/` layout itd.) |
-| 5    | Opcjonalnie: gałąź `dev` — delete remote / tag `legacy-dev`                                                      |
-| 6    | `homelab-v2` można zostawić lub usunąć po merge — `**master` od tej chwili jedyna gałąź prod**                   |
-| 7    | `**README.md` kompletny** — pełna dokumentacja (sekcja *Dokumentacja README*); wymagane przed merge              |
+| 1    | Tag **`legacy-pre-v2`** on the last `master` commit **before** the merge (so the old code can be restored)               |
+| 2    | PR `homelab-v2` → `master` — review: the diff shows **deletion** of legacy + **new** v2 files                      |
+| 3    | Merge the PR (merge commit or squash — both OK, as long as the tree = v2)                                                   |
+| 4    | Verification: on `master` the old paths are **gone** (`setup-proxmox-node-vms.yml`, the old `ansible/` layout, and so on) |
+| 5    | Optional: branch `dev` — delete the remote / tag `legacy-dev`                                                      |
+| 6    | `homelab-v2` can be kept or deleted after the merge — **`master` is the only prod branch from then on**                   |
+| 7    | **`README.md` complete** — full documentation (section *README documentation*); required before the merge              |
 
 
-**Jeśli zwykły merge zostawiłby pliki tylko na masterze** (edge case):
+**If an ordinary merge would leave files that exist only on master** (edge case):
 
 ```bash
 git fetch origin
 git checkout master
-git merge -s ours -m "Replace master with homelab-v2" homelab-v2   # zachowaj punkt merge
+git merge -s ours -m "Replace master with homelab-v2" homelab-v2   # keep the merge point
 git checkout homelab-v2 -- .
 git commit -m "Replace tree with homelab-v2 greenfield"
 git push origin master
 ```
 
-Alternatywa (po tagu `legacy-pre-v2`): `git reset --hard origin/homelab-v2` + `git push --force-with-lease origin master` — tylko gdy PR/merge nie daje czystego drzewa.
+Alternative (after the tag `legacy-pre-v2`): `git reset --hard origin/homelab-v2` + `git push --force-with-lease origin master` — only when a PR/merge does not produce a clean tree.
 
 ```mermaid
 gitGraph
@@ -108,36 +108,36 @@ gitGraph
 
 ---
 
-## CI/CD — deployment przez GitHub Actions
+## CI/CD — deployment through GitHub Actions
 
-**Decyzja:** cały deploy infra i aplikacji idzie przez **pipeline w GitHub Actions** (`[.github/workflows/](.github/workflows/)`) — **nie** ręczny `ansible-playbook` / `terraform apply` z laptopa jako docelowa ścieżka (wyjątek: bootstrap OPNsense one-shot SSH).
+**Decision:** all infra and application deploys go through the **pipeline in GitHub Actions** (`[.github/workflows/](.github/workflows/)`) — **not** a manual `ansible-playbook` / `terraform apply` from the laptop as the target path (exception: OPNsense bootstrap, one-shot SSH).
 
-**Decyzja gałąź → środowisko:**
+**Branch → environment decision:**
 
 
-| Gałąź                            | Środowisko | Efekt                                                                                   |
+| Branch                            | Environment | Effect                                                                                   |
 | -------------------------------- | ---------- | --------------------------------------------------------------------------------------- |
-| `**homelab-v2`** (commit / push) | **dev**    | Walidacja + deploy na **dev VM** (laptop libvirt) — **zero zmian na prod**              |
-| `**master`** (merge / push)      | **prod**   | Terraform apply + deploy aplikacji na **prod** — **zero automatycznego deployu na dev** |
+| **`homelab-v2`** (commit / push) | **dev**    | Validation + deploy to the **dev VM** (laptop libvirt) — **zero changes on prod**              |
+| **`master`** (merge / push)      | **prod**   | Terraform apply + application deploy to **prod** — **zero automatic deploy to dev** |
 
 
-Commitujesz i testujesz na `**homelab-v2`** → pipeline dotyka tylko **dev**. Dopiero **merge do `master`** uruchamia pipeline **prod** (z approval w GitHub Environment).
+You commit and test on **`homelab-v2`** → the pipeline touches only **dev**. Only a **merge to `master`** starts the **prod** pipeline (with approval in the GitHub Environment).
 
-### Zasady
+### Rules
 
 
-| Zasada                | Szczegóły                                                                                                                                               |
+| Rule                | Details                                                                                                                                               |
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Runner**            | **Dwa self-hosted:** **dev** na **laptopie** (`homelab-dev`); **prod** na `**ubuntu-apps`** (`homelab-prod`); **bez** GitHub-hosted / **bez Tailscale** |
-| **Gałąź dev**         | `**homelab-v2`** — jedyna gałąź wyzwalająca deploy **dev**                                                                                              |
-| **Gałąź prod**        | `**master`** — jedyna gałąź wyzwalająca deploy **prod** (po merge v2)                                                                                   |
-| **Environments**      | GitHub `**dev`** i `**prod`** — secrets przez `gh`; **approval obowiązkowy na prod**                                                                    |
-| **Dostęp do homelab** | Runner w LAN — bezpośredni SSH/Ansible/Proxmox API; bootstrap: `utils/setup-github-runner.sh`                                                           |
-| **Źródło prawdy**     | **Hybryda:** core infra w repo (`compose/core`, Ansible, TF); appki z **osobnych repo** via **Portainer** (patrz B1)                                    |
-| **Izolacja**          | Workflow prod **nie** na push `homelab-v2`; dev **nie** na push `master`                                                                                |
+| **Runner**            | **Two self-hosted:** **dev** on the **laptop** (`homelab-dev`); **prod** on **`ubuntu-apps`** (`homelab-prod`); **no** GitHub-hosted / **no Tailscale** |
+| **Dev branch**         | **`homelab-v2`** — the only branch that triggers a **dev** deploy                                                                                              |
+| **Prod branch**        | **`master`** — the only branch that triggers a **prod** deploy (after the v2 merge)                                                                                   |
+| **Environments**      | GitHub **`dev`** and **`prod`** — secrets via `gh`; **approval required on prod**                                                                    |
+| **Access to the homelab** | Runner on the LAN — direct SSH/Ansible/Proxmox API; bootstrap: `utils/setup-github-runner.sh`                                                           |
+| **Source of truth**     | **Hybrid:** core infra in the repo (`compose/core`, Ansible, TF); apps from **separate repos** via **Portainer** (see B1)                                    |
+| **Isolation**          | The prod workflow does **not** run on a push to `homelab-v2`; dev does **not** run on a push to `master`                                                                                |
 
 
-### Pipeline — docelowe workflowy (szkic)
+### Pipeline — target workflows (sketch)
 
 ```mermaid
 flowchart TB
@@ -145,7 +145,7 @@ flowchart TB
         PushV2["push homelab-v2"]
         Validate["ci-validate.yml"]
         DeployDev["apps-deploy-dev.yml"]
-        RunnerDev["self-hosted runner<br/>laptop lub homelab"]
+        RunnerDev["self-hosted runner<br/>laptop or homelab"]
         DevVM["dev VM laptop"]
         PushV2 --> Validate
         PushV2 --> DeployDev --> RunnerDev --> DevVM
@@ -170,80 +170,79 @@ flowchart TB
 
 
 
-| Plik workflow          | Trigger                             | Runner      | Akcja                                                         |
+| Workflow file          | Trigger                             | Runner      | Action                                                         |
 | ---------------------- | ----------------------------------- | ----------- | ------------------------------------------------------------- |
 | `ci-validate.yml`      | push/PR `homelab-v2`, PR → `master` | self-hosted | `terraform validate`, `ansible-lint`, `docker compose config` |
 | `apps-deploy-dev.yml`  | push `homelab-v2`                   | self-hosted | Ansible + deploy core compose / Portainer stacks → **dev VM** |
-| `infra-plan.yml`       | PR `homelab-v2` → `master`          | self-hosted | `terraform plan` (TFC) — bez apply                            |
+| `infra-plan.yml`       | PR `homelab-v2` → `master`          | self-hosted | `terraform plan` (TFC) — no apply                            |
 | `infra-apply-prod.yml` | push `master` / `workflow_dispatch` | self-hosted | `terraform apply` — env **prod**, approval                    |
 | `apps-deploy-prod.yml` | push `master` / `workflow_dispatch` | self-hosted | Ansible + core compose + Portainer → **prod VM**, approval    |
 
-
 ### Self-hosted runner (B5 — ✅)
 
-**Decyzja:** **self-hosted GitHub Actions runner** w LAN — **odrzucone:** GitHub-hosted runner, **Tailscale**, wyłącznie ręczny deploy.
+**Decision:** a **self-hosted GitHub Actions runner** on the LAN — **rejected:** a GitHub-hosted runner, **Tailscale**, and a manual-only deploy.
 
 
-| Element              | Ustalenie                                                                                                                                     |
+| Element              | Decision                                                                                                                                     |
 | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Lokalizacja prod** | VM `**ubuntu-apps`** — runner prod (`homelab-prod`); ten sam host co Docker/Ansible target                                                    |
-| **Lokalizacja dev**  | **Laptop** — runner dev (`homelab-dev`); Actions z laptopa przy push `homelab-v2`; CI failuje gdy laptop wyłączony                            |
-| **Bootstrap**        | Skrypt `**utils/setup-github-runner.sh`** — rejestracja w GitHub (token z `gh`/PAT), instalacja usługi, labels `homelab-dev` / `homelab-prod` |
+| **Prod location** | VM **`ubuntu-apps`** — prod runner (`homelab-prod`); the same host as the Docker/Ansible target                                                    |
+| **Dev location**  | **Laptop** — dev runner (`homelab-dev`); Actions from the laptop on a push to `homelab-v2`; CI fails when the laptop is off                            |
+| **Bootstrap**        | Script **`utils/setup-github-runner.sh`** — registration in GitHub (token from `gh`/PAT), service install, labels `homelab-dev` / `homelab-prod` |
 | **Workflow**         | `runs-on: [self-hosted, homelab-prod]` (prod) / `[self-hosted, homelab-dev]` (dev)                                                            |
-| **F0 legacy**        | Usunąć **stary** runner (jeśli był); **dwa nowe** runnery — część **F1** (prod na VM, dev na laptopie)                                        |
+| **F0 legacy**        | Remove the **old** runner (if there was one); **two new** runners — part of **F1** (prod on the VM, dev on the laptop)                                        |
 
 
-**Po merge v2 → master:** gałąź robocza dev **krótkoterminowo `homelab-v2`** ✅; po pierwszym udanym prod merge → **nowa gałąź `develop`** (opcja B) — *decyzja git-post-merge*.
+**After the v2 → master merge:** the dev working branch is **`homelab-v2` short term** ✅; after the first successful prod merge → **a new `develop` branch** (option B) — *git-post-merge decision*.
 
-**Legacy do usunięcia na v2:** monolityczny `[setup-proxmox-node-vms.yml](.github/workflows/setup-proxmox-node-vms.yml)` — zastąpiony rozdzielonymi workflowami + nowym runnerem.
+**Legacy to remove on v2:** the monolithic `[setup-proxmox-node-vms.yml](.github/workflows/setup-proxmox-node-vms.yml)` — replaced by split workflows + the new runner.
 
-### Co **nie** idzie przez Actions
+### What does **not** go through Actions
 
 
-| Element                               | Dlaczego                                               |
+| Element                               | Why                                               |
 | ------------------------------------- | ------------------------------------------------------ |
-| OPNsense pierwszy bootstrap           | One-shot SSH z laptopa; potem tylko backup config      |
-| Flash HAOS na HP620                   | Fizycznie                                              |
-| `gh secret set` / Bitwarden           | Lokalnie, przed pipeline                               |
-| Pierwsze `git checkout -b homelab-v2` | Lokalnie                                               |
-| **Pierwsza rejestracja runnera**      | `utils/setup-github-runner.sh` — lokalnie / na VM (F1) |
+| OPNsense first bootstrap           | One-shot SSH from the laptop; after that, config backup only      |
+| Flash HAOS on the HP620                   | Physical                                              |
+| `gh secret set` / Bitwarden           | Locally, before the pipeline                               |
+| First `git checkout -b homelab-v2` | Locally                                               |
+| **First runner registration**      | `utils/setup-github-runner.sh` — locally / on the VM (F1) |
 
 
-~~### Otwarte w ramach pipeline (B5)~~ — **zamknięte:** self-hosted runner (powyżej).
+~~### Open within the pipeline (B5)~~ — **closed:** self-hosted runner (above).
 
-### Czyszczenie GH secrets/variables (F0 — przed F1)
+### GH secrets/variables cleanup (F0 — before F1)
 
-**Decyzja:** na początku greenfield **usuwamy** stare secrets i variables z poprzedniego pipeline testowego (`[setup-proxmox-node-vms.yml](.github/workflows/setup-proxmox-node-vms.yml)`), żeby nie mieszać nazw, nie trzymać martwych credentiali i uniknąć kolizji z nowym inventory v2.
+**Decision:** at the start of greenfield **we delete** the old secrets and variables from the previous test pipeline (`[setup-proxmox-node-vms.yml](.github/workflows/setup-proxmox-node-vms.yml)`), so names are not mixed, dead credentials are not kept, and there is no collision with the new v2 inventory.
 
 
-| Poziom                 | Co wyczyścić                                                                                         |
+| Level                 | What to clear                                                                                         |
 | ---------------------- | ---------------------------------------------------------------------------------------------------- |
-| **Repository**         | Secrets/variables na poziomie repo (jeśli były)                                                      |
-| **Environment `dev*`*  | Wszystkie legacy wpisy                                                                               |
-| **Environment `prod`** | Wszystkie legacy wpisy                                                                               |
-| **Po czyszczeniu**     | Nowe nazwy wg `docs/secrets-inventory.md` — wartości tylko przez `gh secret set` + kopia w Bitwarden |
+| **Repository**         | Secrets/variables at repo level (if any)                                                      |
+| **Environment `dev`**  | All legacy entries                                                                               |
+| **Environment `prod`** | All legacy entries                                                                               |
+| **After cleanup**     | New names per `docs/secrets-inventory.md` — values only through `gh secret set` + a copy in Bitwarden |
 
 
-**Inwentarz legacy do usunięcia** (z obecnego workflow — zweryfikuj `gh secret list` / `gh variable list`):
+**Legacy inventory to delete** (from the current workflow — verify with `gh secret list` / `gh variable list`):
 
 
-| Nazwa                               | Typ      | Uwaga                                                  |
+| Name                               | Type      | Note                                                  |
 | ----------------------------------- | -------- | ------------------------------------------------------ |
-| `PROXMOX_API_URL`                   | variable | stary test Proxmox                                     |
+| `PROXMOX_API_URL`                   | variable | old Proxmox test                                     |
 | `PROXMOX_API_TOKEN_ID`              | variable |                                                        |
 | `PROXMOX_API_TOKEN_SECRET`          | secret   |                                                        |
 | `PROXMOX_SSH_USERNAME`              | variable |                                                        |
 | `PROXMOX_SSH_PASSWORD`              | secret   |                                                        |
-| `SSL_CERT`, `SSL_CHAIN`, `SSL_PKEY` | secret   | certy — ewent. zachowaj kopię w Bitwarden przed delete |
+| `SSL_CERT`, `SSL_CHAIN`, `SSL_PKEY` | secret   | certificates — if needed, keep a copy in Bitwarden before delete |
 | `UBUNTU_DOCKER_SSH_PUB`             | variable |                                                        |
 | `UBUNTU_DOCKER_PASSWORD`            | secret   |                                                        |
-| `POSTGRES_PASSWORD`                 | secret   | nowe hasło wygenerować na v2                           |
+| `POSTGRES_PASSWORD`                 | secret   | generate a new password on v2                           |
 
 
-**Procedura (lokalnie, `gh auth login`):**
+**Procedure (locally, `gh auth login`):**
 
 ```bash
-# 1. Audyt — zapisz listę nazw (wartości secretów i tak nie odczytasz)
+# 1. Audit — save the list of names (you cannot read secret values anyway)
 gh secret list
 gh secret list --env dev
 gh secret list --env prod
@@ -251,122 +250,122 @@ gh variable list
 gh variable list --env dev
 gh variable list --env prod
 
-# 2. Usuń po jednym (repo-level — bez --env)
-gh secret delete NAZWA
-gh variable delete NAZWA
+# 2. Delete one by one (repo-level — without --env)
+gh secret delete NAME
+gh variable delete NAME
 
 # 3. Environment-scoped
-gh secret delete NAZWA --env dev
-gh variable delete NAZWA --env prod
+gh secret delete NAME --env dev
+gh variable delete NAME --env prod
 
-# 4. Po wyczyszczeniu: nowe secrets wg inventory v2 (Bitwarden → gh secret set)
+# 4. After cleanup: new secrets per the v2 inventory (Bitwarden → gh secret set)
 ```
 
-**Uwagi:**
+**Notes:**
 
-- **Self-hosted runner** (jeśli był podpięty do repo) — odłączyć / usunąć w Settings → Actions → Runners.
-- Wartości secretów z GH **nie da się odzyskać** — jeśli coś z legacy jest jeszcze potrzebne (certy, klucze), skopiuj z Bitwarden / lokalnych plików **przed** `delete`.
-- Po merge `**master` = drzewo v2** — legacy workflowów nie ma na domyślnej gałęzi; czyszczenie GH secrets **na start F0**, nie czekać na merge.
-
----
-
-## Cel
-
-Self-hosted homelab prod (+ dev na laptopie): aplikacje w Dockerze, centralny Postgres, bezpieczny dostęp (VPN + SSO), backupy na NAS i pCloud, łatwe odtwarzanie po awarii. **Deploy wyłącznie przez GitHub Actions pipeline** (gałąź `homelab-v2` → potem `master`) na **self-hosted runnerze** w LAN.
+- **Self-hosted runner** (if one was attached to the repo) — disconnect / remove it in Settings → Actions → Runners.
+- Secret values from GH **cannot be recovered** — if something from legacy is still needed (certificates, keys), copy it from Bitwarden / local files **before** `delete`.
+- After the merge **`master` = the v2 tree** — legacy workflows are not on the default branch; GH secrets cleanup is **at the start of F0**, do not wait for the merge.
 
 ---
 
-## Decyzje użytkownika (TBD → zamknięte)
+## Goal
 
-> **Data:** 2026-06-11 — sesja AskQuestion; plan zaktualizowany, **bez implementacji**.
+Self-hosted homelab prod (+ dev on the laptop): applications in Docker, a central Postgres, secure access (VPN + SSO), backups to the NAS and pCloud, easy recovery after a failure. **Deploy only through the GitHub Actions pipeline** (branch `homelab-v2` → then `master`) on a **self-hosted runner** on the LAN.
+
+---
+
+## User decisions (TBD → closed)
+
+> **Date:** 2026-06-11 — AskQuestion session; plan updated, **no implementation**.
 
 
-| ID      | Temat                | Decyzja                                                                                                                                                              | Status                   |
+| ID      | Topic                | Decision                                                                                                                                                              | Status                   |
 | ------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
-| **B1**  | Kontenery Proxmox    | **VM `ubuntu-apps` + Docker** (nie LXC) + **Portainer** — appki z **różnych repo**, bez jednego monolitycznego compose                                               | ✅                        |
-| **B1b** | Źródło prawdy deploy | **Hybryda:** core infra (Postgres, Homarr, proxy client, Authelia) w repo `compose/`; **per-app stacks** z osobnych repo przez Portainer / `compose/apps/<name>/`    | ✅                        |
-| **B2**  | Reverse proxy        | **OPNsense: HAProxy** (wbudowany) — **os-traefik-maxit odrzucony**                                                                                                   | ✅                        |
-| **B3**  | Dostęp               | **WireGuard** jako domyślny dostęp do LAN + **publiczny HTTPS tylko dla wybranych app** (na start: **ToDo Grocery**; reszta **VPN-only**, chyba że później zmienisz) | ✅                        |
-| **B4**  | SSO + exposure       | **ToDo Grocery — public**; **pozostałe appki — VPN only**; **SSO (Authelia) na wszystko** gdzie możliwe                                                              | ✅ Authelia rekomendowane |
-| **B5**  | CI → homelab         | **Self-hosted runner** + skrypt `utils/setup-github-runner.sh`; **dev runner na laptopie**, **prod runner na ubuntu-apps**; ❌ Tailscale, GitHub-hosted               | ✅                        |
-| **B6**  | Storage              | **B+C ✅:** SA500→NAS VM (NFS, Immich/media); Purple→backupy; **Postgres/cache lokalnie** na apps VM; per-app volumes ⏳ TBD                                           | ✅ częściowo              |
-| **B7**  | RAM VM               | `**ubuntu-apps` 8 GB** + `**ubuntu-nas` 4 GB**                                                                                                                       | ✅                        |
-| **B14** | LUKS                 | **Bez LUKS na start** ✅; LUKS+clevis/TPM → **backlog / dalekie TODO**                                                                                                | ✅                        |
+| **B1**  | Proxmox containers    | **VM `ubuntu-apps` + Docker** (not LXC) + **Portainer** — apps from **different repos**, not one monolithic compose                                               | ✅                        |
+| **B1b** | Deploy source of truth | **Hybrid:** core infra (Postgres, Homarr, proxy client, Authelia) in the repo `compose/`; **per-app stacks** from separate repos through Portainer / `compose/apps/<name>/`    | ✅                        |
+| **B2**  | Reverse proxy        | **OPNsense: HAProxy** (built in) — **os-traefik-maxit rejected**                                                                                                   | ✅                        |
+| **B3**  | Access               | **WireGuard** as the default access to the LAN + **public HTTPS only for selected apps** (at the start: **ToDo Grocery**; the rest **VPN-only**, unless you change it later) | ✅                        |
+| **B4**  | SSO + exposure       | **ToDo Grocery — public**; **the other apps — VPN only**; **SSO (Authelia) on everything** where possible                                                              | ✅ Authelia recommended |
+| **B5**  | CI → homelab         | **Self-hosted runner** + script `utils/setup-github-runner.sh`; **dev runner on the laptop**, **prod runner on ubuntu-apps**; ❌ Tailscale, GitHub-hosted               | ✅                        |
+| **B6**  | Storage              | **B+C ✅:** SA500→NAS VM (NFS, Immich/media); Purple→backups; **Postgres/cache locally** on the apps VM; per-app volumes ⏳ TBD                                           | ✅ partial              |
+| **B7**  | VM RAM               | **`ubuntu-apps` 8 GB** + **`ubuntu-nas` 4 GB**                                                                                                                       | ✅                        |
+| **B14** | LUKS                 | **No LUKS at the start** ✅; LUKS+clevis/TPM → **backlog / distant TODO**                                                                                                | ✅                        |
 | **B15** | Vault                | **Bitwarden Cloud**                                                                                                                                                  | ✅                        |
-| **B16** | Backup offsite       | **rclone → pCloud**                                                                                                                                                  | ✅                        |
-| **B17** | Portainer            | **Tak, P0** — zarządzanie multi-repo stacks (wcześniej „nie na start”)                                                                                               | ✅                        |
-| **P0**  | Zakres startowy      | **✅ P0/P1/P2 zdefiniowane** — patrz sekcja *Decyzje użytkownika — iteracja #2*                                                                                       | ✅                        |
+| **B16** | Offsite backup       | **rclone → pCloud**                                                                                                                                                  | ✅                        |
+| **B17** | Portainer            | **Yes, P0** — managing multi-repo stacks (earlier: "not at the start")                                                                                               | ✅                        |
+| **P0**  | Starting scope      | **✅ P0/P1/P2 defined** — see the section *User decisions — iteration #2*                                                                                       | ✅                        |
 
 
 ### B2 — HAProxy vs os-traefik-maxit (OPNsense)
 
 
-| Kryterium              | **HAProxy** (wbudowany)                       | **os-traefik-maxit** (plugin)            |
+| Criterion              | **HAProxy** (built in)                       | **os-traefik-maxit** (plugin)            |
 | ---------------------- | --------------------------------------------- | ---------------------------------------- |
-| Instalacja             | Już w OPNsense                                | Plugin z repozytorium OPNsense           |
-| UI / learning curve    | GUI OPNsense, dużo tutoriali homelab          | Traefik-like, mniej typowy na routerze   |
-| Certy Let's Encrypt    | ACME via HAProxy / cert plugin OPNsense       | Zależy od pluginu                        |
-| Dynamic routing        | Ręczne frontends/backends                     | Bliżej Traefik (labels/routes)           |
-| **Rekomendacja planu** | **Start tutaj** — prostsze, natywne, stabilne | Jeśli HAProxy zbyt sztywny — F2 fallback |
+| Installation             | Already in OPNsense                                | Plugin from the OPNsense repository           |
+| UI / learning curve    | OPNsense GUI, many homelab tutorials          | Traefik-like, less typical on a router   |
+| Let's Encrypt certificates    | ACME via HAProxy / the OPNsense cert plugin       | Depends on the plugin                        |
+| Dynamic routing        | Manual frontends/backends                     | Closer to Traefik (labels/routes)           |
+| **Plan recommendation** | **Start here** — simpler, native, stable | If HAProxy is too rigid — F2 fallback |
 
 
-**NPM / Traefik na VM apps:** odrzucone na rzecz proxy **na OPNsense** (wydajność routera OK — poza sizingiem).
+**NPM / Traefik on the apps VM:** rejected in favour of the proxy **on OPNsense** (router performance is OK — outside sizing).
 
-**Decyzja iter. #2:** **HAProxy** ✅ — os-traefik-maxit **odrzucony**.
+**Iteration #2 decision:** **HAProxy** ✅ — os-traefik-maxit **rejected**.
 
-### B4 — model dostępu per app
+### B4 — access model per app
 
 
 | App                 | VPN                 | Public HTTPS | SSO                    |
 | ------------------- | ------------------- | ------------ | ---------------------- |
-| **ToDo Grocery**    | opcjonalnie         | **Tak**      | Authelia               |
-| **Pozostałe P0/P1** | **Tak** (domyślnie) | Nie          | Authelia               |
-| **pgAdmin**         | **Tak only**        | Nie          | Authelia + silne hasło |
+| **ToDo Grocery**    | optional         | **Yes**      | Authelia               |
+| **The other P0/P1** | **Yes** (default) | No          | Authelia               |
+| **pgAdmin**         | **Yes only**        | No          | Authelia + a strong password |
 
 
 ---
 
-## Decyzje użytkownika — iteracja #2 (2026-06-11)
+## User decisions — iteration #2 (2026-06-11)
 
-> **Status:** sesja decyzyjna zamknięta (plan only, bez implementacji).  
-> Poniżej skonsolidowane decyzje; szczegóły opcji w sekcji *Iteracja decyzji #2*.
+> **Status:** decision session closed (plan only, no implementation).
+> Consolidated decisions below; option details in the section *Decision iteration #2*.
 
-### Sieć [A4] ✅ — opcja C (istniejące VLAN-y)
+### Network [A4] ✅ — option C (existing VLANs)
 
 
-| VLAN / nazwa        | Brama               | DHCP range | Tag / uwagi                      |
+| VLAN / name        | Gateway               | DHCP range | Tag / notes                      |
 | ------------------- | ------------------- | ---------- | -------------------------------- |
 | **LAN**             | 192.168.1.1         | .100–.200  |                                  |
 | **HOMEOFFICE**      | 192.168.10.1        | .100–.200  |                                  |
 | **IOT**             | 192.168.20.1        | .100–.200  | **Proxmox host + HP T620 HA**    |
-| **GUEST**           | 192.168.30.1        | .100–.200  | WiFi goście                      |
-| **DMZ**             | 192.168.50.1        | .7–.14     | **nieużywany na start** (A5)     |
+| **GUEST**           | 192.168.30.1        | .100–.200  | guest WiFi                      |
+| **DMZ**             | 192.168.50.1        | .7–.14     | **unused at the start** (A5)     |
 | **APP**             | **192.168.50.50/26** (QinQ) | .30–.62    | **Docker/apps**; VLAN **tag 51** |
-| **VPN (WireGuard)** | **10.10.10.1** (`wg0`)      | peers      | As-built; nie `10.0.0.0/24`      |
+| **VPN (WireGuard)** | **10.10.10.1** (`wg0`)      | peers      | As-built; not `10.0.0.0/24`      |
 
 
 **✅ A5 (as-built 2026-06-30):** Proxmox **`.20.20`**; APP gw **`.50.50`**; NAS **`.20.12`**, HA **`.20.13`**, apps **`.50.30`**; WG **`10.10.10.0/24`**.
 
-### IP statyczne [A5] ✅ — rezerwacja DHCP w OPNsense (IP ustalone; MAC placeholder)
+### Static IPs [A5] ✅ — DHCP reservation in OPNsense (IPs fixed; MAC placeholder)
 
-**Decyzja:** rezerwacja MAC→IP w OPNsense (DHCP reservation).
+**Decision:** MAC→IP reservation in OPNsense (DHCP reservation).
 
-**Decyzje A5 (as-built 2026-06-30; decyzja DHCP 2026-06-11):**
+**A5 decisions (as-built 2026-06-30; DHCP decision 2026-06-11):**
 
-| Temat | Decyzja |
+| Topic | Decision |
 |-------|---------|
-| **APP vs DMZ** | **Uproszczenie:** tylko **APP QinQ tag 51** `192.168.50.0/26` (DHCP `.30`–`.62`); **DMZ (tag 50) nieużywany** na start |
-| **Brama APP** | **192.168.50.50/26** (as-built OPNsense QinQ) — **nie** `.50.1` |
-| **ubuntu-nas** | **IOT VLAN 20** — `192.168.20.12` (NFS); ruch NFS **APP → IOT** (firewall F2: APP net → `.20.12:2049`) |
+| **APP vs DMZ** | **Simplification:** only **APP QinQ tag 51** `192.168.50.0/26` (DHCP `.30`–`.62`); **DMZ (tag 50) unused** at the start |
+| **APP gateway** | **192.168.50.50/26** (as-built OPNsense QinQ) — **not** `.50.1` |
+| **ubuntu-nas** | **IOT VLAN 20** — `192.168.20.12` (NFS); NFS traffic **APP → IOT** (firewall F2: APP net → `.20.12:2049`) |
 | **ubuntu-apps** | **APP VLAN 51** — `192.168.50.30` |
-| **MAC** | Placeholder w planie — uzupełnisz przed F3 (OPNsense DHCP reservation) |
+| **MAC** | Placeholder in the plan — you fill in the real values before F3 (OPNsense DHCP reservation) |
 
-**Domena (A6 ✅ 2026-06-11):** strefa **`dkhomelabserver.xyz`** (legacy: `router.dkhomelabserver.xyz` w starym TF). Publicznie tylko **`grocery.dkhomelabserver.xyz`** → HAProxy ACME (F2).
+**Domain (A6 ✅ 2026-06-11):** zone **`dkhomelabserver.xyz`** (legacy: `router.dkhomelabserver.xyz` in the old TF). Publicly only **`grocery.dkhomelabserver.xyz`** → HAProxy ACME (F2).
 
 
-| Host / rola            | VLAN | Tag | IP docelowe      | MAC (placeholder)   |
+| Host / role            | VLAN | Tag | Target IP      | MAC (placeholder)   |
 | ---------------------- | ---- | --- | ---------------- | ------------------- |
-| OPNsense IOT           | IOT  | 20  | 192.168.20.1     | (interfejs routera) |
+| OPNsense IOT           | IOT  | 20  | 192.168.20.1     | (router interface) |
 | OPNsense APP           | APP  | 51  | **192.168.50.50** | (QinQ as-built)     |
 | Proxmox host (NIC1)    | IOT  | 20  | **192.168.20.20** | `<MAC>` ✅ |
 | HP T620 HA             | IOT  | 20  | **192.168.20.13** | F5 (MAC TBD)        |
@@ -374,102 +373,102 @@ Self-hosted homelab prod (+ dev na laptopie): aplikacje w Dockerze, centralny Po
 | `ubuntu-apps` (Docker) | APP  | 51  | **192.168.50.30** | F3 (MAC TBD)        |
 
 
-**Podział 3× NIC 1 Gb/s (Proxmox) — ✅ potwierdzony w A5:**
+**Split of 3× 1 Gb/s NICs (Proxmox) — ✅ confirmed in A5:**
 
 
-| NIC      | Rola                                       | VLAN / IP                          |
+| NIC      | Role                                       | VLAN / IP                          |
 | -------- | ------------------------------------------ | ---------------------------------- |
-| **NIC1** | IOT / mgmt — Proxmox **`.20.20`** + trunk VM IOT  | tag 20                             |
-| **NIC2** | Pass-through **SA500 + Purple** do NAS VM  | brak IP (dyski tylko)              |
-| **NIC3** | APP / Docker — trunk VM APP                | tag 51 → `ubuntu-apps` `.50.30`  |
+| **NIC1** | IOT / mgmt — Proxmox **`.20.20`** + IOT VM trunk  | tag 20                             |
+| **NIC2** | Pass-through **SA500 + Purple** to the NAS VM  | no IP (disks only)              |
+| **NIC3** | APP / Docker — APP VM trunk                | tag 51 → `ubuntu-apps` `.50.30`  |
 
 
-**VM sieć:** `ubuntu-nas` — 1× NIC na **vmbr0 tag 20** (IOT); `ubuntu-apps` — 1× NIC na **vmbr0 tag 51** (APP). NFS: apps montuje `192.168.20.12:/export/...` (firewall: APP → IOT port 2049).
+**VM network:** `ubuntu-nas` — 1× NIC on **vmbr0 tag 20** (IOT); `ubuntu-apps` — 1× NIC on **vmbr0 tag 51** (APP). NFS: apps mount `192.168.20.12:/export/...` (firewall: APP → IOT port 2049).
 
-**Dev (laptop libvirt):** bez zmian — `192.168.122.0/24`; `ubuntu-docker` dev np. `.221` (legacy).
+**Dev (laptop libvirt):** unchanged — `192.168.122.0/24`; dev `ubuntu-docker` e.g. `.221` (legacy).
 
-**Tabela rezerwacji DHCP OPNsense (do skonfigurowania w F2):**
+**OPNsense DHCP reservation table (to be configured in F2):**
 
 
-| Urządzenie     | IP              | MAC placeholder     | VLAN |
+| Device     | IP              | MAC placeholder     | VLAN |
 | -------------- | --------------- | ------------------- | ---- |
-| Proxmox host   | 192.168.20.20   | ✅ na routerze       | 20   |
+| Proxmox host   | 192.168.20.20   | ✅ on the router       | 20   |
 | HP T620 HA     | 192.168.20.13   | F5                  | 20   |
 | `ubuntu-nas`   | 192.168.20.12   | F3                  | 20   |
 | `ubuntu-apps`  | 192.168.50.30   | F3                  | 51   |
 
-**Definition of done A5:** IP + VLAN + rola NIC ✅; MAC placeholder ✅; zamień MAC na rzeczywiste przed F3 → odhacz `[x]` w gate.
+**Definition of done A5:** IP + VLAN + NIC role ✅; MAC placeholder ✅; replace the MAC with the real one before F3 → check off `[x]` in the gate.
 
 
-### DNS + certy [A6] ✅ — opcja B + konkretna nazwa
+### DNS + certificates [A6] ✅ — option B + a concrete name
 
-**Decyzja:** **osobna subdomena publiczna tylko dla ToDo Grocery** — **nie** wildcard na całą domenę homelab.
+**Decision:** a **separate public subdomain only for ToDo Grocery** — **not** a wildcard for the whole homelab domain.
 
-| Element | Wartość |
+| Element | Value |
 |---------|---------|
-| **Strefa DNS** | `dkhomelabserver.xyz` |
+| **DNS zone** | `dkhomelabserver.xyz` |
 | **OPNsense / router (legacy)** | `router.dkhomelabserver.xyz` |
 | **Grocery (public HTTPS)** | **`grocery.dkhomelabserver.xyz`** |
-| **Reszta usług** | VPN-only; wewnętrznie `/etc/hosts` lub split-DNS LAN (*TBD* F2) |
-| **Certyfikat** | ACME Let's Encrypt — dedykowany cert dla `grocery.dkhomelabserver.xyz` w HAProxy (F2) |
+| **The rest of the services** | VPN-only; internally `/etc/hosts` or LAN split-DNS (*TBD* F2) |
+| **Certificate** | ACME Let's Encrypt — a dedicated cert for `grocery.dkhomelabserver.xyz` in HAProxy (F2) |
 
 ### Terraform Cloud [A8] ✅ — org `dkhomelabserver`, workspace `homelab`
 
-**Decyzja (2026-06-11):**
+**Decision (2026-06-11):**
 
-| Element | Wartość |
+| Element | Value |
 |---------|---------|
-| **Org TFC** | **`dkhomelabserver`** |
-| **Workspace prod** | **`homelab`** (pusty state, `resource-count: 0`, auto-apply OFF) |
-| **Workspace dev** | **brak** — dev TF lokalnie na laptopie |
+| **TFC org** | **`dkhomelabserver`** |
+| **Prod workspace** | **`homelab`** (empty state, `resource-count: 0`, auto-apply OFF) |
+| **Dev workspace** | **none** — dev TF locally on the laptop |
 | **TF version (workspace)** | 1.15.7 |
-| **Execution mode** | **remote** (TFC) — w **F1** przełączyć na **Local** dla self-hosted runnera w LAN |
+| **Execution mode** | **remote** (TFC) — in **F1** switch to **Local** for the self-hosted runner on the LAN |
 | **GH secret `TF_API_TOKEN`** | env **prod** — **F1** |
 
 **Definition of done A8:**
 
-- [x] Konto TFC + org `dkhomelabserver`
-- [x] Workspace **`homelab`** (pusty state)
+- [x] TFC account + org `dkhomelabserver`
+- [x] Workspace **`homelab`** (empty state)
 - [x] `terraform login` — `credentials.tfrc.json` OK (2026-06-11)
-- [ ] Token w Bitwarden (`homelab/TF_API_TOKEN/prod`) — user
-- [x] API zwraca workspace — zweryfikowane
+- [ ] Token in Bitwarden (`homelab/TF_API_TOKEN/prod`) — user
+- [x] The API returns the workspace — verified
 - [x] A8 gate `[x]`
 
-### Zakres faz [P0] ✅
+### Phase scope [P0] ✅
 
 
-| Faza   | Aplikacje                                                                                                                                                           |
+| Phase   | Applications                                                                                                                                                           |
 | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **P0** | PostgreSQL, pgAdmin, Homarr, **Trillium** (notes), **Actual Budget**, Linkwarden, Authelia, omni-tools, DumbWhoIs, Portainer, **Bentoo PDF**, ToDo Grocery (public) |
-| **P1** | Immich, Syncthing, **Navidrome** (streamer), **Jellyfin** (Direct Play / bez transcode)                                                                             |
-| **P2** | Reszta (Beszel, Dozzle, Diun, Zotify defer, Authentik?, itd.)                                                                                                       |
+| **P1** | Immich, Syncthing, **Navidrome** (streamer), **Jellyfin** (Direct Play / no transcode)                                                                             |
+| **P2** | The rest (Beszel, Dozzle, Diun, Zotify deferred, Authentik?, and so on)                                                                                                       |
 
 
-### Pozostałe decyzje iter. #2 (skrót)
+### Other iteration #2 decisions (summary)
 
 
-| ID                 | Decyzja                                                                                                      | Status      |
+| ID                 | Decision                                                                                                      | Status      |
 | ------------------ | ------------------------------------------------------------------------------------------------------------ | ----------- |
-| **B2**             | **HAProxy** na OPNsense (nie os-traefik-maxit)                                                               | ✅           |
-| **B6+A1-TF**       | NFS z NAS VM (media/Immich) + lokalne wolumeny Docker na apps VM (Postgres/cache); per-app volumes ⏳         | ✅ częściowo |
-| **B14**            | **Bez LUKS na start**; auto-unlock (clevis/TPM) → backlog                                                    | ✅           |
-| **A11**            | ToDo Grocery: **Portainer Git deploy** (compose z repo Grocery)                                              | ✅           |
-| **A13**            | **Runner dev na laptopie**; Actions zawsze z laptopa przy dev                                                | ✅           |
-| **B8**             | Syncthing **tak** → **P1**                                                                                   | ✅           |
+| **B2**             | **HAProxy** on OPNsense (not os-traefik-maxit)                                                               | ✅           |
+| **B6+A1-TF**       | NFS from the NAS VM (media/Immich) + local Docker volumes on the apps VM (Postgres/cache); per-app volumes ⏳         | ✅ partial |
+| **B14**            | **No LUKS at the start**; auto-unlock (clevis/TPM) → backlog                                                    | ✅           |
+| **A11**            | ToDo Grocery: **Portainer Git deploy** (compose from the Grocery repo)                                              | ✅           |
+| **A13**            | **Dev runner on the laptop**; Actions always from the laptop for dev                                                | ✅           |
+| **B8**             | Syncthing **yes** → **P1**                                                                                   | ✅           |
 | **B9**             | **Actual Budget** → **P0**                                                                                   | ✅           |
 | **B10**            | **Trillium** → **P0**                                                                                        | ✅           |
 | **B11**            | **Navidrome** → **P1**                                                                                       | ✅           |
-| **B12**            | Jellyfin wideo **Direct Play only** (bez transcode) → **P1**                                                 | ✅           |
-| **B13**            | **Zotify odłożony** (backlog)                                                                                | ✅           |
-| **B18**            | Dev: **pełny stack test** (parity z prod P0), nie minimalny subset                                           | ✅           |
-| **A14**            | HA na T620: **greenfield** (nowa instalacja)                                                                 | ✅           |
-| **A15**            | Retention: **trzymaj 2 najnowsze backupy**; przy 3. usuń najstarszy                                          | ✅           |
-| **secrets**        | Szablon `docs/secrets-inventory.md` w F0-10 (nazwy tylko)                                                    | ✅           |
-| **B19**            | **Beszel** (nie Prometheus+Grafana)                                                                          | ✅           |
-| **B20**            | **Diun** w F6; **Trivy odłożony** do stabilnego P0                                                           | ✅           |
-| **B21**            | DumbWhoIs + omni-tools → **P0** (scope); opcjonalny przyszły podział P0–P6                                   | ✅           |
-| **git-post-merge** | Krótkoterminowo `**homelab-v2`** jako dev; po pierwszym prod merge → `**develop**`                           | ✅           |
-| **proxmox-host**   | **Cleanup legacy VM** (nie świeży install) + **TODO:** uporządkować SSH keys i Proxmox API tokens dla deploy | ✅           |
+| **B12**            | Jellyfin video **Direct Play only** (no transcode) → **P1**                                                 | ✅           |
+| **B13**            | **Zotify deferred** (backlog)                                                                                | ✅           |
+| **B18**            | Dev: **full test stack** (parity with prod P0), not a minimal subset                                           | ✅           |
+| **A14**            | HA on the T620: **greenfield** (fresh install)                                                                 | ✅           |
+| **A15**            | Retention: **keep the 2 newest backups**; on the 3rd, delete the oldest                                          | ✅           |
+| **secrets**        | Template `docs/secrets-inventory.md` in F0-10 (names only)                                                    | ✅           |
+| **B19**            | **Beszel** (not Prometheus+Grafana)                                                                          | ✅           |
+| **B20**            | **Diun** in F6; **Trivy deferred** until P0 is stable                                                           | ✅           |
+| **B21**            | DumbWhoIs + omni-tools → **P0** (scope); optional future split P0–P6                                   | ✅           |
+| **git-post-merge** | Short term **`homelab-v2`** as dev; after the first prod merge → **`develop`**                           | ✅           |
+| **proxmox-host**   | **Cleanup of legacy VMs** (not a fresh install) + **TODO:** tidy SSH keys and Proxmox API tokens for deploy | ✅           |
 
 
 ### CI/CD — dual runners ✅
@@ -481,629 +480,629 @@ Self-hosted homelab prod (+ dev na laptopie): aplikacje w Dockerze, centralny Po
 | **Prod** | `ubuntu-apps` VM | `homelab-prod` | push/merge `master` → TF + deploy prod |
 
 
-**Uwaga:** wcześniejszy plan sugerował jeden runner na ubuntu-apps — **skorygowane:** dev **wyłącznie laptop**, prod **ubuntu-apps** (lub Proxmox host — runner na VM apps wystarczy).
+**Note:** an earlier plan suggested one runner on ubuntu-apps — **corrected:** dev **laptop only**, prod **ubuntu-apps** (or the Proxmox host — a runner on the apps VM is enough).
 
 ---
 
-## Iteracja decyzji #2 (archiwum opcji + konsekwencje)
+## Decision iteration #2 (archive of options + consequences)
 
-> **Data:** 2026-06-11 — iteracja #2 planu; **bez implementacji**.  
-> Format: opcje + skutki (złożoność, RAM, bezpieczeństwo, utrzymanie, CI, DR).  
-> **Zamknięte ✅** — nie powtarzamy (B1, B3, B4, B5, B7, B15, B16, B17, Bitwarden, Portainer, rclone, self-hosted runner).  
-> **Decyzje użytkownika:** patrz sekcja *Decyzje użytkownika — iteracja #2* powyżej.
+> **Date:** 2026-06-11 — plan iteration #2; **no implementation**.
+> Format: options + effects (complexity, RAM, security, maintenance, CI, DR).
+> **Closed ✅** — not repeated (B1, B3, B4, B5, B7, B15, B16, B17, Bitwarden, Portainer, rclone, self-hosted runner).
+> **User decisions:** see the section *User decisions — iteration #2* above.
 
-### 🔴 Blokujące F1 / F2 / F3
+### 🔴 Blocking F1 / F2 / F3
 
-#### [A4] Mapa sieci (VLAN, CIDR, trunk) — ✅ **decyzja: opcja C**
+#### [A4] Network map (VLAN, CIDR, trunk) — ✅ **decision: option C**
 
-**Kontekst:** Bez segmentacji nie da się sensownie napisać OPNsense baseline, TF firewall ani Ansible inventory.
+**Context:** Without segmentation there is no sensible way to write the OPNsense baseline, the TF firewall, or the Ansible inventory.
 
 
-| Opcja                                                 | Konsekwencje (skrót)                                                                    |
+| Option                                                 | Consequences (summary)                                                                    |
 | ----------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| A — **Płaska LAN** (jeden VLAN, np. `192.168.1.0/24`) | Najprostsze TF/Ansible; mniej izolacji; HA + Proxmox + Docker w jednej broadcast domain |
-| B — **2 VLAN-y** (LAN + mgmt/Proxmox, np. 10/20)      | Lepsza separacja mgmt; więcej reguł OPNsense i trunk na switchu                         |
-| C — **3+ VLAN-y** (LAN, mgmt, IoT/HA, ewent. guest)   | Najbezpieczniejsze; najwyższa złożoność konfiguracji i debugowania                      |
-| **Rekomendacja (łatwiej)**                            | ~~**B**~~ → **✅ C** (istniejące VLAN-y — patrz tabela w sekcji iter. #2)                |
+| A — **Flat LAN** (one VLAN, e.g. `192.168.1.0/24`) | Simplest TF/Ansible; less isolation; HA + Proxmox + Docker in one broadcast domain |
+| B — **2 VLANs** (LAN + mgmt/Proxmox, e.g. 10/20)      | Better mgmt separation; more OPNsense rules and a trunk on the switch                         |
+| C — **3+ VLANs** (LAN, mgmt, IoT/HA, guest if needed)   | Safest; highest configuration and debugging complexity                      |
+| **Recommendation (the easier one)**                            | ~~**B**~~ → **✅ C** (existing VLANs — see the table in the iteration #2 section)                |
 
 
-#### [A5] Docelowe IP statyczne — ✅ **as-built 2026-06-30** (MAC placeholder → F3)
+#### [A5] Target static IPs — ✅ **as-built 2026-06-30** (MAC placeholder → F3)
 
-**Kontekst:** Ansible, TF i dokumentacja `docs/network.md` wymagają stałej adresacji hostów i VM.
+**Context:** Ansible, TF, and the `docs/network.md` documentation need stable addressing for hosts and VMs.
 
 
-| Opcja                                           | Konsekwencje (skrót)                                                                     |
+| Option                                           | Consequences (summary)                                                                     |
 | ----------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| A — **DHCP reservation** (MAC → IP na OPNsense) | Mniej ręcznej pracy przy reinstalacji; zależność od routera; TF musi znać zakres         |
-| B — **Statyczne IP w OS** (Proxmox, VM, T620)   | Przewidywalne bez DHCP; więcej kroków przy rebuild; łatwiejsze dla TF cloud-init         |
-| C — **Miks** (infra statyczne, reszta DHCP)     | Elastyczne; ryzyko niespójności dokumentacji                                             |
-| **Rekomendacja (łatwiej)**                      | **✅ DHCP reservation** + podział 3× NIC; IP as-built: `.20.20`/`.12`/`.13`/`.50.30`, APP gw `.50.50`, WG `10.10.10.0/24` |
+| A — **DHCP reservation** (MAC → IP on OPNsense) | Less manual work on reinstall; dependency on the router; TF must know the range         |
+| B — **Static IP in the OS** (Proxmox, VM, T620)   | Predictable without DHCP; more steps on rebuild; easier for TF cloud-init         |
+| C — **Mix** (infra static, the rest DHCP)     | Flexible; risk of inconsistent documentation                                             |
+| **Recommendation (the easier one)**                      | **✅ DHCP reservation** + split across 3× NICs; as-built IPs: `.20.20`/`.12`/`.13`/`.50.30`, APP gw `.50.50`, WG `10.10.10.0/24` |
 
 
-#### [A6] Domena DNS + certy (wildcard) — ✅ **decyzja: opcja B**
+#### [A6] DNS domain + certificates (wildcard) — ✅ **decision: option B**
 
-**Kontekst:** Publiczny **ToDo Grocery**, Homarr i reverse proxy (B2) potrzebują nazw FQDN i ACME.
+**Context:** Public **ToDo Grocery**, Homarr, and the reverse proxy (B2) need FQDN names and ACME.
 
 
-| Opcja                                                          | Konsekwencje (skrót)                                                 |
+| Option                                                          | Consequences (summary)                                                 |
 | -------------------------------------------------------------- | -------------------------------------------------------------------- |
-| A — **Jedna domena + wildcard** (`*.homelab.example`)          | Jeden cert ACME; prostszy HAProxy; wszystkie subdomeny pod kontrolą  |
-| B — **Osobna subdomena tylko dla Grocery** (`grocery.example`) | Mniejszy publiczny footprint; reszta bez public DNS                  |
-| C — **DuckDNS / dynamic DNS**                                  | Tanie/szybkie; mniej profesjonalne; ograniczenia przy wildcard       |
-| **Rekomendacja (łatwiej)**                                     | ~~**A** wildcard~~ → **✅ B** — osobna subdomena tylko Grocery public |
+| A — **One domain + wildcard** (`*.homelab.example`)          | One ACME cert; simpler HAProxy; every subdomain under control  |
+| B — **A separate subdomain only for Grocery** (`grocery.example`) | Smaller public footprint; the rest with no public DNS                  |
+| C — **DuckDNS / dynamic DNS**                                  | Cheap/fast; less professional; limits with a wildcard       |
+| **Recommendation (the easier one)**                                     | ~~**A** wildcard~~ → **✅ B** — a separate subdomain, only Grocery public |
 
 
-#### [B2] Reverse proxy OPNsense: HAProxy vs os-traefik-maxit — ✅ **decyzja: opcja A (HAProxy)**
+#### [B2] OPNsense reverse proxy: HAProxy vs os-traefik-maxit — ✅ **decision: option A (HAProxy)**
 
-**Kontekst:** Wybór przy **F2** — wszystkie usługi HTTPS idą przez router (nie NPM/Traefik na VM).
+**Context:** The choice at **F2** — every HTTPS service goes through the router (not NPM/Traefik on the VM).
 
 
-| Opcja                             | Konsekwencje (skrót)                                                            |
+| Option                             | Consequences (summary)                                                            |
 | --------------------------------- | ------------------------------------------------------------------------------- |
-| A — **HAProxy** (wbudowany)       | Natywny UI OPNsense; dużo tutoriali; ręczne frontends/backends; stabilny start  |
-| B — **os-traefik-maxit** (plugin) | Bliżej modelu Traefik; dodatkowy plugin do utrzymania; mniej typowy na routerze |
-| **Rekomendacja (łatwiej)**        | **✅ A (HAProxy)** — os-traefik-maxit odrzucony                                  |
+| A — **HAProxy** (built in)       | Native OPNsense UI; many tutorials; manual frontends/backends; a stable start  |
+| B — **os-traefik-maxit** (plugin) | Closer to the Traefik model; an extra plugin to maintain; less typical on a router |
+| **Recommendation (the easier one)**        | **✅ A (HAProxy)** — os-traefik-maxit rejected                                  |
 
 
-#### [B6 + A1-TF] Mapa dysków w TF + storage per-app — ✅ **decyzja: B + C (częściowo)**
+#### [B6 + A1-TF] Disk map in TF + per-app storage — ✅ **decision: B + C (partial)**
 
-**Kontekst:** SA500/Purple ✅ co do roli; brakuje mount/LVM w TF oraz reguły local vs NFS per app (blokuje F3 TF i F4 Compose).
+**Context:** SA500/Purple ✅ as to role; missing the mount/LVM in TF and the local vs NFS rule per app (blocks F3 TF and F4 Compose).
 
 
-| Opcja                                                                     | Konsekwencje (skrót)                                                                      |
+| Option                                                                     | Consequences (summary)                                                                      |
 | ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| A — **Wszystkie wolumeny app → NFS (SA500)**                              | Jeden punkt backupu mediów; wolniejsze I/O dla DB/cache; mniej miejsca na root VM         |
-| B — **DB/cache local (256 GB SSD apps VM), media → NFS**                  | Lepsza wydajność Postgres/Immich cache; bardziej złożony Compose; wymaga sizing root disk |
-| C — **Osobny dysk w Proxmox per VM** (pass-through SA500 tylko do NAS VM) | Czysta separacja; obecny plan ✅; doprecyzować tylko mountpointy w guest                   |
-| **Rekomendacja (łatwiej)**                                                | **✅ B + C** — per-app volumes ⏳ TBD                                                       |
+| A — **All app volumes → NFS (SA500)**                              | One backup point for media; slower I/O for DB/cache; less space on the VM root         |
+| B — **DB/cache local (256 GB SSD on the apps VM), media → NFS**                  | Better performance for Postgres/Immich cache; more complex Compose; needs root disk sizing |
+| C — **A separate disk in Proxmox per VM** (pass-through SA500 only to the NAS VM) | Clean separation; the current plan ✅; only the guest mount points still need to be pinned down                   |
+| **Recommendation (the easier one)**                                                | **✅ B + C** — per-app volumes ⏳ TBD                                                       |
 
 
-#### [B14] LUKS na dyskach data (gate F3) — ✅ **decyzja: opcja A (bez LUKS)**
+#### [B14] LUKS on data disks (F3 gate) — ✅ **decision: option A (no LUKS)**
 
-**Kontekst:** Szyfrowanie at-rest tylko jeśli reboot Proxmox **nie** wymaga ręcznego hasła (warunek z planu).
+**Context:** Encryption at rest only if a Proxmox reboot does **not** need a manual password (a condition from the plan).
 
 
-| Opcja                                           | Konsekwencje (skrót)                                                                  |
+| Option                                           | Consequences (summary)                                                                  |
 | ----------------------------------------------- | ------------------------------------------------------------------------------------- |
-| A — **Bez LUKS na start**                       | Prostszy DR (vzdump restore); słabsza ochrona przy fizycznym dostępie do Purple/SA500 |
-| B — **LUKS + clevis/TPM/keyfile** (auto-unlock) | Lepsze bezpieczeństwo; złożony setup initramfs; klucze recovery w Bitwarden           |
-| C — **LUKS tylko Purple (backupy)**             | Kompromis; backup restore trudniejszy; hot data SA500 bez szyfrowania                 |
-| **Rekomendacja (łatwiej)**                      | **✅ A** na start; **B** (auto-unlock) → backlog                                       |
+| A — **No LUKS at the start**                       | Simpler DR (vzdump restore); weaker protection if someone has physical access to Purple/SA500 |
+| B — **LUKS + clevis/TPM/keyfile** (auto-unlock) | Better security; complex initramfs setup; recovery keys in Bitwarden           |
+| C — **LUKS on Purple only (backups)**             | Compromise; backup restore is harder; SA500 hot data unencrypted                 |
+| **Recommendation (the easier one)**                      | **✅ A** at the start; **B** (auto-unlock) → backlog                                       |
 
 
-#### [P0] Zakres aplikacji startowych (F4) — ✅ **zdefiniowany przez użytkownika**
+#### [P0] Starting application scope (F4) — ✅ **defined by the user**
 
-**Kontekst:** Sekcja E to propozycja agenta — bez Twojego P0 F4 może rozrosnąć się miesiącami (scope creep).
+**Context:** Section E is the agent's proposal — without your P0, F4 can grow for months (scope creep).
 
 
-| Opcja                                                                     | Konsekwencje (skrót)                                                  |
+| Option                                                                     | Consequences (summary)                                                  |
 | ------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| A — **Lean P0** (Postgres, pgAdmin, Homarr, Portainer, Authelia, Grocery) | ~6 usług; Immich → P1; mniejsze RAM; szybsze F4                       |
-| B — **P0 z Immich** (+ pozycje z propozycji E)                            | Większy RAM/I/O na J4205; dłuższy F4; NAS od razu krytyczny           |
-| C — **Tylko infra P0** (Postgres, Authelia, proxy, CI) — appki P1         | Najszybszy gate prod; Grocery public przesunięty                      |
-| **Rekomendacja (łatwiej)**                                                | ~~**A** lean~~ → **✅ scope użytkownika** (P0/P1/P2 w sekcji iter. #2) |
+| A — **Lean P0** (Postgres, pgAdmin, Homarr, Portainer, Authelia, Grocery) | ~6 services; Immich → P1; less RAM; a faster F4                       |
+| B — **P0 with Immich** (+ items from proposal E)                            | More RAM/I/O on the J4205; a longer F4; the NAS is critical immediately           |
+| C — **Infra P0 only** (Postgres, Authelia, proxy, CI) — apps in P1         | Fastest prod gate; public Grocery postponed                      |
+| **Recommendation (the easier one)**                                                | ~~**A** lean~~ → **✅ the user's scope** (P0/P1/P2 in the iteration #2 section) |
 
 
-#### [A11 + deploy] ToDo Grocery — ✅ **decyzja: opcja A (Portainer Git deploy)**
+#### [A11 + deploy] ToDo Grocery — ✅ **decision: option A (Portainer Git deploy)**
 
-**Kontekst:** App z osobnego repo (B1); public HTTPS wymaga gotowego obrazu/stacku przed F4.
+**Context:** An app from a separate repo (B1); public HTTPS needs a ready image/stack before F4.
 
 
-| Opcja                                                           | Konsekwencje (skrót)                                                  |
+| Option                                                           | Consequences (summary)                                                  |
 | --------------------------------------------------------------- | --------------------------------------------------------------------- |
-| A — **Portainer Git deploy** (compose z repo Grocery)           | Webhook po push; CI homelab nie buduje app; prostszy pipeline homelab |
-| B — **GHCR image** (build w repo Grocery, Portainer pull image) | Szybszy deploy VM; osobny CI w app repo; wersjonowanie obrazów        |
-| C — **Submodule / kopia compose w homelab**                     | Jedna gałąź deploy; duplikacja konfiguracji; gorsze multi-repo        |
-| **Rekomendacja (łatwiej)**                                      | **✅ A** — Portainer Git deploy z repo Grocery                         |
+| A — **Portainer Git deploy** (compose from the Grocery repo)           | Webhook after a push; homelab CI does not build the app; a simpler homelab pipeline |
+| B — **GHCR image** (build in the Grocery repo, Portainer pulls the image) | Faster VM deploy; a separate CI in the app repo; image versioning        |
+| C — **Submodule / a copy of the compose in homelab**                     | One deploy branch; duplicated configuration; a worse multi-repo setup        |
+| **Recommendation (the easier one)**                                      | **✅ A** — Portainer Git deploy from the Grocery repo                         |
 
 
-#### [A13 + B5-dev] Runner dev + laptop libvirt — ✅ **decyzja: opcja A (runner na laptopie)**
+#### [A13 + B5-dev] Dev runner + laptop libvirt — ✅ **decision: option A (runner on the laptop)**
 
-**Kontekst:** Prod runner ✅ na `ubuntu-apps`; dev workflow wymaga decyzji czy laptop zawsze online.
+**Context:** Prod runner ✅ on `ubuntu-apps`; the dev workflow needs a decision on whether the laptop is always online.
 
 
-| Opcja                                                       | Konsekwencje (skrót)                                                         |
+| Option                                                       | Consequences (summary)                                                         |
 | ----------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| A — **Runner na laptopie** (`homelab-dev`)                  | Izolacja dev/prod; push `homelab-v2` failuje gdy laptop wyłączony            |
-| B — **Ten sam runner prod + SSH do dev VM**                 | Zawsze dostępny deploy dev; ryzyko pomyłki prod/dev; prostsza infra runnerów |
-| C — **Tylko `workflow_dispatch` na dev** (bez auto na push) | Brak failów CI; wolniejsza pętla dev                                         |
-| **Rekomendacja (łatwiej)**                                  | **✅ A** — dev runner laptop; prod runner ubuntu-apps                         |
+| A — **Runner on the laptop** (`homelab-dev`)                  | Dev/prod isolation; a push to `homelab-v2` fails when the laptop is off            |
+| B — **The same prod runner + SSH to the dev VM**                 | Dev deploy always available; risk of mixing up prod/dev; simpler runner infra |
+| C — **`workflow_dispatch` only on dev** (no auto on push) | No CI failures; a slower dev loop                                         |
+| **Recommendation (the easier one)**                                  | **✅ A** — dev runner on the laptop; prod runner on ubuntu-apps                         |
 
 
 ---
 
-### 🟡 Ważne (F4–F5) — ✅ zamknięte iter. #2
+### 🟡 Important (F4–F5) — ✅ closed in iteration #2
 
 #### [B8] Syncthing — ✅ **A → P1**
 
-**Kontekst:** Sync telefon ↔ laptop w LAN; nie wymaga internetu po pierwszej konfiguracji.
+**Context:** Phone ↔ laptop sync on the LAN; does not need the internet after the first configuration.
 
 
-| Opcja                                    | Konsekwencje (skrót)                                    |
+| Option                                    | Consequences (summary)                                    |
 | ---------------------------------------- | ------------------------------------------------------- |
-| A — **Tak, kontener na apps VM**         | Niski RAM; kolejny port/VPN; backup folderów opcjonalny |
-| B — **Nie — tylko cloud (Immich, etc.)** | Mniej usług; brak sync plików ogólnych                  |
-| **Rekomendacja (łatwiej)**               | **A** jeśli regularnie syncujesz pliki poza zdjęciami   |
+| A — **Yes, a container on the apps VM**         | Low RAM; another port/VPN; folder backup optional |
+| B — **No — cloud only (Immich, etc.)** | Fewer services; no sync of general files                  |
+| **Recommendation (the easier one)**               | **A** if you regularly sync files other than photos   |
 
 
 #### [B10] Notes — ✅ **A Trillium → P0**
 
-**Kontekst:** MD, „łączenie kropek”; faza ? w inwentarzu.
+**Context:** Markdown, "connecting the dots"; phase ? in the inventory.
 
 
-| Opcja                       | Konsekwencje (skrót)                              |
+| Option                       | Consequences (summary)                              |
 | --------------------------- | ------------------------------------------------- |
-| A — **Trillium**            | Drzewo + linki; własny storage plików; średni RAM |
-| B — **Joplin Server**       | Znany model; Postgres; sync mobilny               |
-| C — **Outline / BookStack** | Wiki-style; mniej „graph”; Postgres               |
-| D — **Odłożyć (P2)**        | Zero kosztu teraz; notatki poza homelab           |
-| **Rekomendacja (łatwiej)**  | **A** przy priorytecie graph; **D** jeśli P0 lean |
+| A — **Trillium**            | Tree + links; its own file storage; medium RAM |
+| B — **Joplin Server**       | A familiar model; Postgres; mobile sync               |
+| C — **Outline / BookStack** | Wiki-style; less of a "graph"; Postgres               |
+| D — **Defer (P2)**        | Zero cost now; notes outside the homelab           |
+| **Recommendation (the easier one)**  | **A** if the graph is the priority; **D** if P0 is lean |
 
 
-#### [B9] Budżet — ✅ **A Actual Budget → P0**
+#### [B9] Budget — ✅ **A Actual Budget → P0**
 
-**Kontekst:** Oba na Postgres; faza ? — nie blokuje F1.
+**Context:** Both on Postgres; phase ? — does not block F1.
 
 
-| Opcja                      | Konsekwencje (skrót)                                  |
+| Option                      | Consequences (summary)                                  |
 | -------------------------- | ----------------------------------------------------- |
-| A — **Actual Budget**      | Lżejszy UI; sync plików budżetu; mniejsza społeczność |
-| B — **Firefly III**        | Bogatsze API/reguły; cięższy; dojrzały ekosystem      |
-| C — **P2 / pominąć**       | Brak kosztu RAM teraz                                 |
-| **Rekomendacja (łatwiej)** | **A** jeśli wolisz prostotę; **C** przy lean P0       |
+| A — **Actual Budget**      | Lighter UI; budget-file sync; a smaller community |
+| B — **Firefly III**        | Richer API/rules; heavier; a mature ecosystem      |
+| C — **P2 / skip**       | No RAM cost now                                 |
+| **Recommendation (the easier one)** | **A** if you prefer simplicity; **C** with a lean P0       |
 
 
-#### [B11] Streamer muzyki — ✅ **A Navidrome → P1**
+#### [B11] Music streamer — ✅ **A Navidrome → P1**
 
-**Kontekst:** LAN streaming + ewentualna integracja z Zotify (P1).
+**Context:** LAN streaming + a possible integration with Zotify (P1).
 
 
-| Opcja                                   | Konsekwencje (skrót)                         |
+| Option                                   | Consequences (summary)                         |
 | --------------------------------------- | -------------------------------------------- |
-| A — **Navidrome**                       | Lekki na Celeron; tylko audio; Subsonic API  |
-| B — **Jellyfin (audio)**                | Jedna app z wideo; cięższy niż Navidrome     |
-| C — **Bez dedykowanego streamera (P2)** | Zotify bez UI streamingu na start            |
-| **Rekomendacja (łatwiej)**              | **A** gdy muzyka w scope; **C** przy lean P0 |
+| A — **Navidrome**                       | Light on a Celeron; audio only; Subsonic API  |
+| B — **Jellyfin (audio)**                | One app together with video; heavier than Navidrome     |
+| C — **No dedicated streamer (P2)** | Zotify with no streaming UI at the start            |
+| **Recommendation (the easier one)**              | **A** when music is in scope; **C** with a lean P0 |
 
 
-#### [B12] Jellyfin wideo — ✅ **B Direct Play only → P1**
+#### [B12] Jellyfin video — ✅ **B Direct Play only → P1**
 
-**Kontekst:** J4205 + iGPU — Direct Play OK, transkodowanie praktycznie nie.
+**Context:** J4205 + iGPU — Direct Play is OK, transcoding practically is not.
 
 
-| Opcja                                     | Konsekwencje (skrót)                               |
+| Option                                     | Consequences (summary)                               |
 | ----------------------------------------- | -------------------------------------------------- |
-| A — **Pominąć wideo**                     | Oszczędność RAM/CPU; media tylko Immich + audio    |
-| B — **Jellyfin Direct Play only (P1/P2)** | Duże pliki na NAS; bez transcode OK; monitoring UX |
-| C — **Jellyfin P0 z transcode**           | Wysokie ryzyko lagów; niezalecane na J4205         |
-| **Rekomendacja (łatwiej)**                | **A** lub **B** bez transcode                      |
+| A — **Skip video**                     | Saves RAM/CPU; media is Immich + audio only    |
+| B — **Jellyfin Direct Play only (P1/P2)** | Large files on the NAS; OK without transcode; UX monitoring |
+| C — **Jellyfin P0 with transcode**           | High risk of lag; not recommended on the J4205         |
+| **Recommendation (the easier one)**                | **A** or **B** without transcode                      |
 
 
-#### [B13] Zotify — ✅ **C odłożony (backlog)**
+#### [B13] Zotify — ✅ **C deferred (backlog)**
 
-**Kontekst:** P1 w planie; szara strefa ToS Spotify — świadoma decyzja, tylko LAN.
+**Context:** P1 in the plan; a grey area of the Spotify ToS — a conscious decision, LAN only.
 
 
-| Opcja                               | Konsekwencje (skrót)                             |
+| Option                               | Consequences (summary)                             |
 | ----------------------------------- | ------------------------------------------------ |
-| A — **Zotify P1 + zakładka Homarr** | Niski koszt UI; legal/ToS po Twojej stronie      |
-| B — **Zotify bez panelu**           | Mniej utrzymania; ręczne uruchamianie            |
-| C — **Pominąć Zotify**              | Brak ryzyka ToS; muzyka tylko z legalnych źródeł |
-| **Rekomendacja (łatwiej)**          | **A** jeśli akceptujesz ToS; inaczej **C**       |
+| A — **Zotify P1 + a Homarr tile** | Low UI cost; legal/ToS is on your side      |
+| B — **Zotify without a panel**           | Less maintenance; started by hand            |
+| C — **Skip Zotify**              | No ToS risk; music only from legal sources |
+| **Recommendation (the easier one)**          | **A** if you accept the ToS; otherwise **C**       |
 
 
-#### [B18] Dev subset — ✅ **B pełny stack test (parity P0)**
+#### [B18] Dev subset — ✅ **B full test stack (P0 parity)**
 
-**Kontekst:** Laptop dev nie musi odwzorowywać całego prod (Immich, NAS).
+**Context:** The dev laptop does not have to mirror all of prod (Immich, NAS).
 
 
-| Opcja                                                | Konsekwencje (skrót)                            |
+| Option                                                | Consequences (summary)                            |
 | ---------------------------------------------------- | ----------------------------------------------- |
-| A — **Core only** (Postgres, Authelia, Grocery stub) | Szybki CI; brak testów Immich na dev            |
-| B — **Parity z prod P0**                             | Wolniejszy laptop; pewniejsze testy przed merge |
-| **Rekomendacja (łatwiej)**                           | **A** — Immich/NAS testować na prod w P1        |
+| A — **Core only** (Postgres, Authelia, Grocery stub) | Fast CI; no Immich tests on dev            |
+| B — **Parity with prod P0**                             | A slower laptop; more reliable tests before merge |
+| **Recommendation (the easier one)**                           | **A** — test Immich/NAS on prod in P1        |
 
 
 #### [A14] Home Assistant — ✅ **A greenfield**
 
-**Kontekst:** Greenfield HA vs restore; wpływa na F5 i listę USB/cloud.
+**Context:** Greenfield HA vs restore; affects F5 and the USB/cloud list.
 
 
-| Opcja                                   | Konsekwencje (skrót)                                |
+| Option                                   | Consequences (summary)                                |
 | --------------------------------------- | --------------------------------------------------- |
-| A — **Greenfield HA** (nowa instalacja) | Prostszy start; ręczna rekonfiguracja integracji    |
-| B — **Restore z backup `.tar`**         | Szybkie odtworzenie; migracja ze starego środowiska |
-| C — **Hybryda** (restore + czyszczenie) | Średni wysiłek; ryzyko starych śmieci w config      |
-| **Rekomendacja (łatwiej)**              | **B** jeśli masz działający backup; inaczej **A**   |
+| A — **Greenfield HA** (fresh install) | A simpler start; integrations reconfigured by hand    |
+| B — **Restore from a `.tar` backup**         | Fast recovery; migration from the old environment |
+| C — **Hybrid** (restore + cleanup) | Medium effort; risk of old junk in the config      |
+| **Recommendation (the easier one)**              | **B** if you have a working backup; otherwise **A**   |
 
 
-#### [A15 + DR] — ✅ **A + retention 2 backupy**
+#### [A15 + DR] — ✅ **A + retention of 2 backups**
 
-**Kontekst:** Rozmiar SA500/Purple i koszt pCloud; harmonogram vzdump/pg_dump.
+**Context:** Size of SA500/Purple and the pCloud cost; vzdump/pg_dump schedule.
 
 
-| Opcja                                                    | Konsekwencje (skrót)                                                |
+| Option                                                    | Consequences (summary)                                                |
 | -------------------------------------------------------- | ------------------------------------------------------------------- |
-| A — **Retention krótki** (7–14 dni local, 30 dni pCloud) | Mniejszy pCloud; mniejsze okno recovery                             |
-| B — **Retention długi** (30+ local, 90+ pCloud)          | Większy Purple/pCloud; lepszy DR historyczny                        |
-| C — **Immich duży (>500 GB)**                            | SA500 szybko pełny; wcześniejszy upgrade/archiwum                   |
-| **Rekomendacja (łatwiej)**                               | Podaj szacunki GB — bez tego domyślnie **A** + monitoring zajętości |
+| A — **Short retention** (7–14 days local, 30 days pCloud) | Smaller pCloud; a smaller recovery window                             |
+| B — **Long retention** (30+ local, 90+ pCloud)          | Larger Purple/pCloud; better historical DR                        |
+| C — **Immich large (>500 GB)**                            | SA500 fills up fast; an earlier upgrade/archive                   |
+| **Recommendation (the easier one)**                               | Provide GB estimates — without them, default to **A** + usage monitoring |
 
-**Decyzje A15 (zamknięte):**
+**A15 decisions (closed):**
 
-| Element | Wartość |
+| Element | Value |
 | ------- | ------- |
-| **Retention lokalny (Purple)** | **2 najnowsze** kopie **per strumień backupu**; przy 3. uruchomieniu usuń najstarszą |
-| **Strumienie objęte retention** | `vzdump` (apps + NAS VM), `pg_dump`, HA `.tar`, OPNsense `config.xml` |
-| **Retention offsite (pCloud)** | *TBD w F5* — rekomendacja: **ta sama zasada 2 kopii** dla strumieni DR (nie pełne media) |
-| **Media live (SA500)** | Bez rotacji retention — rozmiar rośnie z biblioteką; monitoring zajętości w F5 |
-| **Pełny backup mediów offsite** | **❌ poza homelab rclone** — multimedia już na pCloud osobno; homelab → pCloud tylko DR (vzdump, configs, `pg_dump`, repo zip) |
-| **Dev (libvirt VM)** | Media testowe **po kilka MB** każda — tylko funkcjonalnie, nie prod sizing |
+| **Local retention (Purple)** | **2 newest** copies **per backup stream**; on the 3rd run, delete the oldest |
+| **Streams covered by retention** | `vzdump` (apps + NAS VM), `pg_dump`, HA `.tar`, OPNsense `config.xml` |
+| **Offsite retention (pCloud)** | *TBD in F5* — recommendation: **the same 2-copy rule** for DR streams (not full media) |
+| **Live media (SA500)** | No retention rotation — size grows with the library; usage monitoring in F5 |
+| **Full offsite media backup** | **❌ outside homelab rclone** — multimedia is already on pCloud separately; homelab → pCloud is DR only (vzdump, configs, `pg_dump`, repo zip) |
+| **Dev (libvirt VM)** | Test media **a few MB each** — functional only, not prod sizing |
 
-**Szacunki GB (2026-06-11 — prod caps od użytkownika; dev = kilka MB):**
+**GB estimates (2026-06-11 — prod caps from the user; dev = a few MB):**
 
-| Kategoria | Dysk / miejsce | Formuła | Wartość prod | % pojemności | Status |
+| Category | Disk / location | Formula | Prod value | % of capacity | Status |
 | --------- | -------------- | ------- | ------------ | ------------ | ------ |
-| **Immich** (oryginały + miniatury ~15%) | SA500 NFS | `IMMICH_GB × 1.15` | **60 GB → 69 GB** | ~3% z 2 TB | ✅ cap 60 GB |
-| **Muzyka** (Navidrome P1) | SA500 NFS | `MUSIC_GB` | **150 GB** | +8% | ✅ cap 150 GB |
-| **Wideo** (Jellyfin P1) | SA500 NFS | `VIDEO_GB` | **400 GB** | +20% | ✅ cap 400 GB |
-| **Syncthing** (P1, ogólne pliki) | SA500 NFS | `SYNC_GB` | **20 GB** | +1% | placeholder |
-| **NFS / misc** (nagłówki, staging) | SA500 | stałe | **100 GB** bufor | +5% | szacunek planu |
-| **Σ SA500 (hot media)** | **SA500 2 TB** | suma powyższych | **~739 GB** | **~37%** | ✅ OK (< 1.5 TB) |
-| **Postgres + cache Docker** | SSD 256 GB (apps VM lokalnie) | `30 + DB_GB` | **~40 GB** | ~16% root VM | rośnie z P0 |
-| **vzdump `ubuntu-apps` × 2** | Purple | `2 × ~45 GB` skompres. | **~90 GB** | 2% z 4 TB | formuła; F5 zmierzy |
-| **vzdump `ubuntu-nas` × 2** (tylko root VM, bez pass-through SA500/Purple) | Purple | `2 × ~15 GB` | **~30 GB** | +1% | formuła; F5 zmierzy |
-| **pg_dump × 2** | Purple | `2 × PG_GB` | **~10 GB** (`PG_GB≈5`) | <1% | formuła |
-| **HA backup × 2** | Purple | `2 × ~1 GB` | **~2 GB** | <1% | formuła |
-| **OPNsense config × 2** | Purple | pomijalne | **<0.1 GB** | — | formuła |
-| **Bufor Purple (nagłe wzrosty, rsync)** | Purple | `20%` nad Σ backupów | **~30 GB** | +1% | szacunek planu |
-| **Σ Purple (2 generacje DR)** | **Purple 4 TB** | suma backupów + bufor | **~158 GB** | **~4%** | duży zapas |
-| **pCloud offsite (DR only — homelab rclone)** | pCloud | `vzdump + pg_dump + HA + OPNsense + repo zip` × 2 | **~160 GB** | **500 GB wolne** ✅ | **bez** pełnych bibliotek mediów (już na pCloud osobno) |
-| ~~pCloud pełne media via homelab~~ | — | — | — | — | **❌ poza scope** — media już backupowane na pCloud niezależnie |
+| **Immich** (originals + thumbnails ~15%) | SA500 NFS | `IMMICH_GB × 1.15` | **60 GB → 69 GB** | ~3% of 2 TB | ✅ cap 60 GB |
+| **Music** (Navidrome P1) | SA500 NFS | `MUSIC_GB` | **150 GB** | +8% | ✅ cap 150 GB |
+| **Video** (Jellyfin P1) | SA500 NFS | `VIDEO_GB` | **400 GB** | +20% | ✅ cap 400 GB |
+| **Syncthing** (P1, general files) | SA500 NFS | `SYNC_GB` | **20 GB** | +1% | placeholder |
+| **NFS / misc** (overhead, staging) | SA500 | fixed | **100 GB** buffer | +5% | plan estimate |
+| **Σ SA500 (hot media)** | **SA500 2 TB** | sum of the above | **~739 GB** | **~37%** | ✅ OK (< 1.5 TB) |
+| **Postgres + Docker cache** | SSD 256 GB (apps VM, local) | `30 + DB_GB` | **~40 GB** | ~16% of the VM root | grows with P0 |
+| **vzdump `ubuntu-apps` × 2** | Purple | `2 × ~45 GB` compressed | **~90 GB** | 2% of 4 TB | formula; F5 will measure |
+| **vzdump `ubuntu-nas` × 2** (VM root only, without pass-through SA500/Purple) | Purple | `2 × ~15 GB` | **~30 GB** | +1% | formula; F5 will measure |
+| **pg_dump × 2** | Purple | `2 × PG_GB` | **~10 GB** (`PG_GB≈5`) | <1% | formula |
+| **HA backup × 2** | Purple | `2 × ~1 GB` | **~2 GB** | <1% | formula |
+| **OPNsense config × 2** | Purple | negligible | **<0.1 GB** | — | formula |
+| **Purple buffer (sudden growth, rsync)** | Purple | `20%` over Σ of backups | **~30 GB** | +1% | plan estimate |
+| **Σ Purple (2 DR generations)** | **Purple 4 TB** | sum of backups + buffer | **~158 GB** | **~4%** | large headroom |
+| **pCloud offsite (DR only — homelab rclone)** | pCloud | `vzdump + pg_dump + HA + OPNsense + repo zip` × 2 | **~160 GB** | **500 GB free** ✅ | **without** the full media libraries (already on pCloud separately) |
+| ~~full pCloud media via homelab~~ | — | — | — | — | **❌ out of scope** — media is already backed up to pCloud independently |
 
-**Formuła Σ SA500:** `(60 × 1.15) + 150 + 400 + 20 + 100 = **739 GB**` (~37% z 2 TB).
+**Σ SA500 formula:** `(60 × 1.15) + 150 + 400 + 20 + 100 = **739 GB**` (~37% of 2 TB).
 
-**Wniosek (2026-06-11):** obecny sprzęt (**SA500 2 TB + Purple 4 TB**) wystarcza z dużym marginesem. **pCloud:** user potwierdził **500 GB wolnego** — homelab DR **~160 GB** (backup-only) mieści się z marginesem; multimedia poza scope homelab rclone (już na pCloud osobno).
+**Conclusion (2026-06-11):** the current hardware (**SA500 2 TB + Purple 4 TB**) is enough, with a large margin. **pCloud:** the user confirmed **500 GB free** — homelab DR **~160 GB** (backup-only) fits with margin; multimedia is outside the homelab rclone scope (already on pCloud separately).
 
-Szczegóły i kroki weryfikacji: `docs/manual-setup.md` → [Referencja — A15 Storage sizing](#referencja--a15-storage-sizing-f3f5).
+Details and verification steps: `docs/manual-setup.md` → [Reference — A15 Storage sizing](#reference--a15-storage-sizing-f3f5).
 
-#### [secrets] — ✅ **A szablon F0-10**
+#### [secrets] — ✅ **A, the F0-10 template**
 
-**Kontekst:** Bitwarden ✅; brakuje formalnej tabeli nazw secretów przed F1 `gh secret set`.
+**Context:** Bitwarden ✅; a formal table of secret names is missing before F1 `gh secret set`.
 
 
-| Opcja                                     | Konsekwencje (skrót)                              |
+| Option                                     | Consequences (summary)                              |
 | ----------------------------------------- | ------------------------------------------------- |
-| A — **Szablon w F0-10** (nazwy tylko)     | Gate F1 spełniony; rotacja udokumentowana         |
-| B — **Pełna tabela per app dopiero w F4** | Szybsze F0; ryzyko brakujących secretów w CI      |
-| **Rekomendacja (łatwiej)**                | **A** — core secrets (Postgres, SSH, rclone) w F1 |
+| A — **Template in F0-10** (names only)     | The F1 gate is met; rotation is documented         |
+| B — **A full per-app table only in F4** | A faster F0; risk of missing secrets in CI      |
+| **Recommendation (the easier one)**                | **A** — core secrets (Postgres, SSH, rclone) in F1 |
 
 
 ---
 
-### 🟢 Później (F5 / F6) — ✅ zamknięte iter. #2
+### 🟢 Later (F5 / F6) — ✅ closed in iteration #2
 
-#### [B19] Metryki — ✅ **A Beszel**
+#### [B19] Metrics — ✅ **A Beszel**
 
-**Kontekst:** P2; J4205 ma ograniczone RAM.
+**Context:** P2; the J4205 has limited RAM.
 
 
-| Opcja                                          | Konsekwencje (skrót)                             |
+| Option                                          | Consequences (summary)                             |
 | ---------------------------------------------- | ------------------------------------------------ |
-| A — **Beszel**                                 | Bardzo lekki; mniej dashboardów                  |
-| B — **Prometheus + Grafana**                   | Pełny stack; +512 MB–1 GB RAM; więcej utrzymania |
-| C — **Bez dedykowanych metryk (Dozzle tylko)** | Zero kosztu; brak alertów historycznych          |
-| **Rekomendacja (łatwiej)**                     | **A** na tym sprzęcie                            |
+| A — **Beszel**                                 | Very light; fewer dashboards                  |
+| B — **Prometheus + Grafana**                   | A full stack; +512 MB–1 GB RAM; more maintenance |
+| C — **No dedicated metrics (Dozzle only)** | Zero cost; no historical alerts          |
+| **Recommendation (the easier one)**                     | **A** on this hardware                            |
 
 
-#### [B20] Diun + audyty — ✅ **A Diun (F6); Trivy defer do stabilnego P0**
+#### [B20] Diun + audits — ✅ **A Diun (F6); Trivy deferred until P0 is stable**
 
-**Kontekst:** Cykliczny security hygiene — nie blokuje prod start.
+**Context:** Periodic security hygiene — does not block the prod start.
 
 
-| Opcja                                        | Konsekwencje (skrót)                          |
+| Option                                        | Consequences (summary)                          |
 | -------------------------------------------- | --------------------------------------------- |
-| A — **Diun + Trivy w CI** (skan przy deploy) | Wykrywa CVE w pipeline; wolniejszy build      |
-| B — **Cron Trivy na VM**                     | Niezależne od GHA; kolejny cron do utrzymania |
-| C — **Odłożyć**                              | Szybsze F4–F5; ręczne `docker pull` updates   |
-| **Rekomendacja (łatwiej)**                   | **c**                                         |
+| A — **Diun + Trivy in CI** (scan on deploy) | Finds CVEs in the pipeline; a slower build      |
+| B — **Trivy cron on the VM**                     | Independent of GHA; another cron to maintain |
+| C — **Defer**                              | A faster F4–F5; manual `docker pull` updates   |
+| **Recommendation (the easier one)**                   | **c**                                         |
 
 
-#### [B21] DumbWhoIs, omni-tools — ✅ **P0** (scope); opcj. przyszły podział P0–P6
+#### [B21] DumbWhoIs, omni-tools — ✅ **P0** (scope); optional future split P0–P6
 
-**Kontekst:** Małe narzędzia VPN-only; niski wpływ na architekturę.
+**Context:** Small VPN-only tools; low impact on the architecture.
 
 
-| Opcja                      | Konsekwencje (skrót)                    |
+| Option                      | Consequences (summary)                    |
 | -------------------------- | --------------------------------------- |
-| A — **P1** (zaraz po P0)   | Więcej Homarr shortcuts; marginalny RAM |
-| B — **P2**                 | Mniejszy backlog F4                     |
-| **Rekomendacja (łatwiej)** | **B** przy lean P0                      |
+| A — **P1** (right after P0)   | More Homarr shortcuts; marginal RAM |
+| B — **P2**                 | A smaller F4 backlog                     |
+| **Recommendation (the easier one)** | **B** with a lean P0                      |
 
 
-#### [git-post-merge] — ✅ **A krótkoterminowo; B po pierwszym prod merge**
+#### [git-post-merge] — ✅ **A short term; B after the first prod merge**
 
-**Kontekst:** Po zamianie drzewa — skąd commitować dev deploy.
+**Context:** After the tree replacement — where dev deploy commits come from.
 
 
-| Opcja                                        | Konsekwencje (skrót)                                        |
+| Option                                        | Consequences (summary)                                        |
 | -------------------------------------------- | ----------------------------------------------------------- |
-| A — **Zostawić `homelab-v2`** jako gałąź dev | Dwa flow znane; możliwy confusion                           |
-| B — **Nowa gałąź `develop` po merge**        | Czystsza semantyka; jednorazowa migracja workflow           |
-| C — **Tylko feature branches → master**      | Proste; brak długiej gałęzi dev                             |
-| **Rekomendacja (łatwiej)**                   | **A** krótkoterminowo; **B** po pierwszym udanym prod merge |
+| A — **Keep `homelab-v2`** as the dev branch | Two known flows; possible confusion                           |
+| B — **A new `develop` branch after the merge**        | Cleaner semantics; a one-time workflow migration           |
+| C — **Feature branches → master only**      | Simple; no long-lived dev branch                             |
+| **Recommendation (the easier one)**                   | **A** short term; **B** after the first successful prod merge |
 
 
-#### [proxmox-host] — ✅ **B cleanup legacy VM** + TODO SSH keys / Proxmox API tokens
+#### [proxmox-host] — ✅ **B cleanup of legacy VMs** + TODO SSH keys / Proxmox API tokens
 
-**Kontekst:** Greenfield TF = nowy state; stary metal może mieć testowe VM.
+**Context:** Greenfield TF = a new state; the old metal may have test VMs.
 
 
-| Opcja                                  | Konsekwencje (skrót)                                              |
+| Option                                  | Consequences (summary)                                              |
 | -------------------------------------- | ----------------------------------------------------------------- |
-| A — **Świeży install Proxmox**         | Czysty TF; downtime; utrata starych VM                            |
-| B — **Cleanup ręczny + greenfield TF** | Szybsze; ryzyko pozostałości config                               |
-| **Rekomendacja (łatwiej)**             | **A** jeśli legacy VM niepotrzebne; **B** jeśli host już stabilny |
+| A — **Fresh Proxmox install**         | Clean TF; downtime; loss of the old VMs                            |
+| B — **Manual cleanup + greenfield TF** | Faster; risk of leftover config                               |
+| **Recommendation (the easier one)**             | **A** if the legacy VMs are not needed; **B** if the host is already stable |
 
 
 ---
 
-### Dane do dostarczenia (A0–A16 — status)
+### Data to supply (A0–A16 — status)
 
 
-| ID      | Temat                                          | Blokuje  | Status                                         |
+| ID      | Topic                                          | Blocks  | Status                                         |
 | ------- | ---------------------------------------------- | -------- | ---------------------------------------------- |
-| **A0**  | Audyt + delete legacy GH secrets/variables     | F0 → F1  | [x] ✅ 2026-06-11 — dev/prod/repo puste |
-| **A1**  | Mapa dysków w TF (mount SA500/Purple w NAS VM) | F3       | [x] spec; [ ] TF                               |
-| **A4**  | VLAN, CIDR, trunk                              | F1/F2/F3 | [x] ✅ iter. #2 — opcja C                       |
-| **A5**  | Statyczne IP (OPNsense, Proxmox, VM, T620)     | F1/F3    | [~] ✅ as-built 2026-06-30; MAC placeholder do F3 |
-| **A6**  | Domena + wildcard DNS                          | F2/F4    | [x] ✅ **`grocery.dkhomelabserver.xyz`** |
-| **A7**  | GitHub repo + Environments dev/prod            | F1       | [x] ✅ 2026-06-11 — approval prod, branch `main` |
+| **A0**  | Audit + delete legacy GH secrets/variables     | F0 → F1  | [x] ✅ 2026-06-11 — dev/prod/repo empty |
+| **A1**  | Disk map in TF (mount SA500/Purple in the NAS VM) | F3       | [x] spec; [ ] TF                               |
+| **A4**  | VLAN, CIDR, trunk                              | F1/F2/F3 | [x] ✅ iteration #2 — option C                       |
+| **A5**  | Static IPs (OPNsense, Proxmox, VM, T620)     | F1/F3    | [~] ✅ as-built 2026-06-30; MAC placeholder until F3 |
+| **A6**  | Domain + wildcard DNS                          | F2/F4    | [x] ✅ **`grocery.dkhomelabserver.xyz`** |
+| **A7**  | GitHub repo + Environments dev/prod            | F1       | [x] ✅ 2026-06-11 — prod approval, branch `main` |
 | **A8**  | Terraform Cloud workspace                      | F1       | [x] ✅ org **`dkhomelabserver`**, workspace **`homelab`**, `terraform login` OK |
-| **A9**  | pCloud + rclone auth                           | F5       | [~] ⏳ 2026-06-11 — konto pCloud ✅ (**500 GB wolne**); brak `rclone` OAuth remote; patrz F0-04d |
-| **A10** | Bitwarden vault gotowy (2FA)                   | F0/F1    | [x] ✅ 2026-06-11 — Password Manager, folder `homelab`, `TF_API_TOKEN/prod` |
-| **A11** | Repo ToDo Grocery + Dockerfile/stack           | F4       | [x] ✅ Portainer Git deploy                     |
-| **A13** | Laptop libvirt + polityka runner dev           | F1       | [x] ✅ runner dev na laptopie                   |
-| **A14** | Lista integracji HA (T620)                     | F5       | [x] ✅ greenfield HA                            |
-| **A15** | Szacunki GB (Immich, muzyka) + retention       | F3/F5    | [x] ✅ 2026-06-11 — Σ SA500 **739 GB**; Purple **~158 GB**; pCloud DR **~160 GB** (backup-only) |
-| **A16** | Weryfikacja GitHub / źródła repo per app (P0/P1/P2) | F4/F6 | [x] ✅ 2026-06-11 — **20/20** potwierdzone; patrz `docs/apps-sources.md` |
+| **A9**  | pCloud + rclone auth                           | F5       | [~] ⏳ 2026-06-11 — pCloud account ✅ (**500 GB free**); no `rclone` OAuth remote; see F0-04d |
+| **A10** | Bitwarden vault ready (2FA)                   | F0/F1    | [x] ✅ 2026-06-11 — Password Manager, folder `homelab`, `TF_API_TOKEN/prod` |
+| **A11** | ToDo Grocery repo + Dockerfile/stack           | F4       | [x] ✅ Portainer Git deploy                     |
+| **A13** | Laptop libvirt + dev runner policy           | F1       | [x] ✅ dev runner on the laptop                   |
+| **A14** | HA integration list (T620)                     | F5       | [x] ✅ greenfield HA                            |
+| **A15** | GB estimates (Immich, music) + retention       | F3/F5    | [x] ✅ 2026-06-11 — Σ SA500 **739 GB**; Purple **~158 GB**; pCloud DR **~160 GB** (backup-only) |
+| **A16** | GitHub / repo-source verification per app (P0/P1/P2) | F4/F6 | [x] ✅ 2026-06-11 — **20/20** confirmed; see `docs/apps-sources.md` |
 
 
-**Checklist iteracji #2:** ... pozostałe **A9 partial** (A8 ✅ A10 ✅).
+**Iteration #2 checklist:** ... the remaining item is **A9 partial** (A8 ✅ A10 ✅).
 
 ---
 
-## Sprzęt fizyczny (3 maszyny)
+## Physical hardware (3 machines)
 
 
-| #   | Urządzenie                     | Rola                                                         | Uwagi                             |
+| #   | Device                     | Role                                                         | Notes                             |
 | --- | ------------------------------ | ------------------------------------------------------------ | --------------------------------- |
-| 1   | **OPNsense**                   | Router, firewall, **WireGuard**, **reverse proxy (HAProxy)** | Poza sizingiem zasobów            |
-| 2   | **HP T620**                    | **Home Assistant** (HAOS, flash)                             | Poza Proxmox; git + backup `.tar` |
-| 3   | **PC Proxmox** (Celeron J4205) | **Proxmox** na metalu                                        | **2 VM:** NAS + aplikacje/Docker  |
+| 1   | **OPNsense**                   | Router, firewall, **WireGuard**, **reverse proxy (HAProxy)** | Outside resource sizing            |
+| 2   | **HP T620**                    | **Home Assistant** (HAOS, flash)                             | Outside Proxmox; git + `.tar` backup |
+| 3   | **PC Proxmox** (Celeron J4205) | **Proxmox** on the metal                                        | **2 VMs:** NAS + applications/Docker  |
 
 
 ### HP T620 — Home Assistant
 
 
-| Parametr  | Wartość                                                        |
+| Parameter  | Value                                                        |
 | --------- | -------------------------------------------------------------- |
 | **Model** | HP T620 thin client                                            |
 | **CPU**   | AMD GX-415GA (4× ~1.5 GHz, x86_64)                             |
 | **RAM**   | 16 GB DDR3L                                                    |
-| **Dysk**  | SSD 128 GB                                                     |
-| **Sieć**  | 1× NIC 1 Gb/s — **IOT VLAN tag 20**                            |
-| **Rola**  | HAOS (flash) — wystarczające zasoby pod HA + typowe integracje |
+| **Disk**  | SSD 128 GB                                                     |
+| **Network**  | 1× NIC 1 Gb/s — **IOT VLAN tag 20**                            |
+| **Role**  | HAOS (flash) — enough resources for HA + typical integrations |
 
 
-**HAOS:** architektura **x86_64** — obraz standardowy. 128 GB SSD OK na system + logi; dane HA głównie w backup `.tar`.
+**HAOS:** architecture **x86_64** — the standard image. A 128 GB SSD is OK for the system + logs; HA data lives mainly in the `.tar` backup.
 
-### PC Proxmox — host aplikacji + NAS (VM)
+### PC Proxmox — application host + NAS (VM)
 
 
-| Parametr         | Wartość                                                                                   |
+| Parameter         | Value                                                                                   |
 | ---------------- | ----------------------------------------------------------------------------------------- |
-| **CPU**          | Intel **Celeron J4205** (4 rdzenie, ~2.0 GHz, TDP 10 W)                                   |
-| **iGPU**         | Intel HD Graphics 505 — Direct Play w Jellyfin możliwy; **transkodowanie ograniczone**    |
-| **RAM fizyczna** | **16 GB** — podział VM **8+4 GB** ✅ (B7)                                                  |
-| **Sieć**         | **3× NIC 1 Gb/s** — ✅ **NIC1 IOT/mgmt `.20.20`, NIC2 dyski, NIC3 APP** (as-built A5 2026-06-30) |
+| **CPU**          | Intel **Celeron J4205** (4 cores, ~2.0 GHz, TDP 10 W)                                   |
+| **iGPU**         | Intel HD Graphics 505 — Direct Play in Jellyfin is possible; **transcoding is limited**    |
+| **Physical RAM** | **16 GB** — VM split **8+4 GB** ✅ (B7)                                                  |
+| **Network**         | **3× NIC 1 Gb/s** — ✅ **NIC1 IOT/mgmt `.20.20`, NIC2 disks, NIC3 APP** (as-built A5 2026-06-30) |
 
 
-**Dyski:**
+**Disks:**
 
 
-| Dysk      | Pojemność  | Typ                  | Planowane użycie (*TBD* w TF)                                     |
+| Disk      | Capacity  | Type                  | Planned use (*TBD* in TF)                                     |
 | --------- | ---------- | -------------------- | ----------------------------------------------------------------- |
-| System    | **256 GB** | SSD                  | Proxmox VE, dyski systemowe VM (`ubuntu-apps`, `ubuntu-nas` root) |
+| System    | **256 GB** | SSD                  | Proxmox VE, VM system disks (`ubuntu-apps`, `ubuntu-nas` root) |
 | Data fast | **2 TB**   | SSD WD Red **SA500** | ✅ NAS VM: NFS, Immich/media (hot)                                 |
-| Data bulk | **4 TB**   | HDD WD **Purple**    | ✅ Backupy lokalne, vzdump, archiwum                               |
+| Data bulk | **4 TB**   | HDD WD **Purple**    | ✅ Local backups, vzdump, archive                               |
 
 
-**Uwagi planistyczne (16 GB RAM):**
+**Planning notes (16 GB RAM):**
 
-- Proxmox host ~~1–2 GB; zostaje **~~14 GB** na obie VM łącznie.
-- Wstępny podział **B7 ✅:** **apps 8 GB + NAS 4 GB** (~4 GB bufor host + Proxmox).
-- Immich + Postgres + kilka kontenerów na Celeron — **P0 bez Immich** (Immich P1); monitoring swap w F4.
+- Proxmox host ~1–2 GB; about **~14 GB** left for both VMs combined.
+- Initial split **B7 ✅:** **apps 8 GB + NAS 4 GB** (~4 GB buffer for the host + Proxmox).
+- Immich + Postgres + several containers on a Celeron — **P0 without Immich** (Immich is P1); swap monitoring in F4.
 
-### VM na Proxmox (planowane)
+### VMs on Proxmox (planned)
 
 
-| VM            | Rola                   | System             | RAM (propozycja → B7) | Dysk                                                    |
+| VM            | Role                   | System             | RAM (proposal → B7) | Disk                                                    |
 | ------------- | ---------------------- | ------------------ | --------------------- | ------------------------------------------------------- |
-| `ubuntu-apps` | Docker + **Portainer** | Ubuntu 24.04 cloud | **8 GB** ✅            | root 256 GB SSD; wolumeny app *TBD* (local vs NFS)      |
-| `ubuntu-nas`  | NFS/SMB, backupy       | Ubuntu 24.04 cloud | **4 GB** ✅            | root SSD; **SA500** + **Purple** (*TBD* mount/LVM w TF) |
+| `ubuntu-apps` | Docker + **Portainer** | Ubuntu 24.04 cloud | **8 GB** ✅            | root 256 GB SSD; app volumes *TBD* (local vs NFS)      |
+| `ubuntu-nas`  | NFS/SMB, backups       | Ubuntu 24.04 cloud | **4 GB** ✅            | root SSD; **SA500** + **Purple** (*TBD* mount/LVM in TF) |
 
 
-**B6 — storage per-app ✅ (B+C):** Postgres + cache **lokalnie** na `ubuntu-apps`; media/Immich → **NFS** z NAS VM; dodatkowe wolumeny per app ⏳ TBD przy F4.
+**B6 — per-app storage ✅ (B+C):** Postgres + cache **locally** on `ubuntu-apps`; media/Immich → **NFS** from the NAS VM; extra per-app volumes ⏳ TBD at F4.
 
-### Dev (poza prod)
+### Dev (outside prod)
 
 
-| Host             | Rola                                                                  |
+| Host             | Role                                                                  |
 | ---------------- | --------------------------------------------------------------------- |
-| Laptop + libvirt | VM testowa (`192.168.122.x`) — ten sam stack co prod, mniejsze zasoby |
+| Laptop + libvirt | Test VM (`192.168.122.x`) — the same stack as prod, smaller resources |
 
 
-### Zakres planowania zasobów (RAM / CPU / dysk)
+### Resource planning scope (RAM / CPU / disk)
 
 
-| Maszyna        | Uwzględniana w sizingu?     | Uwagi                                                                                                                              |
+| Machine        | Included in sizing?     | Notes                                                                                                                              |
 | -------------- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| **OPNsense**   | **Nie**                     | Decyzja użytkownika: router ma wystarczającą moc; HAProxy, WireGuard, ewent. dodatki na OPNsense **nie** są ograniczeniem w planie |
-| **HP T620**    | Tak (informacyjnie)         | 16 GB — więcej niż potrzeba pod HA; bez optymalizacji RAM                                                                          |
-| **PC Proxmox** | **Tak (główny bottleneck)** | 16 GB RAM, J4205 — limity VM, Compose, Immich                                                                                      |
-| **Laptop dev** | Osobno                      | Mniejszy stack testowy                                                                                                             |
+| **OPNsense**   | **No**                     | User decision: the router has enough power; HAProxy, WireGuard, and any extras on OPNsense are **not** a constraint in the plan |
+| **HP T620**    | Yes (for information)         | 16 GB — more than HA needs; no RAM tuning                                                                          |
+| **PC Proxmox** | **Yes (the main bottleneck)** | 16 GB RAM, J4205 — limits on VMs, Compose, Immich                                                                                      |
+| **Dev laptop** | Separately                      | A smaller test stack                                                                                                             |
 
 
 ---
 
-## Decyzja architektoniczna: Docker w VM vs LXC
+## Architectural decision: Docker in a VM vs LXC
 
-**Decyzja B1 ✅:** **VM `ubuntu-apps` + Docker** (nie LXC).
+**Decision B1 ✅:** **VM `ubuntu-apps` + Docker** (not LXC).
 
 ### Portainer + multi-repo (B1 + B17 ✅)
 
-Appki pochodzą z **różnych repozytoriów** (np. ToDo Grocery) — **nie** jeden monolityczny `docker-compose.yml` dla wszystkiego.
+Apps come from **different repositories** (for example ToDo Grocery) — **not** one monolithic `docker-compose.yml` for everything.
 
 
-| Warstwa        | Gdzie                            | Co                                                                           |
+| Layer        | Where                            | What                                                                           |
 | -------------- | -------------------------------- | ---------------------------------------------------------------------------- |
-| **Core infra** | Repo `homelab` → `compose/core/` | Postgres, pgAdmin, Homarr, Authelia, Dozzle (później) — **Compose w git**    |
-| **Per-app**    | Osobne repo / GitHub             | Stack deployowany przez **Portainer** (Git deploy, webhook) lub Ansible pull |
-| **Portainer**  | Kontener na `ubuntu-apps`        | UI do zarządzania stacks z wielu źródeł; **P0**                              |
+| **Core infra** | Repo `homelab` → `compose/core/` | Postgres, pgAdmin, Homarr, Authelia, Dozzle (later) — **Compose in git**    |
+| **Per-app**    | A separate repo / GitHub             | Stack deployed through **Portainer** (Git deploy, webhook) or an Ansible pull |
+| **Portainer**  | A container on `ubuntu-apps`        | UI for managing stacks from many sources; **P0**                              |
 
 
-**CI/CD:** Ansible deployuje **core compose**; Portainer stacks — osobno (webhook po push w app repo *lub* manual w P0).
+**CI/CD:** Ansible deploys the **core compose**; Portainer stacks are separate (a webhook after a push in the app repo *or* manual in P0).
 
-- [x] **VM + Docker + Portainer** — potwierdzone
-- [ ] LXC — odrzucone
+- [x] **VM + Docker + Portainer** — confirmed
+- [ ] LXC — rejected
 
 ---
 
-## Strategia generowania sekretów i zmiennych
+## Strategy for generating secrets and variables
 
-### Zasady
+### Rules
 
 
-| Typ                          | Jak generować                                        | Gdzie trzymać                                  | W repo              |
+| Type                          | How to generate                                        | Where to keep                                  | In the repo              |
 | ---------------------------- | ---------------------------------------------------- | ---------------------------------------------- | ------------------- |
-| Hasła DB, API keys, tokeny   | `openssl rand -base64 32` lub `openssl rand -hex 32` | `gh secret set --env prod/dev`                 | tylko `*.example`   |
-| Klucze SSH                   | `ssh-keygen -t ed25519`                              | `gh secret` (private), `gh variable` (public)  | nigdy               |
-| APP_KEY / NEXTAUTH / JWT     | `openssl rand -base64 32` per app                    | GH Secret → Ansible → `/opt/secrets/<app>.env` | nigdy               |
-| Hasła użytkowników aplikacji | generator przy pierwszym deploy                      | secrets + dokumentacja w vault osobistym       | nigdy               |
-| Niesekretne URL, IP, porty   | ręcznie / tfvars                                     | `gh variable set` + inventory Ansible          | tfvars bez haseł OK |
+| DB passwords, API keys, tokens   | `openssl rand -base64 32` or `openssl rand -hex 32` | `gh secret set --env prod/dev`                 | `*.example` only   |
+| SSH keys                   | `ssh-keygen -t ed25519`                              | `gh secret` (private), `gh variable` (public)  | never               |
+| APP_KEY / NEXTAUTH / JWT     | `openssl rand -base64 32` per app                    | GH Secret → Ansible → `/opt/secrets/<app>.env` | never               |
+| Application user passwords | generated on the first deploy                      | secrets + documentation in the personal vault       | never               |
+| Non-secret URLs, IPs, ports   | by hand / tfvars                                     | `gh variable set` + the Ansible inventory          | tfvars without passwords is OK |
 
 
 ### Flow
 
-1. **Generuj lokalnie** w terminalu (nie w chat, nie w repo).
-2. **Zapisz kopię w vault osobistym** (Bitwarden / inny) — **przed** wgraniem do GitHub (patrz niżej).
-3. **Wgraj przez `gh secret set` / `gh variable set`** (patrz sekcja Sekrety).
-4. **Deploy:** Ansible templating → pliki `.env` na VM (`mode 0600`).
-5. **Rotacja:** nowy secret → vault → GH → redeploy — data rotacji w vault.
+1. **Generate locally** in a terminal (not in chat, not in the repo).
+2. **Save a copy in the personal vault** (Bitwarden / another) — **before** uploading to GitHub (see below).
+3. **Upload with `gh secret set` / `gh variable set`** (see the Secrets section).
+4. **Deploy:** Ansible templating → `.env` files on the VM (`mode 0600`).
+5. **Rotation:** new secret → vault → GH → redeploy — the rotation date goes in the vault.
 
-### Widoczność secretów GitHub — problem
+### GitHub secret visibility — the problem
 
-**GitHub Secrets są write-only:** po `gh secret set` **nie odczytasz wartości z powrotem** — ani w UI, ani przez CLI.
+**GitHub Secrets are write-only:** after `gh secret set` **you cannot read the value back** — not in the UI, and not through the CLI.
 
 
-| Co widzisz                                   | Komenda / miejsce                                   |
+| What you see                                   | Command / place                                   |
 | -------------------------------------------- | --------------------------------------------------- |
-| **Nazwy** secretów                           | `gh secret list --env prod`                         |
-| **Nazwy** variables + **wartości** variables | `gh variable list --env prod` (variables ≠ secrets) |
-| **Wartości** secretów                        | **Nigdy** z GitHub — zaprojektowane celowo          |
+| Secret **names**                           | `gh secret list --env prod`                         |
+| Variable **names** + variable **values** | `gh variable list --env prod` (variables ≠ secrets) |
+| Secret **values**                        | **Never** from GitHub — by design          |
 
 
-**Konsekwencja:** jeśli zapiszesz tylko przez `gh secret set` i nie masz kopii — **secret przepada** (utrata przy rotacji, awarii, zapomnieniu).
+**Consequence:** if you save only through `gh secret set` and you have no copy — **the secret is gone** (lost on rotation, on a failure, or when you forget it).
 
-### Vault osobisty — rekomendacja (Bitwarden lub inny)
+### Personal vault — recommendation (Bitwarden or another)
 
-**Tak — sensownie i bezpiecznie** trzymać **drugą kopię** w menedżerze haseł (homelab):
+**Yes — it is sensible and safe** to keep a **second copy** in a password manager (homelab):
 
 
-| Miejsce                                               | Co trzymać                                                | Uwagi                                             |
+| Place                                               | What to keep                                                | Notes                                             |
 | ----------------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------- |
-| **Bitwarden** (lub KeePassXC, 1Password, Proton Pass) | Wartości secretów + notatki (np. „POSTGRES prod 2026-06”) | Vault z 2FA; **nie** sync do publicznego repo     |
-| **GitHub Secrets**                                    | Kopia operacyjna dla CI/CD                                | Write-only z perspektywy odczytu                  |
-| **Repo `docs/secrets-inventory.md`**                  | Tylko **lista nazw** + env + data rotacji                 | **Bez wartości** — do audytu „co powinno istnieć” |
-| **OPNsense / router**                                 | API keys tylko na urządzeniu                              | Poza GH i poza repo                               |
+| **Bitwarden** (or KeePassXC, 1Password, Proton Pass) | Secret values + notes (for example "POSTGRES prod 2026-06") | A vault with 2FA; **do not** sync it to a public repo     |
+| **GitHub Secrets**                                    | The operational copy for CI/CD                                | Write-only from the point of view of reading                  |
+| **Repo `docs/secrets-inventory.md`**                  | Only the **list of names** + env + rotation date                 | **No values** — for an audit of "what should exist" |
+| **OPNsense / router**                                 | API keys only on the device                              | Outside GH and outside the repo                               |
 
 
-**Procedura przy tworzeniu secretu (✅ decyzja iter. #2 — szablon F0-10):**
+**Procedure when creating a secret (✅ iteration #2 decision — F0-10 template):**
 
 ```bash
-# 1. Wygeneruj
+# 1. Generate
 SECRET=$(openssl rand -base64 32)
 
-# 2. Zapisz ręcznie w Bitwarden (Secure Note: homelab/POSTGRES_PASSWORD/prod)
-#    — wklej $SECRET, data, powiązana appka
+# 2. Save manually in Bitwarden (Secure Note: homelab/POSTGRES_PASSWORD/prod)
+#    — paste $SECRET, the date, and the related app
 
-# 3. Dopiero potem wgraj do GitHub (wartość nie wraca)
+# 3. Only then upload to GitHub (the value does not come back)
 gh secret set POSTGRES_PASSWORD --env prod --body "$SECRET"
 
-# 4. Wyczyść zmienną shell (opcjonalnie)
+# 4. Clear the shell variable (optional)
 unset SECRET
 
-# 5. Zaktualizuj docs/secrets-inventory.md — tylko nazwa + data
+# 5. Update docs/secrets-inventory.md — name and date only
 ```
 
-**Klucze SSH:** private key w Bitwarden (attachment) **lub** tylko na laptopie w `~/.ssh/` + **public** w GH variable; nigdy oba private w GH i plain file bez hasła.
+**SSH keys:** the private key in Bitwarden (attachment) **or** only on the laptop in `~/.ssh/` + the **public** key in a GH variable; never both the private key in GH and a plain file without a passphrase.
 
-**Czego unikać:**
+**What to avoid:**
 
-- Pliku `secrets.txt` / `.env` z prawdziwymi wartościami na dysku bez szyfrowania
-- Wklejania wartości do Cursor chat / Issues / Slack
-- Polegania wyłącznie na GitHub jako „bazy haseł”
+- A `secrets.txt` / `.env` file with real values on disk without encryption
+- Pasting values into Cursor chat / Issues / Slack
+- Relying on GitHub alone as a "password database"
 
-**Otwarte (do decyzji):** ~~Bitwarden Cloud vs Vaultwarden~~ → **✅ Bitwarden Cloud** (B15).
+**Open (to be decided):** ~~Bitwarden Cloud vs Vaultwarden~~ → **✅ Bitwarden Cloud** (B15).
 
-### Podział sekretów (TBD — dopisz)
+### Secret split (TBD — add more)
 
 
-| Sekret              | GH env     | Na hoście                   | Uwagi                  |
+| Secret              | GH env     | On the host                   | Notes                  |
 | ------------------- | ---------- | --------------------------- | ---------------------- |
-| `POSTGRES_PASSWORD` | prod, dev  | `/opt/secrets/postgres.env` | jeden silnik, wiele DB |
-| OPNsense API        | **nie GH** | tylko router                |                        |
-| WireGuard           | OPNsense   | config backup               | już na routerze        |
+| `POSTGRES_PASSWORD` | prod, dev  | `/opt/secrets/postgres.env` | one engine, many DBs |
+| OPNsense API        | **not GH** | router only                |                        |
+| WireGuard           | OPNsense   | config backup               | already on the router        |
 | pCloud (rclone)     | prod       | GH secret                   | ✅ **rclone** (B16)     |
 
 
 ---
 
-## Dostęp zewnętrzny i reverse proxy
+## External access and reverse proxy
 
 
-| Element                       | Stan / decyzja                                                                                            |
+| Element                       | State / decision                                                                                            |
 | ----------------------------- | --------------------------------------------------------------------------------------------------------- |
-| **WireGuard VPN**             | OPNsense — **domyślny** dostęp do LAN (większość usług **VPN-only**)                                      |
-| **Publiczny HTTPS**           | ✅ Tylko **wybrane app** — na start: **ToDo Grocery**; reszta **VPN-only**, chyba że później zmienisz (B3) |
-| **Reverse proxy**             | ✅ **OPNsense HAProxy** (os-traefik-maxit odrzucony)                                                       |
-| **Proxy na VM (NPM/Traefik)** | ❌ Odrzucone — proxy na routerze                                                                           |
-| **SSO**                       | ✅ **Authelia** na wszystkie usługi (VPN + public); Authentik → P2 jeśli potrzeba IdP                      |
+| **WireGuard VPN**             | OPNsense — **default** access to the LAN (most services **VPN-only**)                                      |
+| **Public HTTPS**           | ✅ Only **selected apps** — at the start: **ToDo Grocery**; the rest **VPN-only**, unless you change it later (B3) |
+| **Reverse proxy**             | ✅ **OPNsense HAProxy** (os-traefik-maxit rejected)                                                       |
+| **Proxy on the VM (NPM/Traefik)** | ❌ Rejected — the proxy is on the router                                                                           |
+| **SSO**                       | ✅ **Authelia** on every service (VPN + public); Authentik → P2 if an IdP is needed                      |
 
 
 ---
 
-## Weryfikacja repo aplikacji [A16]
+## Application repo verification [A16]
 
-**Gate A16:** Zweryfikować link GitHub / źródło dla każdej appki — **[x] ✅ 2026-06-11 (20/20)**
+**Gate A16:** Verify the GitHub link / source for every app — **[x] ✅ 2026-06-11 (20/20)**
 
-**Dokumentacja:** [`docs/apps-sources.md`](docs/apps-sources.md) — pełna tabela + uwagi deploy (Portainer Git vs GHCR vs compose w `homelab`).
+**Documentation:** [`docs/apps-sources.md`](docs/apps-sources.md) — the full table + deploy notes (Portainer Git vs GHCR vs compose in `homelab`).
 
-| App | Faza | GitHub URL | Status | Uwagi |
+| App | Phase | GitHub URL | Status | Notes |
 | --- | ---- | ---------- | ------ | ----- |
-| **PostgreSQL** | P0 | [postgres/postgres](https://github.com/postgres/postgres) | [x] | upstream; obraz Docker Hub `postgres` |
-| **pgAdmin** | P0 | [pgadmin-org/pgadmin4](https://github.com/pgadmin-org/pgadmin4) | [x] | obraz Docker Hub `dpage/pgadmin4` |
-| **Homarr** | P0 | [homarr-labs/homarr](https://github.com/homarr-labs/homarr) | [x] | aktywny 2026-06-11 |
-| **Trillium** (Trilium) | P0 | [TriliumNext/Trilium](https://github.com/TriliumNext/Trilium) | [x] | fork od `zadam/trilium`; plan: „Trillium” |
+| **PostgreSQL** | P0 | [postgres/postgres](https://github.com/postgres/postgres) | [x] | upstream; Docker Hub image `postgres` |
+| **pgAdmin** | P0 | [pgadmin-org/pgadmin4](https://github.com/pgadmin-org/pgadmin4) | [x] | Docker Hub image `dpage/pgadmin4` |
+| **Homarr** | P0 | [homarr-labs/homarr](https://github.com/homarr-labs/homarr) | [x] | active 2026-06-11 |
+| **Trillium** (Trilium) | P0 | [TriliumNext/Trilium](https://github.com/TriliumNext/Trilium) | [x] | fork of `zadam/trilium`; the plan says "Trillium" |
 | **Actual Budget** | P0 | [actualbudget/actual](https://github.com/actualbudget/actual) | [x] | |
 | **Linkwarden** | P0 | [linkwarden/linkwarden](https://github.com/linkwarden/linkwarden) | [x] | ~~linkwarden-app~~ → 404 |
 | **Authelia** | P0 | [authelia/authelia](https://github.com/authelia/authelia) | [x] | |
 | **omni-tools** | P0 | [iib0011/omni-tools](https://github.com/iib0011/omni-tools) | [x] | |
 | **DumbWhoIs** | P0 | [DumbWareio/DumbWhoIs](https://github.com/DumbWareio/DumbWhoIs) | [x] | [dumbware.io](https://www.dumbware.io/DumbWhoIs) |
-| **Bento PDF** | P0 | [alam00000/bentopdf](https://github.com/alam00000/bentopdf) | [x] | plan: „Bentoo PDF” = upstream **BentoPDF** |
+| **Bento PDF** | P0 | [alam00000/bentopdf](https://github.com/alam00000/bentopdf) | [x] | the plan's "Bentoo PDF" = upstream **BentoPDF** |
 | **Portainer** | P0 | [portainer/portainer](https://github.com/portainer/portainer) | [x] | |
-| **Easy Todo Grocery** | P0 | [DaveKadziola/easytodo-grocery-list](https://github.com/DaveKadziola/easytodo-grocery-list) | [x] | własne repo; Portainer Git deploy (A11) |
+| **Easy Todo Grocery** | P0 | [DaveKadziola/easytodo-grocery-list](https://github.com/DaveKadziola/easytodo-grocery-list) | [x] | own repo; Portainer Git deploy (A11) |
 | **Immich** | P1 | [immich-app/immich](https://github.com/immich-app/immich) | [x] | |
 | **Syncthing** | P1 | [syncthing/syncthing](https://github.com/syncthing/syncthing) | [x] | |
 | **Navidrome** | P1 | [navidrome/navidrome](https://github.com/navidrome/navidrome) | [x] | |
@@ -1111,139 +1110,139 @@ unset SECRET
 | **Beszel** | P2 | [henrygd/beszel](https://github.com/henrygd/beszel) | [x] | |
 | **Diun** | P2 | [crazy-max/diun](https://github.com/crazy-max/diun) | [x] | |
 | **Dozzle** | P2 | [amir20/dozzle](https://github.com/amir20/dozzle) | [x] | |
-| **Zotify** | P2 | [Googolplexed0/zotify](https://github.com/Googolplexed0/zotify) | [x] | defer (B13) |
+| **Zotify** | P2 | [Googolplexed0/zotify](https://github.com/Googolplexed0/zotify) | [x] | deferred (B13) |
 
-**Weryfikacja:** `gh api repos/<owner>/<repo>` 2026-06-11 — wszystkie istnieją, `archived=false`. Wyjątki nazewnicze: TriliumNext (nie zadam), linkwarden (nie linkwarden-app), BentoPDF (plan: Bentoo).
+**Verification:** `gh api repos/<owner>/<repo>` 2026-06-11 — all of them exist, `archived=false`. Naming exceptions: TriliumNext (not zadam), linkwarden (not linkwarden-app), BentoPDF (the plan says Bentoo).
 
 ---
 
-## Aplikacje — inwentarz
+## Applications — inventory
 
-Legenda fazy: **P0** start, **P1** soon, **P2** później, **?** decyzja / pomijamy
+Phase legend: **P0** start, **P1** soon, **P2** later, **?** decision / we skip it
 
 
-| Aplikacja                         | Cel                                                             | Faza | GitHub / źródło | Postgres?    | Uwagi / decyzje                                                            |
+| Application                         | Purpose                                                             | Phase | GitHub / source | Postgres?    | Notes / decisions                                                            |
 | --------------------------------- | --------------------------------------------------------------- | ---- | --------------- | ------------ | -------------------------------------------------------------------------- |
-| **PostgreSQL**                    | Wspólna baza                                                    | P0   | [postgres/postgres](https://github.com/postgres/postgres) | —            | Jedna instancja; **osobna DB + user per app**                              |
-| **pgAdmin**                       | GUI Postgres                                                    | P0   | [pgadmin-org/pgadmin4](https://github.com/pgadmin-org/pgadmin4) | —            | Połączenie do centralnego PG; VPN-only                                     |
-| **Homarr**                        | Dashboard + **skróty do appek**                                 | P0   | [homarr-labs/homarr](https://github.com/homarr-labs/homarr) | nie          | Porobić shortcuts do wszystkich usług                                      |
-| **Trillium** (notes)              | MD, „łączenie kropek”                                           | P0   | [TriliumNext/Trilium](https://github.com/TriliumNext/Trilium) | nie          | ✅ B10 — własny storage plików; plan: „Trillium”                            |
-| **Easy Todo Grocery**             | Własny projekt                                                  | P0   | [DaveKadziola/easytodo-grocery-list](https://github.com/DaveKadziola/easytodo-grocery-list) | tak          | **Public HTTPS** (subdomena); Portainer Git deploy (A11) ✅                 |
-| **Actual Budget**                 | Budżet domowy                                                   | P0   | [actualbudget/actual](https://github.com/actualbudget/actual) | tak          | ✅ B9                                                                       |
-| **Linkwarden**                    | Zakładki                                                        | P0   | [linkwarden/linkwarden](https://github.com/linkwarden/linkwarden) | tak          | ✅ przeniesione z P1                                                        |
-| **Authelia**                      | SSO / forward-auth                                              | P0   | [authelia/authelia](https://github.com/authelia/authelia) | nie          | ✅ Wszystkie usługi; VPN + public Grocery                                   |
-| **omni-tools**                    | Narzędzia web                                                   | P0   | [iib0011/omni-tools](https://github.com/iib0011/omni-tools) | nie          | ✅ B21 — VPN only                                                           |
+| **PostgreSQL**                    | Shared database                                                    | P0   | [postgres/postgres](https://github.com/postgres/postgres) | —            | One instance; **a separate DB + user per app**                              |
+| **pgAdmin**                       | Postgres GUI                                                    | P0   | [pgadmin-org/pgadmin4](https://github.com/pgadmin-org/pgadmin4) | —            | Connection to the central PG; VPN-only                                     |
+| **Homarr**                        | Dashboard + **shortcuts to the apps**                                 | P0   | [homarr-labs/homarr](https://github.com/homarr-labs/homarr) | no          | Make shortcuts to every service                                      |
+| **Trillium** (notes)              | Markdown, "connecting the dots"                                           | P0   | [TriliumNext/Trilium](https://github.com/TriliumNext/Trilium) | no          | ✅ B10 — its own file storage; the plan says "Trillium"                            |
+| **Easy Todo Grocery**             | Own project                                                  | P0   | [DaveKadziola/easytodo-grocery-list](https://github.com/DaveKadziola/easytodo-grocery-list) | yes          | **Public HTTPS** (subdomain); Portainer Git deploy (A11) ✅                 |
+| **Actual Budget**                 | Household budget                                                   | P0   | [actualbudget/actual](https://github.com/actualbudget/actual) | yes          | ✅ B9                                                                       |
+| **Linkwarden**                    | Bookmarks                                                        | P0   | [linkwarden/linkwarden](https://github.com/linkwarden/linkwarden) | yes          | ✅ moved from P1                                                        |
+| **Authelia**                      | SSO / forward-auth                                              | P0   | [authelia/authelia](https://github.com/authelia/authelia) | no          | ✅ Every service; VPN + public Grocery                                   |
+| **omni-tools**                    | Web tools                                                   | P0   | [iib0011/omni-tools](https://github.com/iib0011/omni-tools) | no          | ✅ B21 — VPN only                                                           |
 | **DumbWhoIs**                     | WHOIS / IP / ASN lookup                                         | P0   | [DumbWareio/DumbWhoIs](https://github.com/DumbWareio/DumbWhoIs) | *TBD*        | ✅ B21 — VPN only; dumbware.io                                              |
-| **Bento PDF**                     | PDF tools                                                       | P0   | [alam00000/bentopdf](https://github.com/alam00000/bentopdf) | nie          | VPN only; plan: „Bentoo PDF” = BentoPDF ✅                                   |
-| **Portainer**                     | Multi-repo Docker stacks                                        | P0   | [portainer/portainer](https://github.com/portainer/portainer) | nie          | ✅ B17 — appki z osobnych repo                                              |
-| **Immich**                        | Google Photos self-host                                         | P1   | [immich-app/immich](https://github.com/immich-app/immich) | tak (Immich) | RAM/storage hungry; **VPN-only**; library → NFS                            |
-| **Syncthing**                     | Sync telefon ↔ laptop (LAN)                                     | P1   | [syncthing/syncthing](https://github.com/syncthing/syncthing) | nie          | ✅ B8 — LAN bez internetu po konfiguracji                                   |
-| **Navidrome**                     | Streamer muzyki (Subsonic)                                      | P1   | [navidrome/navidrome](https://github.com/navidrome/navidrome) | nie          | ✅ B11 — lekki na Celeron                                                   |
-| **Jellyfin**                      | Wideo Direct Play only                                          | P1   | [jellyfin/jellyfin](https://github.com/jellyfin/jellyfin) | nie          | ✅ B12 — **bez transcode** na J4205                                         |
-| **Zotify**                        | Spotify downloader                                              | P2   | [Googolplexed0/zotify](https://github.com/Googolplexed0/zotify) | nie          | ✅ B13 — **odłożony** (backlog); ToS Spotify                                |
-| **Beszel**                        | Metryki host/VM                                                 | P2   | [henrygd/beszel](https://github.com/henrygd/beszel) | nie          | ✅ B19 — zamiast Prometheus+Grafana                                         |
-| **Diun**                          | Powiadomienia o update obrazów Docker                           | P2   | [crazy-max/diun](https://github.com/crazy-max/diun) | nie          | ✅ B20 — F6; Trivy defer                                                    |
-| **Dozzle**                        | Logi kontenerów w UI                                            | P2   | [amir20/dozzle](https://github.com/amir20/dozzle) | nie          |                                                                            |
+| **Bento PDF**                     | PDF tools                                                       | P0   | [alam00000/bentopdf](https://github.com/alam00000/bentopdf) | no          | VPN only; the plan's "Bentoo PDF" = BentoPDF ✅                                   |
+| **Portainer**                     | Multi-repo Docker stacks                                        | P0   | [portainer/portainer](https://github.com/portainer/portainer) | no          | ✅ B17 — apps from separate repos                                              |
+| **Immich**                        | Self-hosted Google Photos                                         | P1   | [immich-app/immich](https://github.com/immich-app/immich) | yes (Immich) | Hungry for RAM/storage; **VPN-only**; library → NFS                            |
+| **Syncthing**                     | Phone ↔ laptop sync (LAN)                                     | P1   | [syncthing/syncthing](https://github.com/syncthing/syncthing) | no          | ✅ B8 — LAN with no internet after configuration                                   |
+| **Navidrome**                     | Music streamer (Subsonic)                                      | P1   | [navidrome/navidrome](https://github.com/navidrome/navidrome) | no          | ✅ B11 — light on a Celeron                                                   |
+| **Jellyfin**                      | Direct Play video only                                          | P1   | [jellyfin/jellyfin](https://github.com/jellyfin/jellyfin) | no          | ✅ B12 — **no transcode** on the J4205                                         |
+| **Zotify**                        | Spotify downloader                                              | P2   | [Googolplexed0/zotify](https://github.com/Googolplexed0/zotify) | no          | ✅ B13 — **deferred** (backlog); Spotify ToS                                |
+| **Beszel**                        | Host/VM metrics                                                 | P2   | [henrygd/beszel](https://github.com/henrygd/beszel) | no          | ✅ B19 — instead of Prometheus+Grafana                                         |
+| **Diun**                          | Notifications about Docker image updates                           | P2   | [crazy-max/diun](https://github.com/crazy-max/diun) | no          | ✅ B20 — F6; Trivy deferred                                                    |
+| **Dozzle**                        | Container logs in a UI                                            | P2   | [amir20/dozzle](https://github.com/amir20/dozzle) | no          |                                                                            |
 | ~~Prometheus + Grafana~~          | —                                                               | —    | —               | —            | ❌ — **Beszel** (B19)                                                       |
-| ~~nginx-proxy-manager / Traefik~~ | —                                                               | —    | —               | —            | ❌ Proxy na **OPNsense HAProxy** (B2)                                       |
+| ~~nginx-proxy-manager / Traefik~~ | —                                                               | —    | —               | —            | ❌ Proxy on **OPNsense HAProxy** (B2)                                       |
 
 
-### PostgreSQL — strategia współdzielenia
+### PostgreSQL — sharing strategy
 
-- **Jedna instancja** Postgres na VM apps (kontener).
-- **Per aplikacja:** `CREATE DATABASE`, dedykowany user, hasło z GH secret.
-- Ansible/Compose: init script lub role `postgres_apps` — lista DB *TBD* z tabeli powyżej.
-- pgAdmin: jeden serwer → wszystkie DB.
+- **One** Postgres **instance** on the apps VM (a container).
+- **Per application:** `CREATE DATABASE`, a dedicated user, a password from a GH secret.
+- Ansible/Compose: an init script or a `postgres_apps` role — the DB list is *TBD* from the table above.
+- pgAdmin: one server → every DB.
 
-### Adresacja i zasoby (do uzupełnienia)
+### Addressing and resources (to be filled in)
 
 
-| Usługa | URL wewn.                 | URL przez VPN/SSO  | RAM limit | CPU | Wolumen |
+| Service | Internal URL                 | URL through VPN/SSO  | RAM limit | CPU | Volume |
 | ------ | ------------------------- | ------------------ | --------- | --- | ------- |
 | *TBD*  | `http://192.168.x.x:port` | `https://*.domain` |           |     |         |
 
 
 ---
 
-## Operacje i observability (TBD)
+## Operations and observability (TBD)
 
 
-| Tool                                | Cel                                   | Faza          |
+| Tool                                | Purpose                                   | Phase          |
 | ----------------------------------- | ------------------------------------- | ------------- |
-| **Beszel** / ~~Prometheus+Grafana~~ | Metryki host/VM                       | P2 (Beszel ✅) |
-| **Diun**                            | Monitor nowych tagów Docker           | P2 (F6 ✅)     |
-| **Dozzle**                          | Logi kontenerów                       | P2            |
-| **Audyty bezpieczeństwa**           | Trivy defer; Lynis? — po stabilnym P0 | P2            |
+| **Beszel** / ~~Prometheus+Grafana~~ | Host/VM metrics                       | P2 (Beszel ✅) |
+| **Diun**                            | Watch for new Docker tags           | P2 (F6 ✅)     |
+| **Dozzle**                          | Container logs                       | P2            |
+| **Security audits**           | Trivy deferred; Lynis? — after P0 is stable | P2            |
 
-**Rozszerzenie (iter. #3):** monitoring + alerty z progami i analiza logów — patrz **F10** na końcu planu.
+**Extension (iteration #3):** monitoring + alerts with thresholds, and log analysis — see **F10** at the end of the plan.
 
 ---
 
-## Bezpieczeństwo
+## Security
 
 
-| Temat                  | Pytanie / kierunek                                                                           |
+| Topic                  | Question / direction                                                                           |
 | ---------------------- | -------------------------------------------------------------------------------------------- |
-| **SSO**                | Authelia (lżejszy) vs Authentik (Pełny IdP) — konfiguracja per-app w forward-auth            |
-| **Dostęp z internetu** | Preferowany: **WireGuard (OPNsense)** → LAN; publiczne tylko *TBD* (CDN? ograniczone porty?) |
-| **Kradzież maszyny**   | LUKS at-rest                                                                                 |
-| **Backup secrets**     | Osobno od backupów danych; recovery codes w menedżerze haseł                                 |
-| **Audyty**             | Diun F6; Trivy defer do stabilnego P0 (B20)                                                  |
+| **SSO**                | Authelia (lighter) vs Authentik (a full IdP) — per-app configuration in forward-auth            |
+| **Access from the internet** | Preferred: **WireGuard (OPNsense)** → LAN; public only *TBD* (CDN? limited ports?) |
+| **Machine theft**   | LUKS at rest                                                                                 |
+| **Backup of secrets**     | Separate from data backups; recovery codes in the password manager                                 |
+| **Audits**             | Diun in F6; Trivy deferred until P0 is stable (B20)                                                  |
 
 
 ---
 
-## Backupy i odtwarzanie (DR)
+## Backups and recovery (DR)
 
-### Cele
+### Goals
 
 
-| Źródło                                 | Lokalnie (NAS VM) | Chmura          | Narzędzie (TBD)                          |
+| Source                                 | Locally (NAS VM) | Cloud          | Tool (TBD)                          |
 | -------------------------------------- | ----------------- | --------------- | ---------------------------------------- |
-| Proxmox VM (vzdump)                    | tak               | pCloud?         | Proxmox + *TBD*                          |
-| PostgreSQL                             | tak               | pCloud?         | `pg_dump` cron                           |
-| Home Assistant                         | tak               | pCloud?         | HA backup `.tar`                         |
-| OPNsense config                        | tak               | pCloud?         | `config.xml` / backup API                |
-| Multimedia (Immich, muzyka, wideo) | SA500 (live)      | **pCloud osobno** (już backupowane) | **poza homelab rclone** — nie duplikować via NAS |
-| Sekrety / compose / git                | git remote        | —               | GitHub                                   |
+| Proxmox VM (vzdump)                    | yes               | pCloud?         | Proxmox + *TBD*                          |
+| PostgreSQL                             | yes               | pCloud?         | `pg_dump` cron                           |
+| Home Assistant                         | yes               | pCloud?         | HA backup `.tar`                         |
+| OPNsense config                        | yes               | pCloud?         | `config.xml` / backup API                |
+| Multimedia (Immich, music, video) | SA500 (live)      | **pCloud separately** (already backed up) | **outside homelab rclone** — do not duplicate via the NAS |
+| Secrets / compose / git                | git remote        | —               | GitHub                                   |
 
 
-### Odtwarzanie „łatwe” (skrypty docelowe)
+### "Easy" recovery (target scripts)
 
 
-| System             | Metoda backup                          | Metoda restore                   | W repo (TBD)                   |
+| System             | Backup method                          | Restore method                   | In the repo (TBD)                   |
 | ------------------ | -------------------------------------- | -------------------------------- | ------------------------------ |
-| **OPNsense**       | Export config + dokumentacja bootstrap | Flash/reinstall + restore config | `opnsense/RESTORE.md` + skrypt |
-| **Proxmox**        | vzdump VM + dokumentacja hosta         | ISO + restore VM + TF apply      | `utils/restore-proxmox.md`     |
-| **Home Assistant** | Scheduled `.tar`                       | Flash HAOS + upload backup       | `homeassistant/RESTORE.md`     |
-| **VM apps + NAS**  | vzdump lub rsync wolumenów             | qmrestore / compose up           | Ansible                        |
+| **OPNsense**       | Config export + bootstrap documentation | Flash/reinstall + restore config | `opnsense/RESTORE.md` + a script |
+| **Proxmox**        | VM vzdump + host documentation         | ISO + restore the VM + TF apply      | `utils/restore-proxmox.md`     |
+| **Home Assistant** | Scheduled `.tar`                       | Flash HAOS + upload the backup       | `homeassistant/RESTORE.md`     |
+| **Apps VM + NAS**  | vzdump or rsync of volumes             | qmrestore / compose up           | Ansible                        |
 
 
-**ZeroByte** — ❌ odrzucone na rzecz **rclone** (B16).
+**ZeroByte** — ❌ rejected in favour of **rclone** (B16).
 
-**LUKS (B14):** ✅ **bez LUKS na start**; auto-unlock (clevis/TPM) → backlog.
+**LUKS (B14):** ✅ **no LUKS at the start**; auto-unlock (clevis/TPM) → backlog.
 
-**Retention (A15):** trzymaj **2 najnowsze backupy** lokalnie **per strumień** (`vzdump` apps/NAS, `pg_dump`, HA, OPNsense); przy 3. usuń najstarszy. **Σ SA500 739 GB** (prod caps); Purple **~158 GB**; homelab rclone → pCloud **~160 GB** (DR only, bez mediów — media już na pCloud osobno).
+**Retention (A15):** keep the **2 newest backups** locally **per stream** (`vzdump` apps/NAS, `pg_dump`, HA, OPNsense); on the 3rd, delete the oldest. **Σ SA500 739 GB** (prod caps); Purple **~158 GB**; homelab rclone → pCloud **~160 GB** (DR only, no media — media is already on pCloud separately).
 
 ---
 
-## Topologia docelowa (szkic)
+## Target topology (sketch)
 
 ```mermaid
 flowchart TB
     subgraph wan [Internet]
-        User["Użytkownik"]
+        User["User"]
         GitHub["GitHub Actions"]
         PCloud["pCloud"]
     end
 
-    subgraph opn [OPNsense - fizyczny]
+    subgraph opn [OPNsense - physical]
         WG["WireGuard VPN"]
         FW["Firewall"]
         ProxyOPN["HAProxy"]
     end
 
-    subgraph hp [HP T620 - fizyczny]
+    subgraph hp [HP T620 - physical]
         HA["Home Assistant"]
     end
 
@@ -1271,72 +1270,72 @@ flowchart TB
 
 ---
 
-## Założenia (zaktualizowane)
+## Assumptions (updated)
 
 - [x] **VM + Docker + Portainer** (B1, B17)
 - [x] **Self-hosted GHA dual runner** — dev laptop, prod ubuntu-apps (B5, A13)
-- [x] **Reverse proxy na OPNsense — HAProxy** (B2 ✅)
-- [x] **Authelia SSO** + **Grocery public** (subdomena A6), reszta VPN (B4)
-- [x] **RAM VM 8+4 GB** (B7); **B6 B+C** storage; **rclone→pCloud** (B16); **Bitwarden Cloud** (B15)
-- [x] **Mapa VLAN A4**; **P0/P1/P2** scope; **bez LUKS na start**; **retention 2 backupy**
-- [ ] **Greenfield TF** — cleanup legacy VM na Proxmox + TODO SSH keys / API tokens
-- [ ] **Gałąź `homelab-v2`** — greenfield; **merge = zamiana `master`** (legacy tylko pod tagiem `legacy-pre-v2`)
-- [ ] **Deployment przez GitHub Actions** — `homelab-v2` → **dev**; merge/push `master` → **prod** (approval)
-- [ ] **F0: wyczyszczone** stare repo secrets/variables + env `dev`/`prod` (legacy pipeline)
-- [ ] `**README.md`** — pełna dokumentacja projektu (patrz sekcja *Dokumentacja README*)
-- [ ] **3 maszyny fizyczne:** OPNsense (bez sizingu zasobów), **HP T620**, **PC Proxmox** (16 GB, J4205)
-- [ ] Sekrety przez `**gh` CLI** + **kopia w Bitwarden** (vault osobisty)
-- [ ] **WireGuard** na OPNsense — główny dostęp zdalny
-- [ ] **OPNsense poza planowaniem zasobów** — wystarczająca moc; HAProxy/dodatki na routerze OK pod kątem wydajności
-- [ ] Wspólny **PostgreSQL** z osobnymi DB per app
-- [ ] Backupy: **NAS VM (Purple) + rclone → pCloud** ✅ B16
-- [ ] **Homarr** — skróty do wszystkich usług
-- [ ] Dev: laptop libvirt — **pełny stack P0** (B18 ✅); runner dev na laptopie
+- [x] **Reverse proxy on OPNsense — HAProxy** (B2 ✅)
+- [x] **Authelia SSO** + **Grocery public** (subdomain A6), the rest VPN (B4)
+- [x] **VM RAM 8+4 GB** (B7); **B6 B+C** storage; **rclone→pCloud** (B16); **Bitwarden Cloud** (B15)
+- [x] **VLAN map A4**; **P0/P1/P2** scope; **no LUKS at the start**; **retention of 2 backups**
+- [ ] **Greenfield TF** — cleanup of legacy VMs on Proxmox + TODO SSH keys / API tokens
+- [ ] **Branch `homelab-v2`** — greenfield; **the merge = replacement of `master`** (legacy only under the tag `legacy-pre-v2`)
+- [ ] **Deployment through GitHub Actions** — `homelab-v2` → **dev**; merge/push `master` → **prod** (approval)
+- [ ] **F0: cleared** old repo secrets/variables + env `dev`/`prod` (legacy pipeline)
+- [ ] **`README.md`** — full project documentation (see the section *README documentation*)
+- [ ] **3 physical machines:** OPNsense (no resource sizing), **HP T620**, **PC Proxmox** (16 GB, J4205)
+- [ ] Secrets through the **`gh` CLI** + a **copy in Bitwarden** (personal vault)
+- [ ] **WireGuard** on OPNsense — the main remote access
+- [ ] **OPNsense outside resource planning** — enough power; HAProxy/extras on the router are OK for performance
+- [ ] A shared **PostgreSQL** with a separate DB per app
+- [ ] Backups: **NAS VM (Purple) + rclone → pCloud** ✅ B16
+- [ ] **Homarr** — shortcuts to every service
+- [ ] Dev: laptop libvirt — **the full P0 stack** (B18 ✅); dev runner on the laptop
 
 ---
 
-## Problemy / otwarte pytania
+## Problems / open questions
 
-### ✅ Zamknięte (2026-06-11 + iter. #2)
+### ✅ Closed (2026-06-11 + iteration #2)
 
 1. ~~LXC vs VM~~ → **VM + Portainer**
-2. ~~Reverse proxy NPM/Traefik VM~~ → **OPNsense HAProxy**
+2. ~~Reverse proxy NPM/Traefik on the VM~~ → **OPNsense HAProxy**
 3. ~~CI Tailscale~~ → **self-hosted dual runner**
 4. ~~Bitwarden cloud vs Vaultwarden~~ → **Cloud**
 5. ~~Backup tool~~ → **rclone**
-6. ~~Portainer?~~ → **P0 tak**
-7. ~~RAM VM~~ → **8+4 GB**
-8. ~~VLAN map~~ → **A4 opcja C**
-9. ~~P0 scope~~ → **P0/P1/P2 zdefiniowane**
-10. ~~Trillium / Actual / Syncthing / Navidrome / Jellyfin / Zotify~~ → fazy ustalone
-11. ~~LUKS~~ → **bez na start**
+6. ~~Portainer?~~ → **yes, P0**
+7. ~~VM RAM~~ → **8+4 GB**
+8. ~~VLAN map~~ → **A4 option C**
+9. ~~P0 scope~~ → **P0/P1/P2 defined**
+10. ~~Trillium / Actual / Syncthing / Navidrome / Jellyfin / Zotify~~ → phases set
+11. ~~LUKS~~ → **none at the start**
 12. ~~HA restore~~ → **greenfield**
-13. ~~Dev minimal~~ → **pełny stack P0**
+13. ~~Minimal dev~~ → **the full P0 stack**
 
-### ⏳ Nadal otwarte
+### ⏳ Still open
 
-1. ~~**A5**~~ as-built ✅ 2026-06-30 — IP/VLAN/NIC/WG; MAC placeholder do F3
+1. ~~**A5**~~ as-built ✅ 2026-06-30 — IP/VLAN/NIC/WG; MAC placeholder until F3
 2. ~~**A10**~~ ✅ — Bitwarden PM, folder `homelab`
-3. **Proxmox** — uporządkowanie SSH keys + API tokens (TODO)
-4. **B6** — per-app volumes szczegółowo przy F4
-5. ~~**Domena**~~ ✅ — `grocery.dkhomelabserver.xyz` (A6)
+3. **Proxmox** — tidy SSH keys + API tokens (TODO)
+4. **B6** — per-app volumes in detail at F4
+5. ~~**Domain**~~ ✅ — `grocery.dkhomelabserver.xyz` (A6)
 
-### Znane ryzyka
+### Known risks
 
 
-| Ryzyko                            | Wpływ                         | Mitigacja                                                            |
+| Risk                            | Impact                         | Mitigation                                                            |
 | --------------------------------- | ----------------------------- | -------------------------------------------------------------------- |
-| Secret tylko w GitHub, bez kopii  | Nieodwracalna utrata wartości | Bitwarden przed `gh secret set`; inventory nazw w repo               |
-| Celeron + transkodowanie wideo    | Jellyfin lag                  | Direct play only / osobny sprzęt / pominąć wideo                     |
-| Jeden host Proxmox                | SPOF                          | Backupy vzdump + config offsite                                      |
-| Złożony stack SSO                 | Trudny debug                  | Zacząć od Authelia + 2 apps                                          |
-| Self-hosted runner offline (dev)  | Brak deploy CI dev            | Runner dev na laptopie — akceptacja offline; prod runner ubuntu-apps |
-| Self-hosted runner offline (prod) | Brak deploy prod              | Runner prod na ubuntu-apps; monitoring; workflow_dispatch            |
+| A secret only in GitHub, with no copy  | Irreversible loss of the value | Bitwarden before `gh secret set`; an inventory of names in the repo               |
+| Celeron + video transcoding    | Jellyfin lag                  | Direct play only / separate hardware / skip video                     |
+| A single Proxmox host                | SPOF                          | vzdump backups + config offsite                                      |
+| A complex SSO stack                 | Hard to debug                  | Start with Authelia + 2 apps                                          |
+| Self-hosted runner offline (dev)  | No dev CI deploy            | Dev runner on the laptop — offline is accepted; prod runner on ubuntu-apps |
+| Self-hosted runner offline (prod) | No prod deploy              | Prod runner on ubuntu-apps; monitoring; workflow_dispatch            |
 
 
 ---
 
-## Warstwy IaC (szkielet repo)
+## IaC layers (repo skeleton)
 
 ```
 homelab/
@@ -1354,440 +1353,440 @@ homelab/
 
 ---
 
-## Dokumentacja README
+## README documentation
 
-**Wymaganie:** na `homelab-v2` (i po merge na `master`) `**README.md` w korzeniu repo** to **pełna dokumentacja projektu** — punkt wejścia dla Ciebie za rok i dla agenta/CI. Uzupełniana iteracyjnie od **F1**; **musi być kompletna przed merge v2 → master**.
+**Requirement:** on `homelab-v2` (and after the merge, on `master`) **`README.md` at the repo root** is the **full project documentation** — the entry point for you a year from now and for an agent/CI. Filled in iteratively from **F1**; **it must be complete before the v2 → master merge**.
 
-### Co README musi zawierać
+### What the README must contain
 
 
-| Sekcja                      | Treść                                                                                                         |
+| Section                      | Contents                                                                                                         |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| **Opis projektu**           | Cel homelab, greenfield v2, link do gałęzi / tagów legacy                                                     |
-| **Architektura**            | 3 maszyny fizyczne, 2 VM Proxmox, dev laptop; diagram (mermaid lub obraz)                                     |
-| **Stack technologiczny**    | Terraform, Ansible, Docker Compose, GitHub Actions, TFC, Postgres                                             |
-| **Struktura repo**          | Drzewo katalogów i rola każdego (`compose/`, `ansible/`, …)                                                   |
-| **Wymagania wstępne**       | Narzędzia lokalne — `**docs/manual-setup.md`** (F0, ręcznie na laptopie)                                      |
-| **Sekrety**                 | Procedura: generuj → Bitwarden → `gh secret set`; odesłanie do `docs/secrets-inventory.md` (**bez wartości**) |
-| **Środowiska**              | Dev (laptop libvirt) vs prod (Proxmox); różnice w deploy                                                      |
-| **Quick start — dev**       | Włączenie VM dev, pierwszy deploy przez Actions / lokalnie                                                    |
-| **Quick start — prod**      | Kolejność: OPNsense → Proxmox TF → Ansible → Compose; approval prod                                           |
+| **Project description**           | Homelab goal, greenfield v2, a link to the branch / legacy tags                                                     |
+| **Architecture**            | 3 physical machines, 2 Proxmox VMs, the dev laptop; a diagram (mermaid or an image)                                     |
+| **Technology stack**    | Terraform, Ansible, Docker Compose, GitHub Actions, TFC, Postgres                                             |
+| **Repo structure**          | The directory tree and the role of each (`compose/`, `ansible/`, …)                                                   |
+| **Prerequisites**       | Local tools — **`docs/manual-setup.md`** (F0, by hand on the laptop)                                      |
+| **Secrets**                 | Procedure: generate → Bitwarden → `gh secret set`; a pointer to `docs/secrets-inventory.md` (**no values**) |
+| **Environments**              | Dev (laptop libvirt) vs prod (Proxmox); differences in deploy                                                      |
+| **Quick start — dev**       | Bringing up the dev VM, the first deploy through Actions / locally                                                    |
+| **Quick start — prod**      | Order: OPNsense → Proxmox TF → Ansible → Compose; prod approval                                           |
 | **CI/CD**                   | homelab-v2=dev, master=prod; **self-hosted runner**; `utils/setup-github-runner.sh`                           |
-| **Aplikacje**               | Tabela usług: URL (wewn./public), faza P0/P1, DB, backup                                                      |
-| **Sieć**                    | VLAN, IP (gdy znane), WireGuard, reverse proxy, domeny                                                        |
-| **Backup i DR**             | NAS, pCloud, restore HA/OPNsense/Postgres; odesłanie do `docs/DR.md`                                          |
-| **Operacje**                | Typowe: dodanie appki, rotacja secretu, restart stacku, logi (Dozzle)                                         |
-| **Rozwiązywanie problemów** | Najczęstsze błędy CI, SSH, Compose                                                                            |
-| **Decyzje / ADR**           | Skrót kluczowych decyzji (VM vs LXC, merge strategy, brak self-hosted runner)                                 |
+| **Applications**               | Service table: URL (internal/public), phase P0/P1, DB, backup                                                      |
+| **Network**                    | VLAN, IPs (when known), WireGuard, reverse proxy, domains                                                        |
+| **Backup and DR**             | NAS, pCloud, restore of HA/OPNsense/Postgres; a pointer to `docs/DR.md`                                          |
+| **Operations**                | Typical: adding an app, rotating a secret, restarting a stack, logs (Dozzle)                                         |
+| **Troubleshooting** | The most common CI, SSH, and Compose errors                                                                            |
+| **Decisions / ADR**           | A short list of the key decisions (VM vs LXC, merge strategy, no self-hosted runner)                                 |
 
 
-### Pliki w `docs/` (README linkuje, nie duplikuje wszystkiego)
+### Files in `docs/` (the README links to them, it does not duplicate everything)
 
 
-| Plik                        | Rola                                                                                           |
+| File                        | Role                                                                                           |
 | --------------------------- | ---------------------------------------------------------------------------------------------- |
-| `docs/manual-setup.md`      | **Sprint F0** — checklista F0-01…F0-12 (ręczny setup laptopa; wykonanie w sprincie, nie teraz) |
-| `docs/secrets-inventory.md` | Nazwy secretów, env, data rotacji                                                              |
-| `docs/DR.md`                | Procedury disaster recovery                                                                    |
-| `docs/network.md`           | Mapa IP/VLAN (gdy A4/A5 zamknięte)                                                             |
-| `docs/opnsense-baseline.md` | Baseline routera, export config                                                                |
-| `docs/homarr-services.md`   | Mapowanie usług → skróty Homarr                                                                |
-| `docs/apps-sources.md`      | **A16** — GitHub / źródło per app; status weryfikacji; deploy path (Portainer vs compose)      |
+| `docs/manual-setup.md`      | **Sprint F0** — checklist F0-01…F0-12 (manual laptop setup; carried out in the sprint, not now) |
+| `docs/secrets-inventory.md` | Secret names, env, rotation date                                                              |
+| `docs/DR.md`                | Disaster recovery procedures                                                                    |
+| `docs/network.md`           | IP/VLAN map (when A4/A5 are closed)                                                             |
+| `docs/opnsense-baseline.md` | Router baseline, config export                                                                |
+| `docs/homarr-services.md`   | Mapping of services → Homarr shortcuts                                                                |
+| `docs/apps-sources.md`      | **A16** — GitHub / source per app; verification status; deploy path (Portainer vs compose)      |
 
 
-### Fazy uzupełniania
+### Phases for filling it in
 
 
-| Faza            | README                                                     |
+| Phase            | README                                                     |
 | --------------- | ---------------------------------------------------------- |
-| **F1**          | Szkielet + struktura repo + dev quick start + CI overview  |
-| **F2–F3**       | OPNsense, Proxmox, sieć                                    |
-| **F4–F5**       | Aplikacje P0, backup/DR                                    |
-| **Przed merge** | Przegląd kompletności — brak sekcji „TBD” bez uzasadnienia |
+| **F1**          | Skeleton + repo structure + dev quick start + CI overview  |
+| **F2–F3**       | OPNsense, Proxmox, network                                    |
+| **F4–F5**       | P0 applications, backup/DR                                    |
+| **Before the merge** | Completeness review — no "TBD" section without a reason |
 
 
 ---
 
-## Sekrety (gh CLI)
+## Secrets (gh CLI)
 
-**Zasada:** generuj lokalnie → **zapis w Bitwarden** → `gh secret set` — patrz **Strategia generowania sekretów** i **Widoczność secretów GitHub**.
+**Rule:** generate locally → **save in Bitwarden** → `gh secret set` — see **Strategy for generating secrets** and **GitHub secret visibility**.
 
-**Na początku (F0):** wyczyść legacy secrets/variables — sekcja **Czyszczenie GH secrets/variables** w CI/CD; dopiero potem wgrywaj nowe pod v2.
+**At the start (F0):** clear the legacy secrets/variables — the **GH secrets/variables cleanup** section in CI/CD; only then upload the new ones for v2.
 
 ```bash
 gh auth login
-gh secret list --env prod          # tylko nazwy — nie wartości
-gh variable list --env prod        # variables: wartości widoczne (nie trzymaj haseł w variables!)
+gh secret list --env prod          # names only — not values
+gh variable list --env prod        # variables: values are visible (do not keep passwords in variables!)
 ```
 
-**W repo:** `[docs/secrets-inventory.md](docs/secrets-inventory.md)` — ✅ szablon nazw w **F0-10** (zero wartości).
+**In the repo:** `[docs/secrets-inventory.md](docs/secrets-inventory.md)` — ✅ the name template in **F0-10** (zero values).
 
-Szczegółowa tabela secretów per app — uzupełnij w miarę wdrożeń.
+The detailed per-app secret table — fill it in as deployments proceed.
 
 ---
 
-## Sprint F0 — ręczny setup laptopa
+## Sprint F0 — manual laptop setup
 
-> **Wykonanie:** w osobnym sprincie F0, **po** zamknięciu decyzji planu.  
-> **Checklist:** `[docs/manual-setup.md](docs/manual-setup.md)` — kroki **F0-01 … F0-12**.
+> **Execution:** in a separate F0 sprint, **after** the plan decisions are closed.
+> **Checklist:** `[docs/manual-setup.md](docs/manual-setup.md)` — steps **F0-01 … F0-12**.
 
 
-| ID    | Zadanie                                                                       | Gate F1  |
+| ID    | Task                                                                       | F1 gate  |
 | ----- | ----------------------------------------------------------------------------- | -------- |
-| F0-01 | Audyt narzędzi na laptopie                                                    | tak      |
-| F0-02 | Instalacja brakujących pakietów                                               | tak      |
-| F0-03 | Grupy użytkownika + libvirt (sieć `default`)                                  | tak      |
-| F0-04 | GitHub CLI + sync repo                                                        | tak      |
-| F0-05 | Audyt legacy secrets/variables                                                | tak      |
-| F0-06 | Backup Bitwarden przed kasowaniem                                             | tak      |
-| F0-07 | Usunięcie legacy secrets/variables                                            | tak      |
-| F0-08 | Usunięcie **legacy** runnera; **nowy** runner — F1 (`setup-github-runner.sh`) | F1       |
-| F0-09 | Gałąź `homelab-v2`                                                            | tak      |
-| F0-10 | Commit `docs/` na `homelab-v2`                                                | zalecane |
-| F0-11 | Przygotowanie Bitwarden                                                       | tak      |
-| F0-12 | Gate F0 — weryfikacja końcowa                                                 | tak      | [x] ✅ 2026-06-11 |
+| F0-01 | Audit of the tools on the laptop                                                    | yes      |
+| F0-02 | Install the missing packages                                               | yes      |
+| F0-03 | User groups + libvirt (the `default` network)                                  | yes      |
+| F0-04 | GitHub CLI + repo sync                                                        | yes      |
+| F0-05 | Audit of legacy secrets/variables                                                | yes      |
+| F0-06 | Bitwarden backup before deletion                                             | yes      |
+| F0-07 | Delete the legacy secrets/variables                                            | yes      |
+| F0-08 | Remove the **legacy** runner; the **new** runner is F1 (`setup-github-runner.sh`) | F1       |
+| F0-09 | Branch `homelab-v2`                                                            | yes      |
+| F0-10 | Commit `docs/` on `homelab-v2`                                                | recommended |
+| F0-11 | Prepare Bitwarden                                                       | yes      |
+| F0-12 | Gate F0 — final verification                                                 | yes      | [x] ✅ 2026-06-11 |
 
 
-**Poza F0:** dev VM, pipeline GHA, nowe `gh secret set` → **F1**.
+**Outside F0:** the dev VM, the GHA pipeline, new `gh secret set` → **F1**.
 
 ---
 
-## Fazy / sprinty
+## Phases / sprints
 
 
-| Faza   | Zakres                                                                                  | Notatki     |
+| Phase   | Scope                                                                                  | Notes     |
 | ------ | --------------------------------------------------------------------------------------- | ----------- |
-| **F0** | Plan + decyzje B1–B7 ✅ (częściowo) + sprint `manual-setup.md`                           | w toku      |
-| **F1** | GHA pipeline + nowe GH secrets + TFC + **dev VM** + szkielet `README.md` — `homelab-v2` |             |
-| **F2** | OPNsense bootstrap + WireGuard doc + backup config                                      |             |
+| **F0** | Plan + decisions B1–B7 ✅ (partial) + the `manual-setup.md` sprint                           | in progress      |
+| **F1** | GHA pipeline + new GH secrets + TFC + **dev VM** + `README.md` skeleton — `homelab-v2` |             |
+| **F2** | OPNsense bootstrap + WireGuard doc + config backup                                      |             |
 | **F3** | Proxmox TF: NAS VM + apps VM                                                            |             |
 | **F4** | Postgres + **P0 apps** (Homarr, Grocery, pgAdmin, Trillium, Actual, …)                  | Immich → P1 |
 | **F5** | HA **T620**, NAS backup jobs (Purple 4 TB), pCloud                                      |             |
-| **F6** | P1/P2 apps, Diun, Dozzle, audyty, Grafana/Beszel + **domknięcie README** przed merge    | w dużej mierze wchłonięta przez F4/F7 (2026-10-18); zostaje Grafana — decyzja później |
-| **F7** | Iter. #3: tożsamości + credentiale jako kod, prekonfiguracja apps jako kod, `tests/`    | odtwarzalność |
-| **F8** | Iter. #3: baza wiedzy `docs/kb/` + lessons learned + rebuild/migration runbook          | dokumentacja |
-| **F9** | Iter. #3: audyt bezpieczeństwa + audyt repo + drill „odtworzenie z zera”                 | gate merge → `main` |
-| **R1–R3** | Iter. #4: przywrócenie CI, odtworzenie DEV, bramka F9 po stronie DEV                     | **przed F3 metal** (decyzja 0001) |
-| **F10** | Monitoring + progi alertów; analiza logów agentem AI (z sanityzacją)                    | **po uruchomieniu prod** |
+| **F6** | P1/P2 apps, Diun, Dozzle, audits, Grafana/Beszel + **closing out the README** before the merge    | largely absorbed into F4/F7 (2026-10-18); Grafana remains — a later decision |
+| **F7** | Iteration #3: identities + credentials as code, app preconfiguration as code, `tests/`    | reproducibility |
+| **F8** | Iteration #3: knowledge base `docs/kb/` + lessons learned + rebuild/migration runbook          | documentation |
+| **F9** | Iteration #3: security audit + repo audit + a "rebuild from zero" drill                 | gate for the merge → `main` |
+| **R1–R3** | Iteration #4: restore CI, rebuild DEV, the F9 gate on the DEV side                     | **before F3 metal** (decision 0001) |
+| **F10** | Monitoring + alert thresholds; log analysis by an AI agent (with sanitization)                    | **after prod is up** |
 
 
 ---
 
-## Sieć (docelowa — A4 ✅)
+## Network (target — A4 ✅)
 
 
-| VLAN / nazwa        | Brama               | DHCP range      | Tag / uwagi                            |
+| VLAN / name        | Gateway               | DHCP range      | Tag / notes                            |
 | ------------------- | ------------------- | --------------- | -------------------------------------- |
 | **LAN**             | 192.168.1.1         | .100–.200       |                                        |
 | **HOMEOFFICE**      | 192.168.10.1        | .100–.200       |                                        |
 | **IOT**             | 192.168.20.1        | .100–.200       | **Proxmox host + HP T620 HA** (tag 20) |
-| **GUEST**           | 192.168.30.1        | .100–.200       | WiFi goście                            |
-| **DMZ**             | 192.168.50.1        | .7–.14          | **nieużywany na start** (A5)           |
+| **GUEST**           | 192.168.30.1        | .100–.200       | guest WiFi                            |
+| **DMZ**             | 192.168.50.1        | .7–.14          | **unused at the start** (A5)           |
 | **APP**             | **192.168.50.50/26** | .30–.62         | **Docker/apps**; VLAN **tag 51** (QinQ) |
-| **VPN (WireGuard)** | **10.10.10.1** (`wg0`) | peers         | As-built; nie `10.0.0.0/24`            |
-| **dev libvirt**     | `192.168.122.0/24`  | libvirt default | Laptop — izolowany od prod             |
+| **VPN (WireGuard)** | **10.10.10.1** (`wg0`) | peers         | As-built; not `10.0.0.0/24`            |
+| **dev libvirt**     | `192.168.122.0/24`  | libvirt default | Laptop — isolated from prod             |
 
 
-**✅ A5 (as-built 2026-06-30):** Proxmox **`.20.20`**; APP gw **`.50.50`**; NAS **`.20.12`**, HA **`.20.13`**, apps **`.50.30`**; WG **`10.10.10.0/24`**. Proxmox 3× NIC: NIC1 IOT · NIC2 dyski (pass-through) · NIC3 APP.
+**✅ A5 (as-built 2026-06-30):** Proxmox **`.20.20`**; APP gw **`.50.50`**; NAS **`.20.12`**, HA **`.20.13`**, apps **`.50.30`**; WG **`10.10.10.0/24`**. Proxmox 3× NIC: NIC1 IOT · NIC2 disks (pass-through) · NIC3 APP.
 
 ---
 
-## Przed implementacją — gate F0 → F1
+## Before implementation — gate F0 → F1
 
-> **Implementacja startuje dopiero po** wypełnieniu checklisty i zamknięciu pytań **blokujących** (oznaczone 🔴).
+> **Implementation starts only after** the checklist is filled in and the **blocking** questions are closed (marked 🔴).
 
-### A. Musisz dostarczyć (dane, dostęp, artefakty)
+### A. You have to supply (data, access, artifacts)
 
 
-| #   | Co                                                                                                                              | Po co                                                                                            | Status                                |
+| #   | What                                                                                                                              | What for                                                                                            | Status                                |
 | --- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------- |
-| A0  | **Wyczyścić stare GitHub secrets/variables** (repo + env dev/prod) — audyt `gh secret list` / `gh variable list`, delete legacy | czysty start v2, brak kolizji nazw                                                               | [x] ✅ 2026-06-11                     |
-| A1  | **PC Proxmox** — ✅ CPU Celeron **J4205**, **16 GB** RAM, dyski: 256 GB SSD + 2 TB SA500 + 4 TB Purple, 3×1 Gb/s                 | RAM/CPU VM, mapa dysków w TF, Immich                                                             | [x] spec podany; [ ] mapa dysków w TF |
+| A0  | **Clear the old GitHub secrets/variables** (repo + env dev/prod) — audit with `gh secret list` / `gh variable list`, delete legacy | a clean v2 start, no name collisions                                                               | [x] ✅ 2026-06-11                     |
+| A1  | **PC Proxmox** — ✅ CPU Celeron **J4205**, **16 GB** RAM, disks: 256 GB SSD + 2 TB SA500 + 4 TB Purple, 3×1 Gb/s                 | VM RAM/CPU, the disk map in TF, Immich                                                             | [x] spec given; [ ] disk map in TF |
 | A2  | **HP T620** — ✅ AMD **GX-415GA**, **16 GB** DDR3L, 128 GB SSD, 1 Gb/s, x86_64                                                   | Flash HAOS                                                                                       | [x]                                   |
-| A3  | ~~Model / RAM OPNsense~~                                                                                                        | **N/A** — OPNsense **poza planowaniem zasobów**; wystarczająca moc na WireGuard + ewent. HAProxy | [x] wyłączone z sizingu               |
-| A4  | **Mapa sieci:** VLAN-y, CIDR, brama, trunk                                                                                      | OPNsense bootstrap, TF, firewall                                                                 | [x] ✅ iter. #2                        |
-| A5  | **Docelowe IP:** DHCP reservation OPNsense; Proxmox/VM/T620                                                                     | inventory Ansible, tfvars                                                                        | [~] ✅ as-built 2026-06-30; MAC placeholder → F3 |
-| A6  | **Domena DNS** — subdomena Grocery public                                                                                       | HAProxy, Grocery public                                                                          | [x] ✅ **`grocery.dkhomelabserver.xyz`** |
-| A7  | **Dostęp do repo GitHub** + GitHub Environments                                                                                 | CI, gh secrets, **runner registration**                                                          | [x] ✅ 2026-06-11 — approval prod, branch `main`; dev branch policy po F0-09 |
-| A8  | **Konto Terraform Cloud**                                                                                                       | TF state                                                                                         | [x] ✅ org **`dkhomelabserver`**, workspace **`homelab`**; execution Local w F1 |
-| A9  | **Konto pCloud** + auth dla **rclone**                                                                                          | backup offsite (B16)                                                                             | [~] ⏳ 2026-06-11 — `rclone` 1.60.1; `rclone.conf` pusty; brak remote `pcloud`; patrz `docs/manual-setup.md` F0-04d |
-| A10 | **Bitwarden Cloud** + 2FA                                                                                                       | ✅ decyzja B15                                                                                    | [x] ✅ 2026-06-11 — PM, folder `homelab` |
-| A11 | **Repo ToDo Grocery** + stack Portainer Git deploy                                                                              | P0 public app                                                                                    | [x] ✅ iter. #2                        |
-| A12 | ~~Tailscale dla CI~~                                                                                                            | ✅ **Self-hosted runner** (B5)                                                                    | [x]                                   |
-| A13 | **Laptop dev:** runner `homelab-dev` na laptopie                                                                                | dev workflow                                                                                     | [x] ✅ iter. #2                        |
-| A14 | **HA greenfield** na T620 (lista integracji przy F5)                                                                            | restore vs greenfield HA                                                                         | [x] ✅ iter. #2                        |
-| A15 | **Retention backupów:** 2 najnowsze; szacunki GB Immich/muzyka/wideo                                                                  | rozmiar NAS + pCloud                                                                             | [x] ✅ 2026-06-11 — Σ SA500 **739 GB**; Purple **~158 GB**; pCloud DR **~160 GB** |
-| A16 | **Weryfikacja GitHub / źródła** per app (P0/P1/P2); `docs/apps-sources.md`                                                       | Portainer Git deploy, multi-repo (B1)                                                            | [x] ✅ 2026-06-11 — **20/20** |
+| A3  | ~~OPNsense model / RAM~~                                                                                                        | **N/A** — OPNsense is **outside resource planning**; enough power for WireGuard + HAProxy if needed | [x] excluded from sizing               |
+| A4  | **Network map:** VLANs, CIDR, gateway, trunk                                                                                      | OPNsense bootstrap, TF, firewall                                                                 | [x] ✅ iteration #2                        |
+| A5  | **Target IPs:** OPNsense DHCP reservation; Proxmox/VM/T620                                                                     | Ansible inventory, tfvars                                                                        | [~] ✅ as-built 2026-06-30; MAC placeholder → F3 |
+| A6  | **DNS domain** — public Grocery subdomain                                                                                       | HAProxy, public Grocery                                                                          | [x] ✅ **`grocery.dkhomelabserver.xyz`** |
+| A7  | **Access to the GitHub repo** + GitHub Environments                                                                                 | CI, gh secrets, **runner registration**                                                          | [x] ✅ 2026-06-11 — prod approval, branch `main`; dev branch policy after F0-09 |
+| A8  | **Terraform Cloud account**                                                                                                       | TF state                                                                                         | [x] ✅ org **`dkhomelabserver`**, workspace **`homelab`**; execution Local in F1 |
+| A9  | **pCloud account** + auth for **rclone**                                                                                          | offsite backup (B16)                                                                             | [~] ⏳ 2026-06-11 — `rclone` 1.60.1; `rclone.conf` empty; no remote `pcloud`; see `docs/manual-setup.md` F0-04d |
+| A10 | **Bitwarden Cloud** + 2FA                                                                                                       | ✅ decision B15                                                                                    | [x] ✅ 2026-06-11 — PM, folder `homelab` |
+| A11 | **ToDo Grocery repo** + Portainer Git deploy stack                                                                              | P0 public app                                                                                    | [x] ✅ iteration #2                        |
+| A12 | ~~Tailscale for CI~~                                                                                                            | ✅ **Self-hosted runner** (B5)                                                                    | [x]                                   |
+| A13 | **Dev laptop:** runner `homelab-dev` on the laptop                                                                                | dev workflow                                                                                     | [x] ✅ iteration #2                        |
+| A14 | **Greenfield HA** on the T620 (integration list at F5)                                                                            | restore vs greenfield HA                                                                         | [x] ✅ iteration #2                        |
+| A15 | **Backup retention:** the 2 newest; GB estimates for Immich/music/video                                                                  | NAS + pCloud size                                                                             | [x] ✅ 2026-06-11 — Σ SA500 **739 GB**; Purple **~158 GB**; pCloud DR **~160 GB** |
+| A16 | **GitHub / source verification** per app (P0/P1/P2); `docs/apps-sources.md`                                                       | Portainer Git deploy, multi-repo (B1)                                                            | [x] ✅ 2026-06-11 — **20/20** |
 
 
-### B. Pytania do Ciebie (decyzje — zamknij przed F1)
+### B. Questions for you (decisions — close them before F1)
 
-#### 🔴 Blokujące (bez tego nie projektujemy TF/Compose)
+#### 🔴 Blocking (without these we do not design TF/Compose)
 
 
-| ID  | Pytanie                     | Status / decyzja                                 |
+| ID  | Question                     | Status / decision                                 |
 | --- | --------------------------- | ------------------------------------------------ |
-| B1  | VM + Docker + **Portainer** | ✅ VM (nie LXC); multi-repo                       |
-| B2  | Reverse proxy **OPNsense**  | ✅ **HAProxy** (os-traefik-maxit odrzucony)       |
-| B3  | VPN + public HTTPS          | ✅ WireGuard; public: **Grocery** (subdomena A6)  |
-| B4  | SSO                         | ✅ **Authelia P0** wszystko                       |
+| B1  | VM + Docker + **Portainer** | ✅ VM (not LXC); multi-repo                       |
+| B2  | Reverse proxy **OPNsense**  | ✅ **HAProxy** (os-traefik-maxit rejected)       |
+| B3  | VPN + public HTTPS          | ✅ WireGuard; public: **Grocery** (subdomain A6)  |
+| B4  | SSO                         | ✅ **Authelia P0** for everything                       |
 | B5  | CI → homelab                | ✅ **Dual runner:** dev laptop + prod ubuntu-apps |
 | B6  | Storage                     | ✅ B+C — NFS media + local DB/cache; per-app ⏳    |
 | B7  | RAM                         | ✅ **8 GB apps + 4 GB NAS**                       |
-| B14 | LUKS                        | ✅ **Bez LUKS na start**; auto-unlock → backlog   |
+| B14 | LUKS                        | ✅ **No LUKS at the start**; auto-unlock → backlog   |
 
 
-#### 🟡 Ważne — ✅ zamknięte iter. #2
+#### 🟡 Important — ✅ closed in iteration #2
 
 
-| ID  | Pytanie        | Status / decyzja                     |
+| ID  | Question        | Status / decision                     |
 | --- | -------------- | ------------------------------------ |
-| B8  | Syncthing      | ✅ **Tak → P1**                       |
-| B9  | Budżet         | ✅ **Actual Budget → P0**             |
+| B8  | Syncthing      | ✅ **Yes → P1**                       |
+| B9  | Budget         | ✅ **Actual Budget → P0**             |
 | B10 | Notes          | ✅ **Trillium → P0**                  |
 | B11 | Streamer       | ✅ **Navidrome → P1**                 |
-| B12 | Jellyfin wideo | ✅ **Direct Play → P1**               |
-| B13 | Zotify         | ✅ **Odłożony (backlog)**             |
+| B12 | Jellyfin video | ✅ **Direct Play → P1**               |
+| B13 | Zotify         | ✅ **Deferred (backlog)**             |
 | B15 | Bitwarden      | ✅ **Cloud**                          |
-| B16 | Backup pCloud  | ✅ **rclone**                         |
+| B16 | pCloud backup  | ✅ **rclone**                         |
 | B17 | Portainer      | ✅ **P0**                             |
-| B18 | Dev subset     | ✅ **Pełny stack P0** (nie minimalny) |
+| B18 | Dev subset     | ✅ **The full P0 stack** (not minimal) |
 
 
-#### 🟢 F5/F6 — ✅ zamknięte iter. #2
+#### 🟢 F5/F6 — ✅ closed in iteration #2
 
 
-| ID  | Pytanie               | Status / decyzja           |
+| ID  | Question               | Status / decision           |
 | --- | --------------------- | -------------------------- |
-| B19 | Metryki               | ✅ **Beszel**               |
-| B20 | Diun / Trivy          | ✅ **Diun F6**; Trivy defer |
+| B19 | Metrics               | ✅ **Beszel**               |
+| B20 | Diun / Trivy          | ✅ **Diun in F6**; Trivy deferred |
 | B21 | DumbWhoIs, omni-tools | ✅ **P0**                   |
 
 
-### C. Problemy do przedyskutowania (analiza planu — agent)
+### C. Problems to discuss (plan analysis — agent)
 
-#### Zasoby sprzętowe
+#### Hardware resources
 
 
-| Problem                                                     | Dlaczego ważne                                       | Kierunek rozmowy                                     |
+| Problem                                                     | Why it matters                                       | Direction of the discussion                                     |
 | ----------------------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------- |
-| **Celeron J4205 + 16 GB + 2 VM + ~15 kontenerów**           | Ryzyko **RAM swap** i lagów (Immich P1, Postgres P0) | ✅ P0 bez Immich; limity RAM w Compose; B7            |
-| **GitHub Actions → LAN**                                    | Runner w chmurze                                     | ✅ **Dual runner:** dev laptop, prod ubuntu-apps      |
-| **VLAN dla docker VM** (stary tfvars: tag 40) vs APP tag 51 | Niespójność segmentacji                              | ✅ Jedna tabela VLAN A4 — APP tag **51**              |
-| **NAS + apps na jednym hoście — I/O**                       | Konkurencja przy vzdump + import Immich              | Backup w nocy; Purple na archiwum; SA500 na hot data |
+| **Celeron J4205 + 16 GB + 2 VMs + ~15 containers**           | Risk of **RAM swap** and lag (Immich P1, Postgres P0) | ✅ P0 without Immich; RAM limits in Compose; B7            |
+| **GitHub Actions → LAN**                                    | A runner in the cloud                                     | ✅ **Dual runner:** dev laptop, prod ubuntu-apps      |
+| **VLAN for the docker VM** (old tfvars: tag 40) vs APP tag 51 | Inconsistent segmentation                              | ✅ One VLAN table, A4 — APP tag **51**              |
+| **NAS + apps on one host — I/O**                       | Contention during vzdump + an Immich import              | Backup at night; Purple for the archive; SA500 for hot data |
 
 
-#### Sieć i dostęp
+#### Network and access
 
 
-| Problem                              | Dlaczego ważne                        | Kierunek rozmowy                                       |
+| Problem                              | Why it matters                        | Direction of the discussion                                       |
 | ------------------------------------ | ------------------------------------- | ------------------------------------------------------ |
-| WireGuard vs publiczny reverse proxy | Plan mieszał oba bez decyzji          | ✅ Publiczny HTTPS na wybrane app; reszta VPN-only      |
-| **Traefik „na OPNsense”**            | OPNsense ≠ Traefik; mylenie z HAProxy | ✅ **HAProxy** na OPNsense; NPM/Traefik na VM odrzucone |
-| **GitHub Actions → LAN**             | Runner w LAN                          | ✅ dev **laptop**; prod **ubuntu-apps**                 |
-| **VLAN APP vs DMZ**                  | ~~Wspólny `/24`~~ → **DMZ off, APP QinQ `.50.50/26`** | ✅ A5 as-built 2026-06-30; NFS APP→IOT w F2 |
+| WireGuard vs a public reverse proxy | The plan mixed both without a decision          | ✅ Public HTTPS for selected apps; the rest VPN-only      |
+| **"Traefik on OPNsense"**            | OPNsense ≠ Traefik; confusion with HAProxy | ✅ **HAProxy** on OPNsense; NPM/Traefik on the VM rejected |
+| **GitHub Actions → LAN**             | A runner on the LAN                          | ✅ dev **laptop**; prod **ubuntu-apps**                 |
+| **VLAN APP vs DMZ**                  | ~~A shared `/24`~~ → **DMZ off, APP QinQ `.50.50/26`** | ✅ A5 as-built 2026-06-30; NFS APP→IOT in F2 |
 
 
-#### Aplikacje i prawo
+#### Applications and the law
 
 
-| Problem                               | Dlaczego ważne                     | Kierunek rozmowy                                    |
+| Problem                               | Why it matters                     | Direction of the discussion                                    |
 | ------------------------------------- | ---------------------------------- | --------------------------------------------------- |
-| **Zotify**                            | Szara strefa ToS Spotify           | Świadoma decyzja; tylko LAN; bez publicznego exposu |
-| **Immich + Zotify + ewent. Jellyfin** | Duży footprint storage + CPU       | Fazy P0/P1; media na NAS                            |
-| **ToDo Grocery z innego repo**        | CI musi klonować/build; wersje API | A11; submodule vs publish image                     |
-| **Wspólny Postgres**                  | Jedna awaria = wiele app           | OK na homelab; backup pg_dump krytyczny             |
+| **Zotify**                            | A grey area of the Spotify ToS           | A conscious decision; LAN only; no public exposure |
+| **Immich + Zotify + Jellyfin if needed** | A large storage + CPU footprint       | Phases P0/P1; media on the NAS                            |
+| **ToDo Grocery from another repo**        | CI has to clone/build; API versions | A11; submodule vs publish an image                     |
+| **A shared Postgres**                  | One failure = many apps           | OK for a homelab; a pg_dump backup is critical             |
 
 
-#### Operacje i DR
+#### Operations and DR
 
 
-| Problem                           | Dlaczego ważne                       | Kierunek rozmowy                                        |
+| Problem                           | Why it matters                       | Direction of the discussion                                        |
 | --------------------------------- | ------------------------------------ | ------------------------------------------------------- |
-| **pCloud + NAS — podwójna kopia** | Konflikt sync vs backup immutability | rclone one-way vs ZeroByte; test restore                |
-| **Secret recovery**               | GH write-only                        | Bitwarden obowiązkowy przed F1                          |
-| **OPNsense poza TF/Ansible w CI** | Config drift                         | `docs/opnsense-baseline.md` + ręczny export po zmianach |
-| **HA poza Proxmox**               | Osobny backup workflow               | Nie zapomnieć w F5                                      |
+| **pCloud + NAS — a double copy** | Conflict between sync and backup immutability | rclone one-way vs ZeroByte; a restore test                |
+| **Secret recovery**               | GH is write-only                        | Bitwarden is mandatory before F1                          |
+| **OPNsense outside TF/Ansible in CI** | Config drift                         | `docs/opnsense-baseline.md` + a manual export after changes |
+| **HA outside Proxmox**               | A separate backup workflow               | Do not forget it in F5                                      |
 
 
-#### Bezpieczeństwo
+#### Security
 
 
-| Problem                  | Dlaczego ważne                              | Kierunek rozmowy                       |
+| Problem                  | Why it matters                              | Direction of the discussion                       |
 | ------------------------ | ------------------------------------------- | -------------------------------------- |
-| **Authelia + wiele app** | Każda app inna integracja OIDC/forward-auth | Start: VPN + jeden proxy; SSO później  |
-| **pgAdmin w P0**         | Silny panel DB — exposure                   | Tylko LAN/VPN; silne hasło; nie public |
-| **LUKS przy kradzieży**  | Recovery key management                     | Bitwarden attachment recovery keys     |
+| **Authelia + many apps** | Each app integrates OIDC/forward-auth differently | Start: VPN + one proxy; SSO later  |
+| **pgAdmin in P0**         | A powerful DB panel — exposure                   | LAN/VPN only; a strong password; not public |
+| **LUKS if the machine is stolen**  | Recovery key management                     | Recovery keys as a Bitwarden attachment     |
 
 
-#### Proces / repo
+#### Process / repo
 
 
-| Problem                        | Dlaczego ważne                                      | Kierunek rozmowy                                      |
+| Problem                        | Why it matters                                      | Direction of the discussion                                      |
 | ------------------------------ | --------------------------------------------------- | ----------------------------------------------------- |
-| **Scope creep ~20+ aplikacji** | F4 nieukończony miesiącami                          | ✅ **P0/P1/P2** zdefiniowane iter. #2                  |
-| **Merge v2 → master**          | Stary kod zostaje na masterze po merge              | ✅ **Zamiana drzewa** — master = v2; legacy pod tagiem |
-| **Praca poza `homelab-v2`**    | Stary CI/tfstate na `dev`                           | Wszystkie commity infra tylko na `homelab-v2`         |
-| **Dev laptop offline**         | Push `homelab-v2` failuje CI gdy laptop off         | ✅ Akceptowane — runner dev na laptopie (A13)          |
-| **Brak TFC vs stary tfstate**  | Greenfield = pusty state — stary Proxmox wyczyścić? | ✅ **Cleanup legacy VM**; TODO SSH keys + API tokens   |
+| **Scope creep of ~20+ applications** | F4 unfinished for months                          | ✅ **P0/P1/P2** defined in iteration #2                  |
+| **Merge v2 → master**          | The old code stays on master after a merge              | ✅ **Tree replacement** — master = v2; legacy under a tag |
+| **Work outside `homelab-v2`**    | The old CI/tfstate is on `dev`                           | All infra commits only on `homelab-v2`         |
+| **Dev laptop offline**         | A push to `homelab-v2` fails CI when the laptop is off         | ✅ Accepted — the dev runner is on the laptop (A13)          |
+| **No TFC vs the old tfstate**  | Greenfield = an empty state — clean the old Proxmox? | ✅ **Cleanup of legacy VMs**; TODO SSH keys + API tokens   |
 
 
-### D. Proponowana kolejność rozmowy (1 sesja)
+### D. Proposed order of the conversation (1 session)
 
-1. **A1, A4, A5, B7** — sprzęt + sieć + RAM (blokuje TF)
-2. **B3, B2, B4** — model dostępu (VPN vs public, proxy, SSO)
-3. **B5, A12** — jak CI łączy się z homelab
-4. **B6, A15** — storage i rozmiary
-5. **Scope P0** — max 6 usług na start (propozycja poniżej)
-6. Reszta 🟡/🟢
+1. **A1, A4, A5, B7** — hardware + network + RAM (blocks TF)
+2. **B3, B2, B4** — the access model (VPN vs public, proxy, SSO)
+3. **B5, A12** — how CI connects to the homelab
+4. **B6, A15** — storage and sizes
+5. **P0 scope** — at most 6 services at the start (proposal below)
+6. The rest of 🟡/🟢
 
-### E. Zakres P0/P1/P2 ✅ (decyzja użytkownika iter. #2)
+### E. P0/P1/P2 scope ✅ (user decision, iteration #2)
 
-> Propozycja agenta poniżej **zastąpiona** decyzją użytkownika — patrz sekcja *Decyzje użytkownika — iteracja #2*.
+> The agent's proposal below was **replaced** by the user's decision — see the section *User decisions — iteration #2*.
 
 
-| P0 (start)                                                                                                                        | P1 (soon)                              | P2 (później)                                 |
+| P0 (start)                                                                                                                        | P1 (soon)                              | P2 (later)                                 |
 | --------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- | -------------------------------------------- |
-| Postgres, pgAdmin, Homarr, Trillium, Actual, Linkwarden, Authelia, omni-tools, DumbWhoIs, Portainer, Bentoo PDF, Grocery (public) | Immich, Syncthing, Navidrome, Jellyfin | Beszel, Dozzle, Diun, Zotify (defer), reszta |
+| Postgres, pgAdmin, Homarr, Trillium, Actual, Linkwarden, Authelia, omni-tools, DumbWhoIs, Portainer, Bentoo PDF, Grocery (public) | Immich, Syncthing, Navidrome, Jellyfin | Beszel, Dozzle, Diun, Zotify (deferred), the rest |
 
 
 ---
 
-## Następny krok — **F1 sprint** (`implement` todo)
+## Next step — **F1 sprint** (`implement` todo)
 
-Bramka F0→F1 zamknięta **2026-06-11**. Szczegóły w [`docs/manual-setup.md`](docs/manual-setup.md) (F0-12).
+The F0→F1 gate closed **2026-06-11**. Details in [`docs/manual-setup.md`](docs/manual-setup.md) (F0-12).
 
-1. **TFC** — workspace `homelab`: execution mode **Local** (przed prod apply)
-2. **GHA** — workflowy v2; `homelab-v2` → dev, `main` → prod + approval
-3. **Runnery** — dev laptop (`homelab-dev`) + prod `ubuntu-apps`
-4. **Dev VM** — libvirt + nowe sekrety (`openssl` → Bitwarden → `gh secret set`)
-5. **README** — skeleton dokumentacji (todo `readme-docs`)
+1. **TFC** — workspace `homelab`: execution mode **Local** (before the prod apply)
+2. **GHA** — v2 workflows; `homelab-v2` → dev, `main` → prod + approval
+3. **Runners** — dev laptop (`homelab-dev`) + prod `ubuntu-apps`
+4. **Dev VM** — libvirt + new secrets (`openssl` → Bitwarden → `gh secret set`)
+5. **README** — documentation skeleton (todo `readme-docs`)
 
-**Odłożone:** A9 rclone OAuth (F5); A5 MAC (F3); A1 mapa dysków w TF (F1/F3).
+**Deferred:** A9 rclone OAuth (F5); A5 MAC (F3); A1 disk map in TF (F1/F3).
 
 ---
 
-# Iteracja #3 — odtwarzalność, testy, baza wiedzy (2026-09-10)
+# Iteration #3 — reproducibility, tests, knowledge base (2026-09-10)
 
-> **Cel nadrzędny:** homelab = **odtwarzalna infrastruktura jako kod**, nie jednorazowo skonfigurowany zestaw VM.  
-> **Model:** IaC → deploy → **konfiguracja apps jako kod** → **testy automatyczne** → monitoring → backup → **baza wiedzy** → **rebuild runbook** → **audyt security** → **audyt repo**.  
-> **Zakres:** fazy **F7–F9** (po F6), z jednym wyjątkiem — *lessons learned* piszemy **od teraz**, na bieżąco.
+> **Overriding goal:** the homelab = **reproducible infrastructure as code**, not a one-off configured set of VMs.
+> **Model:** IaC → deploy → **app configuration as code** → **automated tests** → monitoring → backup → **knowledge base** → **rebuild runbook** → **security audit** → **repo audit**.
+> **Scope:** phases **F7–F9** (after F6), with one exception — *lessons learned* are written **from now on**, as we go.
 
-## Mapowanie zgłoszonych punktów na plan (bez duplikowania)
+## Mapping of the reported points onto the plan (without duplicating)
 
 
-| # | Temat | Status w planie | Gdzie / co dokładnie |
+| # | Topic | Status in the plan | Where / exactly what |
 |---|-------|-----------------|----------------------|
-| 1 | Konfiguracja jako kod | 🟡 **częściowo** | TF/Ansible/Compose ✅ (*Warstwy IaC*, CI/CD); **brak** konfiguracji *wnętrza* aplikacji → **F7-B** |
-| 2 | Testy automatyczne | 🔴 **brak** | plan miał tylko `ci-validate` (lint/validate) i „test restore” w A15 → **F7-C** |
-| 3 | Baza wiedzy | 🟡 **częściowo** | `docs/` + lista plików ✅ (*Dokumentacja README*); **brak** struktury `kb/` i lessons learned → **F8-D** |
-| 4 | Rebuild / migracja | 🟡 **częściowo** | DR restore skrypty ✅ (*Backupy i odtwarzanie*); **brak** runbooka „nowy sprzęt / inna infra” → **F8-E** |
-| 5 | Konta, loginy, hasła | 🟡 **częściowo** | generowanie + Bitwarden + rotacja ✅ (*Strategia generowania sekretów*); **brak** deklaracji *jakie konta mają istnieć* → **F7-A** |
-| 6 | Prekonfiguracja aplikacji | 🔴 **brak** | → **F7-B** (macierz TAK / CZĘŚCIOWO / NIE) |
-| 7 | NAS / storage / backup server | ✅ **jest** | `ubuntu-nas` `.20.12`, 4 GB, SA500 (media/NFS) + Purple (backupy), B6/B7, A15 sizing. **Luka wykonawcza:** A1 (mount SA500/Purple w TF) + rola Ansible dla `/export/*` — patrz *Luki wykonawcze* |
-| 8 | Backup + DR | 🟡 **częściowo** | cele, retention, źródła, skrypty restore ✅ (A15); **brak** per-usługa „krytyczne dane → restore → test” + **automatycznego** testu restore → **F7-C4** |
-| 9 | Audyt bezpieczeństwa | 🟡 **częściowo** | *Bezpieczeństwo* + B20 (Diun/Trivy) ✅ jako narzędzia; **brak** audytu jako **deliverable z raportem** → **F9-F1** |
-| 10 | Audyt repozytorium | 🔴 **brak** | → **F9-F2** |
-| 11 | Finalne README | ✅ **jest** | *Dokumentacja README* — tabela wymaganych sekcji + fazy uzupełniania. **F8** dodaje tylko link do `docs/kb/` |
-| 12 | „Czy da się odtworzyć?” | 🔴 **brak** | → **F9-F3** (drill, nie deklaracja) |
+| 1 | Configuration as code | 🟡 **partial** | TF/Ansible/Compose ✅ (*IaC layers*, CI/CD); **no** configuration of the *inside* of an application → **F7-B** |
+| 2 | Automated tests | 🔴 **missing** | the plan had only `ci-validate` (lint/validate) and a "restore test" in A15 → **F7-C** |
+| 3 | Knowledge base | 🟡 **partial** | `docs/` + the file list ✅ (*README documentation*); **no** `kb/` structure and no lessons learned → **F8-D** |
+| 4 | Rebuild / migration | 🟡 **partial** | DR restore scripts ✅ (*Backups and recovery*); **no** runbook for "new hardware / different infra" → **F8-E** |
+| 5 | Accounts, logins, passwords | 🟡 **partial** | generation + Bitwarden + rotation ✅ (*Strategy for generating secrets*); **no** declaration of *which accounts must exist* → **F7-A** |
+| 6 | Application preconfiguration | 🔴 **missing** | → **F7-B** (matrix YES / PARTIAL / NO) |
+| 7 | NAS / storage / backup server | ✅ **present** | `ubuntu-nas` `.20.12`, 4 GB, SA500 (media/NFS) + Purple (backups), B6/B7, A15 sizing. **Implementation gap:** A1 (mount SA500/Purple in TF) + an Ansible role for `/export/*` — see *Implementation gaps* |
+| 8 | Backup + DR | 🟡 **partial** | goals, retention, sources, restore scripts ✅ (A15); **no** per-service "critical data → restore → test" and **no automatic** restore test → **F7-C4** |
+| 9 | Security audit | 🟡 **partial** | *Security* + B20 (Diun/Trivy) ✅ as tools; **no** audit as a **deliverable with a report** → **F9-F1** |
+| 10 | Repository audit | 🔴 **missing** | → **F9-F2** |
+| 11 | Final README | ✅ **present** | *README documentation* — the table of required sections + the phases for filling it in. **F8** only adds a link to `docs/kb/` |
+| 12 | "Can it be rebuilt?" | 🔴 **missing** | → **F9-F3** (a drill, not a declaration) |
 
 ---
 
-## F7-A — Tożsamości i credentiale jako kod
+## F7-A — Identities and credentials as code
 
-**Problem:** hasła mamy zautomatyzowane (`openssl` → Bitwarden → `gh secret set`), ale **nie ma źródła prawdy, jakie konta powinny istnieć**. Efekt widać już na dev: Immich ma konto `admin@admin.com` założone ręcznie w GUI, którego hasła nie zna żaden plik ani vault.
+**Problem:** passwords are automated (`openssl` → Bitwarden → `gh secret set`), but **there is no source of truth for which accounts should exist**. The effect is already visible on dev: Immich has an `admin@admin.com` account created by hand in the GUI, and no file and no vault knows its password.
 
-### Deklaracja kont — `config/identities.yml` (bez wartości sekretów)
+### Account declaration — `config/identities.yml` (no secret values)
 
-Cztery tożsamości bazowe (wg decyzji użytkownika):
+Four base identities (per the user's decision):
 
 
-| Tożsamość | E-mail (login gdy app wymaga e-maila) | Rola |
+| Identity | Email (the login when the app requires an email) | Role |
 |-----------|----------------------------------------|------|
-| `homelab-admin` | `admin@dkhomelabserver.xyz` | konto administratora — człowiek (SSO/Authelia) |
-| `homelab-prod` | `homelab-prod@dkhomelabserver.xyz` | konto techniczne środowiska prod (bootstrap apps, API, integracje) |
-| `homelab-dev` | `homelab-dev@dkhomelabserver.xyz` | to samo dla dev — **nigdy** te same hasła co prod |
-| `homelab-notification` | `homelab-notification@dkhomelabserver.xyz` | nadawca powiadomień (Diun, Beszel, alerty) |
+| `homelab-admin` | `admin@dkhomelabserver.xyz` | administrator account — a human (SSO/Authelia) |
+| `homelab-prod` | `homelab-prod@dkhomelabserver.xyz` | technical account of the prod environment (app bootstrap, API, integrations) |
+| `homelab-dev` | `homelab-dev@dkhomelabserver.xyz` | the same for dev — **never** the same passwords as prod |
+| `homelab-notification` | `homelab-notification@dkhomelabserver.xyz` | notification sender (Diun, Beszel, alerts) |
 
-**Standardy:**
+**Standards:**
 
-- **Nazewnictwo konta:** `homelab-<rola>`; per-app konta techniczne: `<app>-svc`
-- **E-mail:** `<konto>@dkhomelabserver.xyz` — domena już nasza (A6); adresy nie muszą odbierać poczty tam, gdzie app tylko waliduje format
-- **Zakaz `*.local`** w e-mailach — pgAdmin odrzuca `admin@homelab.local` jako reserved TLD (lesson learned z F4 dev)
-- **Nazwa sekretu:** `<APP>_<KONTO>_PASSWORD` (np. `IMMICH_ADMIN_PASSWORD`) — spójna w Bitwarden / GH env / `docs/secrets-inventory.md`
-- **Per-środowisko:** każdy sekret istnieje osobno dla `dev` i `prod`
+- **Account naming:** `homelab-<role>`; per-app technical accounts: `<app>-svc`
+- **Email:** `<account>@dkhomelabserver.xyz` — the domain is already ours (A6); the addresses do not have to receive mail where the app only validates the format
+- **No `*.local`** in emails — pgAdmin rejects `admin@homelab.local` as a reserved TLD (a lesson learned from F4 dev)
+- **Secret name:** `<APP>_<ACCOUNT>_PASSWORD` (for example `IMMICH_ADMIN_PASSWORD`) — consistent in Bitwarden / the GH env / `docs/secrets-inventory.md`
+- **Per environment:** each secret exists separately for `dev` and `prod`
 
-Plik zawiera **wyłącznie deklarację** (konto, e-mail, app, typ loginu `email|username`, nazwa sekretu, sposób wstrzyknięcia) — **zero haseł**. Wartości: Bitwarden (źródło) → GH env secret (CI) → `.env`/API na hoście.
+The file contains **the declaration only** (account, email, app, login type `email|username`, secret name, injection method) — **zero passwords**. Values: Bitwarden (the source) → GH env secret (CI) → `.env`/API on the host.
 
 ### Generator — `utils/gen-app-credentials.sh`
 
-- `--app <name> --env dev|prod` → generuje hasło (`openssl rand`), zapisuje do Bitwarden, `gh secret set`, aktualizuje `docs/secrets-inventory.md` (nazwa + data), **nigdy nie printuje wartości**
-- `--rotate` → nowa wartość + redeploy + wpis rotacji (spójne z istniejącą sekcją *Strategia generowania sekretów*)
-- `--all --env dev` → wszystkie konta z `config/identities.yml`, idempotentnie (istniejące pomija, chyba że `--rotate`)
-- Zastępuje dzisiejsze rozproszone pliki `~/.homelab-*-pass` — te zostają tylko jako **cache dev**, nie źródło prawdy
+- `--app <name> --env dev|prod` → generates a password (`openssl rand`), saves it to Bitwarden, `gh secret set`, updates `docs/secrets-inventory.md` (name + date), **never prints the value**
+- `--rotate` → a new value + redeploy + a rotation entry (consistent with the existing section *Strategy for generating secrets*)
+- `--all --env dev` → every account from `config/identities.yml`, idempotently (existing ones are skipped, unless `--rotate`)
+- Replaces today's scattered `~/.homelab-*-pass` files — those remain only as a **dev cache**, not the source of truth
 
-### Wstrzykiwanie do aplikacji
+### Injection into applications
 
-Kolejność preferencji: **env var w compose** → **API/CLI bootstrap** (idempotentny skrypt) → **ręcznie + wpis w KB**. Konto zakładane ręcznie w GUI = błąd do naprawy, nie stan docelowy.
+Preference order: **an env var in compose** → **API/CLI bootstrap** (an idempotent script) → **by hand + an entry in the KB**. An account created by hand in the GUI is a bug to fix, not the target state.
 
 ---
 
-## F7-B — Prekonfiguracja aplikacji jako kod (macierz)
+## F7-B — Application preconfiguration as code (matrix)
 
-**Zasada:** import z GUI = **fallback**, nie sposób deploymentu. Każda app dostaje `compose/<stack>/` + opcjonalnie `bootstrap/<app>.sh` — **idempotentny**, uruchamiany przez Ansible po `compose up`, z credentialami z F7-A.
+**Rule:** an import from the GUI is a **fallback**, not the deployment method. Each app gets `compose/<stack>/` + optionally `bootstrap/<app>.sh` — **idempotent**, run by Ansible after `compose up`, with credentials from F7-A.
 
-Ocena na podstawie tego, co już wiemy z dev (F4):
+Assessment based on what we already know from dev (F4):
 
 
-| App | Jako kod? | Mechanizm |
+| App | As code? | Mechanism |
 |-----|-----------|-----------|
-| Authelia | **TAK** | `configuration.yml` + `users_database.yml` w repo ✅ już zrobione |
-| Diun | **TAK** | `diun.yml` w repo ✅ |
-| Dozzle | **TAK** | env + labels |
-| Navidrome | **TAK** | env / `navidrome.toml` |
-| pgAdmin | **TAK** | `PGADMIN_DEFAULT_*` + `servers.json` montowany przy starcie (definicje serwerów bez klikania) |
-| Grafana (F6) | **TAK** | provisioning: datasources + dashboards jako pliki — **dashboardy generowane z `config/services.yml`**, nie importowane z GUI |
-| Grocery | **TAK** | Portainer **Git stack** ✅ |
-| Syncthing | **CZĘŚCIOWO** | `config.xml` jako kod; device ID-y powstają przy pierwszym starcie → bootstrap doklei peery przez API |
-| Portainer | **CZĘŚCIOWO** | admin przez `--admin-password-file`, endpointy + Git stacki przez API bootstrap; UI tylko do podglądu |
-| Immich | **CZĘŚCIOWO** | admin: `immich-admin` CLI / API; ustawienia systemowe: **JSON import przez API** (plik w repo); biblioteki/ML jako env |
-| Jellyfin | **CZĘŚCIOWO** | wizard startowy przez API (`/Startup/*`) w bootstrapie; biblioteki z `config/services.yml` |
-| Beszel | **CZĘŚCIOWO** | hub admin przez env/CLI; **agent wymaga KEY z huba** → bootstrap czyta klucz z API i ustawia sekret |
-| Linkwarden / Trilium / Actual | **CZĘŚCIOWO** | pierwszy użytkownik przez API/env; reszta w DB → objęte backupem, nie kodem |
-| Homarr | **CZĘŚCIOWO** | konfiguracja w DB; **boardy generowane z `config/services.yml`** przez API/seed przy bootstrapie |
-| Zotify | **NIE** | interaktywny OAuth Spotify → **udokumentować krok ręczny** w KB + `docs/kb/apps/zotify.md` |
+| Authelia | **YES** | `configuration.yml` + `users_database.yml` in the repo ✅ already done |
+| Diun | **YES** | `diun.yml` in the repo ✅ |
+| Dozzle | **YES** | env + labels |
+| Navidrome | **YES** | env / `navidrome.toml` |
+| pgAdmin | **YES** | `PGADMIN_DEFAULT_*` + `servers.json` mounted at start (server definitions with no clicking) |
+| Grafana (F6) | **YES** | provisioning: datasources + dashboards as files — **dashboards generated from `config/services.yml`**, not imported from the GUI |
+| Grocery | **YES** | Portainer **Git stack** ✅ |
+| Syncthing | **PARTIAL** | `config.xml` as code; device IDs appear on the first start → bootstrap attaches peers through the API |
+| Portainer | **PARTIAL** | admin through `--admin-password-file`, endpoints + Git stacks through an API bootstrap; the UI is for viewing only |
+| Immich | **PARTIAL** | admin: the `immich-admin` CLI / API; system settings: **JSON import through the API** (a file in the repo); libraries/ML as env |
+| Jellyfin | **PARTIAL** | the startup wizard through the API (`/Startup/*`) in bootstrap; libraries from `config/services.yml` |
+| Beszel | **PARTIAL** | hub admin through env/CLI; **the agent needs a KEY from the hub** → bootstrap reads the key from the API and sets the secret |
+| Linkwarden / Trilium / Actual | **PARTIAL** | the first user through the API/env; the rest is in the DB → covered by backup, not by code |
+| Homarr | **PARTIAL** | configuration in the DB; **boards generated from `config/services.yml`** through the API/seed at bootstrap |
+| Zotify | **NO** | interactive Spotify OAuth → **document the manual step** in the KB + `docs/kb/apps/zotify.md` |
 
-**Wspólne źródło prawdy — `config/services.yml`:** nazwa, środowisko, host, port, ścieżka health, oczekiwany kod HTTP, typ auth, priorytet P0/P1/P2, DB. Jeden plik napędza: **smoke testy (F7-C)**, **dashboard Homarr**, **dashboardy Grafany**, **monitoring Beszel**, tabelę portów w `docs/`. Dziś te same porty są powtórzone w compose, docsach i głowie — to się rozjedzie.
+**Shared source of truth — `config/services.yml`:** name, environment, host, port, health path, expected HTTP code, auth type, P0/P1/P2 priority, DB. One file drives: **smoke tests (F7-C)**, the **Homarr dashboard**, the **Grafana dashboards**, **Beszel monitoring**, the port table in `docs/`. Today the same ports are repeated in compose, in the docs, and in someone's head — that will drift apart.
 
 ---
 
-## F7-C — Testy automatyczne
+## F7-C — Automated tests
 
-**Dziś:** `ci-validate.yml` sprawdza tylko lint/validate; poprawność wdrożenia weryfikujemy ręcznie `curl`-em. To jest do zautomatyzowania.
+**Today:** `ci-validate.yml` checks only lint/validate; we verify that a deploy worked by hand with `curl`. That is to be automated.
 
-Layout `tests/` + jeden runner `utils/run-tests.sh --env dev|prod`:
+Layout `tests/` + one runner `utils/run-tests.sh --env dev|prod`:
 
 
-| Zestaw | Co sprawdza |
+| Suite | What it checks |
 |--------|-------------|
-| **C1 `tests/smoke/`** | Każda usługa z `config/services.yml`: kontener `Up` (nie `Restarting`), port publikowany, HTTP == oczekiwany kod, brak restart-loopa w ostatnich N min |
-| **C2 `tests/infra/`** | `terraform plan` = **no changes** (drift); `ansible --check` bez zmian; zgodność IP/VLAN z `docs/network.md`; RAM/dysk VM == tfvars |
-| **C3 `tests/net/`** | DNS (wewn. + publiczny), WireGuard handshake, HAProxy + ważność cert ACME, **dozwolone** przejścia (APP → `.20.12:2049/111`) i **zablokowane** (APP → IOT poza NFS), dostęp z VPN |
-| **C4 `tests/restore/`** | Odtworzenie `pg_dump` do scratch DB + weryfikacja tabel; restore `vzdump` na testowy VMID; restore configu OPNsense do pliku — **cyklicznie**, nie tylko backup |
-| **C5 `tests/config/`** | Sekrety z inventory istnieją w GH env; brak wartości sekretów w repo (gitleaks); brak domyślnych haseł; spójność `config/services.yml` ↔ compose ↔ docs |
+| **C1 `tests/smoke/`** | Every service from `config/services.yml`: the container is `Up` (not `Restarting`), the port is published, HTTP == the expected code, no restart loop in the last N minutes |
+| **C2 `tests/infra/`** | `terraform plan` = **no changes** (drift); `ansible --check` with no changes; IP/VLAN matches `docs/network.md`; VM RAM/disk == tfvars |
+| **C3 `tests/net/`** | DNS (internal + public), the WireGuard handshake, HAProxy + ACME cert validity, **allowed** paths (APP → `.20.12:2049/111`) and **blocked** ones (APP → IOT except NFS), access from the VPN |
+| **C4 `tests/restore/`** | Restore of `pg_dump` into a scratch DB + a table check; restore of `vzdump` onto a test VMID; restore of the OPNsense config to a file — **on a schedule**, not only the backup |
+| **C5 `tests/config/`** | Secrets from the inventory exist in the GH env; no secret values in the repo (gitleaks); no default passwords; `config/services.yml` ↔ compose ↔ docs are consistent |
 
-**Integracja z CI:**
+**CI integration:**
 
-- `tests-dev.yml` — po `apps-deploy-dev`, na runnerze `homelab-dev`; **czerwone = deploy nieudany**
-- prod: job `post-deploy-tests` w `apps-deploy-prod.yml` (po approval)
-- **Gate:** faza nie jest „done”, dopóki jej smoke testy nie są zielone; dotyczy też F4 (aktualny stan dev)
-- C4 na harmonogramie (miesięcznie), nie w każdym push
+- `tests-dev.yml` — after `apps-deploy-dev`, on the `homelab-dev` runner; **red = the deploy failed**
+- prod: a `post-deploy-tests` job in `apps-deploy-prod.yml` (after approval)
+- **Gate:** a phase is not "done" until its smoke tests are green; this also applies to F4 (the current dev state)
+- C4 on a schedule (monthly), not on every push
 
 ---
 
-## F8-D — Baza wiedzy `docs/kb/`
+## F8-D — Knowledge base `docs/kb/`
 
-Rozszerzenie istniejącej sekcji *Dokumentacja README* — README zostaje **punktem wejścia**, `docs/kb/` to szczegóły:
+An extension of the existing *README documentation* section — the README stays the **entry point**, `docs/kb/` is the detail:
 
 ```
 docs/kb/
@@ -1795,158 +1794,159 @@ docs/kb/
   storage.md           backup.md            dr.md
   security.md          deployment.md        operations.md
   troubleshooting.md   rebuild.md           lessons-learned.md
-  apps/<app>.md        # per app: URL, konto, DB, wolumeny, backup, config-as-code, kroki ręczne
+  apps/<app>.md        # per app: URL, account, DB, volumes, backup, config-as-code, manual steps
 ```
 
-### `lessons-learned.md` — append-only, obowiązkowo
+### `lessons-learned.md` — append-only, mandatory
 
-**Zasada procesowa:** nieoczywisty problem napotkany przy deployu/testach → wpis w **tym samym PR**, który go naprawia. Szablon: *data · faza · objaw · przyczyna · fix · jak zapobiec / gdzie to jest w kodzie*.
+**Process rule:** a non-obvious problem hit during deploy/tests → an entry in **the same PR** that fixes it. Template: *date · phase · symptom · cause · fix · how to prevent it / where it lives in the code*.
 
-**Wpisy do przeniesienia od razu (z F3/F4 na dev — realnie kosztowały czas):**
+**Entries to move over immediately (from F3/F4 on dev — they actually cost time):**
 
-1. **CPU `kvm64` → Immich ML pada** (`Illegal instruction`, NumPy wymaga x86-64-v2) → `cpu_type = "host"` w TF (skodyfikowane 2026-09-10)
-2. **pgAdmin odrzuca `admin@homelab.local`** — `.local` to reserved TLD → e-maile kont na realnej domenie
-3. **BentoPDF nasłuchuje na `8080`, nie `80`** — mapowanie `8085:80` dawało connection reset
-4. **`immich-postgres` OOM przy `mem_limit: 512m`** — crash loop w trakcie init geodata → 768 MB minimum
-5. **Brak `docker-compose-v2`** w cloud-image → task w playbooku
-6. **`.env` jako `root:root 0600`** blokuje `docker compose` bez `sudo` → `ubuntu-dev:docker 0640`
-7. **Portainer „timed out for security purposes”** — pierwszy admin musi powstać krótko po starcie → bootstrap admina od razu (F7-A/B), nie ręcznie
-8. **`network_mode: host` ukrywa porty w Portainerze** → bridge + jawne `ports:`
-9. **Authelia: cookie domain ≠ IP** — logowanie po IP nie utrzymuje sesji → wpis w `/etc/hosts` lub realna nazwa DNS
-10. **Nested PVE ma node name `dev`, nie `pve`** → `proxmox_node_name` w tfvars
-11. **Blok `cloud {}` w TF blokuje lokalny apply dev** → `utils/dev-apply-local.sh` odsuwa `cloud.tf`
-12. **`svc.sh` runnera wymaga sudo** — runner `homelab-dev` cicho offline → CI nie startuje
+1. **CPU `kvm64` → Immich ML crashes** (`Illegal instruction`, NumPy needs x86-64-v2) → `cpu_type = "host"` in TF (codified 2026-09-10)
+2. **pgAdmin rejects `admin@homelab.local`** — `.local` is a reserved TLD → account emails on a real domain
+3. **BentoPDF listens on `8080`, not `80`** — the mapping `8085:80` produced a connection reset
+4. **`immich-postgres` OOM at `mem_limit: 512m`** — a crash loop during geodata init → 768 MB minimum
+5. **No `docker-compose-v2`** in the cloud image → a task in the playbook
+6. **`.env` as `root:root 0600`** blocks `docker compose` without `sudo` → `ubuntu-dev:docker 0640`
+7. **Portainer "timed out for security purposes"** — the first admin has to be created shortly after start → bootstrap the admin immediately (F7-A/B), not by hand
+8. **`network_mode: host` hides ports in Portainer** → bridge + explicit `ports:`
+9. **Authelia: cookie domain ≠ IP** — logging in by IP does not keep the session → an entry in `/etc/hosts` or a real DNS name
+10. **Nested PVE has node name `dev`, not `pve`** → `proxmox_node_name` in tfvars
+11. **A `cloud {}` block in TF blocks a local dev apply** → `utils/dev-apply-local.sh` moves `cloud.tf` aside
+12. **The runner's `svc.sh` needs sudo** — the `homelab-dev` runner silently goes offline → CI does not start
 
 ---
 
 ## F8-E — Rebuild / migration runbook (`docs/kb/rebuild.md`)
 
-Scenariusz: *„dostaję czysty Proxmox / nowy sprzęt / inny storage / inną sieć”*. Konsoliduje stary plan `homelab_iac_rebuild` i skrypty restore z sekcji *Odtwarzanie „łatwe”*.
+Scenario: *"I get a clean Proxmox / new hardware / different storage / a different network"*. It consolidates the old `homelab_iac_rebuild` plan and the restore scripts from the section *"Easy" recovery*.
 
-**Struktura:** graf zależności + kolejność:
+**Structure:** a dependency graph + the order:
 
-1. OPNsense — restore `config.xml` (sieć/VLAN/firewall/WG/HAProxy) → **bez tego nic nie dojedzie**
-2. Proxmox na metalu — instalacja + `utils/bootstrap-f3-proxmox.sh` + token API
+1. OPNsense — restore `config.xml` (network/VLAN/firewall/WG/HAProxy) → **without this nothing else will be reachable**
+2. Proxmox on the metal — install + `utils/bootstrap-proxmox.sh` + an API token
 3. `terraform apply` — `ubuntu-nas`, `ubuntu-apps` (+ A1: mount SA500/Purple)
-4. Ansible base — użytkownicy, Docker, NFS klient/serwer, exporty
-5. `compose/core` + `compose/grocery` — deploy przez GHA
-6. **Bootstrap credentiali (F7-A/B)** — konta i integracje bez GUI
-7. Restore danych: `pg_dump` per DB → wolumeny app → biblioteka Immich/media z NFS/pCloud → HA `.tar`
-8. DNS/ACME/HAProxy — publiczny grocery
-9. **`utils/run-tests.sh --env prod`** — weryfikacja, nie „wygląda OK”
+4. Ansible base — users, Docker, NFS client/server, exports
+5. `compose/core` + `compose/grocery` — deploy through GHA
+6. **Credential bootstrap (F7-A/B)** — accounts and integrations with no GUI
+7. Data restore: `pg_dump` per DB → app volumes → the Immich/media library from NFS/pCloud → HA `.tar`
+8. DNS/ACME/HAProxy — public grocery
+9. **`utils/run-tests.sh --env prod`** — verification, not "looks OK"
 
-Dla każdego kroku: **automat czy ręcznie**, wymagane sekrety, dane z backupu, czas, sposób weryfikacji. Warianty: nowy hypervisor · nowy storage · renumeracja sieci · odbudowa dev na laptopie.
-
----
-
-## F9-F — Audyty finalne + gate odtwarzalności
-
-Trzy **deliverable'y w repo**, nie deklaracje:
-
-### F9-F1 — Audyt bezpieczeństwa → `docs/kb/security-audit-<data>.md`
-
-Zakres: ekspozycja usług · firewall · segmentacja VLAN · VPN · reverse proxy · TLS/certy · authentication (Authelia coverage) · uprawnienia · sekrety i credentiale · SSH · dostęp administracyjny · kontenery/VM · backupy · aktualizacje · **domyślne hasła i konta** · zbędne otwarte porty · least privilege.  
-Narzędzia: `nmap` z **każdego** VLAN-u (nie tylko z LAN), Trivy (B20), Lynis, gitleaks, `docker inspect` (privileged, sockety, `:latest`).  
-Format: znalezisko → severity → rekomendacja → status. Znane pozycje do przeglądu: publikowany `5432` na hoście, socket Dockera w Portainer/Dozzle, self-signed TLS Authelii, `:latest` w większości obrazów.
-
-### F9-F2 — Audyt repozytorium → `docs/kb/repo-audit-<data>.md`
-
-Struktura katalogów · spójność nazewnictwa · duplikacja konfiguracji (porty w 3 miejscach!) · zbędne pliki (`utils/create-dev-vm.sh` deprecated) · sekrety/dane wrażliwe · konfiguracje do przeniesienia w IaC · dokumentacja i README · instrukcje deploy · testy · skrypty · zależności między modułami · **czy repo jest zrozumiałe dla osoby, która go nie budowała** (test świeżym okiem — osobny agent bez kontekstu tej rozmowy).
-
-### F9-F3 — Drill „czy da się odtworzyć?”
-
-Nie ankieta, tylko **ćwiczenie**: odtworzenie środowiska w nested PVE na laptopie **wyłącznie** z repo + backupów + `docs/kb/rebuild.md`, bez pamięci o konfiguracji. Mierzymy czas, notujemy każde miejsce, gdzie trzeba było improwizować → luka trafia do IaC/automatyzacji/KB. **Gate merge `homelab-v2` → `main`.**
+For each step: **automated or manual**, the required secrets, data from backup, time, how to verify. Variants: a new hypervisor · new storage · network renumbering · rebuilding dev on the laptop.
 
 ---
 
-## Luki wykonawcze wykryte przy tej analizie (do domknięcia przed F7)
+## F9-F — Final audits + the reproducibility gate
+
+Three **deliverables in the repo**, not declarations:
+
+### F9-F1 — Security audit → `docs/kb/security-audit-<date>.md`
+
+Scope: service exposure · firewall · VLAN segmentation · VPN · reverse proxy · TLS/certificates · authentication (Authelia coverage) · permissions · secrets and credentials · SSH · administrative access · containers/VMs · backups · updates · **default passwords and accounts** · unnecessary open ports · least privilege.
+Tools: `nmap` from **every** VLAN (not only from the LAN), Trivy (B20), Lynis, gitleaks, `docker inspect` (privileged, sockets, `:latest`).
+Format: finding → severity → recommendation → status. Known items to review: published `5432` on the host, the Docker socket in Portainer/Dozzle, Authelia's self-signed TLS, `:latest` on most images.
+
+### F9-F2 — Repository audit → `docs/kb/repo-audit-<date>.md`
+
+Directory structure · naming consistency · duplicated configuration (ports in 3 places!) · unnecessary files (`utils/create-dev-vm.sh` deprecated) · secrets/sensitive data · configuration to move into IaC · documentation and the README · deploy instructions · tests · scripts · dependencies between modules · **whether the repo is understandable to a person who did not build it** (a fresh-eyes test — a separate agent with no context from this conversation).
+
+### F9-F3 — Drill: "can it be rebuilt?"
+
+Not a questionnaire, an **exercise**: rebuild the environment in nested PVE on the laptop **only** from the repo + backups + `docs/kb/rebuild.md`, with no memory of the configuration. We measure the time, and we note every place where we had to improvise → the gap goes into IaC/automation/the KB. **Gate for the merge `homelab-v2` → `main`.**
+
+---
+
+## Implementation gaps found in this analysis (to close before F7)
 
 
-| Luka | Skutek | Faza |
+| Gap | Effect | Phase |
 |------|--------|------|
-| **A1** — mount SA500/Purple w TF nadal `[ ]` | NAS VM powstanie bez dysków danych → brak NFS i miejsca na backupy | **F3/F5** |
-| Brak roli Ansible dla `/export/*` + NFS server | Media/Immich nie mają gdzie leżeć na prod | **F5** |
-| Brak jobów backupowych (`vzdump`, `pg_dump`, rclone → pCloud) | A15 opisany, **nie wdrożony** | **F5** |
-| Konta zakładane w GUI (Immich `admin@admin.com`, Portainer) | Hasła poza vaultem → nieodtwarzalne | **F7-A** |
-| Porty zduplikowane: compose / docs / brak `config/services.yml` | Rozjazd dokumentacji | **F7-B** |
-| Obrazy na `:latest` | Deploy nieodtwarzalny w czasie | **F7-B** / audyt F9 |
-| Runner `homelab-dev` offline (sudo `svc.sh`) | CI nie wykonuje deployu — testujemy lokalnie | **F7-C** |
+| **A1** — the SA500/Purple mount in TF is still `[ ]` | the NAS VM will come up with no data disks → no NFS and no room for backups | **F3/F5** |
+| No Ansible role for `/export/*` + the NFS server | Media/Immich have nowhere to live on prod | **F5** |
+| No backup jobs (`vzdump`, `pg_dump`, rclone → pCloud) | A15 is described, **not implemented** | **F5** |
+| Accounts created in the GUI (Immich `admin@admin.com`, Portainer) | Passwords outside the vault → not reproducible | **F7-A** |
+| Ports duplicated: compose / docs / no `config/services.yml` | The documentation drifts apart | **F7-B** |
+| Images on `:latest` | A deploy is not reproducible over time | **F7-B** / the F9 audit |
+| Runner `homelab-dev` offline (sudo `svc.sh`) | CI does not run the deploy — we test locally | **F7-C** |
 
 ---
 
-## Tożsamości — korekta (2026-09-10, decyzja użytkownika)
+## Identities — correction (2026-09-10, user decision)
 
-Zamiast czterech adresów na własnej domenie: **jedna realna skrzynka per środowisko** — dzięki temu resety haseł i powiadomienia z aplikacji faktycznie docierają.
+Instead of four addresses on our own domain: **one real mailbox per environment** — so password resets and notifications from the applications actually arrive.
 
 
-| Środowisko | E-mail (login wszędzie, gdzie app wymaga e-maila) |
+| Environment | Email (the login everywhere an app requires an email) |
 |------------|---------------------------------------------------|
 | **dev**  | `dev-homelabnotifications@pm.me` |
 | **prod** | `prod-homelabnotifications@pm.me` |
 
-- Tożsamości `homelab-admin` i `homelab-notification` rozwiązują e-mail **z środowiska** (`email: environment` w `config/identities.yml`); różni je `username` (`admin` / `homelab-notification`) tam, gdzie app loguje po nazwie
-- **Usunięte:** `admin@dkhomelabserver.xyz`, `homelab-notification@dkhomelabserver.xyz`, `homelab-prod@…`, `homelab-dev@…` — pokryte przez powyższe
-- Separacja dev/prod zostaje: inne skrzynki **i** inne hasła; `<APP>_<KONTO>_PASSWORD` per env bez zmian
+- The identities `homelab-admin` and `homelab-notification` resolve the email **from the environment** (`email: environment` in `config/identities.yml`); what distinguishes them is `username` (`admin` / `homelab-notification`) where the app logs in by name
+- **Removed:** `admin@dkhomelabserver.xyz`, `homelab-notification@dkhomelabserver.xyz`, `homelab-prod@…`, `homelab-dev@…` — covered by the above
+- Dev/prod separation stays: different mailboxes **and** different passwords; `<APP>_<ACCOUNT>_PASSWORD` per env is unchanged
 
 ---
 
-# Iteracja #4 — przejęcie projektu (2026-10-18)
+# Iteration #4 — project takeover (2026-10-18)
 
-> **Decyzja:** `knowledge/decisions/0001-restore-ci-and-dev-before-f3-metal.md` — najpierw CI i DEV, potem F3 metal.
-> **Dowody:** `docs/audit/2026-10-18-plan-audit.md`.
+> **Decision:** `knowledge/decisions/0001-restore-ci-and-dev-before-f3-metal.md` — CI and DEV first, then F3 metal.
+> **Evidence:** `docs/audit/2026-10-18-plan-audit.md`.
 
-Stan wejściowy: kod F1–F9 jest na `homelab-v2`, ale CI nie uruchomiło się od 2026-07-01 (runner `homelab-dev-laptop` nie działa, na GitHub 0 zarejestrowanych runnerów), a DEV jest nieosiągalny (nested Proxmox bez IP; smoke/infra/net FAIL na „host unreachable”).
+Starting state: the F1–F9 code is on `homelab-v2`, but CI has not run since 2026-07-01 (the `homelab-dev-laptop` runner does not work, GitHub shows 0 registered runners), and DEV is unreachable (nested Proxmox with no IP; smoke/infra/net FAIL on "host unreachable").
 
-| Krok | Zakres | Gotowe, gdy |
+| Step | Scope | Done when |
 |------|--------|-------------|
-| **R1** — `restore-ci` | Ponowna rejestracja runnera `homelab-dev` (`utils/setup-github-runner.sh`), uruchamianego jako usługa | `CI Validate` i `Infra Plan Dev` zielone na `homelab-v2`; `Tests Dev` się uruchamia |
-| **R2** — `restore-dev` | Sieć/IP nested Proxmoxa (`utils/ensure-dev-proxmox.sh`), `ubuntu-apps-dev` w górze | `utils/run-tests.sh --env dev --suite all` bez FAIL |
-| **R3** — `f9-gate-dev` | Rebuild DEV wyłącznie z repo + vault (`knowledge/rebuild.md`), deploy GHA z pełnym zestawem sekretów, ponownie `--suite restore` | punkty bramki F9 możliwe na DEV zamknięte |
+| **R1** — `restore-ci` | Register the `homelab-dev` runner again (`utils/setup-github-runner.sh`), started as a service | `CI Validate` and `Infra Plan Dev` are green on `homelab-v2`; `Tests Dev` starts |
+| **R2** — `restore-dev` | Network/IP of the nested Proxmox (`utils/ensure-dev-proxmox.sh`), `ubuntu-apps-dev` up | `utils/run-tests.sh --env dev --suite all` with no FAIL |
+| **R3** — `f9-gate-dev` | Rebuild DEV only from the repo + vault (`knowledge/rebuild.md`), a GHA deploy with the full set of secrets, `--suite restore` again | the F9 gate points that can be closed on DEV are closed |
 
-Potem bez zmian: F3 metal → F5 prod → nmap z VLAN-ów (ostatni punkt bramki) → merge do `main` → F10.
+Then unchanged: F3 metal → F5 prod → nmap from the VLANs (the last gate point) → merge to `main` → F10.
 
 ---
 
-# F10 — Monitoring, alerty i analiza logów (backlog, **po uruchomieniu prod**)
+# F10 — Monitoring, alerts, and log analysis (backlog, **after prod is up**)
 
-> **Warunek wejścia:** prod działa (F3–F5), bo dopiero wtedy progi i alerty mają realne dane.
+> **Entry condition:** prod is running (F3–F5), because only then do thresholds and alerts have real data.
 
-## F10-A — Monitoring zasobów i alerty progowe
+## F10-A — Resource monitoring and threshold alerts
 
-Baza jest (Beszel B19 hub + agent, Dozzle, Diun); brakuje **progów, kanału alertów i tego, co z nimi robimy**.
+The base is there (Beszel B19 hub + agent, Dozzle, Diun); what is missing is **thresholds, an alert channel, and what we do with them**.
 
 
-| Sygnał | Próg alertu | Źródło |
+| Signal | Alert threshold | Source |
 |--------|-------------|--------|
-| Dysk `/` na VM (apps, NAS) | **> 80 %** warning, > 90 % critical | Beszel agent |
-| Dysk SA500 / Purple (dane + backupy) | > 80 % — z uwzględnieniem capów A15 | Beszel / skrypt NFS |
-| Storage Proxmox `local-lvm` | > 80 % | Beszel na hoście |
-| RAM VM | > 90 % przez 10 min | Beszel |
-| CPU load | sustained > 80 % przez 15 min | Beszel |
-| **Restart-loop kontenera** | ≥ 3 restarty / 10 min | smoke test C1 + Beszel |
-| **OOM kill** | jakikolwiek | dmesg / docker events |
-| Backup nie wykonany | brak nowego artefaktu w 24 h (`vzdump`, `pg_dump`, rclone) | job backupowy F5 |
-| Ważność cert ACME | < 14 dni | test C3 |
-| WireGuard handshake | brak > 24 h dla aktywnego peera | test C3 |
-| Nowe tagi obrazów | informacyjnie, nie alert | Diun |
+| Disk `/` on the VM (apps, NAS) | **> 80 %** warning, > 90 % critical | Beszel agent |
+| Disk SA500 / Purple (data + backups) | > 80 % — taking the A15 caps into account | Beszel / an NFS script |
+| Proxmox storage `local-lvm` | > 80 % | Beszel on the host |
+| VM RAM | > 90 % for 10 min | Beszel |
+| CPU load | sustained > 80 % for 15 min | Beszel |
+| **Container restart loop** | ≥ 3 restarts / 10 min | smoke test C1 + Beszel |
+| **OOM kill** | any | dmesg / docker events |
+| Backup not run | no new artifact in 24 h (`vzdump`, `pg_dump`, rclone) | the F5 backup job |
+| ACME cert validity | < 14 days | test C3 |
+| WireGuard handshake | none for > 24 h for an active peer | test C3 |
+| New image tags | informational, not an alert | Diun |
 
-**Kanał:** powiadomienia na `prod-homelabnotifications@pm.me` (dev na `dev-…`) — spójne z tożsamością `homelab-notification`. Alert bez adresata = alert nieistniejący.
+**Channel:** notifications to `prod-homelabnotifications@pm.me` (dev to `dev-…`) — consistent with the `homelab-notification` identity. An alert with no recipient is an alert that does not exist.
 
-**Zasada:** próg definiowany **w kodzie** (`config/monitoring.yml` obok `services.yml`), nie klikany w UI Beszela — provisioning przez bootstrap (F7-B) i objęty testami C5.
+**Rule:** a threshold is defined **in code** (`config/monitoring.yml` next to `services.yml`), not clicked in the Beszel UI — provisioning through bootstrap (F7-B) and covered by the C5 tests.
 
-## F10-B — Analiza logów z agentem AI (bez danych wrażliwych)
+## F10-B — Log analysis with an AI agent (no sensitive data)
 
-**Cel:** cykliczne „co się psuje i dlaczego” na podstawie logów, zamiast czytania Dozzle ręcznie.
+**Goal:** a periodic "what is breaking and why" based on the logs, instead of reading Dozzle by hand.
 
-**Twarde ograniczenie — dane nie opuszczają homelabu bez sanityzacji:**
+**Hard constraint — data does not leave the homelab without sanitization:**
 
-1. **Pipeline sanityzacji przed wysłaniem czegokolwiek do modelu** — skrypt w repo, objęty testami:
-   - usuwanie/maskowanie: adresów e-mail, tokenów, `Authorization`, cookies, haseł w URL, IP publicznych, nazw plików użytkownika (Immich/Syncthing), ID sesji
-   - allowlist pól, **nie** blocklist — do modelu idzie tylko to, co jawnie dopuszczone (poziom, usługa, kod błędu, skrót komunikatu, licznik)
-   - agregacja: wzorce i liczniki zamiast surowych linii
-2. **Warianty do decyzji:** (a) model lokalny na apps VM — zero wycieku, koszt RAM; (b) API zewnętrzne na **zsanityzowanym** streszczeniu; (c) hybryda: lokalna sanityzacja + agregacja, zewnętrzny model tylko do wniosków
-3. **Wyjście:** raport do `docs/kb/log-analysis/<data>.md` + powtarzalne findingi trafiają do `lessons-learned.md`
-4. **Zakres startowy:** logi Dockera (Dozzle/`docker logs`), `journald` z VM, firewall OPNsense (tu szczególnie ostrożnie — IP i wzorce ruchu)
-5. **Nie wysyłamy nigdy:** configów z sekretami, dumpów DB, treści notatek/zdjęć/plików użytkownika, pełnych logów OPNsense
+1. **A sanitization pipeline before anything is sent to a model** — a script in the repo, covered by tests:
+   - remove/mask: email addresses, tokens, `Authorization`, cookies, passwords in URLs, public IPs, user file names (Immich/Syncthing), session IDs
+   - an allowlist of fields, **not** a blocklist — the model receives only what is explicitly allowed (level, service, error code, a shortened message, a count)
+   - aggregation: patterns and counts instead of raw lines
+2. **Variants to decide:** (a) a local model on the apps VM — zero leakage, a RAM cost; (b) an external API on a **sanitized** summary; (c) a hybrid: local sanitization + aggregation, an external model only for the conclusions
+3. **Output:** a report to `docs/kb/log-analysis/<date>.md` + repeatable findings go into `lessons-learned.md`
+4. **Starting scope:** Docker logs (Dozzle/`docker logs`), `journald` from the VMs, the OPNsense firewall (especially careful here — IPs and traffic patterns)
+5. **We never send:** configs that contain secrets, DB dumps, the contents of the user's notes/photos/files, full OPNsense logs
 
-**Gate:** F10-B startuje po **F9-F1** (audyt bezpieczeństwa), żeby sanityzacja była projektowana na już zaudytowanym modelu danych.
+**Gate:** F10-B starts after **F9-F1** (the security audit), so sanitization is designed against a data model that has already been audited.
+

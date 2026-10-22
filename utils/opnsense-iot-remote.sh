@@ -3,7 +3,7 @@
 #   - disables the IOT "pass any -> any" rule that made the NotForIOT block a no-op;
 #   - points the IOT DNS rule at the IOT address instead of the HOME OFFICE one.
 # Idempotent. Pre-change backup, and an automatic revert after REVERT_AFTER seconds unless
-# /tmp/homelab-iot-keep appears (created by f2-opnsense-iot.sh once the checks pass).
+# /tmp/homelab-iot-keep appears (created by opnsense-iot.sh once the checks pass).
 # --dry-run prints what would change and touches nothing. Do not store secrets in this file.
 
 set -eu

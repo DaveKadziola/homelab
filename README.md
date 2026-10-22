@@ -255,7 +255,7 @@ prompts/ rules/     agent prompt templates and rules read on demand
 scripts/            agent kit sync and check
 terraform/          Proxmox guests; environments dev and prod
 tests/              suites run by utils/run-tests.sh
-utils/              bootstrap, deploy, backup, router (f2-*) and secret scripts
+utils/              bootstrap, deploy, backup, router and secret scripts
 ```
 
 ## Status (2026-10-22)

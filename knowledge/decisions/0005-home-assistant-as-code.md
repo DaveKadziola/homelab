@@ -39,8 +39,8 @@ exported as snapshots on the NAS and restored only on request. DEV runs a HAOS V
 
 ## Sources
 
-- decided by the operator, 2026-10-20 ("HAOS VM na laptopie"; "tylko katalog packages/ ... yamle z GUI
-  synchronizować, żeby nie nadpisywać, tylko móc przywrócić"; "timer na NAS")
+- decided by the operator, 2026-10-20 ("HAOS VM on the laptop"; "only the packages/ directory,
+  sync the GUI YAML so it can be restored and is not overwritten"; "timer on the NAS")
 - DEV twin 2026-10-20: `utils/ha.py --env dev bootstrap` (onboarding, token, add-ons), `deploy`
   (`sensor.homelab_config_revision` = commit), `export-ui`, `restore-ui --dry-run`, `backup` (full,
   protected backup with core 2026.10.2 and both add-ons); `utils/run-tests.sh --env dev --suite ha`

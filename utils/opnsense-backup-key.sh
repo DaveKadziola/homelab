@@ -4,8 +4,8 @@
 # run by the owner's decision (AGENTS.md section 11: live router change).
 #
 # Usage:
-#   ./utils/f2-opnsense-backup-key.sh --dry-run
-#   ./utils/f2-opnsense-backup-key.sh
+#   ./utils/opnsense-backup-key.sh --dry-run
+#   ./utils/opnsense-backup-key.sh
 #
 # Key: OPNSENSE_BACKUP_SSH_PRIV in ~/.homelab-secrets/prod/ (made with ssh-keygen if missing; then
 # push it to the GitHub environment prod with utils/sync-secrets-to-github.py, so the deploy writes it
@@ -31,7 +31,7 @@ if [[ ! -f "$BACKUP_KEY" ]]; then
 fi
 pub="$( [[ -f "$BACKUP_KEY" ]] && ssh-keygen -y -f "$BACKUP_KEY" || echo "ssh-ed25519 AAAA-dry-run homelab-opnsense-backup-prod")"
 
-"${R[@]}" "env DRY_RUN=${DRY_RUN} REVERT_AFTER=${REVERT_AFTER} PUBKEY='${pub}' sh -s" < "${REPO_ROOT}/utils/f2-opnsense-backup-key-remote.sh"
+"${R[@]}" "env DRY_RUN=${DRY_RUN} REVERT_AFTER=${REVERT_AFTER} PUBKEY='${pub}' sh -s" < "${REPO_ROOT}/utils/opnsense-backup-key-remote.sh"
 [[ $DRY_RUN == 1 ]] && exit 0
 
 sleep 3

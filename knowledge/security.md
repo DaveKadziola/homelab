@@ -61,7 +61,7 @@ Legacy one-file caches (`~/.homelab-portainer-dev-pass`, …) are stale. Use `~/
 
 ## Bitwarden (mandatory copy)
 
-GH cannot read secrets back. New values go to Bitwarden in the same run: `gen-app-credentials.sh`, `setup-rclone-pcloud.sh` and `bootstrap-f3-proxmox.sh --set-token` call `utils/bw-store.py`, which upserts the note from the cache file (the value reaches `bw` on stdin, never in argv; an unchanged note is not rewritten). `utils/rotate-secrets.py` writes Bitwarden itself and refuses `--apply` while the vault is locked. (checked 2026-10-20: `--self-test` against a fake `bw`, the locked path with `BW_SESSION` unset, and the real vault - see the sync line below)
+GH cannot read secrets back. New values go to Bitwarden in the same run: `gen-app-credentials.sh`, `setup-rclone-pcloud.sh` and `bootstrap-proxmox.sh --set-token` call `utils/bw-store.py`, which upserts the note from the cache file (the value reaches `bw` on stdin, never in argv; an unchanged note is not rewritten). `utils/rotate-secrets.py` writes Bitwarden itself and refuses `--apply` while the vault is locked. (checked 2026-10-20: `--self-test` against a fake `bw`, the locked path with `BW_SESSION` unset, and the real vault - see the sync line below)
 
 Unlock before generating and the copy lands at once:
 
