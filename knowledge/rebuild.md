@@ -46,7 +46,7 @@ Without the router, VLANs, DHCP statics, WireGuard, and HAProxy do not exist.
 - Secrets: `PROXMOX_API_TOKEN_SECRET` (`prod`, `prod-plan`), `PROXMOX_SSH_PASSWORD` (the new root password). The command that creates each one also writes the laptop cache and Bitwarden (`utils/bw-store.py --stdin`, as in `docs/f3-proxmox.md`), then `gh secret set` reads the cache file; `utils/bw-store.py --pending` stores what waited for a locked vault. Variable: `PROXMOX_API_URL`.
 - Verify: `utils/pve-network.py --env prod --dry-run` prints `no change`; `utils/proxmox-verify.sh` / `utils/proxmox-preflight.sh`.
 - Time: 1–2 h.
-- **DEV variant:** `utils/ensure-dev-proxmox.sh` + `utils/bootstrap-dev-proxmox.sh --set-token`. Node name **`dev`**. Host network: `config/pve/interfaces.dev`, written by `PVE_KEY=~/.ssh/homelab_dev_ed25519 ./utils/pve-network.py --env dev`; DEV is where the apply and revert path is tried before any prod apply.
+- **DEV variant:** `utils/prepare-infra.py --env dev` runs that prep in order: start the nested Proxmox, record its API URL, write `config/pve/interfaces.dev` (`utils/pve-network.py --env dev`), start the HAOS twin. It stops when a secret name is missing and it does not apply Terraform or start a workflow. Node name **`dev`**. DEV is where the network apply and revert path is tried before any prod apply.
 
 ## 3. Terraform VMs — **auto**
 
