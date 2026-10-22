@@ -107,12 +107,12 @@ Uptime Kuma on the T620 (services, hosts, backup freshness), Beszel (host thresh
 
 ## 9. Gaps found while writing this (2026-10-19)
 
-1. ~~HAProxy backend pointed at `192.168.50.30:8080` (Dozzle)~~ - fixed on the router: `8101` (`utils/f2-opnsense-haproxy.sh`, #35).
+1. ~~HAProxy backend pointed at `192.168.50.30:8080` (Dozzle)~~ - fixed on the router: `8101` (`utils/opnsense-haproxy.sh`, #35).
 2. ~~SSH user mismatch `ubuntu` vs `ubuntu-prod`~~ - fixed: inventory and `services.yml` use `ubuntu-prod` (#35).
 3. ~~Prod reused the DEV key and a June password~~ - fixed: own key `homelab_prod_ed25519`, new password hash, the prod deploy installs the key on the runner (#35).
 4. ~~NAS disks: no by-id, nothing formats or mounts them~~ - fixed in #35: serials, one-time wipe opt-in, LABEL mounts, `crossmnt`, nfs-server guard, Samba; tested on DEV with two test disks. On prod since 2026-10-20: attached and mounted ([storage](storage.md#prod)).
-5. ~~Backups that cannot run from `ubuntu-apps`~~ - moved (2026-10-20): Home Assistant and OPNsense run on the NAS (same subnet as both), VM dumps are a Proxmox job onto the NAS ([backup](backup.md)). Still open: `HA_TOKEN` (owner) and the router key (`utils/f2-opnsense-backup-key.sh`, owner's decision).
+5. ~~Backups that cannot run from `ubuntu-apps`~~ - moved (2026-10-20): Home Assistant and OPNsense run on the NAS (same subnet as both), VM dumps are a Proxmox job onto the NAS ([backup](backup.md)). Still open: `HA_TOKEN` (owner) and the router key (`utils/opnsense-backup-key.sh`, owner's decision).
 6. ~~Authelia is configured for `homelab.local` (DEV) only~~ - replaced by Caddy + Authelia under `dkhomelabserver.xyz` ([decision 0007](decisions/0007-app-names-caddy-authelia.md), supersedes 0003); on prod it needs `CLOUDFLARE_API_TOKEN` in environment `prod`.
 7. ~~Monitoring alerts: no notifier for Diun/Beszel~~ - Kuma, Beszel and Diun mail through the env's SMTP relay ([monitoring](monitoring.md)); prod mails once `SMTP_USERNAME` / `SMTP_PASSWORD` are in environment `prod`.
 8. ~~Workflow Terraform version prod `1.15.6` vs DEV `1.16.3`~~ - all workflows and the HCP workspace `homelab` on 1.16.3 since 2026-10-19, before the first prod state.
-9. ~~APP -> NAS rules passed every TCP port~~ (port in a top-level `<destinationport>` that pf ignores) - fixed on the router: NFS 2049/111 plus SSH 22 from `.50.30` only (`utils/f2-opnsense-nas-ports.sh`, #35).
+9. ~~APP -> NAS rules passed every TCP port~~ (port in a top-level `<destinationport>` that pf ignores) - fixed on the router: NFS 2049/111 plus SSH 22 from `.50.30` only (`utils/opnsense-nas-ports.sh`, #35).

@@ -13,7 +13,7 @@ Authelia (forward_auth) except what `auth_bypass` lists: `all`, or path regexes 
 API clients. Output on stdout:
   caddyfile  compose/core/caddy/Caddyfile
   authelia   compose/core/authelia/access.yml (session cookie + access_control)
-  adguard    one `name ip` line per name, for the AdGuard rewrites (utils/f2-adguard-rewrites.sh)
+  adguard    one `name ip` line per name, for the AdGuard rewrites (utils/adguard-rewrites.sh)
   list       `name<TAB>bypass` per proxied service, for the tests
 Exit code: 0 ok, 1 self-test failed, 2 usage or config error.
 """

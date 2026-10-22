@@ -7,7 +7,7 @@ Canonical map and “do not renumber” list: [`docs/network.md`](../docs/networ
 - Isolated libvirt `default`: `192.168.122.0/24`, GW `.1`
 - Apps: **`192.168.122.50`**
 - No OPNsense, no VLANs, no public DNS
-- App names `<app>.dev.dkhomelabserver.xyz` and the Authelia portal `auth.dev.dkhomelabserver.xyz` go through Caddy on `192.168.122.50` ([decision 0007](decisions/0007-app-names-caddy-authelia.md)). They resolve through the AdGuard rewrites once `utils/f2-adguard-rewrites.sh` has run (owner's decision); until then add them on the **client**:
+- App names `<app>.dev.dkhomelabserver.xyz` and the Authelia portal `auth.dev.dkhomelabserver.xyz` go through Caddy on `192.168.122.50` ([decision 0007](decisions/0007-app-names-caddy-authelia.md)). They resolve through the AdGuard rewrites once `utils/adguard-rewrites.sh` has run (owner's decision); until then add them on the **client**:
 
   ```
   192.168.122.50 auth.dev.dkhomelabserver.xyz homarr.dev.dkhomelabserver.xyz

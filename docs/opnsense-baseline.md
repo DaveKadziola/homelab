@@ -2,7 +2,7 @@
 
 > **Status:** F2 reference checklist — configure manually on the router (one-shot; not via GitHub Actions).  
 > **Walkthrough:** [opnsense-ui-walkthrough.md](opnsense-ui-walkthrough.md)  
-> **Verify:** `utils/f2-verify.sh`
+> **Verify:** `utils/opnsense-verify.sh`
 
 **Goal:** router ready for F3 (Proxmox TF) and F4 (apps): VLANs, DHCP reservations, firewall, WireGuard, HAProxy for Grocery.
 

@@ -22,10 +22,10 @@ Host mgmt stays **`192.168.20.20/24`** on `vmbr0.20`, static on the host from `c
 
 | ID | Task | Tool |
 |----|------|------|
-| F3-01 | Proxmox reachable (SSH/API) | `./utils/f3-verify.sh` |
+| F3-01 | Proxmox reachable (SSH/API) | `./utils/proxmox-verify.sh` |
 | F3-02 | API token `homelab-prod@pam!terraform` (done 2026-10-19) | `pveum` on the host, see below |
-| F3-03 | Host post-install (pve-no-subscription, no subscription notice, HA off on one node), GH prod variable `PROXMOX_API_URL` | `./utils/bootstrap-f3-proxmox.sh --dry-run`, then `--upgrade` |
-| F3-04 | `terraform plan` | `./utils/f3-proxmox-preflight.sh` then plan |
+| F3-03 | Host post-install (pve-no-subscription, no subscription notice, HA off on one node), GH prod variable `PROXMOX_API_URL` | `./utils/bootstrap-proxmox.sh --dry-run`, then `--upgrade` |
+| F3-04 | `terraform plan` | `./utils/proxmox-preflight.sh` then plan |
 | F3-05 | `terraform apply` on `main` | `infra-apply-prod.yml` (needs the prod runner, F3-07) |
 | F3-06 | DHCP static for VM MACs on OPNsense | after first boot |
 | F3-07 | `homelab-prod` runner in the LXC `ci-runner` on the host | `./utils/pve-ci-runner-lxc.sh --dry-run`, then without |
@@ -105,7 +105,7 @@ Purple (`/srv/purple/backups`, `knowledge/backup.md`) or on the laptop (the `tar
      `gh secret set PROXMOX_SSH_PASSWORD --env prod < ~/.homelab-secrets/prod/PROXMOX_SSH_PASSWORD`.
    - API tokens: "Proxmox API token (F3-02)" below, then "PR plan" step 1 and its
      `gh secret set PROXMOX_API_TOKEN_SECRET --env prod-plan` line.
-6. `PVE_KEY="$KEY" ./utils/bootstrap-f3-proxmox.sh --upgrade` (first with `--dry-run`) switches apt to
+6. `PVE_KEY="$KEY" ./utils/bootstrap-proxmox.sh --upgrade` (first with `--dry-run`) switches apt to
    `pve-no-subscription`, hides the subscription notice, turns HA off on the single node, upgrades the
    packages (reboot if it prints `REBOOT NEEDED`) and enables `snippets` on `local`; the API URL does
    not change. Then create the runner container (Bootstrap order step 2) and re-run
@@ -118,7 +118,7 @@ Purple (`/srv/purple/backups`, `knowledge/backup.md`) or on the laptop (the `tar
 ## Before first apply — clean conflicting VMs
 
 ```bash
-./utils/f3-proxmox-preflight.sh   # lists VMs; remove vmid 101/102 if occupied
+./utils/proxmox-preflight.sh   # lists VMs; remove vmid 101/102 if occupied
 ```
 
 Legacy VMs on Proxmox with the same **vmid** or names must be **stopped and destroyed** in the UI before `terraform apply`.
@@ -131,7 +131,7 @@ waits in `prod-gate` for the owner only when the Terraform plan is risky
 ([0004](../knowledge/decisions/0004-ci-autonomy-and-prod-risk-gate.md)). The prod runner is an LXC container on the host, made by a script and not by
 Terraform, so it exists before the first apply:
 
-1. `./utils/bootstrap-f3-proxmox.sh --upgrade` (post-install, API URL, `snippets` on datastore `local`).
+1. `./utils/bootstrap-proxmox.sh --upgrade` (post-install, API URL, `snippets` on datastore `local`).
 2. Runner: `./utils/pve-ci-runner-lxc.sh --dry-run`, then without `--dry-run` (CT 110 `ci-runner`, `192.168.20.14`, registered as `homelab-prod-ci-runner`).
 3. Tag the old `main` as `legacy-pre-v2`, open the PR `homelab-v2` -> `main` (`Infra Plan Prod` runs the plan), merge (approve `Infra Apply Prod` if it stops in `prod-gate`).
 4. Attach and format the NAS disks as in [`knowledge/storage.md`](../knowledge/storage.md#attach-and-format-run-order), never in CI.

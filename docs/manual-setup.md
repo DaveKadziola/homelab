@@ -748,7 +748,7 @@ git push
 
 > **Checklist:** [`docs/opnsense-baseline.md`](opnsense-baseline.md)  
 > **UI steps:** [`docs/opnsense-ui-walkthrough.md`](opnsense-ui-walkthrough.md)  
-> **Verify from laptop:** `utils/f2-verify.sh`
+> **Verify from laptop:** `utils/opnsense-verify.sh`
 
 F2 is configured in the **OPNsense web UI** (VLAN, DHCP, firewall, WireGuard, HAProxy). The repo provides docs and backup/verify scripts only — not automated deploy.
 

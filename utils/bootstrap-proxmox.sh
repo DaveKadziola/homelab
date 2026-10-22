@@ -5,9 +5,9 @@
 # Prerequisites: Proxmox online, API token created (docs/f3-proxmox.md F3-02).
 #
 # Usage:
-#   PROXMOX_IP=192.168.20.20 [PVE_KEY=~/.ssh/<root key>] ./utils/bootstrap-f3-proxmox.sh [--dry-run]
-#   ./utils/bootstrap-f3-proxmox.sh --upgrade     # also apt-get dist-upgrade (no reboot)
-#   ./utils/bootstrap-f3-proxmox.sh --set-token   # also prompt for the token secret; it replaces
+#   PROXMOX_IP=192.168.20.20 [PVE_KEY=~/.ssh/<root key>] ./utils/bootstrap-proxmox.sh [--dry-run]
+#   ./utils/bootstrap-proxmox.sh --upgrade     # also apt-get dist-upgrade (no reboot)
+#   ./utils/bootstrap-proxmox.sh --set-token   # also prompt for the token secret; it replaces
 #     GH prod, ~/.homelab-secrets/prod/ and Bitwarden (utils/bw-store.py, queued while locked)
 #
 # On the host: snippets on datastore `local`; the post-install steps of the community
@@ -78,7 +78,7 @@ apt_hook=/etc/apt/apt.conf.d/no-nag-script
 tmp=$(mktemp)
 cat > "$tmp" <<'HOOK'
 #!/bin/sh
-# From homelab utils/bootstrap-f3-proxmox.sh: hides the "No valid subscription" notice.
+# From homelab utils/bootstrap-proxmox.sh: hides the "No valid subscription" notice.
 js=/usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
 [ -s "$js" ] || exit 0
 grep -q NoMoreNagging "$js" ||
@@ -143,5 +143,5 @@ fi
 
 echo ""
 echo "Next:"
-echo "  1. ./utils/f3-verify.sh"
+echo "  1. ./utils/proxmox-verify.sh"
 echo "  2. terraform plan/apply — docs/f3-proxmox.md"

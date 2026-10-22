@@ -89,8 +89,10 @@ python3 utils/tf-plan-risk.py --self-test    # one of the script self-tests CI V
 
 1. A feature branch opens a PR into `homelab-v2`. It merges itself when the required checks
    `validate` (CI Validate) and `plan` (Infra Plan Dev) pass; the ruleset has no bypass.
-2. The push to `homelab-v2` runs Infra Apply Dev, Apps Deploy Dev with post-deploy tests and Tests
-   Dev against DEV.
+2. The push to `homelab-v2` runs Infra Apply Dev. A successful apply starts Apps Deploy
+   Dev as its own run, and that run's tests are the next job. Same split as prod. A README
+   under `ansible/` or `compose/` does not deploy. Tests Dev runs when the push changes
+   tests and does not also deploy. CI Validate stays beside these: it does not touch the host.
 3. A release is a PR `homelab-v2` -> `main` (CI Validate, Infra Plan Prod); the owner merges it.
 4. Infra Apply Prod asks once, on its first job (`prod-approve`). It then plans with refresh and
    classifies the plan with `utils/tf-plan-risk.py`. A safe plan with `gate` false skips `prod-gate`
@@ -120,7 +122,7 @@ flowchart TB
     pld["Infra Plan Dev - job plan<br/>env dev-plan, read-only token"]
     apd["Infra Apply Dev<br/>env dev"]
     dpd["Apps Deploy Dev + post-deploy-tests<br/>env dev, when deploy paths change"]
-    td["Tests Dev<br/>env dev, when tests or config change"]
+    td["Tests Dev<br/>env dev, test files only<br/>skipped when this push also deploys"]
   end
   subgraph rprod ["runner homelab-prod - CT 110 ci-runner 192.168.20.14 on the prod Proxmox host"]
     plp["Infra Plan Prod - job plan<br/>env prod-plan, read-only token, -refresh=false"]
@@ -135,8 +137,8 @@ flowchart TB
   prv2 -->|"required check plan"| pld
   prv2 -->|"auto-merge when both pass"| v2
   v2 -->|"push"| apd
-  v2 --> dpd
-  v2 --> td
+  apd -->|"deploy paths, after apply"| dpd
+  v2 -->|"test files only"| td
   apd -->|"terraform apply"| devt
   dpd -->|"Ansible, Compose, HA"| devt
   td -->|"tests"| devt
@@ -158,8 +160,8 @@ flowchart TB
 | CI Validate (`ci-validate.yml`) | push `homelab-v2`; PR into `homelab-v2` or `main` | `homelab-dev` | - |
 | Infra Plan Dev (`infra-plan-dev.yml`) | PR into `homelab-v2`; manual | `homelab-dev` | `dev-plan` |
 | Infra Apply Dev (`infra-apply-dev.yml`) | push `homelab-v2`; manual | `homelab-dev` | `dev` |
-| Apps Deploy Dev (`apps-deploy-dev.yml`) | push `homelab-v2` on deploy paths (compose, Ansible, HA, storage and identity config); manual | `homelab-dev` | `dev` |
-| Tests Dev (`tests-dev.yml`) | push `homelab-v2` on tests or config; manual | `homelab-dev` | `dev` |
+| Apps Deploy Dev (`apps-deploy-dev.yml`) | after Infra Apply Dev succeeds, same split as prod; a README does not deploy; manual | `homelab-dev` | `dev` |
+| Tests Dev (`tests-dev.yml`) | push `homelab-v2` on test files, unless that push also deploys; manual | `homelab-dev` | `dev` |
 | Infra Plan Prod (`infra-plan.yml`) | PR into `main` | `homelab-prod` | `prod-plan` |
 | Infra Apply Prod (`infra-apply-prod.yml`) | push `main`; manual, input `gate` | `homelab-prod` | `prod`; `prod-gate` for a risky plan |
 | Apps Deploy Prod (`apps-deploy-prod.yml`) | Infra Apply Prod succeeded on `main`; manual | `homelab-prod` | `prod` |
@@ -242,36 +244,27 @@ prod and into mailpit on DEV. A dead T620, router or uplink sends nothing (decis
 ## Repository layout
 
 ```
-.github/workflows/  CI and deploy workflows
+.github/workflows/  CI and deploy. Map: .github/workflows/README.md
 agents/             agent role definitions (AGENTS.md section 13)
-ansible/            playbooks and inventories per environment
-compose/            Docker Compose: core stack, Grocery
-config/             single sources: services, identities, storage, monitoring, Proxmox network
-docs/               setup notes, network map, secret names, diagrams, audits; plan/ in Polish
-homeassistant/      Home Assistant packages deployed by utils/ha.py
-knowledge/          operator knowledge base - start here
-opnsense/           router baseline and restore notes
+ansible/            playbooks and inventories. Map: ansible/README.md
+compose/            Docker Compose. Map: compose/README.md
+config/             services, identities, storage, monitoring, Proxmox network. Map: config/README.md
+docs/               network map, secret names, bring-up notes. Map: docs/README.md
+homeassistant/      packages deployed by utils/ha.py. Map: homeassistant/README.md
+knowledge/          operator knowledge base. Start here. Map: knowledge/README.md
+opnsense/           router restore notes. Map: opnsense/README.md
 prompts/ rules/     agent prompt templates and rules read on demand
 scripts/            agent kit sync and check
-terraform/          Proxmox guests; environments dev and prod
-tests/              suites run by utils/run-tests.sh
-utils/              bootstrap, deploy, backup, router (f2-*) and secret scripts
+terraform/          Proxmox guests. Map: terraform/README.md
+tests/              suites run by utils/run-tests.sh. Map: tests/README.md
+utils/              laptop and host scripts. Map: utils/README.md
 ```
 
-## Status (2026-10-21)
+## Status (2026-10-22)
 
-- Running on prod since 2026-10-20, built from `main` by release #75: VMs 101, 102 and CT 110; Apps
-  Deploy Prod run 39462592254 bootstrapped every app, tests 151 pass / 0 fail / 11 skip. Apps answer
-  on `192.168.50.30:<port>`, Grocery is public, HAOS 18.3 runs on the T620.
-- Checked on DEV, not yet on `main`: the risk gate, Home Assistant as code, the NAS and Proxmox
-  backup streams, Kuma alerts, app names behind Caddy and Authelia. Until the gated Infra Apply Prod
-  has run on `main`, environment `prod` keeps the owner as reviewer.
-- Waiting for the owner: the Proton SMTP subdomain; `HA_TOKEN`, `SMTP_USERNAME`, `SMTP_PASSWORD` and
-  `CLOUDFLARE_API_TOKEN` in environment `prod`; the AdGuard rewrites (`utils/f2-adguard-rewrites.sh`);
-  the OPNsense backup key (`utils/f2-opnsense-backup-key.sh`); after the first gated release, the
-  reviewer removed from `prod` and a `gate=true` test run.
-- Open: prod audit findings S16-S27 ([security-audit-2026-10-20](knowledge/security-audit-2026-10-20.md)),
-  scans from WireGuard and WAN, F10-B. Phases: [`docs/plan/greenfield-plan.md`](docs/plan/greenfield-plan.md) (Polish).
+Prod has been running since release #75 (VMs 101 and 102, CT 110). What is still
+open is the frontmatter of [`docs/plan/greenfield-plan.md`](docs/plan/greenfield-plan.md).
+Completed items are in [`docs/plan/greenfield-completed.md`](docs/plan/greenfield-completed.md).
 
 ## Diagrams
 

@@ -70,7 +70,7 @@ Or push to `homelab-v2` (paths under `compose/` / `ansible/`) with runner label 
 - Every app answers as `https://<app>.dev.dkhomelabserver.xyz` through Caddy (internal CA - accept the
   browser warning or trust Caddy's root), Authelia first: portal `https://auth.dev.dkhomelabserver.xyz`
   ([decision 0007](../knowledge/decisions/0007-app-names-caddy-authelia.md)).
-- Names resolve once the AdGuard rewrites exist (`utils/f2-adguard-rewrites.sh`, owner's decision);
+- Names resolve once the AdGuard rewrites exist (`utils/adguard-rewrites.sh`, owner's decision);
   until then add them to the laptop `/etc/hosts` -> `192.168.122.50`, or test with
   `curl -k --resolve homarr.dev.dkhomelabserver.xyz:443:192.168.122.50 https://homarr.dev.dkhomelabserver.xyz/`.
 - User: `admin`; password file `~/.homelab-secrets/dev/AUTHELIA_ADMIN_PASSWORD` (not in git).
@@ -123,7 +123,7 @@ When all OK → prod rollout.
 
 Do **not** run this until F3 physical Proxmox `.20.20` is online and TF apply has created `ubuntu-apps` @ `.50.30`.
 
-1. **F3 host up** — `docs/f3-proxmox.md` + `utils/f3-proxmox-preflight.sh`
+1. **F3 host up** — `docs/f3-proxmox.md` + `utils/proxmox-preflight.sh`
 2. **TF apply prod** — VMs + cloud-init
 3. **Secrets** — new `POSTGRES_PASSWORD` / `IMMICH_DB_PASSWORD`; Immich media → NFS SA500 (prod only)
 4. **Deploy** — `apps-deploy-prod.yml` or ansible with prod inventory

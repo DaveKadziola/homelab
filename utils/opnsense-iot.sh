@@ -2,8 +2,8 @@
 # Close the IOT allow-all on OPNsense, check from the IOT VLAN, keep or let it auto-revert.
 #
 # Usage (from a laptop with a NIC on IOT, here wlan0 192.168.20.101):
-#   ./utils/f2-opnsense-iot.sh --dry-run
-#   ./utils/f2-opnsense-iot.sh
+#   ./utils/opnsense-iot.sh --dry-run
+#   ./utils/opnsense-iot.sh
 #
 # root logs in over LAN (192.168.1.1), which this change does not touch, with KEY (root's
 # authorized keys in System > Access > Users) or a password prompt. The check and the keep
@@ -22,7 +22,7 @@ DRY_RUN=0
 [[ "${1:-}" == "--dry-run" ]] && DRY_RUN=1
 
 ssh -o StrictHostKeyChecking=accept-new -i "$KEY" "root@${LAN_HOST}" \
-  "env DRY_RUN=${DRY_RUN} REVERT_AFTER=${REVERT_AFTER} sh -s" < "${REPO_ROOT}/utils/f2-opnsense-iot-remote.sh"
+  "env DRY_RUN=${DRY_RUN} REVERT_AFTER=${REVERT_AFTER} sh -s" < "${REPO_ROOT}/utils/opnsense-iot-remote.sh"
 [[ $DRY_RUN == 1 ]] && exit 0
 
 sleep 5

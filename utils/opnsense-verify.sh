@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # F2 verification — checks reachable from laptop (does not log into OPNsense).
 #
-# Usage: ./utils/f2-verify.sh
+# Usage: ./utils/opnsense-verify.sh
 #
 # Exit 0 if blocking gates (F2-01 ping) pass; exit 1 otherwise.
 
@@ -106,7 +106,7 @@ echo "--- Summary ---"
 echo "pass=$pass fail=$fail warn=$warn"
 echo ""
 echo "Manual steps: docs/opnsense-baseline.md + docs/opnsense-ui-walkthrough.md"
-echo "After OPNsense work: OPNSENSE_HOST=192.168.1.1 ./utils/f2-opnsense-apply.sh"
+echo "After OPNsense work: OPNSENSE_HOST=192.168.1.1 ./utils/opnsense-apply.sh"
 
 if [[ "$fail" -gt 0 ]]; then
   exit 1

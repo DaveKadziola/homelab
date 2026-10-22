@@ -228,7 +228,7 @@ service_secrets:
     issued_by: ssh-keygen
     notes: >-
       Key the NAS uses to fetch config.xml; on the router it may only run `cat /conf/config.xml`
-      (utils/f2-opnsense-backup-key.sh makes it and installs the public half).
+      (utils/opnsense-backup-key.sh makes it and installs the public half).
   - name: OPNSENSE_ADMIN_SSH_PRIV
     used_by: [opnsense]
     envs: [prod]

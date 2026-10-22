@@ -6,7 +6,7 @@
 #   - local files (SSH key, Terraform token)
 #   - GitHub Environment variables (readable via API)
 #   - with --regenerate: NEW random values for GH-only secrets (then re-run
-#     bootstrap-f1-secrets.sh or gh secret set to sync GH with Bitwarden)
+#     bootstrap-secrets.sh or gh secret set to sync GH with Bitwarden)
 #
 # Usage:
 #   ./utils/export-secrets-for-bitwarden.sh
@@ -172,7 +172,7 @@ fi
   else
     echo "NOTE: --regenerate created NEW passwords for GH-only secrets."
     echo "      Update GitHub to match Bitwarden:"
-    echo "        ./utils/bootstrap-f1-secrets.sh   # or manual gh secret set"
+    echo "        ./utils/bootstrap-secrets.sh   # or manual gh secret set"
     echo ""
   fi
 

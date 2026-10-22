@@ -24,7 +24,7 @@ jobs:
         # not downloaded per job: the setup-terraform download stalled again and again.
         run: v="$(terraform version | head -1)"; echo "$v"; test "$v" = "Terraform v1.16.3"
 
-      - name: Terraform apply (state in HCP Terraform workspace homelab-dev)
+      - name: Terraform apply
         working-directory: terraform
         env:
           # HCP Terraform login: the CLI reads TF_TOKEN_<host>, so the token never lands in a file.

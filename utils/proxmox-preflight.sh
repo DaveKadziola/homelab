@@ -5,7 +5,7 @@
 #   export TF_VAR_proxmox_api_url=https://192.168.20.20:8006/api2/json
 #   export TF_VAR_proxmox_api_token_id='homelab-prod@pam!terraform'
 #   export TF_VAR_proxmox_api_token_secret='...'
-#   ./utils/f3-proxmox-preflight.sh
+#   ./utils/proxmox-preflight.sh
 #
 # Or load from gh (prod env) — secrets not printed.
 

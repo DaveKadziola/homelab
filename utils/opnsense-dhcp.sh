@@ -2,8 +2,8 @@
 # Fix the IOT DHCP static maps (.20.20 Proxmox, .20.13 Home Assistant), check, keep or auto-revert.
 #
 # Usage:
-#   ./utils/f2-opnsense-dhcp.sh --dry-run
-#   ./utils/f2-opnsense-dhcp.sh
+#   ./utils/opnsense-dhcp.sh --dry-run
+#   ./utils/opnsense-dhcp.sh
 #
 # root logs in over LAN (192.168.1.1) with KEY. If a check fails, nothing is confirmed and the router
 # restores its backup after REVERT_AFTER seconds by itself.
@@ -18,7 +18,7 @@ DRY_RUN=0
 [[ "${1:-}" == "--dry-run" ]] && DRY_RUN=1
 R=(ssh -o StrictHostKeyChecking=accept-new -i "$KEY" "root@${LAN_HOST}")
 
-"${R[@]}" "env DRY_RUN=${DRY_RUN} REVERT_AFTER=${REVERT_AFTER} sh -s" < "${REPO_ROOT}/utils/f2-opnsense-dhcp-remote.sh"
+"${R[@]}" "env DRY_RUN=${DRY_RUN} REVERT_AFTER=${REVERT_AFTER} sh -s" < "${REPO_ROOT}/utils/opnsense-dhcp-remote.sh"
 [[ $DRY_RUN == 1 ]] && exit 0
 
 sleep 3

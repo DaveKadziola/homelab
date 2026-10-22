@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Close TCP 80 on the OPNsense WAN (it reached the AdGuard Home login), check pf, keep or auto-revert.
+# Limit APP -> NAS to NFS 2049/111 (+ SSH 22 from ubuntu-apps), check pf, keep or auto-revert.
 #
 # Usage:
-#   ./utils/f2-opnsense-wan-http.sh --dry-run
-#   ./utils/f2-opnsense-wan-http.sh
+#   ./utils/opnsense-nas-ports.sh --dry-run
+#   ./utils/opnsense-nas-ports.sh
 
 set -euo pipefail
 
@@ -15,22 +15,22 @@ DRY_RUN=0
 [[ "${1:-}" == "--dry-run" ]] && DRY_RUN=1
 R=(ssh -o StrictHostKeyChecking=accept-new -i "$KEY" "root@${LAN_HOST}")
 
-"${R[@]}" "env DRY_RUN=${DRY_RUN} REVERT_AFTER=${REVERT_AFTER} sh -s" < "${REPO_ROOT}/utils/f2-opnsense-wan-http-remote.sh"
+"${R[@]}" "env DRY_RUN=${DRY_RUN} REVERT_AFTER=${REVERT_AFTER} sh -s" < "${REPO_ROOT}/utils/opnsense-nas-ports-remote.sh"
 [[ $DRY_RUN == 1 ]] && exit 0
 
 sleep 3
-rules="$(printf 'pfctl -sr | grep -E "^pass in .*on igc0"\n' | "${R[@]}" -o BatchMode=yes 'sh -s' 2>/dev/null)"
+rules="$(printf 'pfctl -sr | grep 192.168.20.12\n' | "${R[@]}" -o BatchMode=yes 'sh -s' 2>/dev/null)"
 fail=0
 check() { if "${@:2}"; then echo "ok    $1"; else echo "FAIL  $1"; fail=1; fi; }
-check "pf: no WAN pass rule for port 80" bash -c "! grep -qE 'port = (http|80) ' <<<\"\$0\"" "$rules"
-check "pf: WAN 443 (HAProxy) still passes" grep -qE 'proto tcp .*port = (https|443) ' <<<"$rules"
-check "pf: WAN UDP 51820 (WireGuard) still passes" grep -qE 'proto udp .*port = 51820 ' <<<"$rules"
-check "grocery over HTTPS from LAN" bash -c '[ "$(curl -sk -o /dev/null -m 20 -w "%{http_code}" https://grocery.dkhomelabserver.xyz/)" = 200 ]'
+check "pf: APP -> NAS port 2049 (nfsd)" grep -qE 'to 192\.168\.20\.12 port = (nfsd|2049)' <<<"$rules"
+check "pf: APP -> NAS port 111 (sunrpc)" grep -qE 'to 192\.168\.20\.12 port = (sunrpc|111)' <<<"$rules"
+check "pf: 192.168.50.30 -> NAS port 22" grep -qE 'from 192\.168\.50\.30 to 192\.168\.20\.12 port = (ssh|22)' <<<"$rules"
+check "pf: no APP -> NAS rule without a port" bash -c "! grep -E 'to 192\.168\.20\.12 flags' <<<\"\$0\"" "$rules"
 check "LAN -> internet (https)" curl -s -o /dev/null --max-time 8 https://github.com
 check "root ssh over LAN" "${R[@]}" -o BatchMode=yes true
 
 if [[ $fail == 0 ]]; then
-  "${R[@]}" -o BatchMode=yes 'touch /tmp/homelab-wanhttp-keep; pkill -F /tmp/homelab-wanhttp-revert.pid' || true
+  "${R[@]}" -o BatchMode=yes 'touch /tmp/homelab-nasports-keep; pkill -F /tmp/homelab-nasports-revert.pid' || true
   echo "all checks passed - change kept"
   out="${REPO_ROOT}/opnsense/backups/config-$(date +%Y%m%d-%H%M%S).xml"
   mkdir -p "$(dirname "$out")"
