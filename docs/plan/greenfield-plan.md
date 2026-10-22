@@ -132,8 +132,8 @@ todos:
     content: "Zostaje no_root_squash. Odczyt 2026-10-22: /export dla 192.168.50.0/26 i vzdump dla 192.168.20.20. Jellyfin na prod działa jako root i trzyma /media. root_squash zabrałby mu zapis. Eksportu nie zmieniano."
     status: completed
   - id: authelia-ip-bypass
-    content: "Częściowo. Aplikacje z własnym logowaniem mają auth_bypass all. Portów nie zwijano na 127.0.0.1, bo Kuma na T620 sprawdza je TCP. Zamknięcie IP bez wyjątku dla T620 znowu da maile, że żywa aplikacja jest down."
-    status: pending
+    content: "Zamknięte 2026-10-22 (operator): aplikacje z własnym logowaniem mają auth_bypass all. Portów nie zwijamy na 127.0.0.1. Kuma na T620 sprawdza je TCP; zamknięcie IP dałoby maile, że żywa aplikacja jest down."
+    status: completed
   - id: homarr-ha-domain
     content: "Zrobione 2026-10-22: prod kafelek Home Assistant to http://hass.dkhomelabserver.xyz/ (board na hoście, ping wyłączony)."
     status: completed
