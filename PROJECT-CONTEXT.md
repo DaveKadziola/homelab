@@ -11,9 +11,10 @@ Last reviewed: 2026-10-21
 - What this project is for: self-hosted homelab on Proxmox - Terraform + Ansible + Docker
   Compose, deployed through GitHub Actions with two self-hosted runners.
   <!-- source: README.md first paragraph -->
-- Plan and phases: `docs/plan/greenfield-plan.md` (phases F0-F10; copied from Cursor, its todo
-  statuses are older than the code). Current status: `README.md` "Status".
-  <!-- source: docs/plan/greenfield-plan.md "Fazy / sprinty"; README.md "Status" -->
+- Plan and phases: the backlog is the frontmatter of `docs/plan/greenfield-plan.md`.
+  The F0-F10 write-up is `docs/plan/greenfield-notes.md` and is not the current procedure.
+  Current status: `README.md` "Status".
+  <!-- source: docs/plan/greenfield-plan.md frontmatter; docs/plan/greenfield-notes.md "Fazy / sprinty"; README.md "Status" -->
 - Who uses it: the operator (user and admin); later 1-2 occasional users of single apps such as
   the photo gallery and the shopping list. <!-- source: operator, 2026-10-18 -->
 - What is out of scope: <ask>
@@ -112,9 +113,9 @@ Last reviewed: 2026-10-21
 
 | Term | Meaning here | Source |
 | --- | --- | --- |
-| F0-F10 | Plan phases (F0 manual setup ... F9 audits and merge gate, F10 monitoring after prod) | `docs/plan/greenfield-plan.md` "Fazy / sprinty" |
+| F0-F10 | Plan phases (F0 manual setup ... F9 audits and merge gate, F10 monitoring after prod) | `docs/plan/greenfield-notes.md` "Fazy / sprinty" |
 | P0 / P1 / P2 | Application priority tiers | `docs/apps-sources.md:8,25` |
-| greenfield / v2 | The rebuild on `homelab-v2`; pre-v2 code is legacy | `README.md` title; `docs/plan/greenfield-plan.md` "Strategia Git — gałąź `homelab-v2`" |
+| greenfield / v2 | The rebuild on `homelab-v2`; pre-v2 code is legacy | `README.md` title; `docs/plan/greenfield-notes.md` "Strategia Git — gałąź `homelab-v2`" |
 | F9 gate | Conditions for merging `homelab-v2` into `main` | `knowledge/rebuild-drill-2026-09-10.md:7,48-55` |
 | IOT / APP / WireGuard | Prod VLANs and the VPN network | `docs/network.md:23-28` |
 

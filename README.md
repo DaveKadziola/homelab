@@ -258,20 +258,10 @@ tests/              suites run by utils/run-tests.sh
 utils/              bootstrap, deploy, backup, router (f2-*) and secret scripts
 ```
 
-## Status (2026-10-21)
+## Status (2026-10-22)
 
-- Running on prod since 2026-10-20, built from `main` by release #75: VMs 101, 102 and CT 110; Apps
-  Deploy Prod run 39462592254 bootstrapped every app, tests 151 pass / 0 fail / 11 skip. Apps answer
-  on `192.168.50.30:<port>`, Grocery is public, HAOS 18.3 runs on the T620.
-- Checked on DEV, not yet on `main`: the risk gate, Home Assistant as code, the NAS and Proxmox
-  backup streams, Kuma alerts, app names behind Caddy and Authelia. Until the gated Infra Apply Prod
-  has run on `main`, environment `prod` keeps the owner as reviewer.
-- Waiting for the owner: the Proton SMTP subdomain; `HA_TOKEN`, `SMTP_USERNAME`, `SMTP_PASSWORD` and
-  `CLOUDFLARE_API_TOKEN` in environment `prod`; the AdGuard rewrites (`utils/f2-adguard-rewrites.sh`);
-  the OPNsense backup key (`utils/f2-opnsense-backup-key.sh`); after the first gated release, the
-  reviewer removed from `prod` and a `gate=true` test run.
-- Open: prod audit findings S16-S27 ([security-audit-2026-10-20](knowledge/security-audit-2026-10-20.md)),
-  scans from WireGuard and WAN, F10-B. Phases: [`docs/plan/greenfield-plan.md`](docs/plan/greenfield-plan.md) (Polish).
+Prod has been running since release #75 (VMs 101 and 102, CT 110). What is still
+open is the frontmatter of [`docs/plan/greenfield-plan.md`](docs/plan/greenfield-plan.md).
 
 ## Diagrams
 
