@@ -81,13 +81,13 @@ todos:
     content: "Iter. #4 R3 ✅ drill 10-19b z prawdziwym wymazaniem DEV przeszedł bez zmian w kodzie; restore suite ✅"
     status: completed
   - id: monitoring-alerts
-    content: "Częściowo 2026-10-22: SMTP_USERNAME i SMTP_PASSWORD są w środowisku prod. Operator potwierdził, że maile dochodzą. Diun w logu z 48 h nie wysłał powiadomienia o nowych tagach."
-    status: in_progress
+    content: "Zrobione 2026-10-22: SMTP działa, operator dostaje maile. Diun ma DIUN_NOTIF_MAIL_* w diun.env na prod. W logu 48 h nie było nowego tagu do wysłania, były timeouty rejestru."
+    status: completed
   - id: ai-log-analysis
     content: "F10-B (Paczka 2, operator 2026-10-20): streszczenia AI przez OpenRouter z oczyszczonych wyników audytu i logów (allowlist, agregacja); nic surowego do publicznego repo"
     status: pending
   - id: project-cleanup
-    content: "Częściowo 2026-10-22: zmergowane gałęzie zdalne są skasowane (git fetch --prune). Zostały lokalne worktree: homelab-grocery-prod, homelab-grocery-v2, homelab-wt-batch. Nieaktualnych dokumentów i skryptów legacy nie ruszano."
+    content: "Częściowo 2026-10-22: zmergowane gałęzie zdalne skasowane. Usunięte worktree homelab-grocery-v2 i homelab-wt-batch (czyste, remote już nie istniał). Został homelab-grocery-prod na feat/grocery-v2-prod, gałąź jest na origin. Dokumentów i skryptów legacy nie ruszano."
     status: pending
   - id: docs-readme
     content: "Zrobione 2026-10-22: README.md już mówi co to jest, jak jest zbudowane i od czego zacząć. Osobnego przepisywania nie było."
@@ -102,10 +102,10 @@ todos:
     content: "Audyt prod 2026-10-20 zrobiony (knowledge/security-audit-2026-10-20.md, S16-S27); poprawki osobno, każda za zgodą"
     status: in_progress
   - id: app-network-access
-    content: "Później (operator 2026-10-20): dostęp aplikacji do podsieci (APP → NAS/IOT/LAN) i poza sieć (egress per aplikacja zamiast całego internetu)"
+    content: "Odczyt 2026-10-22, bez zmiany reguł. APP (vlan07) ma NFS i SSH na NAS oraz pass do wszystkiego poza PrivateNetworks, czyli cały VLAN wychodzi do internetu, nie pojedyncza aplikacja. Osobny audyt WAN (tylko WireGuard i Grocery) jest opnsense-wan-audit i czeka na końcu."
     status: pending
   - id: ci-autonomy
-    content: "Reviewer środowiska prod zostaje (DaveKadziola). Zdjęcie go osłabiłoby bramkę, a 2026-10-22 merge wszedł przy czerwonym deploy-dev. Został test gate=true, nieuruchomiony."
+    content: "Reviewer środowiska prod zostaje. Test gate=true nie był uruchomiony w tym commicie: to osobny przebieg Infra Apply Prod, czeka na akceptację prod-gate."
     status: in_progress
   - id: homarr-links
     content: "Zrobione 2026-10-22: kafelki po nazwach, seed z deployu. Operator wszedł na prod Homarr (widget Beszela), więc konto admin w UI jest."
@@ -123,22 +123,22 @@ todos:
     content: "Paczka 2 (operator 2026-10-20): tygodniowy audyt na timerze - nmap S7 z IOT, Trivy obrazów, wersje, reguły OPNsense -> raport mailem i na NAS, nigdy w artefaktach publicznego repo"
     status: pending
   - id: nic-error-metrics
-    content: "Później (operator 2026-10-21): błędy sieci jako metryki z alertem - rx_crc_errors, rx_errors, drop i zmiany linku kart PVE (nic0-2), VM i switcha; 2026-10-21 oba porty igb 82575EB miały 8-10 % ramek z błędem CRC, upload laptop -> apps <= 2.2 MiB/s"
+    content: "Częściowo 2026-10-22: utils/nic-errors.sh wypisuje liczniki i z --check kończy się błędem, gdy urosły od ostatniego zapisu. Timera nie ma, więc alertu mailowego nie ma. Odczyt PVE: nic0 crc 0, nic1 crc 1062187, nic2 crc 215206."
     status: pending
   - id: ubuntu-2604
     content: "Po wydaniu PR #78 (operator 2026-10-21): VM-ki apps i NAS z Ubuntu 24.04 na 26.04 - najpierw DEV z ćwiczeniem przebudowy i odtworzenia, potem prod jako osobne wydanie; zmiana obrazu (terraform/environments/*/terraform.tfvars image_url) to najpewniej wymiana VM (bramka ryzyka). Nie naprawia rclone: 26.04 ma w apt nadal 1.60.1, narzędzia przypinać do wersji upstream"
     status: pending
   - id: nfs-root-squash
-    content: "Odczyt 2026-10-22, bez zmiany eksportu: /export 192.168.50.0/26(rw,sync,no_subtree_check,no_root_squash,crossmnt) oraz vzdump dla 192.168.20.20 też no_root_squash. Root w kontenerze na apps ma pełny zapis. Przełączenie na root_squash nie było, bo psuje zapis (Jellyfin)."
-    status: pending
+    content: "Zostaje no_root_squash. Odczyt 2026-10-22: /export dla 192.168.50.0/26 i vzdump dla 192.168.20.20. Jellyfin na prod działa jako root i trzyma /media. root_squash zabrałby mu zapis. Eksportu nie zmieniano."
+    status: completed
   - id: authelia-ip-bypass
-    content: "Częściowo 2026-10-22: aplikacje z własnym logowaniem mają auth_bypass all (prod: beszel, portainer, homarr HTTP 200; dozzle i it-tools 302 na auth). Portów nie zwijano na 127.0.0.1: Kuma na T620 sprawdza te porty TCP i uznałaby żywe aplikacje za down."
+    content: "Częściowo. Aplikacje z własnym logowaniem mają auth_bypass all. Portów nie zwijano na 127.0.0.1, bo Kuma na T620 sprawdza je TCP. Zamknięcie IP bez wyjątku dla T620 znowu da maile, że żywa aplikacja jest down."
     status: pending
   - id: homarr-ha-domain
     content: "Zrobione 2026-10-22: prod kafelek Home Assistant to http://hass.dkhomelabserver.xyz/ (board na hoście, ping wyłączony)."
     status: completed
   - id: pr78-merge-checklist
-    content: "Częściowo 2026-10-22, checkboxów w #78 nie odhaczano. Potwierdzone: HA_TOKEN i SMTP są w env prod, Kuma jest uruchomiona (nie stopped), rewrite AdGuard są, reviewer prod nadal jest. Niepotwierdzone: job homelab-vms, zniknięcie DumbWhois/Zotify, test gate=true, klucz backupu OPNsense, wolumeny Zotify, stary BESZEL_KEY."
+    content: "Częściowo 2026-10-22, checkboxów w #78 nie odhaczano. Jest: HA_TOKEN, SMTP, Kuma started, rewrite AdGuard, reviewer prod, job vzdump homelab-vms (04:30, VM 101 i 102), kontenery DumbWhois i Zotify nie działają, IT Tools, Networking Toolbox i Beszel agent działają. Zostało: obrazy dumbwhois i homelab-zotify oraz wolumeny zotify nadal są; klucza backupu OPNsense nie sprawdzano; test gate=true nieuruchomiony; plików BESZEL_KEY w dwóch sprawdzonych ścieżkach nie było."
     status: pending
   - id: deploy-prod-timeout
     content: "Zrobione 2026-10-22: job deploy-prod ma timeout-minutes 120. Apps Deploy Prod 39746487452 skończył deploy-prod w 21m45s, poniżej limitu."
@@ -150,13 +150,13 @@ todos:
     content: "Zrobione 2026-10-22: na hoście prod są Proxmox :8006, AdGuard https://adguard.dkhomelabserver.xyz:8443/, OPNsense https://router.dkhomelabserver.xyz/, switch i access point. Deploy 39755554518. Switch na porcie 80 z laptopa nie odpowiedział."
     status: completed
   - id: diun-updates
-    content: "Kontenery: Diun 4.33.0 już ogląda obrazy Dockera i ma SMTP w env prod. W logu 48 h były błędy rejestru, zero wysłanych maili. Systemu i obrazu VM Diun nie sprawdza. Osobnego skryptu apt nie dodano."
+    content: "Kontenery obsługuje Diun (mail skonfigurowany, w 48 h nie było nowego tagu). System: utils/host-updates.sh wypisuje pakiety z apt-get -s upgrade. Nie ma timera ani maila. Obrazu VM nikt nie sprawdza."
     status: pending
   - id: diun-homarr-access
     content: "Zrobione 2026-10-22: Diun 4.33.0 nie ma GUI (knowledge/apps/diun.md). Martwego kafelka nie ma. Wejście to log w Dozzle albo skrzynka. Przez 48 h Diun nie wysłał maila."
     status: completed
   - id: homarr-dashboard-widgets
-    content: "Niewdrożone. utils/bootstrap/homarr_board.py zapisuje item tylko jako kafelek aplikacji (options.appId). Widget (pogoda, Beszel, iframe, mapy) wymaga potwierdzonego kształtu options w Homarr 2.6.0. Nie zgadywano go."
+    content: "Niewdrożone. homarr_board.py zapisuje tylko kafelek aplikacji. W obrazie Homarr 2.6.0 nie znaleziono schematu options dla pogody ani zegara. Nie zgadywano."
     status: pending
   - id: opnsense-wan-audit
     content: "Na końcu (operator 2026-10-22): audyt reguł OPNsense. Na WAN ma wychodzić tylko WireGuard i Grocery. Odczyt reguł, porównanie z docs/network.md (WAN 443/tcp i 51820/udp). Bez zmiany konfiguracji, dopóki audyt nie pokaże różnicy i operator jej nie zatwierdzi."
