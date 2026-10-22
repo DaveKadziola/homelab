@@ -96,7 +96,7 @@ todos:
     content: "Później (operator 2026-10-20): schematy draw.io — flow zmian (homelab-v2 → DEV, main → prod, approvals), sieć (VLAN-y, firewall, porty), backupy"
     status: pending
   - id: security-public-repo
-    content: "2026-10-20: fork PR all_external_contributors, rulesety bez bypass, akcje przypięte do SHA (sha_pinning_required), model zagrożeń CI w knowledge/security.md; zostało: decyzje z przeglądu ujawnień (IP publiczny, maile)"
+    content: "2026-10-20: fork PR all_external_contributors, rulesety bez bypass, akcje przypięte do SHA (sha_pinning_required), model zagrożeń CI w knowledge/security.md. Decyzja 2026-10-22: mapa domu wychodzi z publicznego repo (public-map-split), potem jedno przepisanie historii (git-history-state)."
     status: in_progress
   - id: security-audit-hosts
     content: "Audyt prod 2026-10-20 zrobiony (knowledge/security-audit-2026-10-20.md, S16-S27); poprawki osobno, każda za zgodą"
@@ -157,6 +157,12 @@ todos:
     status: completed
   - id: homarr-dashboard-widgets
     content: "Niewdrożone. homarr_board.py zapisuje tylko kafelek aplikacji. W obrazie Homarr 2.6.0 nie znaleziono schematu options dla pogody ani zegara. Nie zgadywano."
+    status: pending
+  - id: public-map-split
+    content: "Operator 2026-10-22: publiczne repo zostaje portfolio (architektura, sposób deployu). Mapa domu (adresy, domena, maile) idzie do docs w .gitignore i/lub modułu z prywatnego repo. Aktualne pliki trzeba przepisać na przykładowe adresy. Historii jeszcze nie ruszać: jedno przepisanie jest w git-history-state, po tej zamianie, nie wcześniej."
+    status: pending
+  - id: git-history-state
+    content: "Po public-map-split (operator 2026-10-22): wyciąć z całej historii terraform/terraform.tfstate i terraform/terraform.tfstate.backup (dodane w 18dd8c6, zdjęte w ce25d3a; sześć adresów 192.168, bez haseł) oraz starą mapę domu. Jedno przepisanie historii, force-push main i homelab-v2. git-filter-repo nie jest zainstalowany. Potem każdy klon jest nieaktualny; GitHub może trzymać stare obiekty, dopóki ich nie wyczyści. Nie robić tego przed zamianą plików, bo inaczej mapa wróci w nowych commitach."
     status: pending
   - id: opnsense-wan-audit
     content: "Na końcu (operator 2026-10-22): audyt reguł OPNsense. Na WAN ma wychodzić tylko WireGuard i Grocery. Odczyt reguł, porównanie z docs/network.md (WAN 443/tcp i 51820/udp). Bez zmiany konfiguracji, dopóki audyt nie pokaże różnicy i operator jej nie zatwierdzi."
