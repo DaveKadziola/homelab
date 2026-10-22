@@ -150,8 +150,8 @@ todos:
     content: "Zrobione 2026-10-22: na hoście prod są Proxmox :8006, AdGuard https://adguard.dkhomelabserver.xyz:8443/, OPNsense https://router.dkhomelabserver.xyz/, switch i access point. Deploy 39755554518. Switch na porcie 80 z laptopa nie odpowiedział."
     status: completed
   - id: diun-updates
-    content: "Częściowo 2026-10-22: obrazy Dockera ogląda Diun. Paczki apt mailuje timer homelab-host-updates, włączony na prod. Został obraz VM: nikt go nie sprawdza i nikt o nim nie mailuje."
-    status: pending
+    content: "Zrobione 2026-10-22: Diun mailuje nowe tagi kontenerów. Timer homelab-host-updates (niedziela 06:15) mailuje paczki apt i nowszy serial obrazu Ubuntu, gdy /etc/cloud/build.info różni się od cloud-images.ubuntu.com. Na prod apps i NAS serial to 20261017, taki sam jak opublikowany. Nowy serial to przebudowa VM, nie apt."
+    status: completed
   - id: diun-homarr-access
     content: "Zrobione 2026-10-22: Diun 4.33.0 nie ma GUI (knowledge/apps/diun.md). Martwego kafelka nie ma. Wejście to log w Dozzle albo skrzynka. Przez 48 h Diun nie wysłał maila."
     status: completed
