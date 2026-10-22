@@ -92,11 +92,12 @@ python3 utils/tf-plan-risk.py --self-test    # one of the script self-tests CI V
 2. The push to `homelab-v2` runs Infra Apply Dev, Apps Deploy Dev with post-deploy tests and Tests
    Dev against DEV.
 3. A release is a PR `homelab-v2` -> `main` (CI Validate, Infra Plan Prod); the owner merges it.
-4. Infra Apply Prod plans with refresh and classifies the plan with `utils/tf-plan-risk.py`. Only a
-   risky plan (any VM change, another delete or replace, an unknown resource type) or a manual run
-   with `gate=true` waits for the owner in `prod-gate`. The apply job applies only a plan with the
-   same digest.
-5. Apps Deploy Prod follows a successful Infra Apply Prod and ends with the post-deploy tests.
+4. Infra Apply Prod asks once, on its first job (`prod-approve`). It then plans with refresh and
+   classifies the plan with `utils/tf-plan-risk.py`. A safe plan with `gate` false skips `prod-gate`
+   and the apply job runs without a second click. A risky plan, or a manual run with `gate=true`,
+   waits in `prod-gate`. The apply job applies only a plan with the same digest.
+5. Apps Deploy Prod follows a successful Infra Apply Prod, asks once on its first job, and ends
+   with the post-deploy tests.
 
 No direct pushes to `homelab-v2` or `main`. Decision
 [0004](knowledge/decisions/0004-ci-autonomy-and-prod-risk-gate.md); settings in

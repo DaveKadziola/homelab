@@ -21,7 +21,18 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # One click for the whole run. Later jobs use prod for its secrets and must not
+  # ask again, so prod has no reviewer once this file is the workflow on main.
+  approve:
+    runs-on: [self-hosted, homelab-prod]
+    timeout-minutes: 5
+    environment: prod-approve
+    steps:
+      - name: Approved
+        run: echo "prod pipeline approved"
+
   plan:
+    needs: approve
     runs-on: [self-hosted, homelab-prod]
     timeout-minutes: 20
     environment: prod
