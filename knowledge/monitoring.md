@@ -12,6 +12,7 @@ Decision: [0006](decisions/0006-alerts-kuma-proton-smtp.md). Config: [`config/mo
 | Backup freshness | NAS, `homelab-backup-check.timer` 06:00 | pushes `up`/`down` per stream to its Kuma push monitor | `monitoring.yml` `backups` |
 | Beszel | hub on the apps host | disk, RAM, CPU thresholds | `monitoring.yml` `thresholds`, `utils/bootstrap/beszel.sh` |
 | Diun | apps host | new image tags (information, not an alert) | `compose/core/diun/diun.yml`, `diun.env` from deploy |
+| NIC error growth | Proxmox cron 06:15, mail via the apps host | `rx_crc_errors`, `rx_errors` or `rx_dropped` grew since yesterday | `utils/nic-errors.sh`, `utils/alert-mail.sh` |
 
 Mail: to `environment_email` (`config/identities.yml`). Prod: Proton SMTP (`smtp.protonmail.ch:587`,
 STARTTLS) with `SMTP_USERNAME` / `SMTP_PASSWORD`; until they exist Kuma keeps its monitors but mails

@@ -59,3 +59,11 @@ reviewer once the new workflow has run on `main`.
   classifier gave `risky=false` (2026-10-20)
 - to verify on the first release: the gate skipped for a safe plan, a `gate=true` run that stops in
   `prod-gate`, Apps Deploy Prod without approvals after the reviewer is removed
+
+## Update 2026-10-22
+
+The owner kept a reviewer, on the first job only. `Infra Apply Prod` and `Apps Deploy Prod`
+start with environment `prod-approve` (reviewer: the owner, branch `main`, no secrets). Later
+jobs keep `environment: prod` so they can read the prod secrets, and that environment loses its
+reviewer only when this workflow is the one on `main`. Clearing it earlier lets the old workflow
+deploy with no click. `prod-gate` is unchanged: a safe plan with `gate` false skips it.

@@ -10,8 +10,19 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy-prod:
+  # One click for the whole run. deploy-prod and the tests use prod for secrets only.
+  approve:
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: [self-hosted, homelab-prod]
+    timeout-minutes: 5
+    environment: prod-approve
+    steps:
+      - name: Approved
+        run: echo "prod pipeline approved"
+
+  deploy-prod:
+    needs: approve
+    if: needs.approve.result == 'success'
     runs-on: [self-hosted, homelab-prod]
     timeout-minutes: 120
     environment: prod

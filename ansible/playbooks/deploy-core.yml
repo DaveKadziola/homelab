@@ -358,6 +358,7 @@
         - "{{ utils_src }}/backup"
         - "{{ utils_src }}/host-updates.sh"
         - "{{ utils_src }}/nic-errors.sh"
+        - "{{ utils_src }}/alert-mail.sh"
 
     - name: Install the weekly apt-update mail
       ansible.builtin.copy:

@@ -229,6 +229,25 @@ service_secrets:
     notes: >-
       Key the NAS uses to fetch config.xml; on the router it may only run `cat /conf/config.xml`
       (utils/f2-opnsense-backup-key.sh makes it and installs the public half).
+  - name: OPNSENSE_ADMIN_SSH_PRIV
+    used_by: [opnsense]
+    envs: [prod]
+    issued_by: ssh-keygen
+    notes: >-
+      Laptop file ~/.ssh/daveadmin. Root shell on the router. Not a GitHub secret.
+  - name: PVE_ROOT_SSH_PRIV
+    used_by: [proxmox]
+    envs: [prod]
+    issued_by: ssh-keygen
+    notes: >-
+      Laptop file ~/.ssh/homelab_prod_pve_ed25519. Root on the prod Proxmox host. Not a GitHub secret.
+  - name: NIC_MAIL_SSH_PRIV
+    used_by: [monitoring]
+    envs: [prod]
+    issued_by: ssh-keygen
+    notes: >-
+      Proxmox file /root/.ssh/homelab-nic-mail. May only run utils/alert-mail.sh on the apps host.
+      Not a GitHub secret.
   - name: HA_BACKUP_PASSWORD
     used_by: [homeassistant]
     envs: [dev, prod]

@@ -39,7 +39,8 @@ fail=0
 check() { if "${@:2}"; then echo "ok    $1"; else echo "FAIL  $1"; fail=1; fi; }
 B=(ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -i "$BACKUP_KEY" "root@${LAN_HOST}")
 check "backup key returns config.xml" bash -c '"$@" "uname" | head -c 100 | grep -q "<?xml"' _ "${B[@]}"
-check "backup key cannot run a command" bash -c '! "$@" "uname" | grep -q FreeBSD' _ "${B[@]}"
+# The whole config.xml contains the word FreeBSD. Only a shell's first line is exactly that.
+check "backup key cannot run a command" bash -c '! "$@" "uname" | head -n 1 | grep -q "^FreeBSD"' _ "${B[@]}"
 check "admin key still opens a shell" "${R[@]}" -o BatchMode=yes true
 
 if [[ $fail == 0 ]]; then

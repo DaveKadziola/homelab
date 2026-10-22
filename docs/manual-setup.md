@@ -275,7 +275,16 @@ gh api -X PUT repos/DaveKadziola/homelab/environments/prod-gate --input - <<'EOF
 EOF
 gh api -X POST repos/DaveKadziola/homelab/environments/prod-gate/deployment-branch-policies -f name=main -f type=branch
 
-# After the first release with the new workflow is green: prod without reviewer, branch policy kept.
+# First job of each prod pipeline. Create it before a workflow on main names it, or GitHub
+# creates it with no reviewer. Do not clear the prod reviewers until that workflow is on main.
+gh api -X PUT repos/DaveKadziola/homelab/environments/prod-approve --input - <<'EOF'
+{"wait_timer": 0, "prevent_self_review": false, "reviewers": [{"type": "User", "id": 194847688}],
+ "deployment_branch_policy": {"protected_branches": false, "custom_branch_policies": true}}
+EOF
+gh api -X POST repos/DaveKadziola/homelab/environments/prod-approve/deployment-branch-policies -f name=main -f type=branch
+
+# Cutover, in the same minute the new workflows reach main. Earlier, the old workflow deploys
+# with no click. Later, every job asks again.
 gh api -X PUT repos/DaveKadziola/homelab/environments/prod --input - <<'EOF'
 {"reviewers": [], "deployment_branch_policy": {"protected_branches": false, "custom_branch_policies": true}}
 EOF
