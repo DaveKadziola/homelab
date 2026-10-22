@@ -45,8 +45,8 @@ Helper scripts:
 | `UBUNTU_DOCKER_PASSWORD` | dev | secret | `homelab/UBUNTU_DOCKER_PASSWORD/dev` | set | F1 |
 | `UBUNTU_DOCKER_PASSWORD` | prod | secret | `homelab/UBUNTU_DOCKER_PASSWORD/prod` | set 2026-10-19 | SHA-512 hash in GH; plain text in `~/.homelab-secrets/prod/UBUNTU_DOCKER_PASSWORD` + Bitwarden |
 | `UBUNTU_DOCKER_PASSWORD` | prod-plan | secret | `homelab/UBUNTU_DOCKER_PASSWORD/prod` | set | the same SHA-512 hash as prod, or the plan shows the snippet as changed |
-| `UBUNTU_DOCKER_SSH_PRIV` | dev | secret | `homelab/UBUNTU_DOCKER_SSH_PRIV/dev` | set | `~/.ssh/homelab_dev_ed25519` |
-| `UBUNTU_DOCKER_SSH_PRIV` | prod | secret | `homelab/UBUNTU_DOCKER_SSH_PRIV/prod` | set 2026-10-19 | `~/.ssh/homelab_prod_ed25519` (own prod key, `homelab-prod`); the prod deploy installs it on the runner |
+| `UBUNTU_DOCKER_SSH_PRIV` | dev | secret | `homelab/UBUNTU_DOCKER_SSH_PRIV/dev` | set | `~/.ssh/homelab_dev_ed25519`. Cache copy queued for Bitwarden 2026-10-22. |
+| `UBUNTU_DOCKER_SSH_PRIV` | prod | secret | `homelab/UBUNTU_DOCKER_SSH_PRIV/prod` | set 2026-10-19 | `~/.ssh/homelab_prod_ed25519` (own prod key, `homelab-prod`); the prod deploy installs it on the runner. Cache copy queued for Bitwarden 2026-10-22. |
 | `TF_API_TOKEN` | prod | secret | `homelab/TF_API_TOKEN/prod` | set | F1 |
 | `TF_API_TOKEN` | prod-plan | secret | `homelab/TF_API_TOKEN/prod` | set | HCP token with access to workspace `homelab` |
 | `SSL_CERT` | prod | secret | `homelab/SSL_CERT/prod` | planned | optional; legacy backup |
@@ -64,6 +64,9 @@ Helper scripts:
 | `SMTP_PASSWORD` | prod | secret | `homelab/SMTP_PASSWORD/prod` | set 2026-10-21 | Proton SMTP token of `SMTP_USERNAME` (owner) |
 | `CLOUDFLARE_API_TOKEN` | prod | secret | `homelab/CLOUDFLARE_API_TOKEN/prod` | planned | Zone.DNS edit on `dkhomelabserver.xyz` only; Caddy wildcard certificate (owner); without it prod keeps proxy and auth off |
 | `OPNSENSE_BACKUP_SSH_PRIV` | prod | secret | `homelab/OPNSENSE_BACKUP_SSH_PRIV/prod` | set 2026-10-22 | NAS key for `config.xml`, forced command on the router. GitHub env prod and Bitwarden both have it. |
+| `OPNSENSE_ADMIN_SSH_PRIV` | prod | secret | `homelab/OPNSENSE_ADMIN_SSH_PRIV/prod` | cache 2026-10-22 | `~/.ssh/daveadmin`, router root shell. Bitwarden via the cache queue. Not a GitHub secret. |
+| `PVE_ROOT_SSH_PRIV` | prod | secret | `homelab/PVE_ROOT_SSH_PRIV/prod` | cache 2026-10-22 | `~/.ssh/homelab_prod_pve_ed25519`, root on the prod Proxmox host. Bitwarden via the cache queue. Not a GitHub secret. |
+| `NIC_MAIL_SSH_PRIV` | prod | secret | `homelab/NIC_MAIL_SSH_PRIV/prod` | cache 2026-10-22 | `/root/.ssh/homelab-nic-mail` on Proxmox. Forced command mails NIC growth. Bitwarden via the cache queue. Not a GitHub secret. |
 | `PORTAINER_ADMIN_PASSWORD` | dev | secret | `homelab/PORTAINER_ADMIN_PASSWORD/dev` | set | generated 2026-09-10 |
 | `PGADMIN_PASSWORD` | dev | secret | `homelab/PGADMIN_PASSWORD/dev` | set | generated 2026-09-10 |
 | `HOMARR_ADMIN_PASSWORD` | dev | secret | `homelab/HOMARR_ADMIN_PASSWORD/dev` | set | generated 2026-09-10; rotated same day |
