@@ -123,7 +123,7 @@ todos:
     content: "Paczka 2 (operator 2026-10-20): tygodniowy audyt na timerze - nmap S7 z IOT, Trivy obrazów, wersje, reguły OPNsense -> raport mailem i na NAS, nigdy w artefaktach publicznego repo"
     status: pending
   - id: nic-error-metrics
-    content: "Częściowo 2026-10-22: utils/nic-errors.sh wypisuje liczniki i z --check kończy się błędem, gdy urosły od ostatniego zapisu. Timera nie ma, więc alertu mailowego nie ma. Odczyt PVE: nic0 crc 0, nic1 crc 1062187, nic2 crc 215206."
+    content: "Częściowo 2026-10-22: utils/nic-errors.sh jest na PVE w /usr/local/sbin, cron /etc/cron.d/homelab-nic-errors codziennie 06:15. Wzrost liczników idzie do syslog (tag homelab-nic), nie mailem Proton. Baza: nic1 crc 1062187, nic2 crc 215206. Cofnięcie: rm /etc/cron.d/homelab-nic-errors /usr/local/sbin/nic-errors.sh /var/lib/homelab/nic-errors.prev"
     status: pending
   - id: ubuntu-2604
     content: "Po wydaniu PR #78 (operator 2026-10-21): VM-ki apps i NAS z Ubuntu 24.04 na 26.04 - najpierw DEV z ćwiczeniem przebudowy i odtworzenia, potem prod jako osobne wydanie; zmiana obrazu (terraform/environments/*/terraform.tfvars image_url) to najpewniej wymiana VM (bramka ryzyka). Nie naprawia rclone: 26.04 ma w apt nadal 1.60.1, narzędzia przypinać do wersji upstream"
@@ -138,7 +138,7 @@ todos:
     content: "Zrobione 2026-10-22: prod kafelek Home Assistant to http://hass.dkhomelabserver.xyz/ (board na hoście, ping wyłączony)."
     status: completed
   - id: pr78-merge-checklist
-    content: "Częściowo 2026-10-22, checkboxów w #78 nie odhaczano. Jest: HA_TOKEN, SMTP, Kuma started, rewrite AdGuard, reviewer prod, job vzdump homelab-vms (04:30, VM 101 i 102), kontenery DumbWhois i Zotify nie działają, IT Tools, Networking Toolbox i Beszel agent działają. Zostało: obrazy dumbwhois i homelab-zotify oraz wolumeny zotify nadal są; klucza backupu OPNsense nie sprawdzano; test gate=true nieuruchomiony; plików BESZEL_KEY w dwóch sprawdzonych ścieżkach nie było."
+    content: "Częściowo 2026-10-22, checkboxów w #78 nie odhaczano. Jest: HA_TOKEN, SMTP, Kuma started, rewrite AdGuard, reviewer prod, job vzdump homelab-vms 04:30 VM 101 i 102, IT Tools, Networking Toolbox i Beszel agent działają, kontenery DumbWhois i Zotify nie działają, ich obrazy zdjęte. Zostało: wolumeny homelab-core_zotify_{config,music,podcasts} (nie kasowane), brak pliku OPNSENSE_BACKUP_SSH_PRIV, test gate=true nadal czeka na akceptację."
     status: pending
   - id: deploy-prod-timeout
     content: "Zrobione 2026-10-22: job deploy-prod ma timeout-minutes 120. Apps Deploy Prod 39746487452 skończył deploy-prod w 21m45s, poniżej limitu."
@@ -150,7 +150,7 @@ todos:
     content: "Zrobione 2026-10-22: na hoście prod są Proxmox :8006, AdGuard https://adguard.dkhomelabserver.xyz:8443/, OPNsense https://router.dkhomelabserver.xyz/, switch i access point. Deploy 39755554518. Switch na porcie 80 z laptopa nie odpowiedział."
     status: completed
   - id: diun-updates
-    content: "Kontenery obsługuje Diun (mail skonfigurowany, w 48 h nie było nowego tagu). System: utils/host-updates.sh wypisuje pakiety z apt-get -s upgrade. Nie ma timera ani maila. Obrazu VM nikt nie sprawdza."
+    content: "Częściowo 2026-10-22: obrazy Dockera ogląda Diun (mail w diun.env). System: utils/host-updates.sh --mail i timer homelab-host-updates (niedziela 06:15) wchodzą z deploy-core. Na hoście timera jeszcze nie ma, dopóki nie przejdzie deploy. Obrazu VM nikt nie sprawdza."
     status: pending
   - id: diun-homarr-access
     content: "Zrobione 2026-10-22: Diun 4.33.0 nie ma GUI (knowledge/apps/diun.md). Martwego kafelka nie ma. Wejście to log w Dozzle albo skrzynka. Przez 48 h Diun nie wysłał maila."
