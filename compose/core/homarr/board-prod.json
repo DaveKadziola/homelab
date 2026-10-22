@@ -89,7 +89,15 @@
       "name": "AdGuard",
       "description": "infra",
       "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/adguard-home.svg",
-      "href": "http://adguard.dkhomelabserver.xyz/",
+      "href": "https://adguard.dkhomelabserver.xyz:8443/",
+      "pingUrl": null
+    },
+    {
+      "id": "gha64p0d6lbeov9fovzjstoh",
+      "name": "OPNsense",
+      "description": "infra",
+      "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/opnsense.svg",
+      "href": "https://router.dkhomelabserver.xyz/",
       "pingUrl": null
     },
     {
@@ -288,11 +296,20 @@
       "height": 1
     },
     {
+      "id": "k6n5eu7dzyzl9gkueeaj26ax",
+      "kind": "app",
+      "appId": "gha64p0d6lbeov9fovzjstoh",
+      "xOffset": 8,
+      "yOffset": 1,
+      "width": 2,
+      "height": 1
+    },
+    {
       "id": "a2l3xme5fuerj2dl7yoi2a05",
       "kind": "app",
       "appId": "9pmoibbupj9k2fe1zyb6xfpm",
-      "xOffset": 8,
-      "yOffset": 1,
+      "xOffset": 0,
+      "yOffset": 2,
       "width": 2,
       "height": 1
     },
@@ -300,7 +317,7 @@
       "id": "7w74fq5x7xr83d8ye00230v4",
       "kind": "app",
       "appId": "tjdue7yhm4h1wa0bjqi1dv2u",
-      "xOffset": 0,
+      "xOffset": 2,
       "yOffset": 2,
       "width": 2,
       "height": 1

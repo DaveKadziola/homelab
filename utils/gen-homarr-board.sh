@@ -145,7 +145,8 @@ for group in GROUP_ORDER:
         # Names from AdGuard rewrites, read 2026-10-22. No ping: the apps host is not on LAN.
         for name, title, icon, href in (
             ("proxmox", "Proxmox", "proxmox", "https://proxmox.dkhomelabserver.xyz:8006/"),
-            ("adguard", "AdGuard", "adguard-home", "http://adguard.dkhomelabserver.xyz/"),
+            ("adguard", "AdGuard", "adguard-home", "https://adguard.dkhomelabserver.xyz:8443/"),
+            ("opnsense", "OPNsense", "opnsense", "https://router.dkhomelabserver.xyz/"),
             ("switch", "Switch", "netgear", "http://switch.dkhomelabserver.xyz/"),
             ("access-point", "Access point", "networking-toolbox", "http://ap.dkhomelabserver.xyz/"),
         ):
