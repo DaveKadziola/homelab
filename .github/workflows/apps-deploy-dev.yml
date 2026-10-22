@@ -1,10 +1,15 @@
 name: Apps Deploy Dev
 
-# Not on push. Infra Apply Dev calls this after a successful apply when the push
-# changed a deploy path. A push trigger here started beside the apply.
+# Not on push, and not a job of Infra Apply Dev. That apply starts this workflow
+# after it succeeds, the same split as Apps Deploy Prod. A workflow_run trigger
+# would run as main, and environment dev only allows homelab-v2.
 on:
-  workflow_call:
   workflow_dispatch:
+    inputs:
+      sha:
+        description: "Commit to deploy. Empty means the tip of the selected branch."
+        required: false
+        type: string
 
 jobs:
   deploy-dev:
@@ -14,6 +19,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.sha || github.sha }}
 
       - name: Ping ubuntu-apps-dev
         working-directory: ansible
@@ -92,6 +99,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.sha || github.sha }}
 
       - name: Run test suites
         env:
