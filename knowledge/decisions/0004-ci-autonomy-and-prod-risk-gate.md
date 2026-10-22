@@ -62,8 +62,8 @@ reviewer once the new workflow has run on `main`.
 
 ## Update 2026-10-22
 
-The owner kept a reviewer, on the first job only. `Infra Apply Prod` and `Apps Deploy Prod`
-start with environment `prod-approve` (reviewer: the owner, branch `main`, no secrets). Later
-jobs keep `environment: prod` so they can read the prod secrets, and that environment loses its
-reviewer only when this workflow is the one on `main`. Clearing it earlier lets the old workflow
-deploy with no click. `prod-gate` is unchanged: a safe plan with `gate` false skips it.
+The owner kept a reviewer on the first job of `Infra Apply Prod` (`prod-approve`). That click is
+the go-ahead for production: a successful apply starts `Apps Deploy Prod` with no second click.
+A manual apps deploy has no fresh apply, so that workflow asks once. Later jobs keep
+`environment: prod` for the secrets. `prod` has no reviewer. `prod-gate` is unchanged: a safe
+plan with `gate` false skips it.
