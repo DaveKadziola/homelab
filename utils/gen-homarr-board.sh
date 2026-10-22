@@ -149,6 +149,7 @@ for group in GROUP_ORDER:
             ("opnsense", "OPNsense", "opnsense", "https://router.dkhomelabserver.xyz/"),
             ("switch", "Switch", "netgear", "http://switch.dkhomelabserver.xyz/"),
             ("access-point", "Access point", "networking-toolbox", "http://ap.dkhomelabserver.xyz/"),
+            ("kuma", "Uptime Kuma", "uptime-kuma", "http://kuma.dkhomelabserver.xyz:3001/"),
         ):
             members.append({
                 "name": name,
