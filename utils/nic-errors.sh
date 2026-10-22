@@ -2,8 +2,8 @@
 # Print receive error counters for every interface except lo.
 # With --check, exit 1 when rx_crc_errors, rx_errors or rx_dropped grew since
 # the state file. The first --check only stores the counters.
-# No timer is installed: cumulative counters on nic1 stay high, so a timer
-# that mailed on "non-zero" would never stop.
+# Prod cron mails only when a counter grew. Cumulative crc on nic1 stays
+# high, so a check for "non-zero" would never stop.
 #
 #   ./utils/nic-errors.sh
 #   ./utils/nic-errors.sh --check /var/lib/homelab/nic-errors.prev
