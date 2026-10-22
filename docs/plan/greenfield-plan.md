@@ -81,7 +81,7 @@ todos:
     content: "Iter. #4 R3 ✅ drill 10-19b z prawdziwym wymazaniem DEV przeszedł bez zmian w kodzie; restore suite ✅"
     status: completed
   - id: monitoring-alerts
-    content: "Częściowo 2026-10-22: SMTP_USERNAME i SMTP_PASSWORD są w środowisku prod (same nazwy, bez odczytu wartości). Dostarczenia maila nie sprawdzano ponownie. Diun w logu z 48 h nie wysłał powiadomienia."
+    content: "Częściowo 2026-10-22: SMTP_USERNAME i SMTP_PASSWORD są w środowisku prod. Operator potwierdził, że maile dochodzą. Diun w logu z 48 h nie wysłał powiadomienia o nowych tagach."
     status: in_progress
   - id: ai-log-analysis
     content: "F10-B (Paczka 2, operator 2026-10-20): streszczenia AI przez OpenRouter z oczyszczonych wyników audytu i logów (allowlist, agregacja); nic surowego do publicznego repo"
@@ -157,6 +157,12 @@ todos:
     status: completed
   - id: homarr-dashboard-widgets
     content: "Niewdrożone. utils/bootstrap/homarr_board.py zapisuje item tylko jako kafelek aplikacji (options.appId). Widget (pogoda, Beszel, iframe, mapy) wymaga potwierdzonego kształtu options w Homarr 2.6.0. Nie zgadywano go."
+    status: pending
+  - id: opnsense-wan-audit
+    content: "Na końcu (operator 2026-10-22): audyt reguł OPNsense. Na WAN ma wychodzić tylko WireGuard i Grocery. Odczyt reguł, porównanie z docs/network.md (WAN 443/tcp i 51820/udp). Bez zmiany konfiguracji, dopóki audyt nie pokaże różnicy i operator jej nie zatwierdzi."
+    status: pending
+  - id: subnet-refactor
+    content: "Na samym końcu, po opnsense-wan-audit (operator 2026-10-22): refaktoring podsieci. Operator uważa, że układ VLAN da się zrobić lepiej. Projektu jeszcze nie ma. Nic nie zmieniać, dopóki nie ma zatwierdzonego układu."
     status: pending
 isProject: false
 ---
