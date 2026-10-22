@@ -356,6 +356,43 @@
         - "{{ utils_src }}/bootstrap-apps.sh"
         - "{{ utils_src }}/bootstrap"
         - "{{ utils_src }}/backup"
+        - "{{ utils_src }}/host-updates.sh"
+        - "{{ utils_src }}/nic-errors.sh"
+
+    - name: Install the weekly apt-update mail
+      ansible.builtin.copy:
+        dest: "/etc/systemd/system/{{ item.name }}"
+        owner: root
+        group: root
+        mode: "0644"
+        content: "{{ item.content }}"
+      loop:
+        - name: homelab-host-updates.service
+          content: |
+            [Unit]
+            Description=Mail pending apt upgrades
+            [Service]
+            Type=oneshot
+            Environment=HOMELAB_ENV={{ homelab_env }}
+            Environment=HOMELAB_SECRETS_DIR={{ secrets_dest }}
+            Environment=HOMELAB_CONFIG_DIR={{ homelab_root }}/config
+            ExecStart={{ homelab_root }}/utils/host-updates.sh --mail
+        - name: homelab-host-updates.timer
+          content: |
+            [Unit]
+            Description=Weekly apt upgrade mail
+            [Timer]
+            OnCalendar=Sun *-*-* 06:15:00
+            Persistent=true
+            [Install]
+            WantedBy=timers.target
+
+    - name: Enable the apt-update timer
+      ansible.builtin.systemd:
+        name: homelab-host-updates.timer
+        enabled: true
+        state: started
+        daemon_reload: true
 
     # docker-buildx: without it `docker build` falls back to the legacy builder, which rejects
     # BuildKit syntax such as `ADD --chmod` in the Grocery v2 Dockerfile.
