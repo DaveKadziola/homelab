@@ -7,10 +7,10 @@
 #   nfs/guard             nfs-server requires every passthrough mount (missing disk -> NFS down)
 #   samba/smbd            smbd is running
 #   samba/hosts-allow     smb.conf allows exactly the clients in config/storage.yml
-#   samba/login           the admin login lists the share, media and backups shares (from the NAS
+#   samba/login           the admin login lists the share, media, photos and backups shares (from the NAS
 #                         itself: the CI runner is not an allowed client)
 #   samba/backups-ro      a write to the backups share is refused
-#   samba/photos-ro       the photos share lists the Immich library and refuses a write
+#   samba/immich-ro       the immich share lists the Immich library and refuses a write
 #                         (SKIP where Immich is not on the NAS, as on DEV)
 #   backup/fresh-<stream> the newest artefact of each stream in config/monitoring.yml is younger
 #                         than its max age, as check-fresh.py on the NAS sees it (dry run, no
@@ -152,10 +152,10 @@ else
   listing="$(printf '%s' "$password" | hl_nas_ssh \
     "PASSWD=\"\$(cat)\" smbclient -g -m SMB3 -L //127.0.0.1 -U '${HL_SMB_LOGIN}' 2>/dev/null")"
   if grep -q '^Disk|share|' <<<"$listing" && grep -q '^Disk|media|' <<<"$listing" \
-     && grep -q '^Disk|backups|' <<<"$listing"; then
-    report PASS "samba/login" "${HL_SMB_LOGIN} lists share, media and backups"
+     && grep -q '^Disk|backups|' <<<"$listing" && grep -q '^Disk|photos|' <<<"$listing"; then
+    report PASS "samba/login" "${HL_SMB_LOGIN} lists share, media, photos and backups"
   else
-    report FAIL "samba/login" "${HL_SMB_LOGIN} cannot list share, media and backups on //${HL_NAS_HOST}"
+    report FAIL "samba/login" "${HL_SMB_LOGIN} cannot list share, media, photos and backups on //${HL_NAS_HOST}"
   fi
 
   probe="$(printf '%s' "$password" | hl_nas_ssh \
@@ -169,20 +169,20 @@ else
   fi
 
   if ! hl_nas_ssh "test -d '${HL_EXPORT_ROOT}/media/immich/library'"; then
-    report SKIP "samba/photos-ro" "no Immich library under ${HL_EXPORT_ROOT}/media on this NAS"
+    report SKIP "samba/immich-ro" "no Immich library under ${HL_EXPORT_ROOT}/media on this NAS"
   else
     look="$(printf '%s' "$password" | hl_nas_ssh \
-      "PASSWD=\"\$(cat)\" smbclient -m SMB3 //127.0.0.1/photos -U '${HL_SMB_LOGIN}' -c 'ls' 2>&1")"
+      "PASSWD=\"\$(cat)\" smbclient -m SMB3 //127.0.0.1/immich -U '${HL_SMB_LOGIN}' -c 'ls' 2>&1")"
     probe="$(printf '%s' "$password" | hl_nas_ssh \
-      "PASSWD=\"\$(cat)\" smbclient -m SMB3 //127.0.0.1/photos -U '${HL_SMB_LOGIN}' -c 'put /etc/hostname .rw-probe' 2>&1")"
+      "PASSWD=\"\$(cat)\" smbclient -m SMB3 //127.0.0.1/immich -U '${HL_SMB_LOGIN}' -c 'put /etc/hostname .rw-probe' 2>&1")"
     if grep -q 'NT_STATUS' <<<"$look"; then
-      report FAIL "samba/photos-ro" "the photos share does not list ($(grep -o -E 'NT_STATUS_[A-Z_]+' <<<"$look" | head -1))"
+      report FAIL "samba/immich-ro" "the immich share does not list ($(grep -o -E 'NT_STATUS_[A-Z_]+' <<<"$look" | head -1))"
     elif grep -q -E 'NT_STATUS_(ACCESS_DENIED|MEDIA_WRITE_PROTECTED)' <<<"$probe"; then
-      report PASS "samba/photos-ro" "photos lists the Immich library and refuses a write"
+      report PASS "samba/immich-ro" "immich lists the Immich library and refuses a write"
     else
       printf '%s' "$password" | hl_nas_ssh \
-        "PASSWD=\"\$(cat)\" smbclient -m SMB3 //127.0.0.1/photos -U '${HL_SMB_LOGIN}' -c 'del .rw-probe'" >/dev/null 2>&1
-      report FAIL "samba/photos-ro" "the photos share accepted a write"
+        "PASSWD=\"\$(cat)\" smbclient -m SMB3 //127.0.0.1/immich -U '${HL_SMB_LOGIN}' -c 'del .rw-probe'" >/dev/null 2>&1
+      report FAIL "samba/immich-ro" "the immich share accepted a write"
     fi
   fi
   unset password
