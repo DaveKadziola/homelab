@@ -18,7 +18,7 @@
     grocery_image: "easytodo-grocery:{{ grocery_ref[:12] }}"
     # vsum (profile vsum), private repo: same pinning as grocery; the build reads VSUM_GIT_TOKEN.
     vsum_repo: https://github.com/DaveKadziola/video-summarizer
-    vsum_ref: e1c3bd0a36509497ba846a62928dc620aeb0ddea  # master, merge of video-summarizer PR #1
+    vsum_ref: 37d88d6a5291438a41bfac5cc41a44eeadb7a6ae  # master, release PR #7 (v1.1.0)
     vsum_image: "vsum:{{ vsum_ref[:12] }}"
     # Same tag as compose/core/docker-compose.yml service caddy. Local build, not a registry image.
     caddy_image: homelab-caddy:2.11.7-cloudflare-0.2.4

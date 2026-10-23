@@ -396,6 +396,8 @@ services:
   vsum-web:
     <<: &vsum
       image: ${VSUM_IMAGE:?set VSUM_IMAGE}
+      # Python as PID 1 ignores SIGTERM: without an init every stop waits 10 s and ends in SIGKILL.
+      init: true
       restart: unless-stopped
       depends_on:
         postgres:
