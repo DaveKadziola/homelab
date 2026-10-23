@@ -107,14 +107,18 @@ def main():
         return self_test()
 
     try:
-        ps = subprocess.run(["docker", "ps", "--format", "{{.Image}}"], capture_output=True, text=True, check=True)
+        ids = subprocess.run(["docker", "ps", "-q"], capture_output=True, text=True, check=True).stdout.split()
+        # docker ps drops the digest of an image pinned by one (omni-tools), and then the image
+        # cannot be found by that name; Config.Image keeps it.
+        refs = subprocess.run(["docker", "inspect", "--format", "{{.Config.Image}}", *ids],
+                              capture_output=True, text=True, check=True).stdout.split() if ids else []
         subprocess.run(["trivy", "--version"], capture_output=True, check=True)
     except (OSError, subprocess.CalledProcessError) as e:
         print(f"trivy-scan: {type(e).__name__}: docker or trivy not usable", file=sys.stderr)
         return 2
     old, old_failed = load_state() if args.mail else (set(), {})
     new, failed = set(), {}
-    for image in sorted(set(ps.stdout.split())):
+    for image in sorted(set(refs)):
         got, why = scan(image)
         if got is None:
             failed[image] = why
