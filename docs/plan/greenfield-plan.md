@@ -24,7 +24,7 @@ todos:
     content: "Package 2 (operator 2026-10-20): a weekly audit on a timer — nmap S7 from IOT, Trivy of images, versions, OPNsense rules — report by mail and on the NAS, never in public-repo artifacts"
     status: pending
   - id: ubuntu-2604
-    content: "After release PR #78 (operator 2026-10-21): move the apps and NAS VMs from Ubuntu 24.04 to 26.04 — DEV first, with a rebuild and restore drill, then prod as its own release. Changing the image (terraform/environments/*/terraform.tfvars image_url) is likely a VM replacement (risk gate). It does not fix rclone: 26.04 still ships 1.60.1 in apt, so tools stay pinned to an upstream version"
+    content: "Deferred by the operator 2026-10-23. After release PR #78 (operator 2026-10-21): move the apps and NAS VMs from Ubuntu 24.04 to 26.04 — DEV first, with a rebuild and restore drill, then prod as its own release. Changing the image (terraform/environments/*/terraform.tfvars image_url) is likely a VM replacement (risk gate). It does not fix rclone: 26.04 still ships 1.60.1 in apt, so tools stay pinned to an upstream version"
     status: pending
   - id: homarr-dashboard-widgets
     content: "Not implemented. homarr_board.py writes only an application tile. Homarr image 2.6.0 had no options schema for weather or a clock. Nothing was guessed."
