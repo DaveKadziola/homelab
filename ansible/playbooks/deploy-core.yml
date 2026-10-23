@@ -449,6 +449,8 @@
       register: trivy_installed
       changed_when: false
       failed_when: false
+      # Read-only. Skipped under --check it reads as "not installed" and the unpack fails.
+      check_mode: false
 
     - name: Install the pinned Trivy release
       when: "('Version: ' ~ trivy_version) not in (trivy_installed.stdout_lines | default([''], true) | first)"
