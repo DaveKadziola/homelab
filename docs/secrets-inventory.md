@@ -120,7 +120,7 @@ Helper scripts:
 | `VSUM_OPENROUTER_KEY` | prod | secret | `homelab/VSUM_OPENROUTER_KEY/prod` | set | regular key `vsum-homelab-prod`, limit 5 USD; set 2026-10-23 |
 | `VSUM_ELEVENLABS_KEY` | prod | secret | `homelab/VSUM_ELEVENLABS_KEY/prod` | set | the same restricted key as dev (owner's choice); set 2026-10-23 |
 | `VSUM_GIT_TOKEN` | prod | secret | `homelab/VSUM_GIT_TOKEN/prod` | set | the same read-only token as dev; set 2026-10-23 |
-| `VSUM_TRILIUM_TOKEN` | prod | secret | `homelab/VSUM_TRILIUM_TOKEN/prod` | planned | ETAPI token from prod Trilium (owner, `knowledge/apps/vsum.md`); optional |
+| `VSUM_TRILIUM_TOKEN` | prod | secret | `homelab/VSUM_TRILIUM_TOKEN/prod` | set | ETAPI token from prod Trilium (owner, `knowledge/apps/vsum.md`); optional; pasted 2026-10-23 |
 
 ---
 
