@@ -244,7 +244,8 @@ flowchart LR
 Uptime Kuma, an add-on on Home Assistant, checks every service, the Proxmox host, the NAS, the router
 and public Grocery, and alerts when a backup stream's push from `check-fresh.py` (NAS, 06:00) is stale
 or missing; `utils/kuma-sync.py` keeps it equal to [`config/monitoring.yml`](config/monitoring.yml).
-Beszel watches disk, RAM and CPU, Diun reports new image tags. Mail goes out through Proton SMTP on
+Beszel watches disk, RAM and CPU, Diun reports new image tags, and a daily Trivy scan mails when the
+fixable HIGH and CRITICAL vulnerabilities in the running images change. Mail goes out through Proton SMTP on
 prod and into mailpit on DEV. A dead T620, router or uplink sends nothing (decision
 [0006](knowledge/decisions/0006-alerts-kuma-proton-smtp.md)). [monitoring](knowledge/monitoring.md)
 
