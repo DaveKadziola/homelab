@@ -5,9 +5,8 @@ name: Tests Dev
 # A workflow_run trigger here ran as the default branch main, which environment dev rejects.
 
 on:
-  # TEMP: homelab-v2 until it is renamed to develop; drop it in the cleanup PR after the rename.
   push:
-    branches: [homelab-v2, develop]
+    branches: [develop]
     paths:
       - "tests/**"
       - "utils/run-tests.sh"
