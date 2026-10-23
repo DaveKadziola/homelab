@@ -23,6 +23,10 @@
     st: "{{ storage.environments[homelab_env] }}"
     passthrough: "{{ st.passthrough | default([]) }}"
     binds: "{{ st.binds | default([]) }}"
+    # The owner's one place for every backup (Samba share all-backups): both trees, bound read-only.
+    admin_view_binds:
+      - { from: "{{ st.export_root }}/backups", to: "{{ st.samba.admin_view | default('') }}/backups" }
+      - { from: "{{ st.nas_private_root | default('') }}", to: "{{ st.samba.admin_view | default('') }}/nas-backups" }
     # Every mount nfs-server must wait for, and the [path, label] marker of each
     # filesystem that NFS shows (checked through NFS by the client play).
     nas_mounts: "{{ (passthrough | map(attribute='mount') | list) + (binds | map(attribute='to') | list) }}"
@@ -257,6 +261,33 @@
         - "{{ st.nas_private_root }}"
         - "{{ st.nas_private_root }}/vzdump"
 
+    # Outside export_root, so no NFS client sees the NAS-private half; read-only binds, so not even
+    # root on the NAS writes through them.
+    - name: Bind both backup trees read-only into the admin view
+      when: st.samba.admin_view is defined and st.nas_private_root is defined
+      block:
+        - name: Create the admin view mount points
+          ansible.builtin.file:
+            path: "{{ item }}"
+            state: directory
+            owner: root
+            group: root
+            mode: "0755"
+          loop: "{{ [st.samba.admin_view] + (admin_view_binds | map(attribute='to') | list) }}"
+
+        - name: Record the admin view binds in fstab
+          ansible.builtin.lineinfile:
+            path: /etc/fstab
+            regexp: '^\S+\s+{{ item.to | regex_escape }}\s'
+            line: "{{ item.from }} {{ item.to }} none bind,ro,nofail,x-systemd.requires-mounts-for={{ item.from }} 0 0"
+          loop: "{{ admin_view_binds }}"
+
+        - name: Mount the admin view binds  # noqa: command-instead-of-module
+          ansible.builtin.shell: mountpoint -q {{ item.to | quote }} && echo already || mount {{ item.to | quote }}
+          loop: "{{ admin_view_binds }}"
+          register: admin_view_mount
+          changed_when: admin_view_mount.stdout != 'already'
+
     # crossmnt: the passthrough filesystems and binds are mounted below export_root.
     - name: Write /etc/exports
       ansible.builtin.copy:
@@ -403,19 +434,20 @@
                  valid users = {{ samba_unix_user }}
                  read only = yes
                  veto files = /.homelab-fs-*/
-              {% if st.samba.admin_hosts | default([]) | length > 0 %}
+              {% if st.samba.admin_hosts | default([]) | length > 0 and st.samba.admin_view is defined %}
 
-              # Every NAS-private backup (router config, HA UI YAML, VM dumps hold keys and password
-              # hashes), for the owner: read-only and only from samba.admin_hosts. The folder is
-              # root-only, so this share reads as root.
-              [nas-backups]
-                 comment = NAS-private backups, read-only, owner's devices only
-                 path = {{ st.nas_private_root }}
+              # Every backup for the owner: backups/ (the shared streams) and nas-backups/ (router
+              # config, HA UI YAML, VM dumps hold keys and password hashes), as read-only binds.
+              # Only from samba.admin_hosts; nas-backups is root-only, so this share reads as root.
+              [all-backups]
+                 comment = Every backup, read-only, owner's devices only
+                 path = {{ st.samba.admin_view }}
                  valid users = {{ samba_unix_user }}
                  force user = root
                  read only = yes
                  hosts allow = {{ st.samba.admin_hosts | join(' ') }}
                  hosts deny = ALL
+                 veto files = /.homelab-fs-*/lost+found/
               {% endif %}
           notify: Restart smbd
 
