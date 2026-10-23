@@ -61,7 +61,7 @@ Helper scripts:
 | `KUMA_ADMIN_PASSWORD` | dev, prod | secret | `homelab/KUMA_ADMIN_PASSWORD/<env>` | set 2026-10-20 | login `admin` of the Uptime Kuma add-on; `utils/kuma-sync.py` sets it up on a fresh Kuma |
 | `KUMA_PUSH_SECRET` | dev, prod | secret | `homelab/KUMA_PUSH_SECRET/<env>` | set 2026-10-20 | seed of the Kuma push tokens (backup freshness); the NAS gets it from the deploy |
 | `IMMICH_SCAN_API_KEY` | dev | secret | `homelab/IMMICH_SCAN_API_KEY/dev` | set | Immich admin API key (`library.read`, `library.update`) for the NAS photos watcher; pasted 2026-10-24 |
-| `IMMICH_SCAN_API_KEY` | prod | secret | `homelab/IMMICH_SCAN_API_KEY/prod` | planned | Immich admin API key (`library.read`, `library.update`) for the NAS photos watcher; the owner makes it in Immich |
+| `IMMICH_SCAN_API_KEY` | prod | secret | `homelab/IMMICH_SCAN_API_KEY/prod` | set | Immich admin API key (`library.read`, `library.update`) for the NAS photos watcher; key `homelab-photos-scan` made through the API with the owner's approval, pasted 2026-10-24 |
 | `SMTP_USERNAME` | prod | secret | `homelab/SMTP_USERNAME/prod` | set 2026-10-21 | Proton address `homelab-prod@dkhomelabserver.xyz` (owner); sender of Kuma, Diun, Beszel mail |
 | `SMTP_PASSWORD` | prod | secret | `homelab/SMTP_PASSWORD/prod` | set 2026-10-21 | Proton SMTP token of `SMTP_USERNAME` (owner) |
 | `CLOUDFLARE_API_TOKEN` | prod | secret | `homelab/CLOUDFLARE_API_TOKEN/prod` | planned | Zone.DNS edit on `dkhomelabserver.xyz` only; Caddy wildcard certificate (owner); without it prod keeps proxy and auth off |
