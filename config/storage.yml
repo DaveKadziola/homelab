@@ -27,14 +27,16 @@ environments:
     vzdump: { pve_host: 192.168.122.219, vmids: [101], schedule: "04:30", enabled: false }
     # NAS-only backups (router config, HA UI YAML, VM dumps): outside export_root, so no NFS client of
     # the export tree (the apps host, as root) reaches them, only the read-only Samba share
-    # nas-backups from samba.admin_hosts; not offsite.
+    # all-backups from samba.admin_hosts; not offsite.
     nas_private_root: /srv/homelab-nas-backups
     # Samba runs on the NAS guest; DEV reaches it from the libvirt network only.
     samba:
       share_path: /srv/homelab-share
       hosts_allow: [192.168.122.0/24, 127.0.0.1]
-      # The only clients of the read-only share nas-backups: the laptop on the libvirt network.
+      # The only clients of the read-only share all-backups: the laptop on the libvirt network.
       admin_hosts: [192.168.122.1]
+      # backups/ and nas-backups/ bound read-only here for all-backups; outside export_root.
+      admin_view: /srv/backups-all
   prod:
     mode: nfs
     nas_host: 192.168.20.12
@@ -67,9 +69,11 @@ environments:
       share_path: /srv/purple/share
       # LAN + WireGuard. IOT devices sit in the NAS subnet, the router cannot filter them.
       hosts_allow: [192.168.1.0/24, 10.10.10.0/24, 127.0.0.1]
-      # The only clients of the read-only share nas-backups: the owner's laptop in LAN (until the
+      # The only clients of the read-only share all-backups: the owner's laptop in LAN (until the
       # OPNsense alias Admins lists the admin devices).
       admin_hosts: [192.168.1.100]
+      # backups/ and nas-backups/ bound read-only here for all-backups; outside export_root.
+      admin_view: /srv/backups-all
 
 # Layout under export_root (created by ansible/playbooks/deploy-storage.yml). No size caps:
 # media totals ~300-400 GB on a 2 TB SSD (owner, 2026-10-19).

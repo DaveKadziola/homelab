@@ -11,8 +11,9 @@
 #                         itself: the CI runner is not an allowed client)
 #   samba/backups-ro      a write to the backups share is refused
 #   samba/immich-ro       the immich share lists the Immich library and refuses a write
-#   samba/nas-backups     the NAS-private share is read-only and only for samba.admin_hosts:
-#                         the NAS itself (127.0.0.1, not an admin host) is refused
+#   samba/all-backups     the owner's share of every backup is read-only and only for
+#                         samba.admin_hosts (127.0.0.1, not an admin host, is refused); both
+#                         trees are bound read-only below samba.admin_view
 #                         (SKIP where Immich is not on the NAS, as on DEV)
 #   backup/fresh-<stream> the newest artefact of each stream in config/monitoring.yml is younger
 #                         than its max age, as check-fresh.py on the NAS sees it (dry run, no
@@ -188,21 +189,24 @@ else
     fi
   fi
 
-  if [[ -z "${HL_SMB_ADMIN_HOSTS:-}" ]]; then
-    report SKIP "samba/nas-backups" "no samba.admin_hosts in config/storage.yml"
+  if [[ -z "${HL_SMB_ADMIN_HOSTS:-}" || -z "${HL_SMB_ADMIN_VIEW:-}" ]]; then
+    report SKIP "samba/all-backups" "no samba.admin_hosts or admin_view in config/storage.yml"
   else
-    ro="$(hl_nas_ssh "testparm -s --section-name=nas-backups --parameter-name='read only' 2>/dev/null")"
-    allow="$(hl_nas_ssh "testparm -s --section-name=nas-backups --parameter-name='hosts allow' 2>/dev/null" | norm)"
+    ro="$(hl_nas_ssh "testparm -s --section-name=all-backups --parameter-name='read only' 2>/dev/null")"
+    allow="$(hl_nas_ssh "testparm -s --section-name=all-backups --parameter-name='hosts allow' 2>/dev/null" | norm)"
     local_try="$(printf '%s' "$password" | hl_nas_ssh \
-      "PASSWD=\"\$(cat)\" smbclient -m SMB3 //127.0.0.1/nas-backups -U '${HL_SMB_LOGIN}' -c 'ls' 2>&1")"
+      "PASSWD=\"\$(cat)\" smbclient -m SMB3 //127.0.0.1/all-backups -U '${HL_SMB_LOGIN}' -c 'ls' 2>&1")"
+    binds="$(hl_nas_ssh "for d in backups nas-backups; do echo \"\$d=\$(findmnt -n -o OPTIONS '${HL_SMB_ADMIN_VIEW}'/\$d | cut -d, -f1)\"; done")"
     if [[ "$ro" != "Yes" ]]; then
-      report FAIL "samba/nas-backups" "read only is '${ro}', not Yes"
+      report FAIL "samba/all-backups" "read only is '${ro}', not Yes"
+    elif [[ "$(tr '\n' ' ' <<<"$binds")" != "backups=ro nas-backups=ro " ]]; then
+      report FAIL "samba/all-backups" "the binds below ${HL_SMB_ADMIN_VIEW} are not both read-only mounts: $(tr '\n' ' ' <<<"$binds")"
     elif [[ "$allow" != "$(printf '%s' "$HL_SMB_ADMIN_HOSTS" | norm)" ]]; then
-      report FAIL "samba/nas-backups" "hosts allow is '${allow}', config says '${HL_SMB_ADMIN_HOSTS}'"
+      report FAIL "samba/all-backups" "hosts allow is '${allow}', config says '${HL_SMB_ADMIN_HOSTS}'"
     elif ! grep -q 'NT_STATUS' <<<"$local_try"; then
-      report FAIL "samba/nas-backups" "127.0.0.1 is not an admin host but could list the share"
+      report FAIL "samba/all-backups" "127.0.0.1 is not an admin host but could list the share"
     else
-      report PASS "samba/nas-backups" "read-only, only ${HL_SMB_ADMIN_HOSTS}; 127.0.0.1 refused ($(grep -o -E 'NT_STATUS_[A-Z_]+' <<<"$local_try" | head -1))"
+      report PASS "samba/all-backups" "read-only binds of backups and nas-backups, only ${HL_SMB_ADMIN_HOSTS}; 127.0.0.1 refused ($(grep -o -E 'NT_STATUS_[A-Z_]+' <<<"$local_try" | head -1))"
     fi
   fi
   unset password

@@ -165,6 +165,7 @@ def cmd_storage(env):
         ident = (identities_doc().get("identities") or {}).get(account.get("identity"), {})
         print(f"HL_SMB_ALLOW={' '.join(samba.get('hosts_allow') or [])}")
         print(f"HL_SMB_ADMIN_HOSTS={' '.join(samba.get('admin_hosts') or [])}")
+        print(f"HL_SMB_ADMIN_VIEW={samba.get('admin_view', '')}")
         print(f"HL_SMB_LOGIN={ident.get('username', '')}")
         print(f"HL_SMB_SECRET={account.get('secret', '')}")
 
