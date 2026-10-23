@@ -55,7 +55,7 @@ Symptoms first. Root-cause write-ups go in [`lessons-learned.md`](lessons-learne
 | Symptom | Check |
 |---------|--------|
 | Workflows queued forever | Runner `homelab-dev` offline → `sudo ./svc.sh start`. |
-| A merge to `homelab-v2` starts no workflow at all | GitHub webhook incident (githubstatus.com, "Webhooks"; seen 2026-10-21). Start Apps Deploy Dev by hand (`workflow_dispatch`). |
+| A merge to `develop` starts no workflow at all | GitHub webhook incident (githubstatus.com, "Webhooks"; seen 2026-10-21). Start Apps Deploy Dev by hand (`workflow_dispatch`). |
 | Beszel agent restarts after a fresh deploy | Normal until `utils/bootstrap/beszel.sh` has written `beszel-agent.env`; it runs at the end of the same deploy. |
 | `Check Terraform` fails (`Terraform vX` instead of the expected version) | The runner's Terraform differs from the workflows'. Laptop: `apt policy terraform` (the apt package can move on); `ci-runner`: re-run `utils/pve-ci-runner-lxc.sh`. Upgrade all places together (`knowledge/infrastructure.md` "Runners"). |
 | Setup Terraform hangs: the downloaded zip in `_work/_temp` stops 2-3 KB short of the full file, the socket to HashiCorp's CDN sits in `FIN-WAIT-1` (seen 2026-10-20 on the laptop and on `ci-runner`, five times) | Gone with the step: the workflows no longer download Terraform, it is installed on the runners. Root cause unknown: curl downloads of the same file from both hosts never stalled. |

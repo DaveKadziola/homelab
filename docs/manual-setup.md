@@ -5,7 +5,7 @@
 > **Related:** greenfield v2 plan, F0→F1 gate, [`README.md`](../README.md) (links here in the "Prerequisites" section).
 
 **Repo:** [DaveKadziola/homelab](https://github.com/DaveKadziola/homelab)  
-**Target working branch:** `homelab-v2` (from `main`)
+**Target working branch:** `homelab-v2` (from `main`); named `develop` since 2026-10-23
 
 ---
 
@@ -238,7 +238,7 @@ EOF
 
 ### CI autonomy (2026-10-20)
 
-[Decision 0004](../knowledge/decisions/0004-ci-autonomy-and-prod-risk-gate.md): PRs into `homelab-v2`
+[Decision 0004](../knowledge/decisions/0004-ci-autonomy-and-prod-risk-gate.md): PRs into `develop`
 merge themselves after `validate` and `plan`; prod approval only for a risky Terraform plan. One-time
 settings, run by the owner (agents must not change repo settings). A ruleset PUT replaces the whole
 rule list, so it repeats `deletion` and `non_fast_forward`.
@@ -248,11 +248,11 @@ gh api -X PATCH repos/DaveKadziola/homelab -F allow_auto_merge=true -F delete_br
 
 gh api -X PUT repos/DaveKadziola/homelab/rulesets/25494699 --input - <<'EOF'
 {
-  "name": "homelab-v2: PR with green validate and plan, no force push or deletion",
+  "name": "develop: PR with green validate and plan, no force push or deletion",
   "target": "branch",
   "enforcement": "active",
   "bypass_actors": [],
-  "conditions": {"ref_name": {"include": ["refs/heads/homelab-v2"], "exclude": []}},
+  "conditions": {"ref_name": {"include": ["refs/heads/develop"], "exclude": []}},
   "rules": [
     {"type": "deletion"},
     {"type": "non_fast_forward"},

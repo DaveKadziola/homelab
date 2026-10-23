@@ -48,14 +48,11 @@ todos:
     content: "Operator 2026-10-22: the public repo stays a portfolio (architecture, how deploy works). The house map (addresses, domain, mail) moves to gitignored docs and/or a module from a private repo. Current files have to be rewritten with example addresses. Do not touch history yet: one rewrite is git-history-state, after this swap, not before."
     status: pending
   - id: git-history-state
-    content: "After public-map-split (operator 2026-10-22): remove terraform/terraform.tfstate and terraform/terraform.tfstate.backup from the whole history (added in 18dd8c6, removed in ce25d3a; six 192.168 addresses, no passwords) and the old house map. One history rewrite, force-push main and homelab-v2. git-filter-repo is not installed. After that every clone is stale; GitHub can keep old objects until it purges them. Do not do this before the files are swapped, or the map comes back in new commits."
+    content: "After public-map-split (operator 2026-10-22): remove terraform/terraform.tfstate and terraform/terraform.tfstate.backup from the whole history (added in 18dd8c6, removed in ce25d3a; six 192.168 addresses, no passwords) and the old house map. One history rewrite, force-push main and develop. git-filter-repo is not installed. After that every clone is stale; GitHub can keep old objects until it purges them. Do not do this before the files are swapped, or the map comes back in new commits."
     status: pending
   - id: opnsense-wan-audit
     content: "Last (operator 2026-10-22): audit OPNsense rules. Only WireGuard and Grocery should leave on WAN. Read the rules, compare with docs/network.md (WAN 443/tcp and 51820/udp). Do not change the configuration until the audit shows a difference and the operator accepts it. Includes S7 from WireGuard and WAN (a scan from outside, e.g. a phone hotspot)."
     status: pending
-  - id: branch-develop
-    content: "Operator 2026-10-23: the DEV branch homelab-v2 becomes develop. Done: the old dev branch deleted (tip 303ffc1); the DEV workflows and utils/release-notes.py accept both names. Left, right after the next release (it carries those workflows to main, where GitHub reads Apps Deploy Dev): add develop to the branch policy of environment dev, point ruleset 25494699 at refs/heads/develop, rename the branch (gh api branches/homelab-v2/rename), move local clones; then one PR drops homelab-v2 from the triggers and the dev policy and renames it in the current docs. Router markers and config backups named homelab-v2 stay: they are the project name the scripts search for."
-    status: in_progress
   - id: subnet-refactor
     content: "At the very end, after opnsense-wan-audit (operator 2026-10-22): subnet refactor. The operator thinks the VLAN layout can be better. There is no design yet. Change nothing until a layout is approved."
     status: pending

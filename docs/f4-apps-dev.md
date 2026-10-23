@@ -63,7 +63,7 @@ cd ansible
 ansible-playbook -i environments/dev/hosts.ini playbooks/deploy-core.yml
 ```
 
-Or push to `homelab-v2` (paths under `compose/` / `ansible/`) with runner label `homelab-dev` online → `apps-deploy-dev.yml`.
+Or push to `develop` (paths under `compose/` / `ansible/`) with runner label `homelab-dev` online → `apps-deploy-dev.yml`.
 
 ### Authelia and app names (DEV)
 

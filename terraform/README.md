@@ -13,4 +13,4 @@ Creates the Proxmox guests. State is in HCP Terraform, not in this directory. `e
 | `environments/dev/terraform.tfvars` | Nested Proxmox on the laptop. Workspace `homelab-dev` |
 | `environments/prod/terraform.tfvars` | Physical host. Workspace `homelab` |
 
-A push to `homelab-v2` applies the dev workspace. A push to `main` applies prod only after the prod approval. `utils/dev-apply-local.sh` applies dev from the laptop and races that push. `utils/tf-plan-risk.py` reads a prod plan and says whether it must stop for a second approval.
+A push to `develop` applies the dev workspace. A push to `main` applies prod only after the prod approval. `utils/dev-apply-local.sh` applies dev from the laptop and races that push. `utils/tf-plan-risk.py` reads a prod plan and says whether it must stop for a second approval.
