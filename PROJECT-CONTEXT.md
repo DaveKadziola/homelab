@@ -85,7 +85,8 @@ Last reviewed: 2026-10-21
   `config/services.yml` -> compose -> `knowledge/apps/<app>.md`. <!-- source: README.md "Applications" -->
 - Commits: `type(scope): subject`, scope = phase (`f1` ... `f10`) when there is one.
   <!-- source: git log main..homelab-v2 -->
-- Branching and review: `homelab-v2` = DEV, `main` = prod. Agent work happens on a feature branch
+- Branching and review: `homelab-v2` = DEV (to be renamed `develop` right after the next release,
+  backlog item `branch-develop`), `main` = prod. Agent work happens on a feature branch
   and reaches `homelab-v2` through a PR that merges itself when `validate` and `plan` pass (ruleset
   without bypass). A release is a PR `homelab-v2` -> `main` that the operator merges; prod asks for
   one approval on Infra Apply Prod (`prod-approve`), plus `prod-gate` when the Terraform plan is risky. A successful apply starts Apps Deploy Prod with no second click.
