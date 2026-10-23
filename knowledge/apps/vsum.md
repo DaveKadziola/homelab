@@ -1,3 +1,7 @@
+Status: draft
+Last reviewed: 2026-10-23
+Scope: vsum on DEV and the steps to turn it on in prod - build, secrets, upstream releases
+
 # vsum (video summaries)
 
 | | |
@@ -16,6 +20,10 @@ host from the repository at `vsum_ref` (a new ref is a new tag, so it rebuilds),
 `postgres-init` creates database and role `vsum` and sets the role's password to `VSUM_DB_PASSWORD`
 on every deploy. Without `VSUM_GIT_TOKEN` the deploy stops at an assert; remove `vsum` from the
 profiles to deploy without it.
+
+Releases: the app repo tags every push to `master` as the next `vX.Y.Z` with a GitHub release
+(`.github/workflows/release.yml`); its PR titles follow `type(scope): subject`. First run: v1.0.0
+on `3c0510b`, Release run 39962899518, 2026-10-23.
 
 Followed channels never spend money on their own: a video runs only after someone approves it in the
 GUI or pastes its link. Without `VSUM_OPENROUTER_KEY` or `VSUM_ELEVENLABS_KEY` the services run and a
