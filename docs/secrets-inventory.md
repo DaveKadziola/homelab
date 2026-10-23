@@ -113,7 +113,7 @@ Helper scripts:
 | `VSUM_DB_PASSWORD` | dev | secret | `homelab/VSUM_DB_PASSWORD/dev` | set | generated 2026-10-23 |
 | `VSUM_OPENROUTER_KEY`, `VSUM_ELEVENLABS_KEY` | dev | secret | `homelab/<NAME>/dev` | planned | vsum API keys (owner); `OPENROUTER_KEY`/`ELEVENLABS_KEY` in the container; optional |
 | `VSUM_TRILIUM_TOKEN` | dev | secret | `homelab/VSUM_TRILIUM_TOKEN/dev` | planned | ETAPI token from DEV Trilium (Options -> ETAPI, owner); optional, turns on the note export |
-| `VSUM_GIT_TOKEN` | dev | secret | `homelab/VSUM_GIT_TOKEN/dev` | planned | fine-grained token, read-only Contents on `DaveKadziola/video-summarizer`; deploy-core builds the image with it; expires |
+| `VSUM_GIT_TOKEN` | dev | secret | `homelab/VSUM_GIT_TOKEN/dev` | set | fine-grained token, read-only Contents on `DaveKadziola/video-summarizer`; deploy-core builds the image with it; expires; set 2026-10-23 |
 
 ---
 
