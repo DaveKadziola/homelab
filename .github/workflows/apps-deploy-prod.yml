@@ -136,8 +136,10 @@ jobs:
 
   # F7-C — a deploy is not done until its tests are green. Checks that need a
   # part of prod that is not online yet report SKIP, which is not a failure.
+  # Without a status function in `if`, the skipped approve job skips this one too.
   post-deploy-tests:
     needs: deploy-prod
+    if: ${{ !cancelled() && needs.deploy-prod.result == 'success' }}
     runs-on: [self-hosted, homelab-prod]
     timeout-minutes: 10
     environment: prod
