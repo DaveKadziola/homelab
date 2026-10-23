@@ -175,6 +175,14 @@ service_secrets:
   - name: IMMICH_DB_PASSWORD
     used_by: [immich]
     envs: [dev, prod]
+  - name: IMMICH_SCAN_API_KEY
+    used_by: [immich]
+    envs: [dev, prod]
+    issued_by: immich
+    notes: >-
+      Admin API key with only library.read and library.update; utils/photos-watch.py on the NAS
+      queues a scan of the external libraries with it. Made in Immich (Account Settings -> API Keys),
+      stored with gen-app-credentials.sh --paste.
   - name: GROCERY_DB_PASSWORD
     used_by: [grocery]
     envs: [dev, prod]

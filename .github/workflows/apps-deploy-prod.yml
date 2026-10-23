@@ -62,6 +62,8 @@ jobs:
           HA_BACKUP_PASSWORD: ${{ secrets.HA_BACKUP_PASSWORD }}
           KUMA_PUSH_SECRET: ${{ secrets.KUMA_PUSH_SECRET }}
           OPNSENSE_BACKUP_SSH_PRIV: ${{ secrets.OPNSENSE_BACKUP_SSH_PRIV }}
+          # Photos watcher on the NAS (utils/photos-watch.py); empty: not written, unit stays stopped.
+          IMMICH_SCAN_API_KEY: ${{ secrets.IMMICH_SCAN_API_KEY }}
         run: |
           ansible-playbook -i environments/prod/hosts.ini playbooks/deploy-storage.yml
 

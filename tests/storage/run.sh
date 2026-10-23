@@ -125,6 +125,18 @@ else
 fi
 
 # --------------------------------------------------------------------------
+# Photos watcher (utils/photos-watch.py: Immich scan soon after the photos share changes)
+# --------------------------------------------------------------------------
+watch="$(hl_nas_ssh "systemctl is-active homelab-photos-watch" 2>/dev/null)"
+if ! hl_nas_ssh "sudo -n test -s /opt/homelab-nas/secrets/$HL_ENV/IMMICH_SCAN_API_KEY" 2>/dev/null; then
+  report SKIP "photos/watch" "no IMMICH_SCAN_API_KEY on the NAS: only Immich's 15-minute scan"
+elif [[ "$watch" == "active" ]]; then
+  report PASS "photos/watch" "homelab-photos-watch active"
+else
+  report FAIL "photos/watch" "homelab-photos-watch is ${watch:-unknown} although the scan key is on the NAS"
+fi
+
+# --------------------------------------------------------------------------
 # Samba
 # --------------------------------------------------------------------------
 if [[ -z "${HL_SMB_LOGIN:-}" ]]; then
