@@ -40,6 +40,10 @@ it in that env's Trilium: Options -> ETAPI). Apps Deploy Dev runs the workflow f
 until a release carries the `VSUM_*` lines of `apps-deploy-dev.yml` the DEV deploy reads them from the
 runner cache `~/.homelab-secrets/dev/`.
 
+`VSUM_OPENROUTER_KEY` must be a regular key from https://openrouter.ai/settings/keys, with a credit
+limit. A management key (https://openrouter.ai/settings/management-keys) passes `GET /api/v1/key`
+but gets 401 on chat completions (DEV, 2026-10-23); the DEV key is `vsum-homelab-dev`, limit 5 USD.
+
 ## Turning it on in prod
 
 1. The SA500 holds `hl-media` and is exported (one-time wipe, `knowledge/storage.md` "Attach and
