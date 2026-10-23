@@ -286,14 +286,32 @@
     - name: Bind both backup trees read-only into the admin view
       when: st.samba.admin_view is defined and st.nas_private_root is defined
       block:
-        - name: Create the admin view mount points
+        - name: Create the admin view directory
           ansible.builtin.file:
-            path: "{{ item }}"
+            path: "{{ st.samba.admin_view }}"
             state: directory
             owner: root
             group: root
             mode: "0755"
-          loop: "{{ [st.samba.admin_view] + (admin_view_binds | map(attribute='to') | list) }}"
+
+        # Once mounted, a mount point is the read-only bind itself: owner and mode cannot be set there.
+        - name: Look at the admin view mount points
+          ansible.builtin.stat:
+            path: "{{ item.to }}"
+          loop: "{{ admin_view_binds }}"
+          register: admin_view_points
+
+        - name: Create the missing admin view mount points
+          ansible.builtin.file:
+            path: "{{ item.item.to }}"
+            state: directory
+            owner: root
+            group: root
+            mode: "0755"
+          loop: "{{ admin_view_points.results }}"
+          loop_control:
+            label: "{{ item.item.to }}"
+          when: not item.stat.exists
 
         - name: Record the admin view binds in fstab
           ansible.builtin.lineinfile:
