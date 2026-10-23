@@ -11,7 +11,7 @@ Scope: when and how a prod release gets its tag and notes
   prod". Their notes are one prose paragraph.
 - A merge to `main` reaches prod only through Infra Apply Prod (one approval, `prod-gate` for a
   risky plan) and Apps Deploy Prod ([0004](0004-ci-autonomy-and-prod-risk-gate.md)); either can stop.
-- Every change reaches `homelab-v2` through a PR whose merge commit carries the PR title, and the
+- Every change reaches `develop` (then `homelab-v2`) through a PR whose merge commit carries the PR title, and the
   titles follow `type(scope): subject` (checked for #151-#158).
 - The default `GITHUB_TOKEN` is read-only; the prod runner (CT 110) also runs PR code for Infra
   Plan Prod ([security](../security.md)).

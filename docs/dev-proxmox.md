@@ -30,17 +30,17 @@ Same `terraform/` module as prod; different `environments/dev/terraform.tfvars` 
 
 | Workflow | Trigger | Action |
 |----------|---------|--------|
-| `infra-plan-dev.yml` | PR → `homelab-v2` | `terraform plan -refresh=false` (HCP workspace `homelab-dev`), environment `dev-plan` ("PR plan" below) |
-| `infra-apply-dev.yml` | push `homelab-v2` / manual | `terraform apply` |
-| `apps-deploy-dev.yml` | push `homelab-v2` | Ansible → deploy `compose/core` |
+| `infra-plan-dev.yml` | PR → `develop` | `terraform plan -refresh=false` (HCP workspace `homelab-dev`), environment `dev-plan` ("PR plan" below) |
+| `infra-apply-dev.yml` | push `develop` / manual | `terraform apply` |
+| `apps-deploy-dev.yml` | push `develop` | Ansible → deploy `compose/core` |
 
 Apps stack details + test/prod checklist: [`docs/f4-apps-dev.md`](f4-apps-dev.md).
 
 ### PR plan (environment `dev-plan`)
 
-`Infra Plan Dev` runs on pull requests to `homelab-v2`; `Infra Apply Dev` runs on the push after the
+`Infra Plan Dev` runs on pull requests to `develop`; `Infra Apply Dev` runs on the push after the
 merge. Before 2026-10-20 both started on the same push and the plan often ran after the apply. The
-environment `dev` allows only `homelab-v2` and rejects pull request refs, so the plan uses `dev-plan`:
+environment `dev` allows only `develop` and `main` and rejects pull request refs, so the plan uses `dev-plan`:
 no reviewers, every branch, a read-only token (`PVEAuditor`), `-refresh=false` and a dummy SSH
 password - the same design as `prod-plan` ([`f3-proxmox.md`](f3-proxmox.md) "PR plan"). DEV uses the
 token `root@pam!terraform`; the plan token is `root@pam!plan`.
@@ -89,7 +89,7 @@ Then run `infra-apply-dev` or local apply above.
 |---|-----|------|
 | Hypervisor | nested PVE (libvirt) | physical PVE `.20.20` |
 | State | local file | TFC `homelab` |
-| Branch | `homelab-v2` | `main` |
+| Branch | `develop` | `main` |
 | VLAN | flat `.122.x` | IOT 20 + APP 51 |
 
 Prod networking bugs still need prod plan; dev catches **TF/provider/cloud-init** regressions early.

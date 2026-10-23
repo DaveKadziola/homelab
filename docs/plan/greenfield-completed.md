@@ -134,6 +134,9 @@ completed:
   - id: docs-diagrams
     content: "Done 2026-10-23: docs/diagrams/{change-flow,network,backups}.drawio (86fd058) and the README mermaid blocks. Brought up to date with the prod-approve job, Apps Deploy Dev after Infra Apply Dev, the NAS-private folder and the crypt offsite remote."
     status: completed
+  - id: branch-develop
+    content: "Done 2026-10-23: homelab-v2 is develop. Release #173 (v2.2.0) carried the workflows that accept develop to main; then environment dev got the branch policy develop, ruleset 25494699 moved to refs/heads/develop (rules unchanged), gh api branches/homelab-v2/rename renamed it at e2e46cb, and the old name redirects. The old dev branch was deleted first (tip 303ffc1). Router markers and config backups keep the name homelab-v2: it is the project name the router scripts search for."
+    status: completed
 isProject: false
 ---
 

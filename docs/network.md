@@ -10,7 +10,7 @@
 | libvirt `default` | `192.168.122.0/24` | GW `192.168.122.1` |
 | **Dev** | `192.168.122.0/24` (nested PVE) | DHCP/static `.122.50` |
 | `ubuntu-apps-dev` (TF) | same | **`192.168.122.50`** |
-| GH branch | `homelab-v2` | env **dev** |
+| GH branch | `develop` | env **dev** |
 
 Dev is **isolated** from prod VLANs.
 
@@ -105,4 +105,4 @@ Zone: **`dkhomelabserver.xyz`** - on Cloudflare (NS `jose.ns.cloudflare.com`, `v
 |---|-----|------|
 | Network | `192.168.122.0/24` | IOT 20 + APP 51 (802.1Q) |
 | VMs | libvirt `Proxmox` → `ubuntu-apps-dev` | `ubuntu-nas`, `ubuntu-apps` |
-| Branch / GH | `homelab-v2` / dev | `main` / prod |
+| Branch / GH | `develop` / dev | `main` / prod |

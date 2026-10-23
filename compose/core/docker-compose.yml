@@ -268,6 +268,8 @@ services:
       - "2283:2283"
     volumes:
       - immich_upload:/data
+      # External library: what the owner puts into the Samba share photos (NFS from the NAS).
+      - /mnt/homelab/media/photos:/external/photos:ro
       - /etc/localtime:/etc/localtime:ro
     environment:
       DB_HOSTNAME: immich-postgres

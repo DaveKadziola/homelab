@@ -35,6 +35,9 @@ todos:
   - id: app-network-access
     content: "Read 2026-10-22, rules not changed. APP (vlan07) has NFS and SSH to the NAS and a pass to everything except PrivateNetworks, so the whole VLAN reaches the internet, not one application. The separate WAN audit (WireGuard and Grocery only) is opnsense-wan-audit and waits until the end."
     status: pending
+  - id: monitoring-audit
+    content: "Operator 2026-10-23: audit the alerts and monitors for gaps. List what can fail (each service, host, VM, disk, NFS mount, backup stream, certificate, router, runner, CI and prod deploy) against what Uptime Kuma, Beszel, Diun, Trivy, the apt and NIC mails and the backup freshness check watch and mail (knowledge/monitoring.md, config/monitoring.yml); name what nobody would notice. Known and accepted: a dead T620, router or uplink sends nothing (decision 0006). Known gaps to cover (operator 2026-10-23): Beszel shows pending updates only for the native Linux agents (prod-nas, prod-pve); prod-apps (container agent) has the weekly apt mail, but nothing reports updates of OPNsense (FreeBSD pkg, firmware) or Home Assistant (core, OS, add-ons; its agent is an add-on). Read-only; each fix is its own item and needs consent."
+    status: pending
   - id: weekly-security-audit
     content: "Package 2 (operator 2026-10-20): a weekly audit on a timer — nmap S7 from IOT, versions, OPNsense rules (images: trivy-daily) — report by mail and on the NAS, never in public-repo artifacts"
     status: pending
@@ -48,14 +51,11 @@ todos:
     content: "Operator 2026-10-22: the public repo stays a portfolio (architecture, how deploy works). The house map (addresses, domain, mail) moves to gitignored docs and/or a module from a private repo. Current files have to be rewritten with example addresses. Do not touch history yet: one rewrite is git-history-state, after this swap, not before."
     status: pending
   - id: git-history-state
-    content: "After public-map-split (operator 2026-10-22): remove terraform/terraform.tfstate and terraform/terraform.tfstate.backup from the whole history (added in 18dd8c6, removed in ce25d3a; six 192.168 addresses, no passwords) and the old house map. One history rewrite, force-push main and homelab-v2. git-filter-repo is not installed. After that every clone is stale; GitHub can keep old objects until it purges them. Do not do this before the files are swapped, or the map comes back in new commits."
+    content: "After public-map-split (operator 2026-10-22): remove terraform/terraform.tfstate and terraform/terraform.tfstate.backup from the whole history (added in 18dd8c6, removed in ce25d3a; six 192.168 addresses, no passwords) and the old house map. One history rewrite, force-push main and develop. git-filter-repo is not installed. After that every clone is stale; GitHub can keep old objects until it purges them. Do not do this before the files are swapped, or the map comes back in new commits."
     status: pending
   - id: opnsense-wan-audit
     content: "Last (operator 2026-10-22): audit OPNsense rules. Only WireGuard and Grocery should leave on WAN. Read the rules, compare with docs/network.md (WAN 443/tcp and 51820/udp). Do not change the configuration until the audit shows a difference and the operator accepts it. Includes S7 from WireGuard and WAN (a scan from outside, e.g. a phone hotspot)."
     status: pending
-  - id: branch-develop
-    content: "Operator 2026-10-23: the DEV branch homelab-v2 becomes develop. Done: the old dev branch deleted (tip 303ffc1); the DEV workflows and utils/release-notes.py accept both names. Left, right after the next release (it carries those workflows to main, where GitHub reads Apps Deploy Dev): add develop to the branch policy of environment dev, point ruleset 25494699 at refs/heads/develop, rename the branch (gh api branches/homelab-v2/rename), move local clones; then one PR drops homelab-v2 from the triggers and the dev policy and renames it in the current docs. Router markers and config backups named homelab-v2 stay: they are the project name the scripts search for."
-    status: in_progress
   - id: subnet-refactor
     content: "At the very end, after opnsense-wan-audit (operator 2026-10-22): subnet refactor. The operator thinks the VLAN layout can be better. There is no design yet. Change nothing until a layout is approved."
     status: pending

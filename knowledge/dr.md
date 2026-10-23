@@ -6,7 +6,7 @@ DR here means “the building burned / the disk died / I bought new hardware”,
 
 | Asset | How |
 |-------|-----|
-| Repo + IaC | git (`homelab-v2` / `main`) |
+| Repo + IaC | git (`develop` / `main`) |
 | Secret *names* | [`docs/secrets-inventory.md`](../docs/secrets-inventory.md) · `config/identities.yml` |
 | Secret *values* | Bitwarden (mandatory). GH cannot give them back. |
 | Nested DEV VMs | `utils/ensure-dev-proxmox.sh` + `utils/dev-apply-local.sh` + Ansible |

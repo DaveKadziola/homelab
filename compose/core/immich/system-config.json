@@ -19,5 +19,11 @@
   },
   "reverseGeocoding": {
     "enabled": true
+  },
+  "library": {
+    "scan": {
+      "enabled": true,
+      "cronExpression": "*/15 * * * *"
+    }
   }
 }

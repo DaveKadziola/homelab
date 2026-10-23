@@ -6,9 +6,8 @@ name: Infra Plan Dev
 # pull request refs (refs/pull/N/merge). dev-plan holds a read-only (PVEAuditor) token -
 # docs/dev-proxmox.md "PR plan".
 on:
-  # TEMP: homelab-v2 until it is renamed to develop; drop it in the cleanup PR after the rename.
   pull_request:
-    branches: [homelab-v2, develop]
+    branches: [develop]
   workflow_dispatch:
 
 jobs:

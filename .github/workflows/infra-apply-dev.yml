@@ -1,9 +1,8 @@
 name: Infra Apply Dev
 
 on:
-  # TEMP: homelab-v2 until it is renamed to develop; drop it in the cleanup PR after the rename.
   push:
-    branches: [homelab-v2, develop]
+    branches: [develop]
   workflow_dispatch:
 
 jobs:

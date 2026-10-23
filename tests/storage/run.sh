@@ -7,9 +7,13 @@
 #   nfs/guard             nfs-server requires every passthrough mount (missing disk -> NFS down)
 #   samba/smbd            smbd is running
 #   samba/hosts-allow     smb.conf allows exactly the clients in config/storage.yml
-#   samba/login           the admin login lists the share, media and backups shares (from the NAS
+#   samba/login           the admin login lists the share, media, photos and backups shares (from the NAS
 #                         itself: the CI runner is not an allowed client)
 #   samba/backups-ro      a write to the backups share is refused
+#   samba/immich-ro       the immich share lists the Immich library and refuses a write
+#   samba/nas-backups     the NAS-private share is read-only and only for samba.admin_hosts:
+#                         the NAS itself (127.0.0.1, not an admin host) is refused
+#                         (SKIP where Immich is not on the NAS, as on DEV)
 #   backup/fresh-<stream> the newest artefact of each stream in config/monitoring.yml is younger
 #                         than its max age, as check-fresh.py on the NAS sees it (dry run, no
 #                         push); a stream that never produced a file is SKIP (prerequisite missing
@@ -150,10 +154,10 @@ else
   listing="$(printf '%s' "$password" | hl_nas_ssh \
     "PASSWD=\"\$(cat)\" smbclient -g -m SMB3 -L //127.0.0.1 -U '${HL_SMB_LOGIN}' 2>/dev/null")"
   if grep -q '^Disk|share|' <<<"$listing" && grep -q '^Disk|media|' <<<"$listing" \
-     && grep -q '^Disk|backups|' <<<"$listing"; then
-    report PASS "samba/login" "${HL_SMB_LOGIN} lists share, media and backups"
+     && grep -q '^Disk|backups|' <<<"$listing" && grep -q '^Disk|photos|' <<<"$listing"; then
+    report PASS "samba/login" "${HL_SMB_LOGIN} lists share, media, photos and backups"
   else
-    report FAIL "samba/login" "${HL_SMB_LOGIN} cannot list share, media and backups on //${HL_NAS_HOST}"
+    report FAIL "samba/login" "${HL_SMB_LOGIN} cannot list share, media, photos and backups on //${HL_NAS_HOST}"
   fi
 
   probe="$(printf '%s' "$password" | hl_nas_ssh \
@@ -164,6 +168,42 @@ else
     printf '%s' "$password" | hl_nas_ssh \
       "PASSWD=\"\$(cat)\" smbclient -m SMB3 //127.0.0.1/backups -U '${HL_SMB_LOGIN}' -c 'del .rw-probe'" >/dev/null 2>&1
     report FAIL "samba/backups-ro" "the backups share accepted a write"
+  fi
+
+  if ! hl_nas_ssh "test -d '${HL_EXPORT_ROOT}/media/immich/library'"; then
+    report SKIP "samba/immich-ro" "no Immich library under ${HL_EXPORT_ROOT}/media on this NAS"
+  else
+    look="$(printf '%s' "$password" | hl_nas_ssh \
+      "PASSWD=\"\$(cat)\" smbclient -m SMB3 //127.0.0.1/immich -U '${HL_SMB_LOGIN}' -c 'ls' 2>&1")"
+    probe="$(printf '%s' "$password" | hl_nas_ssh \
+      "PASSWD=\"\$(cat)\" smbclient -m SMB3 //127.0.0.1/immich -U '${HL_SMB_LOGIN}' -c 'put /etc/hostname .rw-probe' 2>&1")"
+    if grep -q 'NT_STATUS' <<<"$look"; then
+      report FAIL "samba/immich-ro" "the immich share does not list ($(grep -o -E 'NT_STATUS_[A-Z_]+' <<<"$look" | head -1))"
+    elif grep -q -E 'NT_STATUS_(ACCESS_DENIED|MEDIA_WRITE_PROTECTED)' <<<"$probe"; then
+      report PASS "samba/immich-ro" "immich lists the Immich library and refuses a write"
+    else
+      printf '%s' "$password" | hl_nas_ssh \
+        "PASSWD=\"\$(cat)\" smbclient -m SMB3 //127.0.0.1/immich -U '${HL_SMB_LOGIN}' -c 'del .rw-probe'" >/dev/null 2>&1
+      report FAIL "samba/immich-ro" "the immich share accepted a write"
+    fi
+  fi
+
+  if [[ -z "${HL_SMB_ADMIN_HOSTS:-}" ]]; then
+    report SKIP "samba/nas-backups" "no samba.admin_hosts in config/storage.yml"
+  else
+    ro="$(hl_nas_ssh "testparm -s --section-name=nas-backups --parameter-name='read only' 2>/dev/null")"
+    allow="$(hl_nas_ssh "testparm -s --section-name=nas-backups --parameter-name='hosts allow' 2>/dev/null" | norm)"
+    local_try="$(printf '%s' "$password" | hl_nas_ssh \
+      "PASSWD=\"\$(cat)\" smbclient -m SMB3 //127.0.0.1/nas-backups -U '${HL_SMB_LOGIN}' -c 'ls' 2>&1")"
+    if [[ "$ro" != "Yes" ]]; then
+      report FAIL "samba/nas-backups" "read only is '${ro}', not Yes"
+    elif [[ "$allow" != "$(printf '%s' "$HL_SMB_ADMIN_HOSTS" | norm)" ]]; then
+      report FAIL "samba/nas-backups" "hosts allow is '${allow}', config says '${HL_SMB_ADMIN_HOSTS}'"
+    elif ! grep -q 'NT_STATUS' <<<"$local_try"; then
+      report FAIL "samba/nas-backups" "127.0.0.1 is not an admin host but could list the share"
+    else
+      report PASS "samba/nas-backups" "read-only, only ${HL_SMB_ADMIN_HOSTS}; 127.0.0.1 refused ($(grep -o -E 'NT_STATUS_[A-Z_]+' <<<"$local_try" | head -1))"
+    fi
   fi
   unset password
 fi

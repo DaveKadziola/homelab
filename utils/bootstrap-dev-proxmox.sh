@@ -41,6 +41,6 @@ if $SET_TOKEN; then
 fi
 
 echo ""
-echo "Next: infra-plan-dev.yml on push homelab-v2, or locally:"
+echo "Next: infra-plan-dev.yml on push develop, or locally:"
 echo "  cd terraform && TF_WORKSPACE=homelab-dev terraform init"
 echo "  TF_WORKSPACE=homelab-dev terraform plan -var-file=environments/dev/terraform.tfvars"

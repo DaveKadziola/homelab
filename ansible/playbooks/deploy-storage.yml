@@ -326,6 +326,13 @@
               {{ samba_unix_user }} = {{ samba_login }}
           notify: Restart smbd
 
+        # DEV keeps Immich on a Docker volume, so the immich share exists only where the
+        # library is on the NAS.
+        - name: Look for the Immich library on the NAS
+          ansible.builtin.stat:
+            path: "{{ st.export_root }}/media/immich/library"
+          register: immich_library
+
         # Writes run as ansible_user (force user), the owner of the export tree, so files
         # stay readable by the containers and writable by the next deploy.
         - name: Write smb.conf
@@ -368,6 +375,25 @@
                  force user = {{ ansible_user }}
                  read only = no
                  veto files = /immich/.homelab-fs-*/lost+found/
+              {% if immich_library.stat.isdir | default(false) %}
+
+              # Photos uploaded through Immich, to look at. Read-only: Immich owns the files and
+              # its database must match them. New photos go to [photos] or through Immich.
+              [immich]
+                 comment = Photos uploaded through Immich, read-only
+                 path = {{ st.export_root }}/media/immich/library
+                 valid users = {{ samba_unix_user }}
+                 read only = yes
+              {% endif %}
+
+              # Photos the owner adds, renames or deletes; Immich imports them as an external
+              # library (mounted read-only into immich-server) and never changes them.
+              [photos]
+                 comment = Add photos here, Immich shows them after its next scan
+                 path = {{ st.export_root }}/media/photos
+                 valid users = {{ samba_unix_user }}
+                 force user = {{ ansible_user }}
+                 read only = no
 
               # Read-only on purpose: a client with ransomware must not reach the only local
               # backups. The session runs as homelab-smb, which owns nothing there either.
@@ -377,6 +403,20 @@
                  valid users = {{ samba_unix_user }}
                  read only = yes
                  veto files = /.homelab-fs-*/
+              {% if st.samba.admin_hosts | default([]) | length > 0 %}
+
+              # Every NAS-private backup (router config, HA UI YAML, VM dumps hold keys and password
+              # hashes), for the owner: read-only and only from samba.admin_hosts. The folder is
+              # root-only, so this share reads as root.
+              [nas-backups]
+                 comment = NAS-private backups, read-only, owner's devices only
+                 path = {{ st.nas_private_root }}
+                 valid users = {{ samba_unix_user }}
+                 force user = root
+                 read only = yes
+                 hosts allow = {{ st.samba.admin_hosts | join(' ') }}
+                 hosts deny = ALL
+              {% endif %}
           notify: Restart smbd
 
         - name: Start smbd, keep nmbd off

@@ -3,7 +3,7 @@
 Self-hosted homelab as code: Terraform creates the guests on Proxmox, Ansible configures them, Docker
 Compose runs the apps, GitHub Actions deploys through two self-hosted runners. prod (branch `main`) is
 one physical Proxmox host behind an OPNsense router, with Home Assistant OS on an HP T620. DEV (branch
-`homelab-v2`) runs the same code on a laptop: a nested Proxmox in libvirt and a HAOS VM twin.
+`develop`) runs the same code on a laptop: a nested Proxmox in libvirt and a HAOS VM twin.
 
 The repository is public: secret values never enter it, only their names
 ([`docs/secrets-inventory.md`](docs/secrets-inventory.md)). Operator documentation is in
@@ -87,13 +87,13 @@ python3 utils/tf-plan-risk.py --self-test    # one of the script self-tests CI V
 
 ## Change flow
 
-1. A feature branch opens a PR into `homelab-v2`. It merges itself when the required checks
+1. A feature branch opens a PR into `develop`. It merges itself when the required checks
    `validate` (CI Validate) and `plan` (Infra Plan Dev) pass; the ruleset has no bypass.
-2. The push to `homelab-v2` runs Infra Apply Dev. A successful apply starts Apps Deploy
+2. The push to `develop` runs Infra Apply Dev. A successful apply starts Apps Deploy
    Dev as its own run, and that run's tests are the next job. Same split as prod. A README
    under `ansible/` or `compose/` does not deploy. Tests Dev runs when the push changes
    tests and does not also deploy. CI Validate stays beside these: it does not touch the host.
-3. A release is a PR `homelab-v2` -> `main` (CI Validate, Infra Plan Prod); the owner merges it.
+3. A release is a PR `develop` -> `main` (CI Validate, Infra Plan Prod); the owner merges it.
 4. Infra Apply Prod asks once, on its first job (`prod-approve`). It then plans with refresh and
    classifies the plan with `utils/tf-plan-risk.py`. A safe plan with `gate` false skips `prod-gate`
    and the apply job runs without a second click. A risky plan, or a manual run with `gate=true`,
@@ -104,7 +104,7 @@ python3 utils/tf-plan-risk.py --self-test    # one of the script self-tests CI V
    publishes a GitHub release with one bullet per PR under Features, Fixes, Docs and Other
    (`utils/release-notes.py`, decision [0009](knowledge/decisions/0009-release-tag-after-prod-deploy.md)).
 
-No direct pushes to `homelab-v2` or `main`. Decision
+No direct pushes to `develop` or `main`. Decision
 [0004](knowledge/decisions/0004-ci-autonomy-and-prod-risk-gate.md); settings in
 [`docs/manual-setup.md`](docs/manual-setup.md) "CI autonomy"; fork PRs, SHA pinning and environments
 in [security](knowledge/security.md).
@@ -115,13 +115,13 @@ flowchart TB
   prodt["prod target<br/>Proxmox 192.168.20.20: ubuntu-apps 192.168.50.30, ubuntu-nas 192.168.20.12<br/>Home Assistant T620 192.168.20.13"]
   subgraph git ["Branches"]
     fb["feature branch"]
-    prv2["PR into homelab-v2"]
-    v2["homelab-v2 (DEV)"]
-    prm["release PR<br/>homelab-v2 into main"]
+    prv2["PR into develop"]
+    v2["develop (DEV)"]
+    prm["release PR<br/>develop into main"]
     main["main (prod)"]
   end
   subgraph rdev ["runner homelab-dev - laptop"]
-    val["CI Validate - job validate<br/>PRs into homelab-v2 and main<br/>no environment"]
+    val["CI Validate - job validate<br/>PRs into develop and main<br/>no environment"]
     pld["Infra Plan Dev - job plan<br/>env dev-plan, read-only token"]
     apd["Infra Apply Dev<br/>env dev"]
     dpd["Apps Deploy Dev + post-deploy-tests<br/>env dev, when deploy paths change"]
@@ -164,11 +164,11 @@ flowchart TB
 
 | Workflow | Trigger | Runner | Environment |
 | --- | --- | --- | --- |
-| CI Validate (`ci-validate.yml`) | push `homelab-v2`; PR into `homelab-v2` or `main` | `homelab-dev` | - |
-| Infra Plan Dev (`infra-plan-dev.yml`) | PR into `homelab-v2`; manual | `homelab-dev` | `dev-plan` |
-| Infra Apply Dev (`infra-apply-dev.yml`) | push `homelab-v2`; manual | `homelab-dev` | `dev` |
+| CI Validate (`ci-validate.yml`) | push `develop`; PR into `develop` or `main` | `homelab-dev` | - |
+| Infra Plan Dev (`infra-plan-dev.yml`) | PR into `develop`; manual | `homelab-dev` | `dev-plan` |
+| Infra Apply Dev (`infra-apply-dev.yml`) | push `develop`; manual | `homelab-dev` | `dev` |
 | Apps Deploy Dev (`apps-deploy-dev.yml`) | after Infra Apply Dev succeeds, same split as prod; a README does not deploy; manual | `homelab-dev` | `dev` |
-| Tests Dev (`tests-dev.yml`) | push `homelab-v2` on test files, unless that push also deploys; manual | `homelab-dev` | `dev` |
+| Tests Dev (`tests-dev.yml`) | push `develop` on test files, unless that push also deploys; manual | `homelab-dev` | `dev` |
 | Infra Plan Prod (`infra-plan.yml`) | PR into `main` | `homelab-prod` | `prod-plan` |
 | Infra Apply Prod (`infra-apply-prod.yml`) | push `main`; manual, input `gate` | `homelab-prod` | `prod`; `prod-gate` for a risky plan |
 | Apps Deploy Prod (`apps-deploy-prod.yml`) | Infra Apply Prod succeeded on `main`; manual | `homelab-prod`; job `release` on GitHub-hosted `ubuntu-24.04` | `prod`; `release` none |
@@ -197,7 +197,8 @@ apps answer on `192.168.50.30:<port>`. Decision [0007](knowledge/decisions/0007-
 The shared streams land in `/srv/purple/backups` on the NAS Purple disk, bind-mounted to
 `/export/backups` and seen by the apps host as the NFS mount `/mnt/homelab/backups`. Router config,
 HA UI YAML and VM dumps hold password hashes and keys, so they go to `/srv/purple/nas-backups`, which
-the apps host and the Samba share do not reach and which is not copied offsite. The NAS pulls the Home
+the apps host does not reach, Samba shows only read-only to the owner's laptop (`nas-backups`), and
+which is not copied offsite. The NAS pulls the Home
 Assistant backup, its UI YAML and the OPNsense config at 02:30; the apps host dumps Postgres, app
 volumes and the deployed repo at 03:15 and copies those streams and the HA backup to an encrypted
 pCloud remote; Proxmox dumps VMs 101 and 102 at 04:30.

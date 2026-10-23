@@ -147,6 +147,7 @@ def cmd_storage(env):
     print(f"HL_NAS_USER={facts.get('ansible_user', '')}")
     print(f"HL_NAS_KEY={os.path.expanduser(key) if key else ''}")
     print(f"HL_NAS_PASSTHROUGH={len(st.get('passthrough') or [])}")
+    print(f"HL_EXPORT_ROOT={st.get('export_root', '')}")
     export_root, mount_root = st.get("export_root", ""), st.get("mount_root", "")
     nfs_visible = []
     for disk in st.get("passthrough") or []:
@@ -163,6 +164,7 @@ def cmd_storage(env):
         account = next((a for a in identities_doc().get("accounts") or [] if a.get("app") == "samba"), {})
         ident = (identities_doc().get("identities") or {}).get(account.get("identity"), {})
         print(f"HL_SMB_ALLOW={' '.join(samba.get('hosts_allow') or [])}")
+        print(f"HL_SMB_ADMIN_HOSTS={' '.join(samba.get('admin_hosts') or [])}")
         print(f"HL_SMB_LOGIN={ident.get('username', '')}")
         print(f"HL_SMB_SECRET={account.get('secret', '')}")
 

@@ -178,4 +178,25 @@ else
 fi
 
 apply_system_config "$TOKEN"
+
+# Photos the owner adds over the Samba share photos, mounted read-only at /external/photos
+# (compose). One external library owned by the admin; Immich rescans it on the system-config cron.
+ensure_external_library() {
+  local token="$1" path="/external/photos" libs owner id
+  libs="$(hl_curl -H "Authorization: Bearer ${token}" "${BASE}/libraries")" || { hl_warn "cannot list libraries"; return 0; }
+  id="$(printf '%s' "$libs" | python3 -c 'import json,sys; p=sys.argv[1]; print(next((l["id"] for l in json.load(sys.stdin) if p in l.get("importPaths", [])), ""))' "$path")"
+  if [[ -z "$id" ]]; then
+    owner="$(hl_curl -H "Authorization: Bearer ${token}" "${BASE}/users/me" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')"
+    id="$(printf '{"ownerId":"%s","name":"NAS photos","importPaths":["%s"]}' "$owner" "$path" |
+      hl_curl -X POST "${BASE}/libraries" -H "Authorization: Bearer ${token}" -H 'Content-Type: application/json' --data @- |
+      python3 -c 'import json,sys; print(json.load(sys.stdin).get("id",""))' 2>/dev/null)"
+    [[ -n "$id" ]] || { hl_warn "external library ${path} not created"; return 0; }
+    hl_log "external library ${path} created"
+  fi
+  # A scan on every deploy too, so photos added since the last hourly scan show up.
+  hl_curl -X POST "${BASE}/libraries/${id}/scan" -H "Authorization: Bearer ${token}" >/dev/null || hl_warn "scan of ${path} not queued"
+  hl_log "external library ${path}: scan queued"
+}
+
+ensure_external_library "$TOKEN"
 hl_log "OK"

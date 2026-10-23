@@ -44,7 +44,7 @@ Last reviewed: 2026-10-21
 - Things the agent must never touch without an explicit request each time:
   - `main` and anything that triggers prod workflows (push to `main` applies Terraform and
     deploys apps on prod). <!-- source: .github/workflows/infra-apply-prod.yml, apps-deploy-prod.yml -->
-  - Direct pushes to `homelab-v2` (they trigger DEV Terraform apply and app deploy). Changes reach
+  - Direct pushes to `develop` (they trigger DEV Terraform apply and app deploy). Changes reach
     it only through a PR; the agent turns on auto-merge (`gh pr merge --auto --merge`) after
     `Infra Plan Dev` shows no VM replace or destroy. Never `[skip ci]`.
     <!-- source: .github/workflows/infra-apply-dev.yml, apps-deploy-dev.yml; knowledge/decisions/0004-ci-autonomy-and-prod-risk-gate.md -->
@@ -53,7 +53,7 @@ Last reviewed: 2026-10-21
   - `terraform apply` whose plan replaces `ubuntu-apps` - it wipes Docker volumes.
     <!-- source: knowledge/deployment.md:53 -->
   - The OPNsense router and its live configuration.
-  - Merging the release PR `homelab-v2` -> `main`: the operator merges it. The F9 gate that blocked
+  - Merging the release PR `develop` -> `main`: the operator merges it. The F9 gate that blocked
     it is met: wipe drill passed 2026-10-19, prod built from `main` by release #75 (2026-10-20).
     <!-- source: README.md "Change flow", "Status"; knowledge/rebuild-drill-2026-10-19b.md -->
 
@@ -85,10 +85,9 @@ Last reviewed: 2026-10-21
   `config/services.yml` -> compose -> `knowledge/apps/<app>.md`. <!-- source: README.md "Applications" -->
 - Commits: `type(scope): subject`, scope = phase (`f1` ... `f10`) when there is one.
   <!-- source: git log main..homelab-v2 -->
-- Branching and review: `homelab-v2` = DEV (to be renamed `develop` right after the next release,
-  backlog item `branch-develop`), `main` = prod. Agent work happens on a feature branch
-  and reaches `homelab-v2` through a PR that merges itself when `validate` and `plan` pass (ruleset
-  without bypass). A release is a PR `homelab-v2` -> `main` that the operator merges; prod asks for
+- Branching and review: `develop` = DEV (named `homelab-v2` until 2026-10-23), `main` = prod. Agent work happens on a feature branch
+  and reaches `develop` through a PR that merges itself when `validate` and `plan` pass (ruleset
+  without bypass). A release is a PR `develop` -> `main` that the operator merges; prod asks for
   one approval on Infra Apply Prod (`prod-approve`), plus `prod-gate` when the Terraform plan is risky. A successful apply starts Apps Deploy Prod with no second click.
   <!-- source: operator decisions 2026-10-18 and 2026-10-20; knowledge/decisions/0004-ci-autonomy-and-prod-risk-gate.md -->
 - Tools that talk to outside services (rclone, Terraform, ...): the newest stable upstream release,
@@ -105,7 +104,7 @@ Last reviewed: 2026-10-21
 
 | Name | Host / location | Purpose | Agent may change it? |
 | --- | --- | --- | --- |
-| dev | Laptop libvirt `192.168.122.0/24`; nested Proxmox; `ubuntu-apps-dev` `192.168.122.50` (SSH user `ubuntu-dev`, key `~/.ssh/homelab_dev_ed25519`) | DEV, branch `homelab-v2` | yes - tests, SSH, deploys (operator, 2026-10-18); deleting data or replacing a VM still asked each time (`AGENTS.md` section 11) |
+| dev | Laptop libvirt `192.168.122.0/24`; nested Proxmox; `ubuntu-apps-dev` `192.168.122.50` (SSH user `ubuntu-dev`, key `~/.ssh/homelab_dev_ed25519`) | DEV, branch `develop` | yes - tests, SSH, deploys (operator, 2026-10-18); deleting data or replacing a VM still asked each time (`AGENTS.md` section 11) |
 | prod | Proxmox host `192.168.20.20`; `ubuntu-apps` `192.168.50.30`; `ubuntu-nas` `192.168.20.12`; HA T620 `192.168.20.13` | prod, branch `main`; running (qm list, 2026-10-20) | no |
 | router | OPNsense, VLAN gateways in `docs/network.md:23-28` | home network | no |
 
@@ -117,7 +116,7 @@ Last reviewed: 2026-10-21
 | --- | --- | --- |
 | F0-F10 | Plan phases (F0 manual setup ... F9 audits and merge gate, F10 monitoring after prod) | `docs/plan/greenfield-notes.md` "Phases / sprints" |
 | P0 / P1 / P2 | Application priority tiers | `docs/apps-sources.md:8,25` |
-| greenfield / v2 | The rebuild on `homelab-v2`; pre-v2 code is legacy | `README.md` title; `docs/plan/greenfield-notes.md` "Git strategy — branch `homelab-v2`" |
+| greenfield / v2 | The rebuild on the DEV branch, `homelab-v2` until 2026-10-23 and `develop` since; pre-v2 code is legacy | `README.md` title; `docs/plan/greenfield-notes.md` "Git strategy — branch `homelab-v2`" |
 | F9 gate | Conditions for merging `homelab-v2` into `main` | `knowledge/rebuild-drill-2026-09-10.md:7,48-55` |
 | IOT / APP / WireGuard | Prod VLANs and the VPN network | `docs/network.md:23-28` |
 
