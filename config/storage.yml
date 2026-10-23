@@ -69,6 +69,8 @@ environments:
 # media totals ~300-400 GB on a 2 TB SSD (owner, 2026-10-19).
 exports:
   - { name: media-immich, path: media/immich, app: immich }
+  # Photos the owner adds over Samba; Immich reads them as an external library.
+  - { name: media-photos, path: media/photos, app: immich }
   - { name: media-music,  path: media/music,  app: navidrome }
   - { name: media-video,  path: media/video,  app: jellyfin }
   # owner: the UID that writes there (default: the ansible user). vsum runs as 10001 in its image.
