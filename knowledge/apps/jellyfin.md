@@ -19,6 +19,8 @@ Libraries declared in `config/services.yml` (`Movies` / `Shows` / `Music` under 
 
 Since 12.0.0 the API rejects the legacy `X-Emby-Token` header and the `api_key` query with 401 and an empty body; send the token as `Authorization: MediaBrowser ..., Token="<token>"` (verified on DEV 2026-10-18).
 
+The host has no hardware transcoding (iGPU not passed through), so plays are meant to be Direct Play or Direct Stream. On prod (2026-10-23, `journalctl -k`, `/config/log/FFmpeg.*.log`), Jellyfin Web transcoded a 1080p H.264 AVI with libx264 at 0.34-0.8x of real time, and the old 512m limit OOM-killed Jellyfin twice. An H.264 MKV with AC3 audio only had its audio converted to AAC, at 7-21x. Since then `mem_limit` is 2g.
+
 ## Recover on DEV (destructive)
 
 ```bash

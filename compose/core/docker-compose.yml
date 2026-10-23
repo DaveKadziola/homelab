@@ -256,8 +256,8 @@ services:
       - jellyfin_media:/media
     environment:
       JELLYFIN_PublishedServerUrl: ${JELLYFIN_URL:-http://192.168.122.50:8096}
-    # DEV: no HW transcode; keep footprint small
-    mem_limit: 512m
+    # No HW transcode: a software transcode of 1080p OOM-killed Jellyfin at 512m on prod (2026-10-23).
+    mem_limit: 2g
     profiles: ["media"]
 
   # Immich — own Postgres + Valkey; DEV uses local Docker volumes (not NFS SA500)
