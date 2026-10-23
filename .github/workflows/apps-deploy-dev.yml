@@ -110,6 +110,12 @@ jobs:
           NAVIDROME_ADMIN_PASSWORD: ${{ secrets.NAVIDROME_ADMIN_PASSWORD }}
           SYNCTHING_ADMIN_PASSWORD: ${{ secrets.SYNCTHING_ADMIN_PASSWORD }}
           BESZEL_ADMIN_PASSWORD: ${{ secrets.BESZEL_ADMIN_PASSWORD }}
+          VSUM_SECRET_KEY: ${{ secrets.VSUM_SECRET_KEY }}
+          VSUM_DB_PASSWORD: ${{ secrets.VSUM_DB_PASSWORD }}
+          VSUM_OPENROUTER_KEY: ${{ secrets.VSUM_OPENROUTER_KEY }}
+          VSUM_ELEVENLABS_KEY: ${{ secrets.VSUM_ELEVENLABS_KEY }}
+          VSUM_TRILIUM_TOKEN: ${{ secrets.VSUM_TRILIUM_TOKEN }}
+          VSUM_GIT_TOKEN: ${{ secrets.VSUM_GIT_TOKEN }}
         run: |
           ansible-playbook -i environments/dev/hosts.ini playbooks/deploy-core.yml
 

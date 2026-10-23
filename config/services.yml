@@ -18,7 +18,7 @@ environments:
     # App names <subdomain>.<domain> through Caddy + Authelia (utils/gen-proxy-config.py).
     domain: dev.dkhomelabserver.xyz
     # Default compose profiles (deploy-core.yml; COMPOSE_PROFILES overrides). devmail: DEV mail sink.
-    profiles: auth,media,devmail,proxy,beszel-agent
+    profiles: auth,media,devmail,proxy,beszel-agent,vsum
     inventory: ansible/environments/dev/hosts.ini
     ssh_user: ubuntu-dev
     identity: homelab-dev
@@ -56,7 +56,7 @@ services:
     port: 5432
     config_as_code: yes
     login: username
-    databases: [homelab, linkwarden, firefly3, actual, trilium, grafana, easytodo]
+    databases: [homelab, linkwarden, firefly3, actual, trilium, grafana, easytodo, vsum]
     dashboard: { group: infra, hidden: true }
 
   - name: portainer
@@ -393,6 +393,37 @@ services:
     login: none
     optional: true
     notes: KEY and TOKEN come from beszel-agent.env, written by utils/bootstrap/beszel.sh from the hub.
+
+  # vsum: video summaries; one image, built by deploy-core.yml from its private repo (vsum_ref).
+  # Profile vsum is on DEV only; prod needs the SA500 archive, a RAM decision and its own secrets.
+  - name: vsum-web
+    title: vsum (video summaries)
+    priority: P2
+    stack: core
+    profile: vsum
+    container: homelab-core-vsum-web-1
+    check: http
+    port: 8088
+    path: /healthz
+    expect: [200]
+    subdomain: vsum
+    config_as_code: yes
+    login: none
+    dashboard: { group: apps, icon: youtube }
+    notes: >-
+      Container listens on 8080 internally. Authelia is the login (VSUM_AUTH off); an https
+      VSUM_PUBLIC_URL sets the Secure cookie, so forms work only through the name.
+
+  - name: vsum-worker
+    title: vsum worker
+    priority: P2
+    stack: core
+    profile: vsum
+    container: homelab-core-vsum-worker-1
+    check: container
+    config_as_code: yes
+    login: none
+    notes: Reads channel feeds; spends money only on videos approved in vsum-web.
 
   - name: diun
     title: Diun

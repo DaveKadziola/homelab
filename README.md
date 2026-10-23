@@ -182,7 +182,7 @@ apps answer on `192.168.50.30:<port>`. Decision [0007](knowledge/decisions/0007-
 | Group | Names |
 | --- | --- |
 | infra | `portainer`, `pgadmin`, `homarr`, `dozzle`, `beszel`; DEV only: `mailpit` |
-| apps | `trilium`, `actual`, `linkwarden`, `syncthing` |
+| apps | `trilium`, `actual`, `linkwarden`, `syncthing`; DEV only (profile `vsum`): `vsum` |
 | tools | `omni-tools`, `it-tools`, `networking-toolbox`, `bentopdf` |
 | media | `navidrome`; profile `media`: `jellyfin`, `immich` |
 | no name | Grocery (public `https://grocery.dkhomelabserver.xyz` through the OPNsense HAProxy), Postgres, Diun, Beszel agent |
