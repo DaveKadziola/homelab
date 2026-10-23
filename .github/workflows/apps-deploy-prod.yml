@@ -122,6 +122,11 @@ jobs:
           python3 utils/ha.py --env prod bootstrap
           python3 utils/ha.py --env prod deploy
 
+      # The runner keeps its home between jobs, and Infra Plan Prod runs PR code there.
+      - name: Remove the prod SSH key
+        if: always()
+        run: rm -f ~/.ssh/homelab_prod_ed25519
+
   # F7-C — a deploy is not done until its tests are green. Checks that need a
   # part of prod that is not online yet report SKIP, which is not a failure.
   post-deploy-tests:
@@ -162,3 +167,7 @@ jobs:
           name: tests-prod-report
           path: tests-prod-report.json
           if-no-files-found: ignore
+
+      - name: Remove the prod SSH key
+        if: always()
+        run: rm -f ~/.ssh/homelab_prod_ed25519
