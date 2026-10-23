@@ -18,6 +18,10 @@
     grocery_image: "easytodo-grocery:{{ grocery_ref[:12] }}"
     # Same tag as compose/core/docker-compose.yml service caddy. Local build, not a registry image.
     caddy_image: homelab-caddy:2.11.7-cloudflare-0.2.4
+    # Image scanner for utils/trivy-scan.py. Upgrade: new version and the sha256 of its
+    # Linux-64bit.tar.gz from the release's checksums.txt.
+    trivy_version: "0.76.1"
+    trivy_sha256: c7cbe3137fb8a48a17574bede3dd6beb16742d1e9772929940fc90082c39d9c0
     secrets_dest: /opt/homelab/secrets
     homelab_env: "{{ lookup('env', 'HOMELAB_ENV') | default('dev', true) }}"
     # Values come from the environment, else from the per-env cache that
@@ -362,6 +366,7 @@
         - "{{ utils_src }}/host-updates.sh"
         - "{{ utils_src }}/nic-errors.sh"
         - "{{ utils_src }}/alert-mail.sh"
+        - "{{ utils_src }}/trivy-scan.py"
 
     - name: Install the weekly apt-update mail
       ansible.builtin.copy:
@@ -394,6 +399,77 @@
     - name: Enable the apt-update timer
       ansible.builtin.systemd:
         name: homelab-host-updates.timer
+        enabled: true
+        state: started
+        daemon_reload: true
+
+    - name: Read the installed Trivy version
+      ansible.builtin.command: /usr/local/bin/trivy --version
+      register: trivy_installed
+      changed_when: false
+      failed_when: false
+
+    - name: Install the pinned Trivy release
+      when: "('Version: ' ~ trivy_version) not in (trivy_installed.stdout_lines | default([''], true) | first)"
+      block:
+        - name: Download the Trivy release tarball
+          ansible.builtin.get_url:
+            url: "https://github.com/aquasecurity/trivy/releases/download/v{{ trivy_version }}/trivy_{{ trivy_version }}_Linux-64bit.tar.gz"
+            dest: "/tmp/trivy_{{ trivy_version }}.tar.gz"
+            checksum: "sha256:{{ trivy_sha256 }}"
+            mode: "0644"
+
+        - name: Put trivy into /usr/local/bin
+          ansible.builtin.unarchive:
+            src: "/tmp/trivy_{{ trivy_version }}.tar.gz"
+            dest: /usr/local/bin
+            include: [trivy]
+            remote_src: true
+            owner: root
+            group: root
+            mode: "0755"
+
+    - name: Check the Trivy version
+      ansible.builtin.command: /usr/local/bin/trivy --version
+      register: trivy_now
+      changed_when: false
+      failed_when: "('Version: ' ~ trivy_version) not in trivy_now.stdout_lines[0]"
+
+    # Audit finding S15: a daily report, not a merge gate. Mails only when the findings change.
+    - name: Install the daily image scan
+      ansible.builtin.copy:
+        dest: "/etc/systemd/system/{{ item.name }}"
+        owner: root
+        group: root
+        mode: "0644"
+        content: "{{ item.content }}"
+      loop:
+        - name: homelab-trivy.service
+          content: |
+            [Unit]
+            Description=Scan running images with Trivy, mail when the findings change
+            [Service]
+            Type=oneshot
+            Environment=HOMELAB_ENV={{ homelab_env }}
+            Environment=HOMELAB_SECRETS_DIR={{ secrets_dest }}
+            Environment=HOMELAB_CONFIG_DIR={{ homelab_root }}/config
+            ExecStart={{ homelab_root }}/utils/trivy-scan.py --mail
+            Nice=19
+            IOSchedulingClass=idle
+            TimeoutStartSec=3h
+        - name: homelab-trivy.timer
+          content: |
+            [Unit]
+            Description=Daily image scan
+            [Timer]
+            OnCalendar=*-*-* 05:30:00
+            Persistent=true
+            [Install]
+            WantedBy=timers.target
+
+    - name: Enable the image scan timer
+      ansible.builtin.systemd:
+        name: homelab-trivy.timer
         enabled: true
         state: started
         daemon_reload: true

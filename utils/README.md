@@ -80,6 +80,7 @@ Each row is the laptop script. It stops or reverts itself unless a check passes.
 | `ha.py` | Home Assistant: status, deploy `homeassistant/packages`, backup |
 | `kuma-sync.py` | Make Uptime Kuma match `config/monitoring.yml` for monitors named `homelab:` |
 | `host-updates.sh` | Apt packages due, and a newer Ubuntu cloud image |
+| `trivy-scan.py` | Trivy scan of the running images; `--mail` mails only when the HIGH and CRITICAL findings with a fix change |
 | `nic-errors.sh` | Receive errors on the Proxmox NICs. `--check` fails only when a counter grew |
 | `alert-mail.sh` | Send stdin through the SMTP settings in the environment |
 | `backup/` | `run-all.sh` on the apps host (Postgres, volumes, repo zip, offsite). `run-nas.sh` on the NAS (Home Assistant, its UI YAML, OPNsense). `check-fresh.py` ages. `restore-pg.sh` and `restore-scratch.sh` restore. `check-prune.sh` checks retention |
