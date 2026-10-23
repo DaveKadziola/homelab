@@ -28,7 +28,7 @@ environments:
     # OPNsense HAProxy as seen from the APP VLAN; Grocery trusts its X-Forwarded-* headers.
     public_proxy: 192.168.50.50
     # auth and proxy only with CLOUDFLARE_API_TOKEN: Caddy needs it for the certificate (deploy-core.yml).
-    profiles: media,auth,proxy,beszel-agent
+    profiles: media,auth,proxy,beszel-agent,vsum
     inventory: ansible/environments/prod/hosts.ini
     ssh_user: ubuntu-prod
     identity: homelab-prod
@@ -395,7 +395,7 @@ services:
     notes: KEY and TOKEN come from beszel-agent.env, written by utils/bootstrap/beszel.sh from the hub.
 
   # vsum: video summaries; one image, built by deploy-core.yml from its private repo (vsum_ref).
-  # Profile vsum is on DEV only; prod needs the SA500 archive, a RAM decision and its own secrets.
+  # Profile vsum on DEV and prod; RAM limits on prod are an open owner decision (knowledge/apps/vsum.md).
   - name: vsum-web
     title: vsum (video summaries)
     priority: P2
