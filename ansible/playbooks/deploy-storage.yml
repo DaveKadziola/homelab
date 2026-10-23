@@ -403,6 +403,20 @@
                  valid users = {{ samba_unix_user }}
                  read only = yes
                  veto files = /.homelab-fs-*/
+              {% if st.samba.admin_hosts | default([]) | length > 0 %}
+
+              # Every NAS-private backup (router config, HA UI YAML, VM dumps hold keys and password
+              # hashes), for the owner: read-only and only from samba.admin_hosts. The folder is
+              # root-only, so this share reads as root.
+              [nas-backups]
+                 comment = NAS-private backups, read-only, owner's devices only
+                 path = {{ st.nas_private_root }}
+                 valid users = {{ samba_unix_user }}
+                 force user = root
+                 read only = yes
+                 hosts allow = {{ st.samba.admin_hosts | join(' ') }}
+                 hosts deny = ALL
+              {% endif %}
           notify: Restart smbd
 
         - name: Start smbd, keep nmbd off
