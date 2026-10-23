@@ -12,3 +12,5 @@
 | `grocery/docker-compose.yml` | Public Grocery list. Deploy builds its image from the grocery repo and starts it through Portainer |
 
 Ports, profiles, and health checks are `config/services.yml`. This directory does not declare them a second time.
+
+Compose interpolates `${VAR:?}` in every service, including services of a profile that is off, so `.env` must define it in every environment (compose v5.6.1, 2026-10-23).
