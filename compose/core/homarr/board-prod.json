@@ -117,6 +117,14 @@
       "pingUrl": null
     },
     {
+      "id": "pxtsz3wmptqwmlitbvbaidw5",
+      "name": "Uptime Kuma",
+      "description": "infra",
+      "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/uptime-kuma.svg",
+      "href": "http://kuma.dkhomelabserver.xyz:3001/",
+      "pingUrl": null
+    },
+    {
       "id": "ywi01u9abx7p0lz8ghqpyqid",
       "name": "Trilium Notes",
       "description": "apps · P0",
@@ -318,6 +326,15 @@
       "kind": "app",
       "appId": "tjdue7yhm4h1wa0bjqi1dv2u",
       "xOffset": 2,
+      "yOffset": 2,
+      "width": 2,
+      "height": 1
+    },
+    {
+      "id": "2fopgp7agl6f52tax8pe8ey3",
+      "kind": "app",
+      "appId": "pxtsz3wmptqwmlitbvbaidw5",
+      "xOffset": 4,
       "yOffset": 2,
       "width": 2,
       "height": 1
