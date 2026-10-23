@@ -4,6 +4,8 @@ Scope: how changes reach homelab-v2 and prod without a human click on every step
 
 # 0004 - Auto-merge into homelab-v2 and approve prod only when the Terraform plan is risky
 
+Since 2026-10-23 the branch `homelab-v2` is named `develop`; this record keeps the old name.
+
 ## Context
 
 - A prod release needed three approvals of environment `prod`: `Infra Apply Prod` and the two jobs
