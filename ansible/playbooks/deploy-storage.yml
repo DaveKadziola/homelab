@@ -64,6 +64,16 @@
         state: present
         update_cache: true
 
+    # Audit finding S27; the include in sshd_config comes before its X11Forwarding yes.
+    - name: Turn off SSH X11 forwarding
+      ansible.builtin.copy:
+        dest: /etc/ssh/sshd_config.d/10-homelab.conf
+        owner: root
+        group: root
+        mode: "0644"
+        content: "X11Forwarding no\n"
+      notify: Reload ssh
+
     - name: Passthrough disks
       when: passthrough | length > 0
       block:
@@ -228,8 +238,8 @@
       ansible.builtin.file:
         path: "{{ st.export_root }}/{{ item.path }}"
         state: directory
-        owner: "{{ ansible_user }}"
-        group: "{{ ansible_user }}"
+        owner: "{{ item.owner | default(ansible_user) }}"
+        group: "{{ item.owner | default(ansible_user) }}"
         mode: "0755"
       loop: "{{ storage.exports }}"
 
@@ -530,6 +540,11 @@
       ansible.builtin.service:
         name: smbd
         state: restarted
+
+    - name: Reload ssh
+      ansible.builtin.service:
+        name: ssh
+        state: reloaded
 
 - name: Homelab storage — NFS client + backup timer
   hosts: ubuntu_docker

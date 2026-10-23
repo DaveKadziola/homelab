@@ -16,8 +16,16 @@
     grocery_repo: https://github.com/DaveKadziola/easytodo-grocery-list
     grocery_ref: bb37f507a2beef956806c76848c39ddc79599cd5  # tag v2.0.0
     grocery_image: "easytodo-grocery:{{ grocery_ref[:12] }}"
+    # vsum (profile vsum), private repo: same pinning as grocery; the build reads VSUM_GIT_TOKEN.
+    vsum_repo: https://github.com/DaveKadziola/video-summarizer
+    vsum_ref: 37d88d6a5291438a41bfac5cc41a44eeadb7a6ae  # master, release PR #7 (v1.1.0)
+    vsum_image: "vsum:{{ vsum_ref[:12] }}"
     # Same tag as compose/core/docker-compose.yml service caddy. Local build, not a registry image.
     caddy_image: homelab-caddy:2.11.7-cloudflare-0.2.4
+    # Image scanner for utils/trivy-scan.py. Upgrade: new version and the sha256 of its
+    # Linux-64bit.tar.gz from the release's checksums.txt.
+    trivy_version: "0.76.1"
+    trivy_sha256: c7cbe3137fb8a48a17574bede3dd6beb16742d1e9772929940fc90082c39d9c0
     secrets_dest: /opt/homelab/secrets
     homelab_env: "{{ lookup('env', 'HOMELAB_ENV') | default('dev', true) }}"
     # Values come from the environment, else from the per-env cache that
@@ -57,6 +65,12 @@
       - SMTP_PASSWORD
       # Caddy's DNS challenge for the prod wildcard certificate (decision 0007).
       - CLOUDFLARE_API_TOKEN
+      - VSUM_SECRET_KEY
+      - VSUM_DB_PASSWORD
+      - VSUM_OPENROUTER_KEY
+      - VSUM_ELEVENLABS_KEY
+      - VSUM_TRILIUM_TOKEN
+      - VSUM_GIT_TOKEN
     postgres_password: "{{ resolved_secrets.POSTGRES_PASSWORD }}"
     immich_db_password: "{{ resolved_secrets.IMMICH_DB_PASSWORD | default(postgres_password, true) }}"
     # proxy + auth: Caddy names and Authelia in front of the apps (decision 0007). Prod turns them on
@@ -73,6 +87,11 @@
     # Runs on the controller (the runner or the laptop), like the other config lookups.
     proxy_gen: "python3 {{ utils_src }}/gen-proxy-config.py --env {{ homelab_env }} --profiles {{ compose_profiles }}"
     smtp: "{{ monitoring.environments[homelab_env].smtp }}"
+    # Caddy name of vsum-web (subdomain in config/services.yml). https sets vsum's Secure cookie, so
+    # its forms work only through that name; without proxy the links in Trilium notes are left out.
+    vsum_public_url: >-
+      {{ 'https://vsum.' ~ services_doc.environments[homelab_env].domain
+         if 'proxy' in compose_profiles.split(',') else '' }}
     run_bootstrap: "{{ lookup('env', 'HOMELAB_SKIP_BOOTSTRAP') | default('', true) | length == 0 }}"
     # Prod binds Immich/Jellyfin/Navidrome libraries to NFS. Never on DEV —
     # that would hide the existing named volumes (Immich photos).
@@ -88,6 +107,16 @@
         regexp: '^127\.0\.1\.1\s'
         line: "127.0.1.1 {{ ansible_hostname }}"
         insertafter: '^127\.0\.0\.1'
+
+    # Audit finding S27; the include in sshd_config comes before its X11Forwarding yes.
+    - name: Turn off SSH X11 forwarding
+      ansible.builtin.copy:
+        dest: /etc/ssh/sshd_config.d/10-homelab.conf
+        owner: root
+        group: root
+        mode: "0644"
+        content: "X11Forwarding no\n"
+      notify: Reload ssh
 
     - name: Resolve secrets from the environment or the operator secret cache
       ansible.builtin.set_fact:
@@ -118,6 +147,15 @@
         fail_msg: >-
           Generate missing secrets with
           utils/gen-app-credentials.sh --env {{ homelab_env }} --all
+
+    - name: Require the vsum repository token when profile vsum is on
+      when: "'vsum' in compose_profiles.split(',')"
+      ansible.builtin.assert:
+        that:
+          - resolved_secrets.VSUM_GIT_TOKEN | length > 0
+        fail_msg: >-
+          Profile vsum builds its image from a private repository. Set VSUM_GIT_TOKEN in GitHub
+          environment {{ homelab_env }} (knowledge/apps/vsum.md), or remove vsum from the profiles.
 
     - name: Ensure compose directories
       ansible.builtin.file:
@@ -283,6 +321,13 @@
           IMMICH_VERSION={{ lookup('env', 'IMMICH_VERSION') | default('v3.3.3', true) }}
           JELLYFIN_URL={{ lookup('env', 'JELLYFIN_URL') | default('http://192.168.122.50:8096', true) }}
           BESZEL_HUB_URL={{ lookup('env', 'BESZEL_HUB_URL') | default('http://127.0.0.1:8090', true) }}
+          VSUM_IMAGE={{ vsum_image }}
+          VSUM_SECRET_KEY={{ resolved_secrets.VSUM_SECRET_KEY | default(postgres_password, true) }}
+          VSUM_DB_PASSWORD={{ resolved_secrets.VSUM_DB_PASSWORD | default(postgres_password, true) }}
+          VSUM_OPENROUTER_KEY={{ resolved_secrets.VSUM_OPENROUTER_KEY }}
+          VSUM_ELEVENLABS_KEY={{ resolved_secrets.VSUM_ELEVENLABS_KEY }}
+          VSUM_TRILIUM_TOKEN={{ resolved_secrets.VSUM_TRILIUM_TOKEN }}
+          VSUM_PUBLIC_URL={{ vsum_public_url }}
       no_log: true
 
     # The bootstrap scripts read secrets from here, so a re-run on the host
@@ -362,6 +407,7 @@
         - "{{ utils_src }}/host-updates.sh"
         - "{{ utils_src }}/nic-errors.sh"
         - "{{ utils_src }}/alert-mail.sh"
+        - "{{ utils_src }}/trivy-scan.py"
 
     - name: Install the weekly apt-update mail
       ansible.builtin.copy:
@@ -398,6 +444,77 @@
         state: started
         daemon_reload: true
 
+    - name: Read the installed Trivy version
+      ansible.builtin.command: /usr/local/bin/trivy --version
+      register: trivy_installed
+      changed_when: false
+      failed_when: false
+
+    - name: Install the pinned Trivy release
+      when: "('Version: ' ~ trivy_version) not in (trivy_installed.stdout_lines | default([''], true) | first)"
+      block:
+        - name: Download the Trivy release tarball
+          ansible.builtin.get_url:
+            url: "https://github.com/aquasecurity/trivy/releases/download/v{{ trivy_version }}/trivy_{{ trivy_version }}_Linux-64bit.tar.gz"
+            dest: "/tmp/trivy_{{ trivy_version }}.tar.gz"
+            checksum: "sha256:{{ trivy_sha256 }}"
+            mode: "0644"
+
+        - name: Put trivy into /usr/local/bin
+          ansible.builtin.unarchive:
+            src: "/tmp/trivy_{{ trivy_version }}.tar.gz"
+            dest: /usr/local/bin
+            include: [trivy]
+            remote_src: true
+            owner: root
+            group: root
+            mode: "0755"
+
+    - name: Check the Trivy version
+      ansible.builtin.command: /usr/local/bin/trivy --version
+      register: trivy_now
+      changed_when: false
+      failed_when: "('Version: ' ~ trivy_version) not in trivy_now.stdout_lines[0]"
+
+    # Audit finding S15: a daily report, not a merge gate. Mails only when the findings change.
+    - name: Install the daily image scan
+      ansible.builtin.copy:
+        dest: "/etc/systemd/system/{{ item.name }}"
+        owner: root
+        group: root
+        mode: "0644"
+        content: "{{ item.content }}"
+      loop:
+        - name: homelab-trivy.service
+          content: |
+            [Unit]
+            Description=Scan running images with Trivy, mail when the findings change
+            [Service]
+            Type=oneshot
+            Environment=HOMELAB_ENV={{ homelab_env }}
+            Environment=HOMELAB_SECRETS_DIR={{ secrets_dest }}
+            Environment=HOMELAB_CONFIG_DIR={{ homelab_root }}/config
+            ExecStart={{ homelab_root }}/utils/trivy-scan.py --mail
+            Nice=19
+            IOSchedulingClass=idle
+            TimeoutStartSec=3h
+        - name: homelab-trivy.timer
+          content: |
+            [Unit]
+            Description=Daily image scan
+            [Timer]
+            OnCalendar=*-*-* 05:30:00
+            Persistent=true
+            [Install]
+            WantedBy=timers.target
+
+    - name: Enable the image scan timer
+      ansible.builtin.systemd:
+        name: homelab-trivy.timer
+        enabled: true
+        state: started
+        daemon_reload: true
+
     # docker-buildx: without it `docker build` falls back to the legacy builder, which rejects
     # BuildKit syntax such as `ADD --chmod` in the Grocery v2 Dockerfile.
     - name: Ensure docker compose plugin / v2, buildx and the bootstrap dependencies
@@ -429,6 +546,28 @@
       when:
         - "'proxy' in compose_profiles.split(',')"
         - (caddy_dockerfile.changed | default(false)) or ((caddy_image_check.rc | default(1)) != 0)
+
+    # `up` cannot pull vsum: the image exists only where it was built. A new vsum_ref is a new tag.
+    - name: Check whether the vsum image exists
+      ansible.builtin.command: docker image inspect {{ vsum_image }}
+      register: vsum_image_check
+      changed_when: false
+      failed_when: false
+      check_mode: false
+      when: "'vsum' in compose_profiles.split(',')"
+
+    # BuildKit reads the token from its GIT_AUTH_TOKEN secret: not in argv, not in the image.
+    - name: Build the vsum image from the app repository
+      ansible.builtin.command: >-
+        docker build -t {{ vsum_image }}
+        --secret id=GIT_AUTH_TOKEN,env=GIT_AUTH_TOKEN
+        {{ vsum_repo }}.git#{{ vsum_ref }}
+      environment:
+        GIT_AUTH_TOKEN: "{{ resolved_secrets.VSUM_GIT_TOKEN }}"
+      changed_when: true
+      when:
+        - "'vsum' in compose_profiles.split(',')"
+        - (vsum_image_check.rc | default(1)) != 0
 
     - name: Start core stack
       ansible.builtin.command:
@@ -520,3 +659,8 @@
         cmd: docker compose {{ compose_file_args }} --env-file {{ compose_dest }}/.env restart authelia
         chdir: "{{ compose_dest }}"
       changed_when: true
+
+    - name: Reload ssh
+      ansible.builtin.service:
+        name: ssh
+        state: reloaded

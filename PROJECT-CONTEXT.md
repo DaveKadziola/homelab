@@ -65,7 +65,7 @@ Last reviewed: 2026-10-21
 | Build | - | nothing to build |
 | Test (all) | `utils/run-tests.sh --env dev --suite all` | `README.md` "Where to start"; `all` = smoke, infra, net, config, storage, ha (`utils/run-tests.sh:15`); `restore` is opt-in and not in `all` |
 | Test (single) | `utils/run-tests.sh --env dev --suite <smoke\|infra\|net\|config\|storage\|ha\|restore>` | `utils/run-tests.sh:4`. Only `config` is static; `ha` talks to the Home Assistant API (`utils/ha.py`), the others reach DEV hosts over SSH |
-| Lint / format | `terraform fmt -check -recursive`; `terraform validate`; `ansible-lint ansible/playbooks/`; `docker compose --profile auth --profile media config` (in `compose/core`, needs placeholder env values); `./utils/pve-attach-nas-disks.sh --self-test`; `python3 utils/pve-network.py --self-test`; `python3 utils/bw-store.py --self-test`; `python3 utils/tf-plan-risk.py --self-test`; `python3 utils/ha.py --self-test`; `python3 utils/backup/check-fresh.py --self-test`; `python3 utils/pve-backup-job.py --self-test`; `python3 utils/gen-proxy-config.py --self-test`; `python3 utils/kuma-sync.py --self-test`; `python3 utils/bootstrap/beszel_config.py --self-test`; `python3 utils/prepare-infra.py --self-test` | `.github/workflows/ci-validate.yml` (step "Script self-tests") |
+| Lint / format | `terraform fmt -check -recursive`; `terraform validate`; `ansible-lint ansible/playbooks/`; `docker compose --profile auth --profile media config` (in `compose/core`, needs placeholder env values); `./utils/pve-attach-nas-disks.sh --self-test`; `python3 utils/pve-network.py --self-test`; `python3 utils/bw-store.py --self-test`; `python3 utils/tf-plan-risk.py --self-test`; `python3 utils/ha.py --self-test`; `python3 utils/backup/check-fresh.py --self-test`; `python3 utils/pve-backup-job.py --self-test`; `python3 utils/gen-proxy-config.py --self-test`; `python3 utils/kuma-sync.py --self-test`; `python3 utils/bootstrap/beszel_config.py --self-test`; `python3 utils/prepare-infra.py --self-test`; `python3 utils/trivy-scan.py --self-test`; `python3 utils/release-notes.py --self-test` | `.github/workflows/ci-validate.yml` (step "Script self-tests") |
 | Kit check | `python3 scripts/validate_kit.py` | agent kit |
 | Run locally | - | |
 | Deploy | through GitHub Actions on push | Never run by the agent without an explicit request |
@@ -85,7 +85,8 @@ Last reviewed: 2026-10-21
   `config/services.yml` -> compose -> `knowledge/apps/<app>.md`. <!-- source: README.md "Applications" -->
 - Commits: `type(scope): subject`, scope = phase (`f1` ... `f10`) when there is one.
   <!-- source: git log main..homelab-v2 -->
-- Branching and review: `homelab-v2` = DEV, `main` = prod. Agent work happens on a feature branch
+- Branching and review: `homelab-v2` = DEV (to be renamed `develop` right after the next release,
+  backlog item `branch-develop`), `main` = prod. Agent work happens on a feature branch
   and reaches `homelab-v2` through a PR that merges itself when `validate` and `plan` pass (ruleset
   without bypass). A release is a PR `homelab-v2` -> `main` that the operator merges; prod asks for
   one approval on Infra Apply Prod (`prod-approve`), plus `prod-gate` when the Terraform plan is risky. A successful apply starts Apps Deploy Prod with no second click.

@@ -71,6 +71,8 @@ exports:
   - { name: media-immich, path: media/immich, app: immich }
   - { name: media-music,  path: media/music,  app: navidrome }
   - { name: media-video,  path: media/video,  app: jellyfin }
+  # owner: the UID that writes there (default: the ansible user). vsum runs as 10001 in its image.
+  - { name: media-vsum,   path: media/vsum,   app: vsum, owner: 10001 }
   - { name: sync,         path: media/sync,   app: syncthing }
   - { name: backups,      path: backups,      app: backup }
 

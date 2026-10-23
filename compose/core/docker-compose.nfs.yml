@@ -25,3 +25,12 @@ services:
     volumes:
       - syncthing_data:/var/syncthing
       - /mnt/homelab/media/sync:/var/syncthing/HomelabSync
+
+  # SA500 export media/vsum, owned by UID 10001 (the image user; config/storage.yml).
+  vsum-web:
+    volumes:
+      - /mnt/homelab/media/vsum:/archive
+
+  vsum-worker:
+    volumes:
+      - /mnt/homelab/media/vsum:/archive

@@ -17,7 +17,7 @@ One real mailbox per environment (Proton):
 
 Apps that login by **email** use that mailbox. Apps that login by **username** use `admin`. Never use `*.local` as an email — pgAdmin refuses reserved TLDs.
 
-Generator: `utils/gen-app-credentials.sh` → GH Environment secret + `~/.homelab-secrets/<env>/<NAME>` + Bitwarden (`utils/bw-store.py`, below). No staging file since 2026-10-20. Values never go in git. Argon2/bcrypt **hashes** may.
+Generator: `utils/gen-app-credentials.sh` → GH Environment secret + `~/.homelab-secrets/<env>/<NAME>` + Bitwarden (`utils/bw-store.py`, below). No staging file since 2026-10-20. A value another service issues (`issued_by`, e.g. a GitHub token) goes the same three ways with `--secret <NAME> --paste`: read from the terminal, hidden, and marked `set` in `docs/secrets-inventory.md`. Values never go in git. Argon2/bcrypt **hashes** may.
 
 The Beszel agent key and token are issued by the hub and stay on the apps host (`compose/core/beszel-agent.env`, written by the bootstrap); they are not GitHub secrets.
 
@@ -27,14 +27,14 @@ The Beszel agent key and token are issued by the hub and stay on the apps host (
 |-------|--------|
 | Authelia | In front of every app name through Caddy (profiles `auth` + `proxy`, [decision 0007](decisions/0007-app-names-caddy-authelia.md)), one factor, except the paths in `auth_bypass`. Cookie domain `dev.dkhomelabserver.xyz` on DEV, `dkhomelabserver.xyz` on prod, where both profiles run only once `CLOUDFLARE_API_TOKEN` is in environment `prod` (`ansible/playbooks/deploy-core.yml` `compose_profiles`). The app ports stay published (Caddy's upstream is `host.docker.internal:<port>`, `utils/gen-proxy-config.py`), so `<host>:<port>` reaches each app directly, without Authelia. |
 | App admins | Converged by `utils/bootstrap/*.sh` where the app has an API/CLI |
-| SSH | Key-only to the apps guest. Root on the prod Proxmox host: own laptop key `~/.ssh/homelab_prod_pve_ed25519` since 2026-10-20; the DEV key `~/.ssh/homelab_dev_ed25519` (also GH `dev` `UBUNTU_DOCKER_SSH_PRIV`, an environment without reviewer) no longer logs in there. Lost key: console login with the root password |
+| SSH | Key-only to the apps guest. NAS and apps: X11 forwarding off (`/etc/ssh/sshd_config.d/10-homelab.conf`, written by the deploy). Root on the prod Proxmox host: own laptop key `~/.ssh/homelab_prod_pve_ed25519` since 2026-10-20; the DEV key `~/.ssh/homelab_dev_ed25519` (also GH `dev` `UBUNTU_DOCKER_SSH_PRIV`, an environment without reviewer) no longer logs in there. Lost key: console login with the root password |
 | TLS | Caddy: DEV internal CA, prod Let's Encrypt wildcard `*.dkhomelabserver.xyz` through the Cloudflare DNS challenge (`utils/gen-proxy-config.py`); Authelia is plain HTTP behind it. Public grocery ACME is a prod HAProxy job. |
 
 ## CI on a public repository
 
 Threat model, checked 2026-10-20 with `gh api` (sources at the end).
 
-- The repository is public and both runners sit inside the home network: `homelab-dev-laptop` runs as the laptop user `kdzl`, whose home holds `~/.homelab-secrets/` and `~/.ssh/`; `homelab-prod-ci-runner` runs as `runner` in the unprivileged CT 110 `ci-runner` on IOT (`192.168.20.14`). A job can read whatever its runner user can read.
+- The repository is public and both runners sit inside the home network: `homelab-dev-laptop` runs as the laptop user `kdzl`, whose home holds `~/.homelab-secrets/` and `~/.ssh/`; `homelab-prod-ci-runner` runs as `runner` in the unprivileged CT 110 `ci-runner` on IOT (`192.168.20.14`). A job can read whatever its runner user can read. Apps Deploy Prod writes the `ubuntu-prod` key (sudo on NAS and apps) to `~/.ssh/homelab_prod_ed25519` for its jobs and removes it at the end of each one (`if: always()`), so a later job on that runner, such as Infra Plan Prod of a PR, does not find it (S20; until 2026-10-23 the key stayed there).
 - Fork PRs trigger `CI Validate` and `Infra Plan Dev` on the laptop runner and `Infra Plan Prod` on the prod runner, with the PR's own workflow files. Every external contributor's run waits for the owner (`approval_policy: all_external_contributors`); approving one hands its code a shell on that runner, so approve only after reading the whole diff, workflows included.
 - Every `uses:` is pinned to a commit SHA and GitHub enforces it (`sha_pinning_required: true`): a moved or hijacked tag cannot change what runs. To update an action, take the commit of the new tag (`gh api repos/<owner>/<action>/commits/<tag> --jq .sha`) and replace the SHA and the version comment in every workflow. `GITHUB_TOKEN` is read-only by default and cannot approve PRs.
 - Rulesets without bypass actors: `main` accepts changes only through a PR (0 approvals) and refuses force pushes and deletion; `homelab-v2` the same, plus required checks `validate` and `plan`.

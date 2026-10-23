@@ -117,6 +117,14 @@
       "pingUrl": null
     },
     {
+      "id": "pxtsz3wmptqwmlitbvbaidw5",
+      "name": "Uptime Kuma",
+      "description": "infra",
+      "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/uptime-kuma.svg",
+      "href": "http://kuma.dkhomelabserver.xyz:3001/",
+      "pingUrl": null
+    },
+    {
       "id": "ywi01u9abx7p0lz8ghqpyqid",
       "name": "Trilium Notes",
       "description": "apps · P0",
@@ -155,6 +163,14 @@
       "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/syncthing.svg",
       "href": "https://syncthing.dkhomelabserver.xyz/",
       "pingUrl": "http://192.168.50.30:8384/"
+    },
+    {
+      "id": "m8ncljuu6xjrh9s6rpsfn06q",
+      "name": "vsum (video summaries)",
+      "description": "apps · P2",
+      "iconUrl": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/youtube.svg",
+      "href": "https://vsum.dkhomelabserver.xyz/",
+      "pingUrl": "http://192.168.50.30:8088/healthz"
     },
     {
       "id": "byi2xwhgfchqure1raf0wpxo",
@@ -323,6 +339,15 @@
       "height": 1
     },
     {
+      "id": "2fopgp7agl6f52tax8pe8ey3",
+      "kind": "app",
+      "appId": "pxtsz3wmptqwmlitbvbaidw5",
+      "xOffset": 4,
+      "yOffset": 2,
+      "width": 2,
+      "height": 1
+    },
+    {
       "id": "k26xo29ha3729lpbo08d38zx",
       "kind": "app",
       "appId": "ywi01u9abx7p0lz8ghqpyqid",
@@ -368,11 +393,20 @@
       "height": 1
     },
     {
+      "id": "foj419cl73njok0uuzz0h3kb",
+      "kind": "app",
+      "appId": "m8ncljuu6xjrh9s6rpsfn06q",
+      "xOffset": 0,
+      "yOffset": 4,
+      "width": 2,
+      "height": 1
+    },
+    {
       "id": "pl3eroeh38f4pws6lmsy2sv9",
       "kind": "app",
       "appId": "byi2xwhgfchqure1raf0wpxo",
       "xOffset": 0,
-      "yOffset": 4,
+      "yOffset": 5,
       "width": 2,
       "height": 1
     },
@@ -381,7 +415,7 @@
       "kind": "app",
       "appId": "0uiahk2bhbjciqg2v2x68217",
       "xOffset": 2,
-      "yOffset": 4,
+      "yOffset": 5,
       "width": 2,
       "height": 1
     },
@@ -390,7 +424,7 @@
       "kind": "app",
       "appId": "snwqgi2dgx2srbwxzm3t2uqi",
       "xOffset": 4,
-      "yOffset": 4,
+      "yOffset": 5,
       "width": 2,
       "height": 1
     },
@@ -399,7 +433,7 @@
       "kind": "app",
       "appId": "jqc2rg30sqlymii57n9i6nmz",
       "xOffset": 0,
-      "yOffset": 5,
+      "yOffset": 6,
       "width": 2,
       "height": 1
     },
@@ -408,7 +442,7 @@
       "kind": "app",
       "appId": "10bqiht2g1noad7cecx85in0",
       "xOffset": 2,
-      "yOffset": 5,
+      "yOffset": 6,
       "width": 2,
       "height": 1
     },
@@ -417,7 +451,7 @@
       "kind": "app",
       "appId": "5wkvvxvfv3sk1uez1bdz4cpi",
       "xOffset": 4,
-      "yOffset": 5,
+      "yOffset": 6,
       "width": 2,
       "height": 1
     },
@@ -426,7 +460,7 @@
       "kind": "app",
       "appId": "1nqk1e16kh07ezjyvvub1skc",
       "xOffset": 6,
-      "yOffset": 5,
+      "yOffset": 6,
       "width": 2,
       "height": 1
     }

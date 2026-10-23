@@ -1,13 +1,14 @@
 name: Infra Plan Dev
 
-# On pull requests to homelab-v2, so the plan is seen before the merge; Infra Apply Dev runs on the
+# On pull requests to develop, so the plan is seen before the merge; Infra Apply Dev runs on the
 # push after it. Both used to start on the same push and the plan often ran after the apply, so it
-# always showed "No changes". Environment dev-plan, not dev: dev allows only homelab-v2 and rejects
+# always showed "No changes". Environment dev-plan, not dev: dev allows only develop and main and rejects
 # pull request refs (refs/pull/N/merge). dev-plan holds a read-only (PVEAuditor) token -
 # docs/dev-proxmox.md "PR plan".
 on:
+  # TEMP: homelab-v2 until it is renamed to develop; drop it in the cleanup PR after the rename.
   pull_request:
-    branches: [homelab-v2]
+    branches: [homelab-v2, develop]
   workflow_dispatch:
 
 jobs:

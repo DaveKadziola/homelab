@@ -100,6 +100,9 @@ python3 utils/tf-plan-risk.py --self-test    # one of the script self-tests CI V
    waits in `prod-gate`. The apply job applies only a plan with the same digest.
 5. Apps Deploy Prod follows a successful Infra Apply Prod with no second click, and ends with
    the post-deploy tests. A manual run of this workflow asks once (`prod-approve`).
+6. When the post-deploy tests pass, the `release` job tags the deployed commit `vX.Y.Z` and
+   publishes a GitHub release with one bullet per PR under Features, Fixes, Docs and Other
+   (`utils/release-notes.py`, decision [0009](knowledge/decisions/0009-release-tag-after-prod-deploy.md)).
 
 No direct pushes to `homelab-v2` or `main`. Decision
 [0004](knowledge/decisions/0004-ci-autonomy-and-prod-risk-gate.md); settings in
@@ -126,12 +129,14 @@ flowchart TB
   end
   subgraph rprod ["runner homelab-prod - CT 110 ci-runner 192.168.20.14 on the prod Proxmox host"]
     plp["Infra Plan Prod - job plan<br/>env prod-plan, read-only token, -refresh=false"]
+    appr["Infra Apply Prod - job approve<br/>env prod-approve, owner approves once"]
     iap["Infra Apply Prod - job plan<br/>env prod, plan with refresh, utils/tf-plan-risk.py"]
     risk{"risky plan<br/>or gate=true?"}
     gate["Infra Apply Prod - job gate<br/>env prod-gate, owner approves"]
     apply["Infra Apply Prod - job apply<br/>env prod, plans again, applies only the same digest"]
     dpp["Apps Deploy Prod + post-deploy-tests<br/>env prod"]
   end
+  rel["Apps Deploy Prod - job release<br/>GitHub-hosted, contents: write<br/>tag vX.Y.Z + release notes"]
   fb -->|"open PR"| prv2
   prv2 -->|"required check validate"| val
   prv2 -->|"required check plan"| pld
@@ -145,7 +150,8 @@ flowchart TB
   v2 -->|"release"| prm
   prm -->|"plan"| plp
   prm -->|"owner merges"| main
-  main -->|"push"| iap
+  main -->|"push"| appr
+  appr -->|"approved"| iap
   iap -->|"classify"| risk
   risk -->|"yes"| gate
   risk -->|"no"| apply
@@ -153,6 +159,7 @@ flowchart TB
   apply -->|"workflow_run: success"| dpp
   apply -->|"terraform apply"| prodt
   dpp -->|"Ansible, Compose, HA, tests"| prodt
+  dpp -->|"tests passed"| rel
 ```
 
 | Workflow | Trigger | Runner | Environment |
@@ -164,7 +171,7 @@ flowchart TB
 | Tests Dev (`tests-dev.yml`) | push `homelab-v2` on test files, unless that push also deploys; manual | `homelab-dev` | `dev` |
 | Infra Plan Prod (`infra-plan.yml`) | PR into `main` | `homelab-prod` | `prod-plan` |
 | Infra Apply Prod (`infra-apply-prod.yml`) | push `main`; manual, input `gate` | `homelab-prod` | `prod`; `prod-gate` for a risky plan |
-| Apps Deploy Prod (`apps-deploy-prod.yml`) | Infra Apply Prod succeeded on `main`; manual | `homelab-prod` | `prod` |
+| Apps Deploy Prod (`apps-deploy-prod.yml`) | Infra Apply Prod succeeded on `main`; manual | `homelab-prod`; job `release` on GitHub-hosted `ubuntu-24.04` | `prod`; `release` none |
 
 ## Applications
 
@@ -180,17 +187,20 @@ apps answer on `192.168.50.30:<port>`. Decision [0007](knowledge/decisions/0007-
 | Group | Names |
 | --- | --- |
 | infra | `portainer`, `pgadmin`, `homarr`, `dozzle`, `beszel`; DEV only: `mailpit` |
-| apps | `trilium`, `actual`, `linkwarden`, `syncthing` |
+| apps | `trilium`, `actual`, `linkwarden`, `syncthing`; profile `vsum`: `vsum` |
 | tools | `omni-tools`, `it-tools`, `networking-toolbox`, `bentopdf` |
 | media | `navidrome`; profile `media`: `jellyfin`, `immich` |
 | no name | Grocery (public `https://grocery.dkhomelabserver.xyz` through the OPNsense HAProxy), Postgres, Diun, Beszel agent |
 
 ## Backups and monitoring
 
-Every stream lands in `/srv/purple/backups` on the NAS Purple disk, bind-mounted to `/export/backups`
-and seen by the apps host as the NFS mount `/mnt/homelab/backups`. The NAS pulls the Home Assistant
-backup, its UI YAML and the OPNsense config at 02:30; the apps host dumps Postgres, app volumes and
-the deployed repo at 03:15 and copies the tree to pCloud; Proxmox dumps VMs 101 and 102 at 04:30.
+The shared streams land in `/srv/purple/backups` on the NAS Purple disk, bind-mounted to
+`/export/backups` and seen by the apps host as the NFS mount `/mnt/homelab/backups`. Router config,
+HA UI YAML and VM dumps hold password hashes and keys, so they go to `/srv/purple/nas-backups`, which
+the apps host and the Samba share do not reach and which is not copied offsite. The NAS pulls the Home
+Assistant backup, its UI YAML and the OPNsense config at 02:30; the apps host dumps Postgres, app
+volumes and the deployed repo at 03:15 and copies those streams and the HA backup to an encrypted
+pCloud remote; Proxmox dumps VMs 101 and 102 at 04:30.
 Retention is the 2 newest files per name prefix (UI YAML: 30); media and the Samba share are not included. On DEV
 one guest is NAS and apps host, offsite is off. [backup](knowledge/backup.md), [dr](knowledge/dr.md)
 
@@ -198,7 +208,7 @@ one guest is NAS and apps host, offsite is off. [backup](knowledge/backup.md), [
 flowchart LR
   ha["Home Assistant<br/>T620 192.168.20.13<br/>(DEV: HAOS twin)"]
   opns["OPNsense<br/>192.168.20.1"]
-  pcloud["pCloud pcloud:homelab-backups<br/>offsite, DR only"]
+  pcloud["pCloud pcloud-crypt:homelab-backups<br/>encrypted, offsite, DR only"]
   pve["Proxmox 192.168.20.20<br/>job homelab-vms 04:30<br/>vzdump VM 101, 102, keep-last=2"]
   kuma["Uptime Kuma on Home Assistant :3001<br/>one push monitor per stream"]
   mail["mail to the environment mailbox<br/>prod: Proton SMTP, DEV: mailpit"]
@@ -207,6 +217,7 @@ flowchart LR
     hay["ha-yaml.sh: UI YAML snapshots, keep 30<br/>utils/ha.py export-ui, HA_SSH_PRIV"]
     opx["opnsense.sh: config.xml<br/>forced-command key, prod only"]
     store["Purple 4 TB: /srv/purple/backups<br/>bind-mounted to /export/backups<br/>keep 2 newest per name prefix"]
+    private["NAS-private: /srv/purple/nas-backups<br/>not exported to apps, not offsite"]
     chk["check-fresh.py<br/>homelab-backup-check.timer 06:00<br/>max ages: config/monitoring.yml"]
   end
   subgraph apps ["ubuntu-apps 192.168.50.30 - homelab-backup.timer 03:15 (run-all.sh)"]
@@ -214,22 +225,23 @@ flowchart LR
     vol["volumes.sh: app volumes, not media"]
     zip["repo-zip.sh: deployed /opt/homelab"]
     mnt["NFS mount /mnt/homelab/backups<br/>(= /export/backups on the NAS)"]
-    rcl["rclone-offsite.sh, prod only<br/>copies the tree except media<br/>writes .offsite-ok"]
+    rcl["rclone-offsite.sh, prod only<br/>postgres, volumes, homeassistant, repo-zip<br/>crypt remote only, writes .offsite-ok"]
   end
   ha -->|"API"| haf
   ha -->|"SSH add-on"| hay
   opns -->|"SSH"| opx
   haf --> store
-  hay --> store
-  opx --> store
+  hay --> private
+  opx --> private
   pg --> mnt
   vol --> mnt
   zip --> mnt
   mnt -->|"NFS, APP to NAS TCP 2049, 111"| store
   mnt -->|"reads"| rcl
   rcl -->|"upload"| pcloud
-  pve -->|"NFS storage nas-backups<br/>(backups/vzdump)"| store
+  pve -->|"NFS storage nas-backups<br/>(nas-backups/vzdump, PVE only)"| private
   store -->|"age of the newest file per stream"| chk
+  private --> chk
   chk -->|"push up or down per stream"| kuma
   kuma -->|"alert"| mail
 ```
@@ -237,7 +249,8 @@ flowchart LR
 Uptime Kuma, an add-on on Home Assistant, checks every service, the Proxmox host, the NAS, the router
 and public Grocery, and alerts when a backup stream's push from `check-fresh.py` (NAS, 06:00) is stale
 or missing; `utils/kuma-sync.py` keeps it equal to [`config/monitoring.yml`](config/monitoring.yml).
-Beszel watches disk, RAM and CPU, Diun reports new image tags. Mail goes out through Proton SMTP on
+Beszel watches disk, RAM and CPU, Diun reports new image tags, and a daily Trivy scan mails when the
+fixable HIGH and CRITICAL vulnerabilities in the running images change. Mail goes out through Proton SMTP on
 prod and into mailpit on DEV. A dead T620, router or uplink sends nothing (decision
 [0006](knowledge/decisions/0006-alerts-kuma-proton-smtp.md)). [monitoring](knowledge/monitoring.md)
 

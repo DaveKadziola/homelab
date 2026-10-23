@@ -61,7 +61,7 @@ Each row is the laptop script. It stops or reverts itself unless a check passes.
 
 | Script | Does |
 | --- | --- |
-| `gen-app-credentials.sh` | Create names from `config/identities.yml` in GitHub, the laptop cache, and Bitwarden. Skips a name that already exists |
+| `gen-app-credentials.sh` | Create names from `config/identities.yml` in GitHub, the laptop cache, and Bitwarden. Skips a name that already exists. `--secret <NAME> --paste` stores a value you paste, e.g. a token another service issued |
 | `bootstrap-secrets.sh` | Older generator for the first infra secrets. Prefer `gen-app-credentials.sh` |
 | `bw-store.py` | Copy one cache file into Bitwarden, or queue the name while the vault is locked |
 | `sync-cache-to-bitwarden.sh` | Wrapper: the logic is `bw-store.py` |
@@ -80,9 +80,11 @@ Each row is the laptop script. It stops or reverts itself unless a check passes.
 | `ha.py` | Home Assistant: status, deploy `homeassistant/packages`, backup |
 | `kuma-sync.py` | Make Uptime Kuma match `config/monitoring.yml` for monitors named `homelab:` |
 | `host-updates.sh` | Apt packages due, and a newer Ubuntu cloud image |
+| `trivy-scan.py` | Trivy scan of the running images; `--mail` mails only when the HIGH and CRITICAL findings with a fix change |
 | `nic-errors.sh` | Receive errors on the Proxmox NICs. `--check` fails only when a counter grew |
 | `alert-mail.sh` | Send stdin through the SMTP settings in the environment |
 | `backup/` | `run-all.sh` on the apps host (Postgres, volumes, repo zip, offsite). `run-nas.sh` on the NAS (Home Assistant, its UI YAML, OPNsense). `check-fresh.py` ages. `restore-pg.sh` and `restore-scratch.sh` restore. `check-prune.sh` checks retention |
 | `setup-github-runner.sh` | Register the laptop or prod runner |
 | `setup-rclone-pcloud.sh` | Finish the pCloud remote after its OAuth login |
 | `tf-plan-risk.py` | Say whether a prod Terraform plan must stop for approval |
+| `release-notes.py` | Next `vX.Y.Z` and bullet-point release notes for what Apps Deploy Prod deployed |

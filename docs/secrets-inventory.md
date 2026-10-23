@@ -109,6 +109,18 @@ Helper scripts:
 | `AUTHELIA_SESSION_SECRET` | prod | secret | `homelab/AUTHELIA_SESSION_SECRET/prod` | set | generated 2026-09-11 |
 | `AUTHELIA_STORAGE_KEY` | prod | secret | `homelab/AUTHELIA_STORAGE_KEY/prod` | set | generated 2026-09-11 |
 | `SAMBA_ADMIN_PASSWORD` | prod | secret | `homelab/SAMBA_ADMIN_PASSWORD/prod` | set 2026-10-19 | Samba login `admin` (`inject: ansible`, `deploy-storage.yml`); also in `~/.homelab-secrets/prod/`; Bitwarden copy by the operator |
+| `VSUM_SECRET_KEY` | dev | secret | `homelab/VSUM_SECRET_KEY/dev` | set | generated 2026-10-23 |
+| `VSUM_DB_PASSWORD` | dev | secret | `homelab/VSUM_DB_PASSWORD/dev` | set | generated 2026-10-23 |
+| `VSUM_OPENROUTER_KEY` | dev | secret | `homelab/VSUM_OPENROUTER_KEY/dev` | set | vsum API key (owner); `OPENROUTER_KEY` in the container; optional; set 2026-10-23 |
+| `VSUM_ELEVENLABS_KEY` | dev | secret | `homelab/VSUM_ELEVENLABS_KEY/dev` | set | vsum API key (owner); `ELEVENLABS_KEY` in the container; optional; set 2026-10-23 |
+| `VSUM_TRILIUM_TOKEN` | dev | secret | `homelab/VSUM_TRILIUM_TOKEN/dev` | set | ETAPI token from DEV Trilium (Options -> ETAPI, owner); optional, turns on the note export; set 2026-10-23 |
+| `VSUM_GIT_TOKEN` | dev | secret | `homelab/VSUM_GIT_TOKEN/dev` | set | fine-grained token, read-only Contents on `DaveKadziola/video-summarizer`; deploy-core builds the image with it; expires; set 2026-10-23 |
+| `VSUM_SECRET_KEY` | prod | secret | `homelab/VSUM_SECRET_KEY/prod` | set | generated 2026-10-23 |
+| `VSUM_DB_PASSWORD` | prod | secret | `homelab/VSUM_DB_PASSWORD/prod` | set | generated 2026-10-23 |
+| `VSUM_OPENROUTER_KEY` | prod | secret | `homelab/VSUM_OPENROUTER_KEY/prod` | set | regular key `vsum-homelab-prod`, limit 5 USD; set 2026-10-23 |
+| `VSUM_ELEVENLABS_KEY` | prod | secret | `homelab/VSUM_ELEVENLABS_KEY/prod` | set | the same restricted key as dev (owner's choice); set 2026-10-23 |
+| `VSUM_GIT_TOKEN` | prod | secret | `homelab/VSUM_GIT_TOKEN/prod` | set | the same read-only token as dev; set 2026-10-23 |
+| `VSUM_TRILIUM_TOKEN` | prod | secret | `homelab/VSUM_TRILIUM_TOKEN/prod` | set | ETAPI token from prod Trilium (owner, `knowledge/apps/vsum.md`); optional; pasted 2026-10-23 |
 
 ---
 
