@@ -28,16 +28,14 @@ name, not through `:8088` over plain HTTP.
 ## Secrets made by hand
 
 Generated: `VSUM_SECRET_KEY`, `VSUM_DB_PASSWORD` (`utils/gen-app-credentials.sh --env <env> --app vsum`).
-The others come from their issuer. Store each in the runner cache, the GitHub environment and
-Bitwarden; the value is read from the terminal and never printed:
+The others come from their issuer. Paste each one; the value is read from the terminal, hidden, and
+goes to the runner cache, the GitHub environment and Bitwarden (queued while the vault is locked):
 
 ```bash
-umask 077; read -rs v; printf '%s' "$v" > ~/.homelab-secrets/dev/VSUM_GIT_TOKEN; unset v
-gh secret set VSUM_GIT_TOKEN --env dev --repo DaveKadziola/homelab < ~/.homelab-secrets/dev/VSUM_GIT_TOKEN
-./utils/bw-store.py --env dev VSUM_GIT_TOKEN
+./utils/gen-app-credentials.sh --env dev --secret VSUM_GIT_TOKEN --paste
 ```
 
-The same three lines for `VSUM_OPENROUTER_KEY`, `VSUM_ELEVENLABS_KEY` and `VSUM_TRILIUM_TOKEN` (create
+The same line for `VSUM_OPENROUTER_KEY`, `VSUM_ELEVENLABS_KEY` and `VSUM_TRILIUM_TOKEN` (create
 it in that env's Trilium: Options -> ETAPI). Apps Deploy Dev runs the workflow file from `main`, so
 until a release carries the `VSUM_*` lines of `apps-deploy-dev.yml` the DEV deploy reads them from the
 runner cache `~/.homelab-secrets/dev/`.

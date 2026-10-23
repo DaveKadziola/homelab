@@ -17,7 +17,7 @@ One real mailbox per environment (Proton):
 
 Apps that login by **email** use that mailbox. Apps that login by **username** use `admin`. Never use `*.local` as an email — pgAdmin refuses reserved TLDs.
 
-Generator: `utils/gen-app-credentials.sh` → GH Environment secret + `~/.homelab-secrets/<env>/<NAME>` + Bitwarden (`utils/bw-store.py`, below). No staging file since 2026-10-20. Values never go in git. Argon2/bcrypt **hashes** may.
+Generator: `utils/gen-app-credentials.sh` → GH Environment secret + `~/.homelab-secrets/<env>/<NAME>` + Bitwarden (`utils/bw-store.py`, below). No staging file since 2026-10-20. A value another service issues (`issued_by`, e.g. a GitHub token) goes the same three ways with `--secret <NAME> --paste`: read from the terminal, hidden, and marked `set` in `docs/secrets-inventory.md`. Values never go in git. Argon2/bcrypt **hashes** may.
 
 The Beszel agent key and token are issued by the hub and stay on the apps host (`compose/core/beszel-agent.env`, written by the bootstrap); they are not GitHub secrets.
 
