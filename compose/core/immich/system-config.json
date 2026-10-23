@@ -9,7 +9,7 @@
   "storageTemplate": {
     "enabled": true,
     "hashVerificationEnabled": true,
-    "template": "{{y}}/{{y}}-{{MM}}-{{dd}}/{{filename}}"
+    "template": "{{#if album}}{{album}}{{else}}{{y}}/{{y}}-{{MM}}-{{dd}}{{/if}}/{{filename}}"
   },
   "passwordLogin": {
     "enabled": true
