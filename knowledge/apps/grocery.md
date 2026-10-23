@@ -1,3 +1,7 @@
+Status: draft
+Last reviewed: 2026-10-23
+Scope: EasyToDo Grocery on DEV and prod - build, stack, proxy, upstream releases
+
 # Easy Todo Grocery (EasyToDo v2)
 
 | | |
@@ -12,6 +16,13 @@
 | Upstream | `DaveKadziola/easytodo-grocery-list`, pinned by `grocery_ref` in `deploy-core.yml` |
 
 Deployed automatically: `deploy-core.yml` builds `easytodo-grocery:<ref[:12]>` from `deploy/Dockerfile` at `grocery_ref` (a new ref is a new tag, so it rebuilds) and sets the password of role `easytodo`. `utils/bootstrap/portainer.sh` creates or updates the Portainer stack `easytodo-grocery` with the compose file and its env (image, DB password, `GROCERY_SECRET_KEY`, public URL, mail), then runs `create-admin`. The container runs the DB migrations on start.
+
+Releases: in the app repo work reaches `develop` through PRs and `main` only through a release
+PR `develop` -> `main` that the operator merges; rulesets enforce both (flow confirmed by the
+operator, 2026-10-23). The green CI run on `main` tags the next `vX.Y.Z` with a GitHub release
+(job `release` in its `.github/workflows/ci.yml`), so `grocery_ref` can point at a tag commit.
+First run: v2.0.1 on `aa8ae8d`, CI run 39962892576, 2026-10-23, still from a direct PR into `main`
+(unverified for a release PR from `develop`: none merged yet).
 
 `create-admin` creates the admin or makes an existing account admin; it never changes an existing password. `GROCERY_ADMIN_PASSWORD` is therefore only the first password: once the admin changes it in the app, the stored value no longer signs in. Before the exec the bootstrap waits until the container runs `GROCERY_IMAGE` and answers `/healthz`, because the Portainer stack update can return while the old container still answers (DEV deploy 2026-10-21).
 
