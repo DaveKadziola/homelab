@@ -121,6 +121,10 @@ Helper scripts:
 | `VSUM_ELEVENLABS_KEY` | prod | secret | `homelab/VSUM_ELEVENLABS_KEY/prod` | set | the same restricted key as dev (owner's choice); set 2026-10-23 |
 | `VSUM_GIT_TOKEN` | prod | secret | `homelab/VSUM_GIT_TOKEN/prod` | set | the same read-only token as dev; set 2026-10-23 |
 | `VSUM_TRILIUM_TOKEN` | prod | secret | `homelab/VSUM_TRILIUM_TOKEN/prod` | set | ETAPI token from prod Trilium (owner, `knowledge/apps/vsum.md`); optional; pasted 2026-10-23 |
+| `SAMBA_USER1_PASSWORD` | dev | secret | `homelab/SAMBA_USER1_PASSWORD/dev` | set | generated 2026-10-23 |
+| `IMMICH_USER1_PASSWORD` | dev | secret | `homelab/IMMICH_USER1_PASSWORD/dev` | set | generated 2026-10-23 |
+| `SAMBA_USER1_PASSWORD` | prod | secret | `homelab/SAMBA_USER1_PASSWORD/prod` | set | generated 2026-10-23 |
+| `IMMICH_USER1_PASSWORD` | prod | secret | `homelab/IMMICH_USER1_PASSWORD/prod` | set | generated 2026-10-23 |
 
 ---
 
