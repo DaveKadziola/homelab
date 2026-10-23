@@ -131,6 +131,9 @@ completed:
   - id: diun-homarr-access
     content: "Done 2026-10-22: Diun 4.33.0 has no GUI (knowledge/apps/diun.md). There is no dead tile. The way in is a Dozzle log or the mailbox. Diun sent no mail for 48 h."
     status: completed
+  - id: docs-diagrams
+    content: "Done 2026-10-23: docs/diagrams/{change-flow,network,backups}.drawio (86fd058) and the README mermaid blocks. Brought up to date with the prod-approve job, Apps Deploy Dev after Infra Apply Dev, the NAS-private folder and the crypt offsite remote."
+    status: completed
 isProject: false
 ---
 

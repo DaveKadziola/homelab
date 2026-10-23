@@ -29,9 +29,6 @@ todos:
   - id: ai-log-analysis
     content: "Package 2 (operator 2026-10-20): AI summaries through OpenRouter of cleaned audit results and logs (allowlist, aggregation); nothing raw into the public repo"
     status: pending
-  - id: docs-diagrams
-    content: "Later (operator 2026-10-20): draw.io diagrams — change flow (homelab-v2 to DEV, main to prod, approvals), network (VLANs, firewall, ports), backups"
-    status: pending
   - id: security-public-repo
     content: "2026-10-20: fork PRs need all_external_contributors, rulesets have no bypass, actions are pinned to SHAs (sha_pinning_required), CI threat model is in knowledge/security.md. Decision 2026-10-22: the house map leaves the public repo (public-map-split), then one history rewrite (git-history-state)."
     status: in_progress

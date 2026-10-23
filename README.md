@@ -126,6 +126,7 @@ flowchart TB
   end
   subgraph rprod ["runner homelab-prod - CT 110 ci-runner 192.168.20.14 on the prod Proxmox host"]
     plp["Infra Plan Prod - job plan<br/>env prod-plan, read-only token, -refresh=false"]
+    appr["Infra Apply Prod - job approve<br/>env prod-approve, owner approves once"]
     iap["Infra Apply Prod - job plan<br/>env prod, plan with refresh, utils/tf-plan-risk.py"]
     risk{"risky plan<br/>or gate=true?"}
     gate["Infra Apply Prod - job gate<br/>env prod-gate, owner approves"]
@@ -145,7 +146,8 @@ flowchart TB
   v2 -->|"release"| prm
   prm -->|"plan"| plp
   prm -->|"owner merges"| main
-  main -->|"push"| iap
+  main -->|"push"| appr
+  appr -->|"approved"| iap
   iap -->|"classify"| risk
   risk -->|"yes"| gate
   risk -->|"no"| apply
@@ -187,10 +189,13 @@ apps answer on `192.168.50.30:<port>`. Decision [0007](knowledge/decisions/0007-
 
 ## Backups and monitoring
 
-Every stream lands in `/srv/purple/backups` on the NAS Purple disk, bind-mounted to `/export/backups`
-and seen by the apps host as the NFS mount `/mnt/homelab/backups`. The NAS pulls the Home Assistant
-backup, its UI YAML and the OPNsense config at 02:30; the apps host dumps Postgres, app volumes and
-the deployed repo at 03:15 and copies the tree to pCloud; Proxmox dumps VMs 101 and 102 at 04:30.
+The shared streams land in `/srv/purple/backups` on the NAS Purple disk, bind-mounted to
+`/export/backups` and seen by the apps host as the NFS mount `/mnt/homelab/backups`. Router config,
+HA UI YAML and VM dumps hold password hashes and keys, so they go to `/srv/purple/nas-backups`, which
+the apps host and the Samba share do not reach and which is not copied offsite. The NAS pulls the Home
+Assistant backup, its UI YAML and the OPNsense config at 02:30; the apps host dumps Postgres, app
+volumes and the deployed repo at 03:15 and copies those streams and the HA backup to an encrypted
+pCloud remote; Proxmox dumps VMs 101 and 102 at 04:30.
 Retention is the 2 newest files per name prefix (UI YAML: 30); media and the Samba share are not included. On DEV
 one guest is NAS and apps host, offsite is off. [backup](knowledge/backup.md), [dr](knowledge/dr.md)
 
@@ -198,7 +203,7 @@ one guest is NAS and apps host, offsite is off. [backup](knowledge/backup.md), [
 flowchart LR
   ha["Home Assistant<br/>T620 192.168.20.13<br/>(DEV: HAOS twin)"]
   opns["OPNsense<br/>192.168.20.1"]
-  pcloud["pCloud pcloud:homelab-backups<br/>offsite, DR only"]
+  pcloud["pCloud pcloud-crypt:homelab-backups<br/>encrypted, offsite, DR only"]
   pve["Proxmox 192.168.20.20<br/>job homelab-vms 04:30<br/>vzdump VM 101, 102, keep-last=2"]
   kuma["Uptime Kuma on Home Assistant :3001<br/>one push monitor per stream"]
   mail["mail to the environment mailbox<br/>prod: Proton SMTP, DEV: mailpit"]
@@ -207,6 +212,7 @@ flowchart LR
     hay["ha-yaml.sh: UI YAML snapshots, keep 30<br/>utils/ha.py export-ui, HA_SSH_PRIV"]
     opx["opnsense.sh: config.xml<br/>forced-command key, prod only"]
     store["Purple 4 TB: /srv/purple/backups<br/>bind-mounted to /export/backups<br/>keep 2 newest per name prefix"]
+    private["NAS-private: /srv/purple/nas-backups<br/>not exported to apps, not offsite"]
     chk["check-fresh.py<br/>homelab-backup-check.timer 06:00<br/>max ages: config/monitoring.yml"]
   end
   subgraph apps ["ubuntu-apps 192.168.50.30 - homelab-backup.timer 03:15 (run-all.sh)"]
@@ -214,22 +220,23 @@ flowchart LR
     vol["volumes.sh: app volumes, not media"]
     zip["repo-zip.sh: deployed /opt/homelab"]
     mnt["NFS mount /mnt/homelab/backups<br/>(= /export/backups on the NAS)"]
-    rcl["rclone-offsite.sh, prod only<br/>copies the tree except media<br/>writes .offsite-ok"]
+    rcl["rclone-offsite.sh, prod only<br/>postgres, volumes, homeassistant, repo-zip<br/>crypt remote only, writes .offsite-ok"]
   end
   ha -->|"API"| haf
   ha -->|"SSH add-on"| hay
   opns -->|"SSH"| opx
   haf --> store
-  hay --> store
-  opx --> store
+  hay --> private
+  opx --> private
   pg --> mnt
   vol --> mnt
   zip --> mnt
   mnt -->|"NFS, APP to NAS TCP 2049, 111"| store
   mnt -->|"reads"| rcl
   rcl -->|"upload"| pcloud
-  pve -->|"NFS storage nas-backups<br/>(backups/vzdump)"| store
+  pve -->|"NFS storage nas-backups<br/>(nas-backups/vzdump, PVE only)"| private
   store -->|"age of the newest file per stream"| chk
+  private --> chk
   chk -->|"push up or down per stream"| kuma
   kuma -->|"alert"| mail
 ```
