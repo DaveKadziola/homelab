@@ -3,6 +3,7 @@
 #
 #   1. run the /Startup/* wizard: locale, admin user, remote access, complete
 #   2. create the media libraries declared under `libraries:` in config/services.yml
+#   3. turn off video transcoding for every user (remux and audio conversion stay)
 #
 # The wizard endpoints only answer while the wizard is pending, so a re-run
 # short-circuits to a login check.
@@ -110,6 +111,31 @@ ensure_libraries() {
   done < <(declared_libraries)
 }
 
+# No hardware transcoding on this host: a 1080p software transcode ran below real time and got
+# Jellyfin OOM-killed on prod (2026-10-23). Every user may still get remuxed video and converted
+# audio, but never re-encoded video; a file the client cannot play fails instead of stuttering.
+ensure_no_video_transcode() {
+  local token="$1" id name policy code
+  while IFS=$'\t' read -r id name policy; do
+    [[ -n "$id" ]] || continue
+    code="$(printf '%s' "$policy" |
+      curl -s -o /dev/null -w '%{http_code}' --max-time 30 -X POST "${BASE}/Users/${id}/Policy" \
+        -H "$(token_header "$token")" -H 'Content-Type: application/json' --data @-)"
+    if [[ "$code" =~ ^(200|204)$ ]]; then
+      hl_log "user ${name}: video transcoding off"
+    else
+      hl_warn "user ${name}: policy rejected (HTTP ${code})"
+    fi
+  done < <(hl_curl -H "$(token_header "$token")" "${BASE}/Users" | python3 -c '
+import json, sys
+for user in json.load(sys.stdin):
+    policy = user["Policy"]
+    if policy.get("EnableVideoPlaybackTranscoding", True):
+        policy["EnableVideoPlaybackTranscoding"] = False
+        print(user["Id"], user["Name"], json.dumps(policy), sep="\t")
+')
+}
+
 if [[ "$(wizard_done)" == "false" ]]; then
   run_wizard
   hl_wait_http "${BASE}/System/Info/Public" "200" 90 || hl_die "Jellyfin did not come back after the wizard"
@@ -122,4 +148,5 @@ fi
 hl_log "admin ${USERNAME} authenticated"
 
 ensure_libraries "$TOKEN"
+ensure_no_video_transcode "$TOKEN"
 hl_log "OK"
