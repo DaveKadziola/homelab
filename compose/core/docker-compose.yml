@@ -305,6 +305,29 @@ services:
     mem_limit: 384m
     profiles: ["media"]
 
+  # A folder in a person's photos folder on the NAS becomes that person's Immich album
+  # (photos/<person>/<folder>/...; deeper folders join it, loose files get no album).
+  immich-album-creator:
+    image: salvoxia/immich-folder-album-creator:1.0.0
+    restart: unless-stopped
+    volumes:
+      # One API key per person, kept by utils/bootstrap/immich.sh. No photo folder is mounted.
+      - /opt/homelab/secrets/immich-album-creator:/keys:ro
+    environment:
+      API_URL: http://immich-server:2283/api
+      API_KEY_FILE: /keys/api-keys
+      ROOT_PATH: /external/photos
+      ALBUM_LEVELS: "2,2"
+      # Five minutes after each library scan (library.scan.cronExpression).
+      CRON_EXPRESSION: "5,20,35,50 * * * *"
+      # 1 and 2 delete empty albums, 2 also offline photos.
+      SYNC_MODE: "0"
+    depends_on:
+      - immich-server
+    # 79 MiB peak on DEV with 5 photos; the asset list grows with the library.
+    mem_limit: 192m
+    profiles: ["media"]
+
   immich-redis:
     image: docker.io/valkey/valkey:8-alpine
     restart: unless-stopped
