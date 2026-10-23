@@ -1,5 +1,5 @@
 Status: draft
-Last reviewed: 2026-10-22
+Last reviewed: 2026-10-23
 Scope: alerts and checks - Uptime Kuma, backup freshness, Beszel, Diun and the mail path per env
 
 # Monitoring
@@ -56,3 +56,15 @@ sudo env HOMELAB_CONFIG_DIR=/opt/homelab-nas/config python3 /opt/homelab-nas/uti
 ```
 
 The storage test suite shows the same (`storage/backup/fresh-<stream>`).
+
+## NIC error growth
+
+Installed by hand on Proxmox (not deployed by Ansible). `/etc/cron.d/homelab-nic-errors`:
+
+```
+SHELL=/bin/bash
+15 6 * * * root err=$(/usr/local/sbin/nic-errors.sh --check /var/lib/homelab/nic-errors.prev 2>&1 1>/dev/null); rc=$?; if [[ $rc -eq 1 ]]; then echo "$err" | ssh -i /root/.ssh/homelab-nic-mail -o BatchMode=yes -o StrictHostKeyChecking=accept-new ubuntu-prod@192.168.50.30 true; fi
+```
+
+The line must not contain `%`: cron turns it into a newline (2026-10-23, lessons learned). Each
+`--check` run rewrites the state file, so a test run by hand moves the baseline and mails real growth.
