@@ -14,8 +14,11 @@
 #   ./utils/gen-app-credentials.sh --env prod --app immich
 #   ./utils/gen-app-credentials.sh --env dev --secret POSTGRES_PASSWORD --rotate
 #   ./utils/gen-app-credentials.sh --env dev --all --dry-run
+#   ./utils/gen-app-credentials.sh --env dev --secret VSUM_GIT_TOKEN --paste
 #
-# Existing secrets are skipped unless --rotate is given.
+# Existing secrets are skipped unless --rotate is given. --paste reads the value of one
+# secret from the terminal (hidden) instead of generating it, also for a secret an issuer
+# makes (issued_by in config/identities.yml), and stores it the same three ways.
 
 set -euo pipefail
 
@@ -31,9 +34,10 @@ TARGET_SECRET=""
 ALL=false
 ROTATE=false
 DRY_RUN=false
+PASTE=false
 
 usage() {
-  sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//'
   exit "${1:-0}"
 }
 
@@ -45,6 +49,7 @@ while [[ $# -gt 0 ]]; do
     --all) ALL=true; shift ;;
     --rotate) ROTATE=true; shift ;;
     --dry-run) DRY_RUN=true; shift ;;
+    --paste) PASTE=true; shift ;;
     -h|--help) usage 0 ;;
     *) echo "Unknown option: $1" >&2; usage 1 ;;
   esac
@@ -53,16 +58,17 @@ done
 [[ -n "$ENVIRONMENT" ]] || { echo "--env dev|prod is required" >&2; exit 1; }
 [[ "$ENVIRONMENT" == "dev" || "$ENVIRONMENT" == "prod" ]] || { echo "--env must be dev or prod" >&2; exit 1; }
 $ALL || [[ -n "$TARGET_APP" || -n "$TARGET_SECRET" ]] || { echo "Pass --all, --app or --secret" >&2; exit 1; }
+! $PASTE || { [[ -n "$TARGET_SECRET" && -z "$TARGET_APP" ]] && ! $ALL; } || { echo "--paste takes one --secret" >&2; exit 1; }
 [[ -f "$IDENTITIES" ]] || { echo "Missing ${IDENTITIES}" >&2; exit 1; }
 command -v gh >/dev/null || { echo "gh CLI required" >&2; exit 1; }
 $DRY_RUN || gh auth status >/dev/null 2>&1 || { echo "gh not authenticated" >&2; exit 1; }
 
 # name|app|login|identity|email|username|format|inject
 mapfile -t RECORDS < <(
-  python3 - "$IDENTITIES" "$ENVIRONMENT" "$TARGET_APP" "$TARGET_SECRET" <<'PY'
+  python3 - "$IDENTITIES" "$ENVIRONMENT" "$TARGET_APP" "$TARGET_SECRET" "$PASTE" <<'PY'
 import sys, yaml
 
-path, environment, want_app, want_secret = sys.argv[1:5]
+path, environment, want_app, want_secret, paste = sys.argv[1:6]
 doc = yaml.safe_load(open(path))
 identities = doc.get("identities", {})
 env_email = doc.get("environment_email", {}).get(environment, "")
@@ -94,8 +100,8 @@ for account in doc.get("accounts", []):
 for secret in doc.get("service_secrets", []):
     if environment not in secret.get("envs", []):
         continue
-    if secret.get("issued_by"):
-        continue  # issued by another app, not generated here
+    if secret.get("issued_by") and not (paste == "true" and secret["name"] == want_secret):
+        continue  # issued by another app, not generated here; --paste takes its value
     used_by = secret.get("used_by", [])
     rows.append([
         secret["name"],
@@ -159,7 +165,14 @@ for record in "${RECORDS[@]}"; do
     continue
   fi
 
-  value="$(gen_value "$format")"
+  if $PASTE; then
+    # read drops leading and trailing blanks; || true keeps a piped value without a newline.
+    read -rs -p "Paste ${name} for ${ENVIRONMENT} (hidden): " value || true
+    [[ ! -t 0 ]] || echo >&2
+    [[ -n "$value" ]] || { echo "Empty value for ${name}: nothing written" >&2; exit 1; }
+  else
+    value="$(gen_value "$format")"
+  fi
   printf '%s' "$value" | gh secret set "$name" --env "$ENVIRONMENT" --repo "$REPO"
   printf '%s' "$value" > "${CACHE_DIR}/${name}"
   chmod 600 "${CACHE_DIR}/${name}"
@@ -183,21 +196,35 @@ if [[ ${#STAGED[@]} -gt 0 ]]; then
   today="$(date +%F)"
   for name in "${STAGED[@]}"; do
     if grep -q "| \`${name}\` | ${ENVIRONMENT} |" "$INVENTORY" 2>/dev/null; then
-      python3 - "$INVENTORY" "$name" "$ENVIRONMENT" "$today" <<'PY'
+      python3 - "$INVENTORY" "$name" "$ENVIRONMENT" "$today" "$PASTE" <<'PY'
 import re, sys
-path, name, env, today = sys.argv[1:5]
+path, name, env, today, paste = sys.argv[1:6]
 text = open(path).read()
+if paste == "true":
+    # A pasted secret was usually "planned": mark it set and keep its notes.
+    head = f"| `{name}` | {env} |"
+    lines = text.splitlines(keepends=True)
+    for i, line in enumerate(lines):
+        if line.startswith(head):
+            cells = [c.strip() for c in line.strip().strip("|").split("|")]
+            cells[4] = "set"
+            notes = re.sub(r";? ?pasted [0-9-]{10}$", "", cells[5]).strip()
+            cells[5] = f"{notes}; pasted {today}" if notes else f"pasted {today}"
+            lines[i] = "| " + " | ".join(cells) + " |\n"
+    open(path, "w").write("".join(lines))
+    raise SystemExit
 pattern = re.compile(rf"(\| `{re.escape(name)}` \| {re.escape(env)} \|[^\n]*?)(rotated [0-9-]{{10}})?(\s*\|\s*)$", re.M)
 text, count = pattern.subn(lambda m: f"{m.group(1)}rotated {today}{m.group(3)}", text)
 if count:
     open(path, "w").write(text)
 PY
     else
-      python3 - "$INVENTORY" "$name" "$ENVIRONMENT" "$today" <<'PY'
+      python3 - "$INVENTORY" "$name" "$ENVIRONMENT" "$today" "$PASTE" <<'PY'
 import sys
-path, name, env, today = sys.argv[1:5]
+path, name, env, today, paste = sys.argv[1:6]
 marker = "## GitHub Environments — variables"
-row = f"| `{name}` | {env} | secret | `homelab/{name}/{env}` | set | generated {today} |\n"
+how = "pasted" if paste == "true" else "generated"
+row = f"| `{name}` | {env} | secret | `homelab/{name}/{env}` | set | {how} {today} |\n"
 text = open(path).read()
 if row in text:
     raise SystemExit

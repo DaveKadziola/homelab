@@ -61,7 +61,7 @@ Each row is the laptop script. It stops or reverts itself unless a check passes.
 
 | Script | Does |
 | --- | --- |
-| `gen-app-credentials.sh` | Create names from `config/identities.yml` in GitHub, the laptop cache, and Bitwarden. Skips a name that already exists |
+| `gen-app-credentials.sh` | Create names from `config/identities.yml` in GitHub, the laptop cache, and Bitwarden. Skips a name that already exists. `--secret <NAME> --paste` stores a value you paste, e.g. a token another service issued |
 | `bootstrap-secrets.sh` | Older generator for the first infra secrets. Prefer `gen-app-credentials.sh` |
 | `bw-store.py` | Copy one cache file into Bitwarden, or queue the name while the vault is locked |
 | `sync-cache-to-bitwarden.sh` | Wrapper: the logic is `bw-store.py` |
