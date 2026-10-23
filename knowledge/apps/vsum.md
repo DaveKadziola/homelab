@@ -26,8 +26,8 @@ PR `develop` -> `master` that the operator merges (flow confirmed by the operato
 enforced, rulesets need GitHub Pro for a private repository). A green CI run on `master` tags the
 next `vX.Y.Z` with a GitHub release (`.github/workflows/ci.yml`); PR titles follow
 `type(scope): subject`. First run: v1.0.0 on `3c0510b`, Release run 39962899518, 2026-10-23, still
-from a direct PR into `master` without tests (unverified for a release PR from `develop`: none
-merged yet).
+from a direct PR into `master` without tests. Release PRs from `develop`: v1.0.2 on `fea21d2` (run
+39968882819) and v1.1.0 on `37d88d6` (run 39973342538, a `feat` PR, so a minor bump), 2026-10-23.
 
 Followed channels never spend money on their own: a video runs only after someone approves it in the
 GUI or pastes its link. Without `VSUM_OPENROUTER_KEY` or `VSUM_ELEVENLABS_KEY` the services run and a
