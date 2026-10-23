@@ -35,6 +35,9 @@ todos:
   - id: app-network-access
     content: "Read 2026-10-22, rules not changed. APP (vlan07) has NFS and SSH to the NAS and a pass to everything except PrivateNetworks, so the whole VLAN reaches the internet, not one application. The separate WAN audit (WireGuard and Grocery only) is opnsense-wan-audit and waits until the end."
     status: pending
+  - id: monitoring-audit
+    content: "Operator 2026-10-23: audit the alerts and monitors for gaps. List what can fail (each service, host, VM, disk, NFS mount, backup stream, certificate, router, runner, CI and prod deploy) against what Uptime Kuma, Beszel, Diun, Trivy, the apt and NIC mails and the backup freshness check watch and mail (knowledge/monitoring.md, config/monitoring.yml); name what nobody would notice. Known and accepted: a dead T620, router or uplink sends nothing (decision 0006). Read-only; each fix is its own item and needs consent."
+    status: pending
   - id: weekly-security-audit
     content: "Package 2 (operator 2026-10-20): a weekly audit on a timer — nmap S7 from IOT, versions, OPNsense rules (images: trivy-daily) — report by mail and on the NAS, never in public-repo artifacts"
     status: pending
