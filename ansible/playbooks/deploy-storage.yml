@@ -326,6 +326,13 @@
               {{ samba_unix_user }} = {{ samba_login }}
           notify: Restart smbd
 
+        # DEV keeps Immich on a Docker volume, so the photos share exists only where the
+        # library is on the NAS.
+        - name: Look for the Immich library on the NAS
+          ansible.builtin.stat:
+            path: "{{ st.export_root }}/media/immich/library"
+          register: immich_library
+
         # Writes run as ansible_user (force user), the owner of the export tree, so files
         # stay readable by the containers and writable by the next deploy.
         - name: Write smb.conf
@@ -368,6 +375,16 @@
                  force user = {{ ansible_user }}
                  read only = no
                  veto files = /immich/.homelab-fs-*/lost+found/
+              {% if immich_library.stat.isdir | default(false) %}
+
+              # Immich originals to look at. Read-only: Immich owns the files and its database
+              # must match them; photos are added through Immich.
+              [photos]
+                 comment = Immich photos, read-only (add them through Immich)
+                 path = {{ st.export_root }}/media/immich/library
+                 valid users = {{ samba_unix_user }}
+                 read only = yes
+              {% endif %}
 
               # Read-only on purpose: a client with ransomware must not reach the only local
               # backups. The session runs as homelab-smb, which owns nothing there either.

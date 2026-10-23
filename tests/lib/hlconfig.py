@@ -147,6 +147,7 @@ def cmd_storage(env):
     print(f"HL_NAS_USER={facts.get('ansible_user', '')}")
     print(f"HL_NAS_KEY={os.path.expanduser(key) if key else ''}")
     print(f"HL_NAS_PASSTHROUGH={len(st.get('passthrough') or [])}")
+    print(f"HL_EXPORT_ROOT={st.get('export_root', '')}")
     export_root, mount_root = st.get("export_root", ""), st.get("mount_root", "")
     nfs_visible = []
     for disk in st.get("passthrough") or []:

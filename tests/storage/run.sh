@@ -10,6 +10,8 @@
 #   samba/login           the admin login lists the share, media and backups shares (from the NAS
 #                         itself: the CI runner is not an allowed client)
 #   samba/backups-ro      a write to the backups share is refused
+#   samba/photos-ro       the photos share lists the Immich library and refuses a write
+#                         (SKIP where Immich is not on the NAS, as on DEV)
 #   backup/fresh-<stream> the newest artefact of each stream in config/monitoring.yml is younger
 #                         than its max age, as check-fresh.py on the NAS sees it (dry run, no
 #                         push); a stream that never produced a file is SKIP (prerequisite missing
@@ -164,6 +166,24 @@ else
     printf '%s' "$password" | hl_nas_ssh \
       "PASSWD=\"\$(cat)\" smbclient -m SMB3 //127.0.0.1/backups -U '${HL_SMB_LOGIN}' -c 'del .rw-probe'" >/dev/null 2>&1
     report FAIL "samba/backups-ro" "the backups share accepted a write"
+  fi
+
+  if ! hl_nas_ssh "test -d '${HL_EXPORT_ROOT}/media/immich/library'"; then
+    report SKIP "samba/photos-ro" "no Immich library under ${HL_EXPORT_ROOT}/media on this NAS"
+  else
+    look="$(printf '%s' "$password" | hl_nas_ssh \
+      "PASSWD=\"\$(cat)\" smbclient -m SMB3 //127.0.0.1/photos -U '${HL_SMB_LOGIN}' -c 'ls' 2>&1")"
+    probe="$(printf '%s' "$password" | hl_nas_ssh \
+      "PASSWD=\"\$(cat)\" smbclient -m SMB3 //127.0.0.1/photos -U '${HL_SMB_LOGIN}' -c 'put /etc/hostname .rw-probe' 2>&1")"
+    if grep -q 'NT_STATUS' <<<"$look"; then
+      report FAIL "samba/photos-ro" "the photos share does not list ($(grep -o -E 'NT_STATUS_[A-Z_]+' <<<"$look" | head -1))"
+    elif grep -q -E 'NT_STATUS_(ACCESS_DENIED|MEDIA_WRITE_PROTECTED)' <<<"$probe"; then
+      report PASS "samba/photos-ro" "photos lists the Immich library and refuses a write"
+    else
+      printf '%s' "$password" | hl_nas_ssh \
+        "PASSWD=\"\$(cat)\" smbclient -m SMB3 //127.0.0.1/photos -U '${HL_SMB_LOGIN}' -c 'del .rw-probe'" >/dev/null 2>&1
+      report FAIL "samba/photos-ro" "the photos share accepted a write"
+    fi
   fi
   unset password
 fi
