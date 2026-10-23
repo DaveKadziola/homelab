@@ -89,6 +89,16 @@
         line: "127.0.1.1 {{ ansible_hostname }}"
         insertafter: '^127\.0\.0\.1'
 
+    # Audit finding S27; the include in sshd_config comes before its X11Forwarding yes.
+    - name: Turn off SSH X11 forwarding
+      ansible.builtin.copy:
+        dest: /etc/ssh/sshd_config.d/10-homelab.conf
+        owner: root
+        group: root
+        mode: "0644"
+        content: "X11Forwarding no\n"
+      notify: Reload ssh
+
     - name: Resolve secrets from the environment or the operator secret cache
       ansible.builtin.set_fact:
         resolved_secrets: >-
@@ -520,3 +530,8 @@
         cmd: docker compose {{ compose_file_args }} --env-file {{ compose_dest }}/.env restart authelia
         chdir: "{{ compose_dest }}"
       changed_when: true
+
+    - name: Reload ssh
+      ansible.builtin.service:
+        name: ssh
+        state: reloaded
