@@ -220,6 +220,21 @@ ensure_external_libraries() {
     while read -r line; do hl_log "$line"; done || hl_warn "external libraries not converged"
 }
 
+# Folders in the photos share become albums: the immich-album-creator container (compose) reads one
+# API key per person from this file, which immich_album_keys.py keeps.
+ensure_album_keys() {
+  local email username secret
+  {
+    printf '%s\t%s\n' "$EMAIL" "$PASSWORD"
+    while IFS='|' read -r email username secret; do
+      [[ -n "$email" ]] || continue
+      printf '%s\t%s\n' "$email" "$(hl_has_secret "$secret" && hl_secret "$secret")"
+    done < <(photo_people)
+  } | python3 "$(dirname "$0")/immich_album_keys.py" "$BASE" "$(hl_secrets_dir)/immich-album-creator/api-keys" |
+    while read -r line; do hl_log "$line"; done || hl_warn "album creator keys not converged"
+}
+
 ensure_photo_users "$TOKEN"
 ensure_external_libraries "$TOKEN"
+ensure_album_keys
 hl_log "OK"

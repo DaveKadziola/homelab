@@ -190,7 +190,7 @@ apps answer on `192.168.50.30:<port>`. Decision [0007](knowledge/decisions/0007-
 | apps | `trilium`, `actual`, `linkwarden`, `syncthing`; profile `vsum`: `vsum` |
 | tools | `omni-tools`, `it-tools`, `networking-toolbox`, `bentopdf` |
 | media | `navidrome`; profile `media`: `jellyfin`, `immich` |
-| no name | Grocery (public `https://grocery.dkhomelabserver.xyz` through the OPNsense HAProxy), Postgres, Diun, Beszel agent |
+| no name | Grocery (public `https://grocery.dkhomelabserver.xyz` through the OPNsense HAProxy), Postgres, Diun, Beszel agent, Immich album creator |
 
 ## Backups and monitoring
 

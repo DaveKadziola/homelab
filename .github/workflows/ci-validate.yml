@@ -74,3 +74,4 @@ jobs:
           python3 utils/trivy-scan.py --self-test
           python3 utils/release-notes.py --self-test
           python3 utils/bootstrap/immich_libraries.py --self-test
+          python3 utils/bootstrap/immich_album_keys.py --self-test
