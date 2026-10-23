@@ -63,6 +63,11 @@
       - HA_BACKUP_PASSWORD
       - KUMA_PUSH_SECRET
       - OPNSENSE_BACKUP_SSH_PRIV
+      - IMMICH_SCAN_API_KEY
+    # Immich API for the photos watcher; the port comes from config/services.yml.
+    immich_port: >-
+      {{ (lookup('file', playbook_dir + '/../../config/services.yml') | from_yaml).services
+         | selectattr('name', 'equalto', 'immich') | map(attribute='port') | first }}
   tasks:
     - name: Refuse a run whose HOMELAB_ENV does not match the inventory
       ansible.builtin.assert:
@@ -714,6 +719,58 @@
             state: started
             daemon_reload: "{{ nas_units.changed }}"
           loop: [homelab-nas-backup.timer, homelab-backup-check.timer]
+
+    # Immich gets no change events over NFS, so the NAS queues a library scan about 30 s after the
+    # photos share changes (utils/photos-watch.py). Without IMMICH_SCAN_API_KEY on the NAS the unit
+    # stays stopped and only Immich's 15-minute scan runs.
+    - name: Photos watcher
+      block:
+        - name: Install inotify-tools
+          ansible.builtin.apt:
+            name: inotify-tools
+            state: present
+
+        - name: Sync the photos watcher to the NAS
+          ansible.builtin.copy:
+            src: "{{ playbook_dir }}/../../utils/photos-watch.py"
+            dest: "{{ nas_root }}/utils/photos-watch.py"
+            owner: root
+            group: root
+            mode: "0755"
+          register: watch_script
+
+        - name: Install the photos watcher unit
+          ansible.builtin.copy:
+            dest: /etc/systemd/system/homelab-photos-watch.service
+            owner: root
+            group: root
+            mode: "0644"
+            content: |
+              [Unit]
+              Description=Immich library scan soon after the photos share changes
+              After=network-online.target
+              Wants=network-online.target
+              RequiresMountsFor={{ st.export_root }}/media/photos
+              [Service]
+              ExecStart=/usr/bin/python3 {{ nas_root }}/utils/photos-watch.py {{ st.export_root }}/media/photos \
+                http://{{ st.apps_host }}:{{ immich_port }}/api {{ nas_root }}/secrets/{{ homelab_env }}/IMMICH_SCAN_API_KEY
+              Restart=always
+              RestartSec=30
+              [Install]
+              WantedBy=multi-user.target
+          register: watch_unit
+
+        - name: Check for the Immich scan key
+          ansible.builtin.stat:
+            path: "{{ nas_root }}/secrets/{{ homelab_env }}/IMMICH_SCAN_API_KEY"
+          register: scan_key
+
+        - name: Run the photos watcher when the scan key is there
+          ansible.builtin.systemd:
+            name: homelab-photos-watch.service
+            enabled: "{{ scan_key.stat.exists }}"
+            state: "{{ ('restarted' if watch_script.changed or watch_unit.changed else 'started') if scan_key.stat.exists else 'stopped' }}"
+            daemon_reload: "{{ watch_unit.changed }}"
 
   handlers:
     - name: Reload systemd
