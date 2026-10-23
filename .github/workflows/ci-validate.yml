@@ -1,10 +1,11 @@
 name: CI Validate
 
 on:
+  # TEMP: homelab-v2 until it is renamed to develop; drop it in the cleanup PR after the rename.
   push:
-    branches: [homelab-v2]
+    branches: [homelab-v2, develop]
   pull_request:
-    branches: [homelab-v2, main]
+    branches: [homelab-v2, develop, main]
 
 jobs:
   validate:

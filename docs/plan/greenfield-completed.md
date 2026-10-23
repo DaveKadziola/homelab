@@ -81,7 +81,7 @@ completed:
     content: "Done 2026-10-22: SMTP works, the operator gets mail. Diun has DIUN_NOTIF_MAIL_* in diun.env on prod. In 48 h of logs there was no new tag to send; there were registry timeouts."
     status: completed
   - id: project-cleanup
-    content: "Done 2026-10-22: worktree homelab-grocery-prod removed. feat/grocery-v2-prod and fix/grocery-no-debug deleted from origin (the Grocery fix is already 6c13608 on homelab-v2; the grocery rewrite sentence is in docs/network.md). Local branches of merged PRs deleted. ansible/docker-containers.yml, utils/create-dev-vm.sh and ansible/user-setup.yml have been gone since 07bb30e. origin/dev stays: 26 commits are not in tag legacy-pre-v2. docs/opnsense-ui-walkthrough.md stays because the baseline and opnsense-verify.sh point at it."
+    content: "Done 2026-10-22: worktree homelab-grocery-prod removed. feat/grocery-v2-prod and fix/grocery-no-debug deleted from origin (the Grocery fix is already 6c13608 on homelab-v2; the grocery rewrite sentence is in docs/network.md). Local branches of merged PRs deleted. ansible/docker-containers.yml, utils/create-dev-vm.sh and ansible/user-setup.yml have been gone since 07bb30e. origin/dev stays: 26 commits are not in tag legacy-pre-v2. 2026-10-23: origin/dev deleted by the operator (tip 303ffc1, last commit 2025-08-10); tag legacy-pre-v2 is not on GitHub (git ls-remote --tags: v1.0.0, v2.0.0, v2.1.0). docs/opnsense-ui-walkthrough.md stays because the baseline and opnsense-verify.sh point at it."
     status: completed
   - id: docs-readme
     content: "Done 2026-10-22: README.md already says what this is, how it is built and where to start. It was not rewritten."

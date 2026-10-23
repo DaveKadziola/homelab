@@ -53,6 +53,9 @@ todos:
   - id: opnsense-wan-audit
     content: "Last (operator 2026-10-22): audit OPNsense rules. Only WireGuard and Grocery should leave on WAN. Read the rules, compare with docs/network.md (WAN 443/tcp and 51820/udp). Do not change the configuration until the audit shows a difference and the operator accepts it. Includes S7 from WireGuard and WAN (a scan from outside, e.g. a phone hotspot)."
     status: pending
+  - id: branch-develop
+    content: "Operator 2026-10-23: the DEV branch homelab-v2 becomes develop. Done: the old dev branch deleted (tip 303ffc1); the DEV workflows and utils/release-notes.py accept both names. Left, right after the next release (it carries those workflows to main, where GitHub reads Apps Deploy Dev): add develop to the branch policy of environment dev, point ruleset 25494699 at refs/heads/develop, rename the branch (gh api branches/homelab-v2/rename), move local clones; then one PR drops homelab-v2 from the triggers and the dev policy and renames it in the current docs. Router markers and config backups named homelab-v2 stay: they are the project name the scripts search for."
+    status: in_progress
   - id: subnet-refactor
     content: "At the very end, after opnsense-wan-audit (operator 2026-10-22): subnet refactor. The operator thinks the VLAN layout can be better. There is no design yet. Change nothing until a layout is approved."
     status: pending

@@ -7,7 +7,8 @@ on:
   workflow_run:
     workflows: ["Infra Apply Dev"]
     types: [completed]
-    branches: [homelab-v2]
+    # TEMP: homelab-v2 until it is renamed to develop; drop it in the cleanup PR after the rename.
+    branches: [homelab-v2, develop]
   workflow_dispatch:
     inputs:
       sha:

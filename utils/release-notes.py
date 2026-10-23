@@ -2,14 +2,15 @@
 """Next release tag and bullet-point notes for what Apps Deploy Prod just deployed (decision 0009).
 
   utils/release-notes.py --target <sha> --run-url <url> --out notes.md   # prints the tag, or nothing
-  utils/release-notes.py --target origin/homelab-v2                      # local preview to stdout
+  utils/release-notes.py --target origin/develop                         # local preview to stdout
   utils/release-notes.py --self-test
 
 Reads the merge commits between the newest vX.Y.Z tag and the target. Each "Merge pull request #N"
 carries the PR title as its body; a title follows `type(scope): subject`. A merge from
-.../homelab-v2 is the release PR and is named in the header, not listed. The bump: `!` after the
-type or BREAKING CHANGE -> major, any feat -> minor, else patch. Prints nothing when the target
-already has a vX.Y.Z tag, so a redeploy of the same commit makes no second release.
+.../develop (homelab-v2 before the rename) is the release PR and is named in the header, not
+listed. The bump: `!` after the type or BREAKING CHANGE -> major, any feat -> minor, else patch.
+Prints nothing when the target already has a vX.Y.Z tag, so a redeploy of the same commit makes
+no second release.
 Exit code: 0 done, 1 self-test failed, 2 git error.
 """
 import argparse
@@ -23,7 +24,8 @@ TAG = re.compile(r"^v(\d+)\.(\d+)\.(\d+)$")
 MERGE = re.compile(r"^Merge pull request #(\d+) from (\S+)")
 TITLE = re.compile(r"^(\w+)(?:\(([^)]*)\))?(!)?:\s*(.+)$")
 GROUPS = [("feat", "Features"), ("fix", "Fixes"), ("docs", "Docs"), (None, "Other")]
-RELEASE_BRANCH = "/homelab-v2"
+# The DEV branch was homelab-v2 until it became develop; old release merges keep that name.
+RELEASE_BRANCHES = ("/develop", "/homelab-v2")
 
 
 def git(*args):
@@ -39,7 +41,7 @@ def classify(merges):
     """[(number, branch, title, body)] -> (release PR numbers, [(type, bullet, breaking)])."""
     releases, items = [], []
     for number, branch, title, body in merges:
-        if branch.endswith(RELEASE_BRANCH):
+        if branch.endswith(RELEASE_BRANCHES):
             releases.append(number)
             continue
         m = TITLE.match(title)
@@ -103,7 +105,7 @@ def main():
     try:
         if any(parse_tag(t) for t in git("tag", "--points-at", args.target).split()):
             return 0
-        # The newest tag sits on a main merge commit that homelab-v2 never contains; prev..target
+        # The newest tag sits on a main merge commit that develop never contains; prev..target
         # still lists only what came after it.
         tags = [(parse_tag(t), t) for t in git("tag", "--list", "v*").split()]
         tags = sorted(t for t in tags if t[0])
@@ -128,6 +130,7 @@ def main():
 
 def self_test():
     merges = [
+        ("170", "o/develop", "release: develop to main", ""),
         ("160", "o/homelab-v2", "release: homelab-v2 to main", ""),
         ("158", "o/fix/vsum-pin", "fix(f4): pin vsum to master", ""),
         ("156", "o/feat/vsum", "feat(f4): add vsum", ""),
@@ -135,7 +138,7 @@ def self_test():
         ("149", "o/odd", "Increase timeout for deploy-prod job", ""),
     ]
     releases, items = classify(merges)
-    assert releases == ["160"], releases
+    assert releases == ["170", "160"], releases
     assert items[0] == ("fix", "f4: pin vsum to master (#158)", False), items[0]
     assert items[2] == ("docs", "audit decisions (#152)", False) and items[3][0] is None, items
     assert bump((2, 1, 0), items) == (2, 2, 0)
@@ -145,7 +148,7 @@ def self_test():
     assert bump((2, 1, 0), []) == (2, 1, 1)
 
     text = render("v2.1.0", "v2.2.0", releases, items, "https://run/1", "2026-10-24", "o/r")
-    assert text.startswith("Deployed to prod by Apps Deploy Prod (https://run/1) on 2026-10-24, from release PR #160.\n")
+    assert text.startswith("Deployed to prod by Apps Deploy Prod (https://run/1) on 2026-10-24, from release PR #170.\n")
     assert "### Features\n- f4: add vsum (#156)\n" in text, text
     assert "### Fixes\n- f4: pin vsum to master (#158)\n" in text, text
     assert "### Other\n- Increase timeout for deploy-prod job (#149)\n" in text, text
