@@ -248,6 +248,42 @@ service_secrets:
     notes: >-
       Proxmox file /root/.ssh/homelab-nic-mail. May only run utils/alert-mail.sh on the apps host.
       Not a GitHub secret.
+  # vsum: DEV only until profile vsum is on in prod (knowledge/apps/vsum.md); then add prod here.
+  - name: VSUM_SECRET_KEY
+    used_by: [vsum]
+    envs: [dev]
+    format: hex64
+    notes: Flask session key of vsum-web; keeps the CSRF session across restarts.
+  - name: VSUM_DB_PASSWORD
+    used_by: [vsum]
+    envs: [dev]
+    notes: Password of the Postgres role vsum (postgres-init sets it on every deploy).
+  - name: VSUM_OPENROUTER_KEY
+    used_by: [vsum]
+    envs: [dev]
+    issued_by: openrouter
+    notes: >-
+      OpenRouter API key, OPENROUTER_KEY in the container (summaries, topics). Optional: without it a
+      video fails with a clear error. Each approved video costs money.
+  - name: VSUM_ELEVENLABS_KEY
+    used_by: [vsum]
+    envs: [dev]
+    issued_by: elevenlabs
+    notes: ElevenLabs API key, ELEVENLABS_KEY in the container (transcription). Optional, as above.
+  - name: VSUM_TRILIUM_TOKEN
+    used_by: [vsum]
+    envs: [dev]
+    issued_by: trilium
+    notes: >-
+      ETAPI token the owner creates in that env's Trilium (Options -> ETAPI). Optional: without it
+      the note export is off.
+  - name: VSUM_GIT_TOKEN
+    used_by: [vsum]
+    envs: [dev]
+    issued_by: github
+    notes: >-
+      Fine-grained token, read-only Contents on DaveKadziola/video-summarizer (private); deploy-core.yml
+      builds the image with it as the BuildKit secret GIT_AUTH_TOKEN. It expires: renew it in GitHub.
   - name: HA_BACKUP_PASSWORD
     used_by: [homeassistant]
     envs: [dev, prod]

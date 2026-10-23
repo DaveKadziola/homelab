@@ -48,7 +48,10 @@ jobs:
           AUTHELIA_STORAGE_KEY: ci-validate-placeholder-storage-32
           NAVIDROME_ADMIN_PASSWORD: ci-validate-placeholder
           IMMICH_DB_PASSWORD: ci-validate-placeholder
-        run: docker compose --profile auth --profile media config
+          VSUM_IMAGE: vsum:ci-validate-placeholder
+          VSUM_SECRET_KEY: ci-validate-placeholder
+          VSUM_DB_PASSWORD: ci-validate-placeholder
+        run: docker compose --profile auth --profile media --profile vsum config
 
       - name: Gitleaks
         run: |

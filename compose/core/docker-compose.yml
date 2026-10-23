@@ -42,12 +42,14 @@ services:
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
-        for db in linkwarden firefly3 actual trilium grafana easytodo; do
+        for db in linkwarden firefly3 actual trilium grafana easytodo vsum; do
           psql -h postgres -U homelab -d homelab -tc "SELECT 1 FROM pg_database WHERE datname='$$db'" | grep -q 1 \
             || psql -h postgres -U homelab -d homelab -c "CREATE DATABASE $$db"
           psql -h postgres -U homelab -d homelab -c "DO \$\$ BEGIN CREATE USER $$db WITH PASSWORD '${POSTGRES_PASSWORD}'; EXCEPTION WHEN duplicate_object THEN NULL; END \$\$;"
           psql -h postgres -U homelab -d $$db -c "GRANT ALL ON SCHEMA public TO $$db"
         done
+        # vsum fetches untrusted feeds and pages: its role gets its own password, not the admin one.
+        psql -h postgres -U homelab -d homelab -c "ALTER ROLE vsum PASSWORD '${VSUM_DB_PASSWORD:?set VSUM_DB_PASSWORD}'"
     restart: "no"
 
   portainer:
@@ -387,6 +389,43 @@ services:
     # mid-scan on DEV (2026-10-19).
     mem_limit: 256m
 
+  # vsum (profile vsum): video summaries. Image built on the host by deploy-core.yml from the private
+  # repo at vsum_ref; never pushed to a registry. Archive: named volume on DEV, SA500 NFS on prod
+  # (docker-compose.nfs.yml). API keys and the Trilium ETAPI token are optional: without them a video
+  # fails with a clear error and the Trilium export stays off.
+  vsum-web:
+    <<: &vsum
+      image: ${VSUM_IMAGE:?set VSUM_IMAGE}
+      restart: unless-stopped
+      depends_on:
+        postgres:
+          condition: service_healthy
+        postgres-init:
+          condition: service_completed_successfully
+      environment:
+        TZ: Europe/Warsaw
+        VSUM_DATABASE_URL: postgresql+psycopg://vsum:${VSUM_DB_PASSWORD:?set VSUM_DB_PASSWORD}@postgres:5432/vsum
+        VSUM_SECRET_KEY: ${VSUM_SECRET_KEY:?set VSUM_SECRET_KEY}
+        VSUM_PUBLIC_URL: ${VSUM_PUBLIC_URL:-}
+        VSUM_TRILIUM_URL: http://trilium:8080
+        VSUM_TRILIUM_TOKEN: ${VSUM_TRILIUM_TOKEN:-}
+        OPENROUTER_KEY: ${VSUM_OPENROUTER_KEY:-}
+        ELEVENLABS_KEY: ${VSUM_ELEVENLABS_KEY:-}
+      volumes:
+        - vsum_archive:/archive
+      profiles: ["vsum"]
+    command: ["web", "--host", "0.0.0.0"]
+    ports:
+      - "8088:8080"
+    # Measured 67 MiB peak (vsum docs/knowledge-base/deployment.md).
+    mem_limit: 192m
+
+  vsum-worker:
+    <<: *vsum
+    command: ["worker"]
+    # Measured 321 MiB peak on a 15-minute video; one video at a time.
+    mem_limit: 768m
+
   # DEV only (profile devmail): SMTP sink that receives every alert mail of DEV (Kuma, Diun, Beszel);
   # UI and API on :8025 (config/monitoring.yml).
   mailpit:
@@ -420,3 +459,4 @@ volumes:
   caddy_data:
   caddy_config:
   diun_data:
+  vsum_archive:
