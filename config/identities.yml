@@ -29,6 +29,11 @@ identities:
     email: environment
     username: homelab-notification
     role: Sender identity for notifications (Diun, Beszel, alerts).
+  # Pseudonymous on purpose: the repository is public. The person behind it is in the owner's notes only.
+  photos-user1:
+    email: user1@dkhomelabserver.xyz
+    username: user1
+    role: Photos user - own Samba folder photos/user1 and own Immich account (not a mailbox).
 
 # inject: env       — password reaches the app through compose environment
 #         bootstrap — utils/bootstrap/<app>.sh creates the account through API/CLI
@@ -144,6 +149,23 @@ accounts:
     inject: bootstrap
     envs: [dev, prod]
     notes: Login `admin` of the Uptime Kuma add-on on Home Assistant; utils/kuma-sync.py creates it on a fresh Kuma.
+
+  # Photos users other than the admin: one Samba login with only their own folders, one Immich
+  # account that owns the external library photos/<username> (decision 2026-10-23).
+  - app: samba
+    identity: photos-user1
+    login: username
+    secret: SAMBA_USER1_PASSWORD
+    inject: ansible
+    envs: [dev, prod]
+    notes: Shares photos-user1 (writable) and immich-user1 (read-only) only.
+
+  - app: immich
+    identity: photos-user1
+    login: email
+    secret: IMMICH_USER1_PASSWORD
+    inject: bootstrap
+    envs: [dev, prod]
 
 # Secrets that are not login credentials but must exist per environment.
 service_secrets:

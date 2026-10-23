@@ -11,6 +11,8 @@
 #                         itself: the CI runner is not an allowed client)
 #   samba/backups-ro      a write to the backups share is refused
 #   samba/immich-ro       the immich share lists the Immich library and refuses a write
+#   samba/people          each photos user lists their own photos-<login> share and is refused
+#                         on the admin's photos and share
 #   samba/all-backups     the owner's share of every backup is read-only and only for
 #                         samba.admin_hosts (127.0.0.1, not an admin host, is refused); both
 #                         trees are bound read-only below samba.admin_view
@@ -188,6 +190,28 @@ else
       report FAIL "samba/immich-ro" "the immich share accepted a write"
     fi
   fi
+
+  for person in ${HL_SMB_PEOPLE:-}; do
+    login="${person%%:*}" secret="${person#*:}"
+    pw="${!secret:-}"
+    pcache="${HOMELAB_SECRETS_DIR:-$HOME/.homelab-secrets}/${HL_ENV}/${secret}"
+    [[ -z "$pw" && -r "$pcache" ]] && pw="$(cat "$pcache")"
+    if [[ -z "$pw" ]]; then
+      report SKIP "samba/people" "${secret} is not in the environment or ${pcache}"
+      continue
+    fi
+    own="$(printf '%s' "$pw" | hl_nas_ssh "PASSWD=\"\$(cat)\" smbclient -m SMB3 //127.0.0.1/photos-${login} -U '${login}' -c 'ls' 2>&1")"
+    other="$(printf '%s' "$pw" | hl_nas_ssh "PASSWD=\"\$(cat)\" smbclient -m SMB3 //127.0.0.1/photos -U '${login}' -c 'ls' 2>&1")"
+    misc="$(printf '%s' "$pw" | hl_nas_ssh "PASSWD=\"\$(cat)\" smbclient -m SMB3 //127.0.0.1/share -U '${login}' -c 'ls' 2>&1")"
+    if grep -q 'NT_STATUS' <<<"$own"; then
+      report FAIL "samba/people" "${login} cannot list photos-${login} ($(grep -o -E 'NT_STATUS_[A-Z_]+' <<<"$own" | head -1))"
+    elif ! grep -q 'NT_STATUS' <<<"$other" || ! grep -q 'NT_STATUS' <<<"$misc"; then
+      report FAIL "samba/people" "${login} reaches the admin's photos or share"
+    else
+      report PASS "samba/people" "${login} lists photos-${login} only; photos and share refused"
+    fi
+  done
+  unset pw
 
   if [[ -z "${HL_SMB_ADMIN_HOSTS:-}" || -z "${HL_SMB_ADMIN_VIEW:-}" ]]; then
     report SKIP "samba/all-backups" "no samba.admin_hosts or admin_view in config/storage.yml"

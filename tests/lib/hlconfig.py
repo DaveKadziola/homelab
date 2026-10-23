@@ -166,6 +166,10 @@ def cmd_storage(env):
         print(f"HL_SMB_ALLOW={' '.join(samba.get('hosts_allow') or [])}")
         print(f"HL_SMB_ADMIN_HOSTS={' '.join(samba.get('admin_hosts') or [])}")
         print(f"HL_SMB_ADMIN_VIEW={samba.get('admin_view', '')}")
+        people = [a for a in identities_doc().get("accounts") or []
+                  if a.get("app") == "samba" and a.get("identity") != "homelab-admin" and env in (a.get("envs") or [])]
+        logins = [f"{(identities_doc().get('identities') or {})[a['identity']]['username']}:{a['secret']}" for a in people]
+        print(f"HL_SMB_PEOPLE={' '.join(logins)}")
         print(f"HL_SMB_LOGIN={ident.get('username', '')}")
         print(f"HL_SMB_SECRET={account.get('secret', '')}")
 
