@@ -237,10 +237,10 @@ if marker not in text:
     open(path, "a").write(row)
     raise SystemExit
 head, tail = text.split(marker, 1)
-# Keep the secrets table closed by the --- before the variables heading.
-if not head.endswith("\n"):
-    head += "\n"
-open(path, "w").write(head + row + marker + tail)
+# After the last row of the secrets table, above the --- that closes it.
+last = head.rstrip().rfind("\n|")
+end = head.index("\n", last + 1) + 1 if last >= 0 else len(head)
+open(path, "w").write(head[:end] + row + head[end:] + marker + tail)
 PY
     fi
   done
