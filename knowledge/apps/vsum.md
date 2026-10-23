@@ -46,8 +46,11 @@ runner cache `~/.homelab-secrets/dev/`.
    format"); `deploy-storage.yml` creates `media/video/vsum` owned by 10001.
 2. RAM: the compose limits on prod already add up to more than the 8 GiB of `ubuntu-apps`; vsum adds
    960 MiB (worker 768m, web 192m; measured peaks 321 and 67 MiB). Decide what to lower or raise.
-3. `envs: [dev, prod]` for the `VSUM_*` entries in `config/identities.yml`; generate and store the
-   prod secrets as above.
+3. Done 2026-10-23: the `VSUM_*` entries in `config/identities.yml` include prod, and env `prod` has
+   every secret except `VSUM_TRILIUM_TOKEN`. That one the owner makes in prod Trilium
+   (http://192.168.50.30:8082, Options -> ETAPI -> create a token) and stores with
+   `./utils/gen-app-credentials.sh --env prod --secret VSUM_TRILIUM_TOKEN --paste`. Optional: without
+   it the note export is off.
 4. Add `vsum` to `environments.prod.profiles` in `config/services.yml` and a vsum row (8088) to the
    application table of `knowledge/prod-target.md`.
 
