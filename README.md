@@ -197,7 +197,8 @@ apps answer on `192.168.50.30:<port>`. Decision [0007](knowledge/decisions/0007-
 The shared streams land in `/srv/purple/backups` on the NAS Purple disk, bind-mounted to
 `/export/backups` and seen by the apps host as the NFS mount `/mnt/homelab/backups`. Router config,
 HA UI YAML and VM dumps hold password hashes and keys, so they go to `/srv/purple/nas-backups`, which
-the apps host and the Samba share do not reach and which is not copied offsite. The NAS pulls the Home
+the apps host does not reach, Samba shows only read-only to the owner's laptop (`nas-backups`), and
+which is not copied offsite. The NAS pulls the Home
 Assistant backup, its UI YAML and the OPNsense config at 02:30; the apps host dumps Postgres, app
 volumes and the deployed repo at 03:15 and copies those streams and the HA backup to an encrypted
 pCloud remote; Proxmox dumps VMs 101 and 102 at 04:30.
