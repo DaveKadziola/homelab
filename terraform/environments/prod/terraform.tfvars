@@ -27,7 +27,7 @@ vm_config = {
     vm_description     = "NAS VM — NFS, SA500/Purple disk passthrough (by-id)"
     vm_tags            = ["nas", "ubuntu-server", "cloud-init", "terraform"]
     bios               = "seabios"
-    ram                = 4096
+    ram                = 2048 # was 4096; processes used ~0.5 GiB (2026-10-23)
     cpu_cores          = 2
     net_dev_type       = "vmbr0"
     vlan_tag           = 20
@@ -52,7 +52,7 @@ vm_config = {
     vm_description = "Docker / core stack — APP VLAN 51"
     vm_tags        = ["docker", "ubuntu-server", "cloud-init", "terraform"]
     bios           = "seabios"
-    ram            = 8192
+    ram            = 9216
     cpu_cores      = 2
     # Immich machine-learning needs x86-64-v2 (NumPy) — kvm64 crashes.
     cpu_type           = "host"

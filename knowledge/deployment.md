@@ -54,6 +54,8 @@ Not in `compose/core`. Portainer stack `easytodo-grocery` from `compose/grocery/
 
 Do **not** `terraform apply` if the plan wants to **replace** `ubuntu-apps`. That wipes Docker volumes.
 
+A change of `ram` or `cpu_cores` is an update in place: the provider (bpg 0.77.1, `reboot_after_update`) reboots the VM, and disks attached outside Terraform stay. Checked on DEV 2026-10-23 with a probe disk attached by device path like the NAS passthrough disks (`scsi5: /dev/pve/tfprobe`): Infra Apply Dev 39979726921 (6144 -> 5632) and 39980282226 (back to 6144) changed only `memory.dedicated`, and after each reboot `qm config 101` and the guest still had the disk.
+
 ## Related
 
 - [`docs/f4-apps-dev.md`](../docs/f4-apps-dev.md)
