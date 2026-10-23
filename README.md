@@ -100,6 +100,9 @@ python3 utils/tf-plan-risk.py --self-test    # one of the script self-tests CI V
    waits in `prod-gate`. The apply job applies only a plan with the same digest.
 5. Apps Deploy Prod follows a successful Infra Apply Prod with no second click, and ends with
    the post-deploy tests. A manual run of this workflow asks once (`prod-approve`).
+6. When the post-deploy tests pass, the `release` job tags the deployed commit `vX.Y.Z` and
+   publishes a GitHub release with one bullet per PR under Features, Fixes, Docs and Other
+   (`utils/release-notes.py`, decision [0009](knowledge/decisions/0009-release-tag-after-prod-deploy.md)).
 
 No direct pushes to `homelab-v2` or `main`. Decision
 [0004](knowledge/decisions/0004-ci-autonomy-and-prod-risk-gate.md); settings in
@@ -133,6 +136,7 @@ flowchart TB
     apply["Infra Apply Prod - job apply<br/>env prod, plans again, applies only the same digest"]
     dpp["Apps Deploy Prod + post-deploy-tests<br/>env prod"]
   end
+  rel["Apps Deploy Prod - job release<br/>GitHub-hosted, contents: write<br/>tag vX.Y.Z + release notes"]
   fb -->|"open PR"| prv2
   prv2 -->|"required check validate"| val
   prv2 -->|"required check plan"| pld
@@ -155,6 +159,7 @@ flowchart TB
   apply -->|"workflow_run: success"| dpp
   apply -->|"terraform apply"| prodt
   dpp -->|"Ansible, Compose, HA, tests"| prodt
+  dpp -->|"tests passed"| rel
 ```
 
 | Workflow | Trigger | Runner | Environment |
@@ -166,7 +171,7 @@ flowchart TB
 | Tests Dev (`tests-dev.yml`) | push `homelab-v2` on test files, unless that push also deploys; manual | `homelab-dev` | `dev` |
 | Infra Plan Prod (`infra-plan.yml`) | PR into `main` | `homelab-prod` | `prod-plan` |
 | Infra Apply Prod (`infra-apply-prod.yml`) | push `main`; manual, input `gate` | `homelab-prod` | `prod`; `prod-gate` for a risky plan |
-| Apps Deploy Prod (`apps-deploy-prod.yml`) | Infra Apply Prod succeeded on `main`; manual | `homelab-prod` | `prod` |
+| Apps Deploy Prod (`apps-deploy-prod.yml`) | Infra Apply Prod succeeded on `main`; manual | `homelab-prod`; job `release` on GitHub-hosted `ubuntu-24.04` | `prod`; `release` none |
 
 ## Applications
 
