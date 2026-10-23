@@ -180,3 +180,27 @@ jobs:
       - name: Remove the prod SSH key
         if: always()
         run: rm -f ~/.ssh/homelab_prod_ed25519
+
+  # A tag says what runs on prod, so it comes after green tests. A GitHub-hosted runner keeps the
+  # only write token in this repository off the prod runner, where PR code runs (decision 0009).
+  release:
+    needs: post-deploy-tests
+    if: ${{ !cancelled() && needs.post-deploy-tests.result == 'success' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Tag and release what was deployed
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          tag="$(python3 utils/release-notes.py --target "$GITHUB_SHA" --run-url "$RUN_URL" --out notes.md)"
+          if [ -z "$tag" ]; then echo "$GITHUB_SHA already has a release tag"; exit 0; fi
+          gh release create "$tag" --target "$GITHUB_SHA" --title "$tag" --notes-file notes.md

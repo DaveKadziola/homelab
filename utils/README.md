@@ -87,3 +87,4 @@ Each row is the laptop script. It stops or reverts itself unless a check passes.
 | `setup-github-runner.sh` | Register the laptop or prod runner |
 | `setup-rclone-pcloud.sh` | Finish the pCloud remote after its OAuth login |
 | `tf-plan-risk.py` | Say whether a prod Terraform plan must stop for approval |
+| `release-notes.py` | Next `vX.Y.Z` and bullet-point release notes for what Apps Deploy Prod deployed |

@@ -156,6 +156,12 @@
         <mxCell id="c22" value="Ansible, Compose, HA, tests" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;" edge="1" parent="1" source="dpp" target="prodt">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
+        <mxCell id="rel" value="Apps Deploy Prod - job release&lt;br&gt;GitHub-hosted, contents: write&lt;br&gt;tag vX.Y.Z + release notes" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="1060" y="1240" width="210" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="c23" value="tests passed" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="dpp" target="rel">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
       </root>
     </mxGraphModel>
   </diagram>
