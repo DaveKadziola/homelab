@@ -111,8 +111,9 @@ Helper scripts:
 | `SAMBA_ADMIN_PASSWORD` | prod | secret | `homelab/SAMBA_ADMIN_PASSWORD/prod` | set 2026-10-19 | Samba login `admin` (`inject: ansible`, `deploy-storage.yml`); also in `~/.homelab-secrets/prod/`; Bitwarden copy by the operator |
 | `VSUM_SECRET_KEY` | dev | secret | `homelab/VSUM_SECRET_KEY/dev` | set | generated 2026-10-23 |
 | `VSUM_DB_PASSWORD` | dev | secret | `homelab/VSUM_DB_PASSWORD/dev` | set | generated 2026-10-23 |
-| `VSUM_OPENROUTER_KEY`, `VSUM_ELEVENLABS_KEY` | dev | secret | `homelab/<NAME>/dev` | planned | vsum API keys (owner); `OPENROUTER_KEY`/`ELEVENLABS_KEY` in the container; optional |
-| `VSUM_TRILIUM_TOKEN` | dev | secret | `homelab/VSUM_TRILIUM_TOKEN/dev` | planned | ETAPI token from DEV Trilium (Options -> ETAPI, owner); optional, turns on the note export |
+| `VSUM_OPENROUTER_KEY` | dev | secret | `homelab/VSUM_OPENROUTER_KEY/dev` | set | vsum API key (owner); `OPENROUTER_KEY` in the container; optional; set 2026-10-23 |
+| `VSUM_ELEVENLABS_KEY` | dev | secret | `homelab/VSUM_ELEVENLABS_KEY/dev` | set | vsum API key (owner); `ELEVENLABS_KEY` in the container; optional; set 2026-10-23 |
+| `VSUM_TRILIUM_TOKEN` | dev | secret | `homelab/VSUM_TRILIUM_TOKEN/dev` | set | ETAPI token from DEV Trilium (Options -> ETAPI, owner); optional, turns on the note export; set 2026-10-23 |
 | `VSUM_GIT_TOKEN` | dev | secret | `homelab/VSUM_GIT_TOKEN/dev` | set | fine-grained token, read-only Contents on `DaveKadziola/video-summarizer`; deploy-core builds the image with it; expires; set 2026-10-23 |
 
 ---
