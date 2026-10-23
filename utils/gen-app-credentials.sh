@@ -214,7 +214,12 @@ if paste == "true":
     open(path, "w").write("".join(lines))
     raise SystemExit
 pattern = re.compile(rf"(\| `{re.escape(name)}` \| {re.escape(env)} \|[^\n]*?)(rotated [0-9-]{{10}})?(\s*\|\s*)$", re.M)
-text, count = pattern.subn(lambda m: f"{m.group(1)}rotated {today}{m.group(3)}", text)
+def rotated(m):
+    # Same form as the hand-written rows: "<notes>; rotated <date>".
+    notes = m.group(1).rstrip().rstrip(";").rstrip()
+    sep = " " if notes.endswith("|") else "; "
+    return f"{notes}{sep}rotated {today}{m.group(3)}"
+text, count = pattern.subn(rotated, text)
 if count:
     open(path, "w").write(text)
 PY
