@@ -23,7 +23,7 @@
   "library": {
     "scan": {
       "enabled": true,
-      "cronExpression": "0 * * * *"
+      "cronExpression": "*/15 * * * *"
     }
   }
 }
