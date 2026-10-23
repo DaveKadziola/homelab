@@ -41,9 +41,6 @@ todos:
   - id: subnet-refactor
     content: "At the very end, after opnsense-wan-audit (operator 2026-10-22): subnet refactor. The operator thinks the VLAN layout can be better. There is no design yet. Change nothing until a layout is approved."
     status: pending
-  - id: totp-only-gate
-    content: "Operator 2026-10-22: a gate in front of self-hosted apps that asks only for a TOTP code from a phone app, no username and password. totp-gateway was named as a candidate and is not chosen. Authelia stays as it is (decision 0007) until a tool is picked."
-    status: pending
 isProject: false
 ---
 
