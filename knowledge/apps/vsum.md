@@ -10,7 +10,7 @@ Scope: vsum on DEV and the steps to turn it on in prod - build, secrets, upstrea
 | Services | `vsum-web` (GUI, `/healthz` runs a database query), `vsum-worker` (channel feeds, one approved video at a time); profile `vsum` |
 | Login | Authelia in front; the app's own login is off (`VSUM_AUTH` unset) |
 | DB | `vsum` / role `vsum` / `VSUM_DB_PASSWORD` (core Postgres, daily dump) |
-| Archive | named volume `vsum_archive` on DEV; prod `/mnt/homelab/media/video/vsum` (SA500 NFS, owner UID 10001, not backed up) |
+| Archive | named volume `vsum_archive` on DEV; prod `/mnt/homelab/media/vsum` (SA500, folder `vsum` of the Samba share `media`, owner UID 10001, not backed up) |
 | Trilium | `http://trilium:8080` with `VSUM_TRILIUM_TOKEN`; without the token the note export is off |
 | Upstream | `DaveKadziola/video-summarizer` (private), pinned by `vsum_ref` in `deploy-core.yml`; contract: `docs/knowledge-base/deployment.md` there |
 
@@ -56,18 +56,18 @@ runner cache `~/.homelab-secrets/dev/`.
 limit. A management key (https://openrouter.ai/settings/management-keys) passes `GET /api/v1/key`
 but gets 401 on chat completions (DEV, 2026-10-23); the DEV key is `vsum-homelab-dev`, limit 5 USD.
 
-## Turning it on in prod
+## Prod
 
-1. The SA500 holds `hl-media` and is exported (one-time wipe, `knowledge/storage.md` "Attach and
-   format"); `deploy-storage.yml` creates `media/video/vsum` owned by 10001.
-2. RAM: the compose limits on prod already add up to more than the 8 GiB of `ubuntu-apps`; vsum adds
-   960 MiB (worker 768m, web 192m; measured peaks 321 and 67 MiB). Decide what to lower or raise.
-3. Done 2026-10-23: the `VSUM_*` entries in `config/identities.yml` include prod, and env `prod` has
-   all six secrets. A new ETAPI token comes from prod Trilium (http://192.168.50.30:8082, Options ->
-   ETAPI) and is stored with
-   `./utils/gen-app-credentials.sh --env prod --secret VSUM_TRILIUM_TOKEN --paste --rotate`.
-4. Add `vsum` to `environments.prod.profiles` in `config/services.yml` and a vsum row (8088) to the
-   application table of `knowledge/prod-target.md`.
+Profile `vsum` is on in `environments.prod.profiles` since 2026-10-23; prod runs it after the next
+release into `main`. That deploy creates `media/vsum` on the SA500 (owner 10001), builds the image and
+starts both services behind Authelia as `vsum.dkhomelabserver.xyz`; the name needs
+`./utils/adguard-rewrites.sh` once (router change, owner).
+
+- Secrets: env `prod` has all six. A new ETAPI token comes from prod Trilium (http://192.168.50.30:8082,
+  Options -> ETAPI) and is stored with
+  `./utils/gen-app-credentials.sh --env prod --secret VSUM_TRILIUM_TOKEN --paste --rotate`.
+- Open (owner): RAM. The compose limits on prod already add up to more than the 8 GiB of
+  `ubuntu-apps`; vsum adds 960 MiB (worker 768m, web 192m; measured peaks 321 and 67 MiB).
 
 Commands on the app host:
 

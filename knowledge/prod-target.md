@@ -52,7 +52,7 @@ Source: `config/services.yml`, `compose/core/docker-compose.yml` (versions pinne
 
 | Prio | App | Port | Notes |
 |------|-----|------|-------|
-| P0 | PostgreSQL 16 | 5432 | DBs homelab, linkwarden, firefly3, actual, trilium, grafana, easytodo, todo_grocery |
+| P0 | PostgreSQL 16 | 5432 | DBs homelab, linkwarden, firefly3, actual, trilium, grafana, easytodo, todo_grocery, vsum |
 | P0 | Portainer | 9000 / 9443 | bootstrap; manages the Grocery stack |
 | P0 | pgAdmin | 5050 | |
 | P0 | Homarr | 7575 | board seeded from `services.yml`; password set once in UI |
@@ -70,6 +70,7 @@ Source: `config/services.yml`, `compose/core/docker-compose.yml` (versions pinne
 | P2 | Beszel hub + agent | 8090 | agent key and token from the hub, written on the host by the bootstrap; threshold alerts by mail ([monitoring](monitoring.md)) |
 | P2 | Dozzle | 8080 | container logs; Docker socket |
 | P2 | Diun | - | new image tags by mail through Proton SMTP once `SMTP_USERNAME` / `SMTP_PASSWORD` exist, else log only ([monitoring](monitoring.md)) |
+| P2 | vsum (web + worker) | 8088 | profile `vsum`; image built on the guest from the private repo at pinned `vsum_ref`; DB `vsum`; archive `media/vsum` on NFS; behind Authelia as `vsum.dkhomelabserver.xyz` |
 
 Reachability: LAN, WireGuard and IOT can open APP; APP reaches the internet and the NAS NFS only (`docs/network.md`).
 
