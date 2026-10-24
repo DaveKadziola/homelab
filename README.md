@@ -32,7 +32,7 @@ flowchart TB
   net["Internet"]
   isp["ISP router<br/>no hairpin NAT"]
   wgc["WireGuard clients<br/>10.10.10.0/24<br/>reach IOT, APP, LAN per rule"]
-  nfi["GUEST, HOME OFFICE (alias NotForIOT)<br/>the only networks IOT cannot reach"]
+  nfi["router, LAN, APP, GUEST, HOME OFFICE<br/>closed to IOT except DNS, NTP, ping<br/>and the homelab flows (docs/network.md)"]
   dmz["DMZ VLAN 50<br/>192.168.50.64/28<br/>unused, DHCP off"]
   subgraph opn ["OPNsense - WAN 192.168.100.2/30 - gateway of every VLAN"]
     hap["HAProxy<br/>grocery.dkhomelabserver.xyz<br/>Let's Encrypt"]
@@ -40,7 +40,7 @@ flowchart TB
     wg["WireGuard wg0<br/>10.10.10.1/24"]
   end
   subgraph lan ["LAN 192.168.1.0/24<br/>gw 192.168.1.1"]
-    laptop["laptop 192.168.1.100<br/>DEV: libvirt 192.168.122.0/24<br/>nested Proxmox, HAOS twin<br/>runner homelab-dev"]
+    laptop["laptop 192.168.1.20 (Admins)<br/>DEV: libvirt 192.168.122.0/24<br/>nested Proxmox, HAOS twin<br/>runner homelab-dev"]
   end
   subgraph iot ["IOT VLAN 20 - 192.168.20.0/24 - gw 192.168.20.1<br/>also printer, E1 Zoom, Tuya devices"]
     nas["ubuntu-nas, VM 102 on the Proxmox host<br/>192.168.20.12<br/>NFS for APP, SMB 445 for LAN and WireGuard only (Samba hosts allow)"]
@@ -56,8 +56,8 @@ flowchart TB
   isp -->|"WAN 51820/udp"| wg
   wg -->|"tunnel"| wgc
   hap -->|"192.168.50.30:8101"| apps
-  apps -->|"NFS TCP 2049, 111<br/>(+ SSH 22 from .50.30, unused)"| nas
-  app -->|"internet: anything except PrivateNetworks"| net
+  apps -->|"NFS TCP 2049, 111"| nas
+  app -->|"internet: TCP 80, 443, 587, Syncthing; UDP 123; ping"| net
   iot --x|"blocked"| nfi
   pve -.->|"hosts"| apps
 ```
