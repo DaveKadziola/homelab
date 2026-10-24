@@ -18,7 +18,7 @@ Declared in [`config/storage.yml`](../config/storage.yml). Two directories:
 | Home Assistant full backup (`ha-full-*.tar`, `HA_BACKUP_PASSWORD`) | NAS, `ha-pull.sh` -> `utils/ha.py backup` (`homelab-nas-backup.timer` 02:30) | HAOS twin | needs `HA_TOKEN` |
 | Home Assistant UI YAML snapshots (keep 30, only on change), NAS-private | NAS, `ha-yaml.sh` -> `utils/ha.py export-ui` | HAOS twin | needs `HA_TOKEN`, `HA_SSH_PRIV` |
 | OPNsense `config.xml`, NAS-private | NAS, `opnsense.sh`, key with a forced command | SKIP (prod only) | one file 2026-10-22 (`config-20261022T131513Z.xml`, mode 600); timer 02:30 |
-| VM dumps 101/102 (`vzdump/dump/`), NAS-private | Proxmox job `homelab-vms` 04:30 onto storage `nas-backups` (NFS `<nas_private_root>/vzdump`, only to the PVE host), `utils/pve-backup-job.py` | job created, disabled | runs |
+| VM dumps 101/102 (`vzdump/dump/`), NAS-private | Proxmox job `homelab-vms` 04:30 onto storage `nas-backups` (NFS `<nas_private_root>/vzdump`, only to the PVE host, `vers=4.2`), `utils/pve-backup-job.py` | job created, disabled | runs |
 | Freshness of every stream | NAS, `check-fresh.py` (`homelab-backup-check.timer` 06:00) -> Uptime Kuma push | runs | runs |
 
 Retention **A15 = 2 newest** artefacts **per name prefix** (`linkwarden-*.sql.gz`, not “2 files in the whole folder”). `hl_prune` in `utils/backup/lib.sh`; Home Assistant: `ha.py backup --keep 2`; VM dumps: `prune-backups keep-last=2` on the Proxmox job. Max ages and the Kuma push monitors: [`config/monitoring.yml`](../config/monitoring.yml) `backups`.

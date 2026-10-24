@@ -10,8 +10,9 @@ schedule, enabled) and retention.keep. API: PROXMOX_API_URL (default
 https://<vzdump.pve_host>:8006/api2/json), PROXMOX_API_TOKEN_ID, PROXMOX_API_TOKEN_SECRET; on dev
 the token defaults to root@pam!terraform with the secret from ~/.homelab-pve-dev-token-secret.
 The secret is never printed.
-First the storage `nas-backups` (NFS <nas_host>:<nas_private_root>/vzdump, content backup),
-then the job `homelab-vms` (snapshot, zstd, notes {{guestname}}); both prune to keep-last=<keep>.
+First the storage `nas-backups` (NFS <nas_host>:<nas_private_root>/vzdump, content backup, options
+vers=4.2), then the job `homelab-vms` (snapshot, zstd, notes {{guestname}}); both prune to
+keep-last=<keep>. Last, PVE must report the storage online, or vzdump would fail on it.
 Missing -> created, differing -> only the differing fields updated, equal -> "ok". Stops when the
 API's node is not proxmox_node_name of that env, or the storage exists with another type, server
 or export. Creating the storage makes PVE mount it: the export must exist on the NAS first.
@@ -57,7 +58,10 @@ def desired(env_cfg, keep):
     prune = f"keep-last={int(keep)}"
     storage = {"type": "nfs", "server": env_cfg["nas_host"],
                "export": f"{env_cfg['nas_private_root'].rstrip('/')}/vzdump",
-               "content": "backup", "prune-backups": prune}
+               "content": "backup", "prune-backups": prune,
+               # Without vers=4 PVE checks the server with showmount (rpcbind, mountd), which the NAS
+               # firewall drops; with it, rpcinfo (TCP 111 from the PVE host) and then TCP 2049.
+               "options": "vers=4.2"}
     job = {"schedule": vz["schedule"], "vmid": ",".join(str(int(v)) for v in vz["vmids"]),
            "storage": STORAGE_ID, "mode": "snapshot", "compress": "zstd",
            "enabled": int(vz["enabled"]), "prune-backups": prune, "notes-template": "{{guestname}}"}
@@ -151,6 +155,15 @@ def ensure(api, what, want, find, create, update, dry_run, fixed=(), defaults=No
     print(f"ok    {what} (read back after {action})")
 
 
+def check_online(api, node):
+    """The mount can still work while PVE reports the storage offline; vzdump then refuses it."""
+    status = api.call("GET", f"/nodes/{node}/storage/{STORAGE_ID}/status") or {}
+    if not status.get("active"):
+        raise Stop(f"storage {STORAGE_ID} is not online on {node} (pvesm status) - vzdump would fail; "
+                   "check the NFS export and the NAS host firewall")
+    print(f"ok    storage {STORAGE_ID} online")
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--env", choices=["dev", "prod"])
@@ -190,6 +203,8 @@ def main(argv=None):
         ensure(api, f"backup job {JOB_ID}", want_job,
                lambda: next((j for j in api.call("GET", "/cluster/backup") if j.get("id") == JOB_ID), None),
                ("/cluster/backup", {"id": JOB_ID}), f"/cluster/backup/{JOB_ID}", args.dry_run, defaults=JOB_DEFAULTS)
+        if not args.dry_run:
+            check_online(api, node)
     except Stop as e:
         print(f"STOP: {e}", file=sys.stderr)
         return 1
@@ -206,7 +221,7 @@ def self_test():
            "vzdump": {"pve_host": "192.168.20.20", "vmids": [101, 102], "schedule": "04:30", "enabled": True}}
     st, job = desired(env, 2)
     assert st == {"type": "nfs", "server": "192.168.20.12", "export": "/srv/purple/nas-backups/vzdump",
-                  "content": "backup", "prune-backups": "keep-last=2"}, st
+                  "content": "backup", "prune-backups": "keep-last=2", "options": "vers=4.2"}, st
     assert job["vmid"] == "101,102" and job["enabled"] == 1 and job["storage"] == STORAGE_ID, job
     assert job["prune-backups"] == "keep-last=2" and job["notes-template"] == "{{guestname}}", job
     assert desired({**env, "vzdump": {**env["vzdump"], "enabled": False}}, 2)[1]["enabled"] == 0
