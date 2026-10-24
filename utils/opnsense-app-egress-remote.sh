@@ -1,8 +1,8 @@
 #!/usr/bin/env sh
 # Run ON OPNsense as root (piped via SSH). APP (opt6) reaches the NAS over NFS and the internet only
-# on the ports the apps use: TCP 80, 443, 587 (mail), 22000 and 22067 (Syncthing), UDP 123 and
-# 22000, and ping; the rest is blocked and logged. The ports come from the pf states of 2026-10-24
-# and the services in compose/core. Removes the unused APP .50.30 -> NAS SSH rule (audit S25).
+# on the ports the apps use: TCP 80, 443, 587 (mail), 22000 and 22067 (Syncthing), UDP 123, 3478
+# (Syncthing STUN) and 22000, and ping; the rest is blocked and logged. The ports come from the pf
+# states and the block log of 2026-10-24 and the services in compose/core. Removes the unused APP .50.30 -> NAS SSH rule (audit S25).
 # DNS to the router is passed by the CommonDNS group rule to (self):53. Idempotent: rules are found
 # by descr and replaced when they differ. Pre-change backup, automatic revert after REVERT_AFTER
 # seconds unless /tmp/homelab-appfw-keep appears. --dry-run via DRY_RUN=1. No secrets here.
@@ -79,7 +79,7 @@ def ensure_alias(name, content, description):
 
 
 ensure_alias("AppEgressTcp", ["80", "443", "587", "22000", "22067"], "homelab-v2: APP to the internet, TCP")
-ensure_alias("AppEgressUdp", ["123", "22000"], "homelab-v2: APP to the internet, UDP")
+ensure_alias("AppEgressUdp", ["123", "3478", "22000"], "homelab-v2: APP to the internet, UDP")
 
 rules = filt.findall("rule")
 app = [r for r in rules if r.findtext("interface") == "opt6"]

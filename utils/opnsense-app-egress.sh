@@ -23,11 +23,12 @@ R=(ssh -o StrictHostKeyChecking=accept-new -i "$KEY" "root@${LAN_HOST}")
 # The test client has no resolver that answers on VLAN 51, so the targets are resolved here.
 SMTP_IP="$(dig +short @"$LAN_HOST" smtp.protonmail.ch A | grep -m1 -E '^[0-9.]+$')"
 ARCHIVE_IP="$(dig +short @"$LAN_HOST" archive.ubuntu.com A | grep -m1 -E '^[0-9.]+$')"
+STUN_IP="$(dig +short @"$LAN_HOST" stun.cloudflare.com A | grep -m1 -E '^[0-9.]+$')"
 sleep 3
 # A test client in its own network namespace on Proxmox: vmbr1 VLAN 51, 192.168.50.61/26, gateway
 # 192.168.50.50 - what ubuntu-apps will see. Prints one line per probe; removed again.
 probe() {
-  "${PVE[@]}" "SMTP_IP=${SMTP_IP} ARCHIVE_IP=${ARCHIVE_IP} bash -s" <<'P' 2>/dev/null
+  "${PVE[@]}" "SMTP_IP=${SMTP_IP} ARCHIVE_IP=${ARCHIVE_IP} STUN_IP=${STUN_IP} bash -s" <<'P' 2>/dev/null
 bridge vlan add vid 51 dev vmbr1 self
 ip netns add apptest
 ip link add link vmbr1 name app51 type vlan id 51
@@ -49,6 +50,12 @@ ip netns exec apptest curl -s -o /dev/null -w "http %{http_code}\n" --max-time 8
 ip netns exec apptest timeout 4 bash -c "</dev/tcp/${SMTP_IP}/587" 2>/dev/null && echo "smtp open" || echo "smtp closed"
 ip netns exec apptest timeout 4 bash -c "</dev/tcp/140.82.121.4/22" 2>/dev/null && echo "ssh-out open" || echo "ssh-out closed"
 ip netns exec apptest ping -c 1 -W 3 1.1.1.1 >/dev/null && echo "ping ok" || echo "ping fail"
+# A STUN binding request, as Syncthing sends for NAT traversal.
+ip netns exec apptest python3 -c '
+import os, socket, struct
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.settimeout(3)
+s.sendto(struct.pack(">HHI", 1, 0, 0x2112A442) + os.urandom(12), (os.environ["STUN_IP"], 3478))
+s.recvfrom(512); print("stun ok")' 2>/dev/null || echo "stun fail"
 ip netns del apptest
 bridge vlan del vid 51 dev vmbr1 self
 P
@@ -63,6 +70,7 @@ check "APP -> internet (http, apt)" grep -q "^http [23]" <<<"$out"
 check "APP -> mail (587)" grep -q "^smtp open" <<<"$out"
 check "APP -/-> internet SSH (22)" grep -q "^ssh-out closed" <<<"$out"
 check "APP -> ping" grep -q "^ping ok" <<<"$out"
+check "APP -> STUN (UDP 3478)" grep -q "^stun ok" <<<"$out"
 check "LAN -> internet (https)" curl -s -o /dev/null --max-time 8 https://github.com
 check "root ssh over LAN" "${R[@]}" -o BatchMode=yes true
 APPS=(ssh -o BatchMode=yes -i "${PROD_KEY:-$HOME/.ssh/homelab_prod_ed25519}" ubuntu-prod@192.168.50.30)
