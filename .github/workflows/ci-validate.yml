@@ -76,3 +76,4 @@ jobs:
           python3 utils/bootstrap/immich_libraries.py --self-test
           python3 utils/bootstrap/immich_album_keys.py --self-test
           python3 utils/photos-watch.py --self-test
+          python3 utils/media-check.py --self-test
