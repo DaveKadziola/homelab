@@ -19,7 +19,10 @@ Agreed with the operator on 2026-10-24:
 - Docker image updates are in scope (Diun reported newer tags).
 - Two releases (approach 1 of three considered; one big release and three releases rejected).
 - Manual changes on prod hosts (Proxmox, Home Assistant, router) count as prod deployments and
-  are done in the window of a release, not on their own.
+  are done in the window of a release, not on their own. The agent makes them through the
+  Remote Control session, only after the operator's explicit consent to that change
+  (operator 2026-10-24). Each one follows `AGENTS.md` section 11: old value saved, smallest
+  change, effect verified, restore command reported.
 - Read-only prod work runs through a Remote Control session on the operator's laptop: the cloud
   workspace has no route to the home network.
 - Every phase has reviewer and critic agents whose job is to find what passes on DEV and fails
@@ -29,16 +32,16 @@ Agreed with the operator on 2026-10-24:
 
 Unchanged rules from `PROJECT-CONTEXT.md` section 3: the operator merges every release PR and
 approves `prod-approve` / `prod-gate`; no direct push to `develop` or `main`; the router's live
-configuration is changed only by the operator; a plan that replaces `ubuntu-apps` stops the
-release.
+configuration changes only with the operator's consent to that change; a plan that replaces
+`ubuntu-apps` stops the release.
 
 ## 2. Invasiveness levels
 
 | Level | Meaning | Items |
 | --- | --- | --- |
-| 1 | Read-only on prod; work on DEV and in the repo only | monitoring-audit, adguard-review, opnsense-wan-audit, syncthing-smb-check, backup-decrypt-drill, rebuild-data-safety, ai-cost (measuring), container-file-access (check Portainer), joplin-to-trilium (DEV test and docs), trilium-ai-access (research), image inventory |
-| 2 | Adds to prod; nothing existing changes meaning | weekly-security-audit, ai-log-analysis, monitoring gap fixes, patch/minor image updates, file browser, db-admin-tool (CloudBeaver next to pgAdmin), homarr-dashboard-widgets, postgres-unused-dbs (list cleanup only) |
-| 3 | Changes or removes something on prod | pve-hardening, admin-certs, postgres-unused-dbs (DROP on prod), pgAdmin removal, public-map-split, image updates with a data migration, audit fixes that change config; then git-history-state |
+| 1 | Read-only on prod; work on DEV and in the repo only | monitoring-audit, adguard-review, opnsense-wan-audit, syncthing-smb-check, backup-decrypt-drill, rebuild-data-safety, ai-cost (measuring), container-file-access (check Portainer), joplin-to-trilium (DEV test and docs), trilium-ai-access (design, section 3.5), app database survey (section 3.6), image inventory |
+| 2 | Adds to prod; nothing existing changes meaning | weekly-security-audit, ai-log-analysis, monitoring gap fixes, patch/minor image updates, file browser, homarr-dashboard-widgets, postgres-unused-dbs (list cleanup only), trilium-ai-access if its design only adds (section 3.5) |
+| 3 | Changes or removes something on prod | pve-hardening, admin-certs, postgres-unused-dbs (DROP on prod; an app moved to Postgres), db-admin-tool (CloudBeaver replaces pgAdmin, only under the condition in section 3.6), public-map-split, image updates with a data migration, audit fixes that change config; then git-history-state |
 | 4 | Rebuilds - out of scope | ubuntu-2604, disk-encryption, subnet-refactor, home-assistant-zigbee |
 
 `security-audit-fixes` and `security-public-repo` are umbrella items: they close when
@@ -50,7 +53,7 @@ cleanup is level 2 and the DROP is level 3.
 
 ## 3. Phases
 
-### Phase 0 - read-only, no deploy
+### 3.1 Phase 0 - read-only, no deploy
 
 One Remote Control session on the laptop. Reads on prod run one after another, never in
 parallel (`AGENTS.md` section 6). Order:
@@ -71,13 +74,14 @@ parallel (`AGENTS.md` section 6). Order:
 5. syncthing-smb-check, adguard-review, opnsense-wan-audit (the scan from outside is done by
    the operator from a phone hotspot), ai-cost measurement.
 6. Repo and DEV only: Portainer file access check, Joplin -> Trilium export test on DEV,
-   trilium-ai-access research.
+   the trilium-ai-access design questions (section 3.5), the app database survey
+   (section 3.6).
 
 Output: findings in `knowledge/` (one document per audit), each finding that needs a change
 as a new backlog item tagged R1 or R2. Phase 0 ends with an operator review of that list; a
 finding that needs level 4 work goes to the backlog, not into R1 or R2.
 
-### Release 1 - additions
+### 3.2 Release 1 - additions
 
 One PR per item into `develop`, in this order:
 
@@ -86,8 +90,8 @@ One PR per item into `develop`, in this order:
 3. Monitoring gap fixes from Phase 0 (known: update reports for OPNsense and Home Assistant).
 4. weekly-security-audit.
 5. ai-log-analysis (uses the weekly audit output and the ai-cost result).
-6. Minor image updates, CloudBeaver next to pgAdmin, file browser (read-only by default),
-   Homarr widgets if the new Homarr version supports them.
+6. Minor image updates, file browser (read-only by default), Homarr widgets if the new Homarr
+   version supports them.
 7. Phase 0 fixes tagged R1.
 
 Items without a design (weekly-security-audit, ai-log-analysis, container-file-access) get a
@@ -95,7 +99,7 @@ short brainstorming of their own before implementation. Then one release PR.
 
 After R1 the operator can import Joplin notes into prod Trilium by hand (it only adds data).
 
-### Release 2 - changes to existing prod
+### 3.3 Release 2 - changes to existing prod
 
 One PR per item into `develop`, in this order:
 
@@ -103,18 +107,61 @@ One PR per item into `develop`, in this order:
 2. admin-certs.
 3. pve-hardening: the Terraform provider change (SSH key, new `privsep=1` token) together with
    the host changes in the release window.
-4. DROP of the unused databases and pgAdmin removal.
+4. App moves to Postgres that the survey in section 3.6 allows (data migration, DEV first),
+   then DROP of the databases nothing uses. CloudBeaver replaces pgAdmin only under the
+   condition in section 3.6.
 5. Image updates with a data migration (Immich Postgres 14) - only with an upstream migration
    path; without one the item moves back to the backlog.
 6. Phase 0 fixes tagged R2.
 
-trilium-ai-access gets its own brainstorming after Phase 0; it is placed in R1 or R2 by what the
-design changes.
-
-### After R2 - history rewrite, no deploy
+### 3.4 After R2 - history rewrite, no deploy
 
 git-history-state: one rewrite, force-push of `main` and `develop`. Asked separately, because it
 cannot be undone and every clone and runner checkout becomes stale.
+
+### 3.5 trilium-ai-access - requirement
+
+Operator 2026-10-24: AI may read only the Trilium notes and knowledge-base content the operator
+marks as fit for cloud processing. Private notes never leave the home network, neither to
+OpenRouter nor to any other cloud model. "Cannot read" means the AI path has no credential or
+copy that reaches them; a prompt rule or a filter applied after the read does not count.
+
+What exists: vsum writes to Trilium with `VSUM_TRILIUM_TOKEN`, an ETAPI token
+(`knowledge/apps/vsum.md:50`). Assumption, to verify in Phase 0: an ETAPI token is not limited to
+a subtree, so any holder of it can read every note.
+
+Phase 0 answers, on DEV:
+
+1. Can an ETAPI token be limited to a subtree or a label? Checked in the Trilium source and
+   documentation for the deployed version, and by a test on DEV.
+2. How the operator marks a note as allowed (a label on a subtree root, a separate subtree), and
+   how a new private note stays private by default.
+3. If tokens are not scoped: candidate designs, for example a small local service that holds the
+   ETAPI token and exposes only the marked subtree, or an export of the marked subtree into a
+   separate store that the AI tools read. The service must not run on a cloud host.
+4. Whether `VSUM_TRILIUM_TOKEN` itself reads more than vsum needs (it only has to write), and
+   what that means for the OpenRouter path of vsum.
+5. Where the "knowledge base" content lives, if it is not Trilium, and the same rule for it.
+6. Local model vs OpenRouter for the content that is allowed.
+
+The answers go to the operator; the design gets its own short brainstorming. It lands in R1 if it
+only adds (a new service, a new token) and in R2 if it changes an existing token or app. Until
+it lands, no AI tool in this plan (ai-log-analysis included) gets a Trilium credential.
+
+### 3.6 App databases and the admin tool
+
+Operator 2026-10-24: CloudBeaver replaces pgAdmin only if some app database cannot be moved or
+switched to Postgres and the operator needs access to it; otherwise pgAdmin stays and CloudBeaver
+is not added.
+
+Phase 0 survey, per app that keeps its own database file instead of the shared Postgres
+(`config/services.yml:59` and `compose/`): the engine and file location, whether the upstream
+version in use supports Postgres, the migration path upstream documents, and the data at stake.
+Outcome per app: move to Postgres (R2, DEV first, dump of the old file kept), or stays outside
+Postgres. If at least one app stays outside and the operator wants access to it, db-admin-tool
+goes into R2: CloudBeaver replaces pgAdmin, with a check that a running app's database file is
+opened read-only. The survey also confirms which entries of `databases:` nothing uses before
+the list cleanup in R1.
 
 ## 4. Release mechanics
 
@@ -190,5 +237,5 @@ One model per item from start to merge (`AGENTS.md` section 13).
 
 ## 8. Out of scope
 
-Level 4 items; changes to the router's live configuration by the agent; retiring
-`utils/bootstrap-secrets.sh` (open question in `PROJECT-CONTEXT.md` section 8).
+Level 4 items; any change on a prod host or the router without the operator's consent to that
+change; retiring `utils/bootstrap-secrets.sh` (open question in `PROJECT-CONTEXT.md` section 8).
