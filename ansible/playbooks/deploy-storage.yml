@@ -785,6 +785,14 @@
             name: nftables
             state: present
 
+        - name: Create the firewall config directory
+          ansible.builtin.file:
+            path: /etc/homelab
+            state: directory
+            owner: root
+            group: root
+            mode: "0755"
+
         - name: Write the firewall rules
           ansible.builtin.copy:
             dest: /etc/homelab/nas-firewall.nft
