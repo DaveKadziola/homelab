@@ -179,24 +179,62 @@ fi
 
 apply_system_config "$TOKEN"
 
-# Photos the owner adds over the Samba share photos, mounted read-only at /external/photos
-# (compose). One external library owned by the admin; Immich rescans it on the system-config cron.
-ensure_external_library() {
-  local token="$1" path="/external/photos" libs owner id
-  libs="$(hl_curl -H "Authorization: Bearer ${token}" "${BASE}/libraries")" || { hl_warn "cannot list libraries"; return 0; }
-  id="$(printf '%s' "$libs" | python3 -c 'import json,sys; p=sys.argv[1]; print(next((l["id"] for l in json.load(sys.stdin) if p in l.get("importPaths", [])), ""))' "$path")"
-  if [[ -z "$id" ]]; then
-    owner="$(hl_curl -H "Authorization: Bearer ${token}" "${BASE}/users/me" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')"
-    id="$(printf '{"ownerId":"%s","name":"NAS photos","importPaths":["%s"]}' "$owner" "$path" |
-      hl_curl -X POST "${BASE}/libraries" -H "Authorization: Bearer ${token}" -H 'Content-Type: application/json' --data @- |
-      python3 -c 'import json,sys; print(json.load(sys.stdin).get("id",""))' 2>/dev/null)"
-    [[ -n "$id" ]] || { hl_warn "external library ${path} not created"; return 0; }
-    hl_log "external library ${path} created"
-  fi
-  # A scan on every deploy too, so photos added since the last hourly scan show up.
-  hl_curl -X POST "${BASE}/libraries/${id}/scan" -H "Authorization: Bearer ${token}" >/dev/null || hl_warn "scan of ${path} not queued"
-  hl_log "external library ${path}: scan queued"
+# Photos added over Samba: each person has photos/<username> on the NAS, mounted read-only below
+# /external/photos (compose), and owns the external library on it. People other than the admin are
+# the immich accounts of config/identities.yml with another identity; they get an Immich account.
+photo_people() {
+  python3 - "$(hl_config_dir)/identities.yml" "$HOMELAB_ENV" <<'PY'
+import sys, yaml
+doc = yaml.safe_load(open(sys.argv[1]))
+for a in doc.get("accounts", []):
+    if a.get("app") == "immich" and a.get("identity") != "homelab-admin" and sys.argv[2] in a.get("envs", []):
+        ident = doc["identities"][a["identity"]]
+        print(f'{ident["email"]}|{ident["username"]}|{a["secret"]}')
+PY
 }
 
-ensure_external_library "$TOKEN"
+ensure_photo_users() {
+  local token="$1" email username secret users code
+  users="$(hl_curl -H "Authorization: Bearer ${token}" "${BASE}/admin/users")" || { hl_warn "cannot list users"; return 0; }
+  while IFS='|' read -r email username secret; do
+    [[ -n "$email" ]] || continue
+    if printf '%s' "$users" | python3 -c 'import json,sys; sys.exit(0 if any(u["email"] == sys.argv[1] for u in json.load(sys.stdin)) else 1)' "$email"; then
+      continue
+    fi
+    hl_has_secret "$secret" || { hl_warn "${secret} missing - Immich user ${username} not created"; continue; }
+    code="$(printf '{"email":%s,"name":%s,"password":%s,"storageLabel":%s,"shouldChangePassword":false}' \
+      "$(hl_json_escape "$email")" "$(hl_json_escape "$username")" "$(hl_json_escape "$(hl_secret "$secret")")" "$(hl_json_escape "$username")" |
+      curl -s -o /dev/null -w '%{http_code}' --max-time 30 -X POST "${BASE}/admin/users" \
+        -H "Authorization: Bearer ${token}" -H 'Content-Type: application/json' --data @-)"
+    [[ "$code" =~ ^(200|201)$ ]] && hl_log "Immich user ${username} created" || hl_warn "Immich user ${username} rejected (HTTP ${code})"
+  done < <(photo_people)
+}
+
+ensure_external_libraries() {
+  local token="$1" pairs=("${EMAIL}=/external/photos/$(hl_account immich username)") email username secret
+  while IFS='|' read -r email username secret; do
+    [[ -n "$email" ]] && pairs+=("${email}=/external/photos/${username}")
+  done < <(photo_people)
+  # A scan on every deploy too, so photos added since the last scheduled scan show up.
+  IMMICH_TOKEN="$token" python3 "$(dirname "$0")/immich_libraries.py" "$BASE" "${pairs[@]}" |
+    while read -r line; do hl_log "$line"; done || hl_warn "external libraries not converged"
+}
+
+# Folders in the photos share become albums: the immich-album-creator container (compose) reads one
+# API key per person from this file, which immich_album_keys.py keeps.
+ensure_album_keys() {
+  local email username secret
+  {
+    printf '%s\t%s\n' "$EMAIL" "$PASSWORD"
+    while IFS='|' read -r email username secret; do
+      [[ -n "$email" ]] || continue
+      printf '%s\t%s\n' "$email" "$(hl_has_secret "$secret" && hl_secret "$secret")"
+    done < <(photo_people)
+  } | python3 "$(dirname "$0")/immich_album_keys.py" "$BASE" "$(hl_secrets_dir)/immich-album-creator/api-keys" |
+    while read -r line; do hl_log "$line"; done || hl_warn "album creator keys not converged"
+}
+
+ensure_photo_users "$TOKEN"
+ensure_external_libraries "$TOKEN"
+ensure_album_keys
 hl_log "OK"

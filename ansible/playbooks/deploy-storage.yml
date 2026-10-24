@@ -23,6 +23,10 @@
     st: "{{ storage.environments[homelab_env] }}"
     passthrough: "{{ st.passthrough | default([]) }}"
     binds: "{{ st.binds | default([]) }}"
+    # The owner's one place for every backup (Samba share all-backups): both trees, bound read-only.
+    admin_view_binds:
+      - { from: "{{ st.export_root }}/backups", to: "{{ st.samba.admin_view | default('') }}/backups" }
+      - { from: "{{ st.nas_private_root | default('') }}", to: "{{ st.samba.admin_view | default('') }}/nas-backups" }
     # Every mount nfs-server must wait for, and the [path, label] marker of each
     # filesystem that NFS shows (checked through NFS by the client play).
     nas_mounts: "{{ (passthrough | map(attribute='mount') | list) + (binds | map(attribute='to') | list) }}"
@@ -34,7 +38,17 @@
     # Same resolution as deploy-core.yml: environment first, else the operator cache.
     secret_cache: "{{ lookup('env', 'HOME') }}/.homelab-secrets/{{ homelab_env }}"
     identities: "{{ lookup('file', playbook_dir + '/../../config/identities.yml') | from_yaml }}"
-    samba_account: "{{ identities.accounts | selectattr('app', 'equalto', 'samba') | first }}"
+    samba_account: >-
+      {{ identities.accounts | selectattr('app', 'equalto', 'samba')
+         | selectattr('identity', 'equalto', 'homelab-admin') | first }}
+    # Photos users other than the admin: own Samba login, own folders, nothing else (2026-10-23).
+    photo_accounts: >-
+      {{ identities.accounts | selectattr('app', 'equalto', 'samba')
+         | rejectattr('identity', 'equalto', 'homelab-admin')
+         | selectattr('envs', 'contains', homelab_env) | list }}
+    photo_logins: >-
+      {{ photo_accounts | map(attribute='identity') | map('extract', identities.identities)
+         | map(attribute='username') | list }}
     samba_login: "{{ identities.identities[samba_account.identity].username }}"
     # Not the login itself: a Unix user named admin gets sudo through Ubuntu's %admin group.
     samba_unix_user: homelab-smb
@@ -49,6 +63,11 @@
       - HA_BACKUP_PASSWORD
       - KUMA_PUSH_SECRET
       - OPNSENSE_BACKUP_SSH_PRIV
+      - IMMICH_SCAN_API_KEY
+    # Immich API for the photos watcher; the port comes from config/services.yml.
+    immich_port: >-
+      {{ (lookup('file', playbook_dir + '/../../config/services.yml') | from_yaml).services
+         | selectattr('name', 'equalto', 'immich') | map(attribute='port') | first }}
   tasks:
     - name: Refuse a run whose HOMELAB_ENV does not match the inventory
       ansible.builtin.assert:
@@ -243,6 +262,16 @@
         mode: "0755"
       loop: "{{ storage.exports }}"
 
+    # One folder per person in photos; Immich imports each as that person's external library.
+    - name: Create the photos folder of each person
+      ansible.builtin.file:
+        path: "{{ st.export_root }}/media/photos/{{ item }}"
+        state: directory
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0755"
+      loop: "{{ [identities.identities['homelab-admin'].username] + photo_logins }}"
+
     # Outside export_root: no client of the export tree (the apps host is root there through
     # no_root_squash) and no Samba share reaches router config, HA UI YAML or the VM dumps.
     - name: Create the NAS-private backup directories
@@ -256,6 +285,51 @@
       loop:
         - "{{ st.nas_private_root }}"
         - "{{ st.nas_private_root }}/vzdump"
+
+    # Outside export_root, so no NFS client sees the NAS-private half; read-only binds, so not even
+    # root on the NAS writes through them.
+    - name: Bind both backup trees read-only into the admin view
+      when: st.samba.admin_view is defined and st.nas_private_root is defined
+      block:
+        - name: Create the admin view directory
+          ansible.builtin.file:
+            path: "{{ st.samba.admin_view }}"
+            state: directory
+            owner: root
+            group: root
+            mode: "0755"
+
+        # Once mounted, a mount point is the read-only bind itself: owner and mode cannot be set there.
+        - name: Look at the admin view mount points
+          ansible.builtin.stat:
+            path: "{{ item.to }}"
+          loop: "{{ admin_view_binds }}"
+          register: admin_view_points
+
+        - name: Create the missing admin view mount points
+          ansible.builtin.file:
+            path: "{{ item.item.to }}"
+            state: directory
+            owner: root
+            group: root
+            mode: "0755"
+          loop: "{{ admin_view_points.results }}"
+          loop_control:
+            label: "{{ item.item.to }}"
+          when: not item.stat.exists
+
+        - name: Record the admin view binds in fstab
+          ansible.builtin.lineinfile:
+            path: /etc/fstab
+            regexp: '^\S+\s+{{ item.to | regex_escape }}\s'
+            line: "{{ item.from }} {{ item.to }} none bind,ro,nofail,x-systemd.requires-mounts-for={{ item.from }} 0 0"
+          loop: "{{ admin_view_binds }}"
+
+        - name: Mount the admin view binds  # noqa: command-instead-of-module
+          ansible.builtin.shell: mountpoint -q {{ item.to | quote }} && echo already || mount {{ item.to | quote }}
+          loop: "{{ admin_view_binds }}"
+          register: admin_view_mount
+          changed_when: admin_view_mount.stdout != 'already'
 
     # crossmnt: the passthrough filesystems and binds are mounted below export_root.
     - name: Write /etc/exports
@@ -273,11 +347,45 @@
           {% endif %}
       notify: Reload nfs
 
+    # nfsd sizes its largest block from RAM at start: with 2 GiB it took 256 KiB, and a client still
+    # mounted with 512 KiB hung (Proxmox vzdump, 2026-10-24). The kernel maximum (1 MiB) is what DEV
+    # gets from its RAM anyway, and no client can negotiate more, so every mount stays valid.
+    - name: Fix the nfsd block size before nfsd starts
+      block:
+        - name: Create the nfs-server drop-in directory
+          ansible.builtin.file:
+            path: /etc/systemd/system/nfs-server.service.d
+            state: directory
+            mode: "0755"
+
+        - name: Write the nfsd block size drop-in
+          ansible.builtin.copy:
+            dest: /etc/systemd/system/nfs-server.service.d/homelab-blocksize.conf
+            mode: "0644"
+            content: |
+              # Generated by deploy-storage.yml: the kernel accepts it only while nfsd is stopped.
+              [Service]
+              ExecStartPre=/bin/sh -c 'echo 1048576 > /proc/fs/nfsd/max_block_size'
+          notify: Reload systemd
+
     - name: Enable and start NFS server
       ansible.builtin.service:
         name: nfs-kernel-server
         state: started
         enabled: true
+
+    - name: Read the nfsd block size
+      ansible.builtin.slurp:
+        src: /proc/fs/nfsd/max_block_size
+      register: nfsd_blocksize_now
+
+    # Only when the running value differs: a restart pauses NFS clients for the NFSv4 grace time.
+    - name: Restart nfsd with the fixed block size
+      when: (nfsd_blocksize_now.content | b64decode | trim) != '1048576'
+      ansible.builtin.systemd:
+        name: nfs-server.service
+        state: restarted
+        daemon_reload: true
 
     - name: Export the shares
       ansible.builtin.command: exportfs -ra
@@ -302,6 +410,34 @@
               Set {{ samba_account.secret }} in the environment, or generate it with
               utils/gen-app-credentials.sh --env {{ homelab_env }} --app samba
 
+        - name: Resolve the photos users' Samba passwords
+          ansible.builtin.set_fact:
+            photo_passwords: >-
+              {{ photo_passwords | default({}) | combine({item.secret: lookup('env', item.secret)
+                 | default(lookup('file', secret_cache ~ '/' ~ item.secret, errors='ignore'), true)
+                 | default('', true)}) }}
+          loop: "{{ photo_accounts }}"
+          no_log: true
+
+        - name: Require the photos users' Samba passwords
+          ansible.builtin.assert:
+            that:
+              - photo_passwords[item.secret] | length > 0
+            fail_msg: >-
+              Set {{ item.secret }} in the environment, or generate it with
+              utils/gen-app-credentials.sh --env {{ homelab_env }} --secret {{ item.secret }}
+          loop: "{{ photo_accounts }}"
+          loop_control:
+            label: "{{ item.secret }}"
+
+        - name: Create the Unix accounts of the photos users
+          ansible.builtin.user:
+            name: "smb-{{ item }}"
+            system: true
+            shell: /usr/sbin/nologin
+            create_home: false
+          loop: "{{ photo_logins }}"
+
         - name: Create the Unix account behind the Samba login
           ansible.builtin.user:
             name: "{{ samba_unix_user }}"
@@ -324,6 +460,9 @@
             content: |
               # Generated by deploy-storage.yml: unix_user = login
               {{ samba_unix_user }} = {{ samba_login }}
+              {% for login in photo_logins %}
+              smb-{{ login }} = {{ login }}
+              {% endfor %}
           notify: Restart smbd
 
         # DEV keeps Immich on a Docker volume, so the immich share exists only where the
@@ -332,6 +471,17 @@
           ansible.builtin.stat:
             path: "{{ st.export_root }}/media/immich/library"
           register: immich_library
+
+        # Immich makes library/<storage label> on the first upload; the read-only share needs it now.
+        - name: Create each photos user's Immich folder
+          when: immich_library.stat.isdir | default(false)
+          ansible.builtin.file:
+            path: "{{ st.export_root }}/media/immich/library/{{ item }}"
+            state: directory
+            owner: root
+            group: root
+            mode: "0755"
+          loop: "{{ photo_logins }}"
 
         # Writes run as ansible_user (force user), the owner of the export tree, so files
         # stay readable by the containers and writable by the next deploy.
@@ -394,6 +544,24 @@
                  valid users = {{ samba_unix_user }}
                  force user = {{ ansible_user }}
                  read only = no
+              {% for login in photo_logins %}
+
+              # {{ login }} reaches only these two: own photos to add, own Immich uploads to look at.
+              [photos-{{ login }}]
+                 comment = Photos of {{ login }}; Immich shows them after its next scan
+                 path = {{ st.export_root }}/media/photos/{{ login }}
+                 valid users = smb-{{ login }}
+                 force user = {{ ansible_user }}
+                 read only = no
+              {% if immich_library.stat.isdir | default(false) %}
+
+              [immich-{{ login }}]
+                 comment = Photos {{ login }} uploaded through Immich, read-only
+                 path = {{ st.export_root }}/media/immich/library/{{ login }}
+                 valid users = smb-{{ login }}
+                 read only = yes
+              {% endif %}
+              {% endfor %}
 
               # Read-only on purpose: a client with ransomware must not reach the only local
               # backups. The session runs as homelab-smb, which owns nothing there either.
@@ -403,19 +571,20 @@
                  valid users = {{ samba_unix_user }}
                  read only = yes
                  veto files = /.homelab-fs-*/
-              {% if st.samba.admin_hosts | default([]) | length > 0 %}
+              {% if st.samba.admin_hosts | default([]) | length > 0 and st.samba.admin_view is defined %}
 
-              # Every NAS-private backup (router config, HA UI YAML, VM dumps hold keys and password
-              # hashes), for the owner: read-only and only from samba.admin_hosts. The folder is
-              # root-only, so this share reads as root.
-              [nas-backups]
-                 comment = NAS-private backups, read-only, owner's devices only
-                 path = {{ st.nas_private_root }}
+              # Every backup for the owner: backups/ (the shared streams) and nas-backups/ (router
+              # config, HA UI YAML, VM dumps hold keys and password hashes), as read-only binds.
+              # Only from samba.admin_hosts; nas-backups is root-only, so this share reads as root.
+              [all-backups]
+                 comment = Every backup, read-only, owner's devices only
+                 path = {{ st.samba.admin_view }}
                  valid users = {{ samba_unix_user }}
                  force user = root
                  read only = yes
                  hosts allow = {{ st.samba.admin_hosts | join(' ') }}
                  hosts deny = ALL
+                 veto files = /.homelab-fs-*/lost+found/
               {% endif %}
           notify: Restart smbd
 
@@ -447,6 +616,26 @@
             stdin: "{{ samba_password }}\n{{ samba_password }}"
           when: samba_login_check.rc != 0
           changed_when: true
+          no_log: true
+
+        - name: Check whether each photos user's Samba login works
+          ansible.builtin.command: smbclient -L //127.0.0.1 -U {{ identities.identities[item.identity].username | quote }} -m SMB3
+          environment:
+            PASSWD: "{{ photo_passwords[item.secret] }}"
+          register: photo_login_check
+          changed_when: false
+          failed_when: false
+          check_mode: false
+          loop: "{{ photo_accounts }}"
+          no_log: true
+
+        - name: Set each photos user's Samba password
+          ansible.builtin.command: smbpasswd -s -a smb-{{ identities.identities[item.item.identity].username | quote }}
+          args:
+            stdin: "{{ photo_passwords[item.item.secret] }}\n{{ photo_passwords[item.item.secret] }}"
+          when: item.rc != 0
+          changed_when: true
+          loop: "{{ photo_login_check.results }}"
           no_log: true
 
     - name: NAS backup jobs
@@ -565,6 +754,168 @@
             daemon_reload: "{{ nas_units.changed }}"
           loop: [homelab-nas-backup.timer, homelab-backup-check.timer]
 
+    # Immich gets no change events over NFS, so the NAS queues a library scan about 30 s after the
+    # photos share changes (utils/photos-watch.py). Without IMMICH_SCAN_API_KEY on the NAS the unit
+    # stays stopped and only Immich's 15-minute scan runs.
+    - name: Photos watcher
+      block:
+        - name: Install inotify-tools
+          ansible.builtin.apt:
+            name: inotify-tools
+            state: present
+
+        - name: Sync the photos watcher to the NAS
+          ansible.builtin.copy:
+            src: "{{ playbook_dir }}/../../utils/photos-watch.py"
+            dest: "{{ nas_root }}/utils/photos-watch.py"
+            owner: root
+            group: root
+            mode: "0755"
+          register: watch_script
+
+        - name: Install the photos watcher unit
+          ansible.builtin.copy:
+            dest: /etc/systemd/system/homelab-photos-watch.service
+            owner: root
+            group: root
+            mode: "0644"
+            content: |
+              [Unit]
+              Description=Immich library scan soon after the photos share changes
+              After=network-online.target
+              Wants=network-online.target
+              RequiresMountsFor={{ st.export_root }}/media/photos
+              [Service]
+              ExecStart=/usr/bin/python3 {{ nas_root }}/utils/photos-watch.py {{ st.export_root }}/media/photos \
+                http://{{ st.apps_host }}:{{ immich_port }}/api {{ nas_root }}/secrets/{{ homelab_env }}/IMMICH_SCAN_API_KEY
+              Restart=always
+              RestartSec=30
+              [Install]
+              WantedBy=multi-user.target
+          register: watch_unit
+
+        - name: Check for the Immich scan key
+          ansible.builtin.stat:
+            path: "{{ nas_root }}/secrets/{{ homelab_env }}/IMMICH_SCAN_API_KEY"
+          register: scan_key
+
+        - name: Run the photos watcher when the scan key is there
+          ansible.builtin.systemd:
+            name: homelab-photos-watch.service
+            enabled: "{{ scan_key.stat.exists }}"
+            state: "{{ ('restarted' if watch_script.changed or watch_unit.changed else 'started') if scan_key.stat.exists else 'stopped' }}"
+            daemon_reload: "{{ watch_unit.changed }}"
+
+
+    # Audit S6 and S24: IOT devices share the NAS subnet, so only the guest can filter them. Only the
+    # table inet homelab_fw: the stock nftables service stays off because its config flushes every
+    # ruleset, Docker's on DEV included.
+    - name: Host firewall
+      vars:
+        fw_changed: "{{ fw_rules.changed or fw_unit.changed }}"
+      block:
+        - name: Install nftables
+          ansible.builtin.apt:
+            name: nftables
+            state: present
+
+        - name: Create the firewall config directory
+          ansible.builtin.file:
+            path: /etc/homelab
+            state: directory
+            owner: root
+            group: root
+            mode: "0755"
+
+        - name: Write the firewall rules
+          ansible.builtin.copy:
+            dest: /etc/homelab/nas-firewall.nft
+            owner: root
+            group: root
+            mode: "0644"
+            validate: /usr/sbin/nft -c -f %s
+            content: |
+              #!/usr/sbin/nft -f
+              # From config/storage.yml environments.{{ homelab_env }}.firewall (deploy-storage.yml).
+              table inet homelab_fw
+              delete table inet homelab_fw
+              table inet homelab_fw {
+                set ssh_from { type ipv4_addr; flags interval; elements = { {{ st.firewall.ssh_from | join(', ') }} } }
+                set smb_from { type ipv4_addr; flags interval; elements = { {{ st.firewall.smb_from | join(', ') }} } }
+                set nfs_from { type ipv4_addr; flags interval; elements = { {{ st.firewall.nfs_from | join(', ') }} } }
+                chain input {
+                  type filter hook input priority filter; policy drop;
+                  ct state established,related accept
+                  ct state invalid drop
+                  iif "lo" accept
+                  iifname "docker0" accept
+                  iifname "br-*" accept
+                  meta l4proto { icmp, ipv6-icmp } accept
+                  tcp dport 22 ip saddr @ssh_from accept
+                  tcp dport 445 ip saddr @smb_from accept
+                  tcp dport 2049 ip saddr @nfs_from accept
+                  # Discovery broadcasts (Tuya, mDNS, SSDP, Syncthing) would fill the log.
+                  meta pkttype { broadcast, multicast } drop
+                  limit rate 10/minute log prefix "homelab-fw drop: "
+                }
+              }
+          register: fw_rules
+
+        - name: Install the firewall service
+          ansible.builtin.copy:
+            dest: /etc/systemd/system/homelab-firewall.service
+            owner: root
+            group: root
+            mode: "0644"
+            content: |
+              [Unit]
+              Description=Homelab host firewall (nftables table inet homelab_fw)
+              Wants=network-pre.target
+              Before=network-pre.target shutdown.target
+              Conflicts=shutdown.target
+              DefaultDependencies=no
+              [Service]
+              Type=oneshot
+              RemainAfterExit=yes
+              ExecStart=/usr/sbin/nft -f /etc/homelab/nas-firewall.nft
+              ExecStop=/usr/sbin/nft delete table inet homelab_fw
+              [Install]
+              WantedBy=sysinit.target
+          register: fw_unit
+
+        # If the runner cannot reconnect through the new rules, they go away again after 5 minutes.
+        - name: Clear a rollback left by an earlier run
+          when: fw_changed
+          ansible.builtin.systemd:
+            name: homelab-fw-rollback.timer
+            state: stopped
+          failed_when: false
+
+        - name: Arm the firewall rollback
+          when: fw_changed
+          ansible.builtin.command:
+            argv: [systemd-run, --unit, homelab-fw-rollback, --on-active=300, /bin/sh, -c,
+                   "nft delete table inet homelab_fw; systemctl disable homelab-firewall.service"]
+          changed_when: true
+
+        - name: Load the firewall
+          ansible.builtin.systemd:
+            name: homelab-firewall.service
+            enabled: true
+            state: "{{ 'restarted' if fw_changed else 'started' }}"
+            daemon_reload: "{{ fw_unit.changed }}"
+
+        - name: Drop the SSH connection so the next task opens a new one through the firewall
+          ansible.builtin.meta: reset_connection
+
+        - name: Reconnect through the firewall
+          ansible.builtin.ping:
+
+        - name: Cancel the firewall rollback
+          when: fw_changed
+          ansible.builtin.systemd:
+            name: homelab-fw-rollback.timer
+            state: stopped
   handlers:
     - name: Reload systemd
       ansible.builtin.systemd:

@@ -32,7 +32,7 @@ flowchart TB
   net["Internet"]
   isp["ISP router<br/>no hairpin NAT"]
   wgc["WireGuard clients<br/>10.10.10.0/24<br/>reach IOT, APP, LAN per rule"]
-  nfi["GUEST, HOME OFFICE (alias NotForIOT)<br/>the only networks IOT cannot reach"]
+  nfi["router, LAN, APP, GUEST, HOME OFFICE<br/>closed to IOT except DNS, NTP, ping<br/>and the homelab flows (docs/network.md)"]
   dmz["DMZ VLAN 50<br/>192.168.50.64/28<br/>unused, DHCP off"]
   subgraph opn ["OPNsense - WAN 192.168.100.2/30 - gateway of every VLAN"]
     hap["HAProxy<br/>grocery.dkhomelabserver.xyz<br/>Let's Encrypt"]
@@ -40,7 +40,7 @@ flowchart TB
     wg["WireGuard wg0<br/>10.10.10.1/24"]
   end
   subgraph lan ["LAN 192.168.1.0/24<br/>gw 192.168.1.1"]
-    laptop["laptop 192.168.1.100<br/>DEV: libvirt 192.168.122.0/24<br/>nested Proxmox, HAOS twin<br/>runner homelab-dev"]
+    laptop["laptop 192.168.1.20 (Admins)<br/>DEV: libvirt 192.168.122.0/24<br/>nested Proxmox, HAOS twin<br/>runner homelab-dev"]
   end
   subgraph iot ["IOT VLAN 20 - 192.168.20.0/24 - gw 192.168.20.1<br/>also printer, E1 Zoom, Tuya devices"]
     nas["ubuntu-nas, VM 102 on the Proxmox host<br/>192.168.20.12<br/>NFS for APP, SMB 445 for LAN and WireGuard only (Samba hosts allow)"]
@@ -56,8 +56,8 @@ flowchart TB
   isp -->|"WAN 51820/udp"| wg
   wg -->|"tunnel"| wgc
   hap -->|"192.168.50.30:8101"| apps
-  apps -->|"NFS TCP 2049, 111<br/>(+ SSH 22 from .50.30, unused)"| nas
-  app -->|"internet: anything except PrivateNetworks"| net
+  apps -->|"NFS TCP 2049, 111"| nas
+  app -->|"internet: TCP 80, 443, 587, Syncthing; UDP 123; ping"| net
   iot --x|"blocked"| nfi
   pve -.->|"hosts"| apps
 ```
@@ -190,14 +190,14 @@ apps answer on `192.168.50.30:<port>`. Decision [0007](knowledge/decisions/0007-
 | apps | `trilium`, `actual`, `linkwarden`, `syncthing`; profile `vsum`: `vsum` |
 | tools | `omni-tools`, `it-tools`, `networking-toolbox`, `bentopdf` |
 | media | `navidrome`; profile `media`: `jellyfin`, `immich` |
-| no name | Grocery (public `https://grocery.dkhomelabserver.xyz` through the OPNsense HAProxy), Postgres, Diun, Beszel agent |
+| no name | Grocery (public `https://grocery.dkhomelabserver.xyz` through the OPNsense HAProxy), Postgres, Diun, Beszel agent, Immich album creator |
 
 ## Backups and monitoring
 
 The shared streams land in `/srv/purple/backups` on the NAS Purple disk, bind-mounted to
 `/export/backups` and seen by the apps host as the NFS mount `/mnt/homelab/backups`. Router config,
 HA UI YAML and VM dumps hold password hashes and keys, so they go to `/srv/purple/nas-backups`, which
-the apps host does not reach, Samba shows only read-only to the owner's laptop (`nas-backups`), and
+the apps host does not reach, Samba shows only read-only to the owner's laptop (`all-backups`, together with the shared streams), and
 which is not copied offsite. The NAS pulls the Home
 Assistant backup, its UI YAML and the OPNsense config at 02:30; the apps host dumps Postgres, app
 volumes and the deployed repo at 03:15 and copies those streams and the HA backup to an encrypted

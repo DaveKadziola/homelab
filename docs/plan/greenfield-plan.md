@@ -3,14 +3,11 @@ name: Homelab greenfield dummy
 overview: Greenfield homelab v2 — iteration.
 todos:
   - id: security-audit-fixes
-    content: "Prod audit 2026-10-20 (knowledge/security-audit-2026-10-20.md); replaces audit-final and security-audit-hosts. Closed 2026-10-23: S4 (Caddy terminates TLS, Authelia is plain HTTP behind it), S5, S9 (the 15 laptop copies shredded; the NAS keeps opnsense/config-*.xml daily), S11 (curl: Actual bootstrapped true, Trilium isInitialized true), S21 (OPNsense 26.7.7, pkg audit -q lists nothing), S26 (the noble-security packages came through unattended-upgrades; the noble-updates ones applied by hand, containerd restarted, no container restarted). Accepted: S12 (key only), S22 (nfs-root-squash). Agreed fixes, one item each: admins-alias, host-firewalls, pve-hardening, runner-key-cleanup, sshd-x11, trivy-daily, admin-certs. S7 from WireGuard and WAN goes with opnsense-wan-audit."
+    content: "Prod audit 2026-10-20 (knowledge/security-audit-2026-10-20.md); replaces audit-final and security-audit-hosts. Closed 2026-10-23: S4 (Caddy terminates TLS, Authelia is plain HTTP behind it), S5, S9 (the 15 laptop copies shredded; the NAS keeps opnsense/config-*.xml daily), S11 (curl: Actual bootstrapped true, Trilium isInitialized true), S21 (OPNsense 26.7.7, pkg audit -q lists nothing), S26 (the noble-security packages came through unattended-upgrades; the noble-updates ones applied by hand, containerd restarted, no container restarted). Accepted: S12 (key only), S22 (nfs-root-squash). Agreed fixes, one item each: admins-alias, host-firewalls, pve-hardening, runner-key-cleanup, sshd-x11, trivy-daily, admin-certs. S7 from WireGuard and WAN goes with opnsense-wan-audit. Closed 2026-10-24 by the router window (admins-alias): S16, S17, S24 on the router (53530, AdGuard UI) and S25; S1 and S2 from LAN and WireGuard for non-Admins (the host firewalls stay open in host-firewalls)."
     status: in_progress
-  - id: admins-alias
-    content: "Operator 2026-10-23: OPNsense alias Admins (laptop and phone: fixed LAN leases and their WireGuard addresses); admin ports only from Admins. IOT gets DNS and NTP on the router, the NAS SSH to the router, Kuma (T620) and the runner what they use on APP; then IOT is blocked to the router, LAN and APP (S16). Router SSH key-only, from Admins and the NAS (S17). unbound 53530 blocked from clients, AdGuard 8443 from Admins only (S24). The APP .50.30 -> NAS SSH rule removed (S25). One router window, scripts with --dry-run and auto-revert."
-    status: pending
   - id: host-firewalls
-    content: "Operator 2026-10-23: firewall on ubuntu-nas and ubuntu-apps through Ansible, DEV first, with auto-revert (S6). Apps: published ports only from Caddy, Kuma (T620) and Admins (DOCKER-USER); Postgres 5432 only from Admins, Kuma and the Docker bridge (S1); Dozzle 8080 only from Caddy and Kuma, because the direct port bypasses Authelia (S2). NAS: SSH from Admins and the runner, 445 from LAN and WireGuard, NFS from apps and Proxmox (S24)."
-    status: pending
+    content: "Operator 2026-10-24: nftables firewall on the NAS only (S6, S24 on the NAS): SSH, Samba and NFS 2049 from config/storage.yml firewall, the rest dropped and logged, 5-minute rollback unless the play reconnects. apps gets no own firewall: it is alone in the APP VLAN, so the router filters every packet to it (phase 2). DEV first; prod with the next release."
+    status: in_progress
   - id: pve-hardening
     content: "Operator 2026-10-23: TFA for root@pam; Terraform SSH by key, then PasswordAuthentication no (S18); PVE firewall with 22/8006 from Admins and the runner, overriding the default management set (S18, S24); X11Forwarding no (S27). Token: a role with the privileges the bpg provider needs, a new privsep=1 token tested on DEV, swap the secret, delete the old token after a real apply (S19). Console at hand."
     status: pending
@@ -32,9 +29,6 @@ todos:
   - id: security-public-repo
     content: "2026-10-20: fork PRs need all_external_contributors, rulesets have no bypass, actions are pinned to SHAs (sha_pinning_required), CI threat model is in knowledge/security.md. Decision 2026-10-22: the house map leaves the public repo (public-map-split), then one history rewrite (git-history-state)."
     status: in_progress
-  - id: app-network-access
-    content: "Read 2026-10-22, rules not changed. APP (vlan07) has NFS and SSH to the NAS and a pass to everything except PrivateNetworks, so the whole VLAN reaches the internet, not one application. The separate WAN audit (WireGuard and Grocery only) is opnsense-wan-audit and waits until the end."
-    status: pending
   - id: monitoring-audit
     content: "Operator 2026-10-23: audit the alerts and monitors for gaps. List what can fail (each service, host, VM, disk, NFS mount, backup stream, certificate, router, runner, CI and prod deploy) against what Uptime Kuma, Beszel, Diun, Trivy, the apt and NIC mails and the backup freshness check watch and mail (knowledge/monitoring.md, config/monitoring.yml); name what nobody would notice. Known and accepted: a dead T620, router or uplink sends nothing (decision 0006). Known gaps to cover (operator 2026-10-23): Beszel shows pending updates only for the native Linux agents (prod-nas, prod-pve); prod-apps (container agent) has the weekly apt mail, but nothing reports updates of OPNsense (FreeBSD pkg, firmware) or Home Assistant (core, OS, add-ons; its agent is an add-on). Read-only; each fix is its own item and needs consent."
     status: pending
@@ -57,7 +51,7 @@ todos:
     content: "Last (operator 2026-10-22): audit OPNsense rules. Only WireGuard and Grocery should leave on WAN. Read the rules, compare with docs/network.md (WAN 443/tcp and 51820/udp). Do not change the configuration until the audit shows a difference and the operator accepts it. Includes S7 from WireGuard and WAN (a scan from outside, e.g. a phone hotspot)."
     status: pending
   - id: subnet-refactor
-    content: "At the very end, after opnsense-wan-audit (operator 2026-10-22): subnet refactor. The operator thinks the VLAN layout can be better. There is no design yet. Change nothing until a layout is approved."
+    content: "At the very end, after opnsense-wan-audit (operator 2026-10-22): subnet refactor. The operator thinks the VLAN layout can be better. There is no design yet. Change nothing until a layout is approved. Decide with the layout whether ubuntu-apps needs its own host firewall (DOCKER-USER): on 2026-10-24 it is alone in the APP VLAN, so the router filters every packet to it (operator 2026-10-24: not before then)."
     status: pending
 isProject: false
 ---

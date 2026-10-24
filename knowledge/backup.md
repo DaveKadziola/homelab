@@ -7,7 +7,7 @@
 Declared in [`config/storage.yml`](../config/storage.yml). Two directories:
 
 - the shared one: on the NAS `<export_root>/backups` (prod: `/srv/purple/backups` on Purple, bind-mounted to `/export/backups`), on the apps guest the NFS mount `backup_root` (`/mnt/homelab/backups`), in the read-only Samba share `backups`, and the source of offsite;
-- the NAS-private one, `nas_private_root` (prod `/srv/purple/nas-backups`, DEV `/srv/homelab-nas-backups`): router config, HA UI YAML and VM dumps, which hold password hashes and keys. Outside the export tree, so the apps host (root over NFS) and the writable Samba shares do not reach it; only the Proxmox host mounts its `vzdump` folder. The owner reads it through the read-only Samba share `nas-backups`, open only to `samba.admin_hosts` (prod: the laptop `192.168.1.100`; DEV: `192.168.122.1`), since 2026-10-23. It is not copied offsite.
+- the NAS-private one, `nas_private_root` (prod `/srv/purple/nas-backups`, DEV `/srv/homelab-nas-backups`): router config, HA UI YAML and VM dumps, which hold password hashes and keys. Outside the export tree, so the apps host (root over NFS) and the writable Samba shares do not reach it; only the Proxmox host mounts its `vzdump` folder. The owner reads it, next to the shared streams, through the read-only Samba share `all-backups` (both trees bound read-only below `/srv/backups-all`), open only to `samba.admin_hosts` (prod: the laptop, `192.168.1.20` and its WireGuard peers `10.10.10.3`, `.5`; DEV: `192.168.122.1`), since 2026-10-23. It is not copied offsite.
 
 | Stream | Runs on, by | DEV | Prod |
 |--------|-------------|-----|------|

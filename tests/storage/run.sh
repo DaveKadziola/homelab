@@ -11,8 +11,11 @@
 #                         itself: the CI runner is not an allowed client)
 #   samba/backups-ro      a write to the backups share is refused
 #   samba/immich-ro       the immich share lists the Immich library and refuses a write
-#   samba/nas-backups     the NAS-private share is read-only and only for samba.admin_hosts:
-#                         the NAS itself (127.0.0.1, not an admin host) is refused
+#   samba/people          each photos user lists their own photos-<login> share and is refused
+#                         on the admin's photos and share
+#   samba/all-backups     the owner's share of every backup is read-only and only for
+#                         samba.admin_hosts (127.0.0.1, not an admin host, is refused); both
+#                         trees are bound read-only below samba.admin_view
 #                         (SKIP where Immich is not on the NAS, as on DEV)
 #   backup/fresh-<stream> the newest artefact of each stream in config/monitoring.yml is younger
 #                         than its max age, as check-fresh.py on the NAS sees it (dry run, no
@@ -122,6 +125,18 @@ else
 fi
 
 # --------------------------------------------------------------------------
+# Photos watcher (utils/photos-watch.py: Immich scan soon after the photos share changes)
+# --------------------------------------------------------------------------
+watch="$(hl_nas_ssh "systemctl is-active homelab-photos-watch" 2>/dev/null)"
+if ! hl_nas_ssh "sudo -n test -s /opt/homelab-nas/secrets/$HL_ENV/IMMICH_SCAN_API_KEY" 2>/dev/null; then
+  report SKIP "photos/watch" "no IMMICH_SCAN_API_KEY on the NAS: only Immich's 15-minute scan"
+elif [[ "$watch" == "active" ]]; then
+  report PASS "photos/watch" "homelab-photos-watch active"
+else
+  report FAIL "photos/watch" "homelab-photos-watch is ${watch:-unknown} although the scan key is on the NAS"
+fi
+
+# --------------------------------------------------------------------------
 # Samba
 # --------------------------------------------------------------------------
 if [[ -z "${HL_SMB_LOGIN:-}" ]]; then
@@ -188,22 +203,57 @@ else
     fi
   fi
 
-  if [[ -z "${HL_SMB_ADMIN_HOSTS:-}" ]]; then
-    report SKIP "samba/nas-backups" "no samba.admin_hosts in config/storage.yml"
-  else
-    ro="$(hl_nas_ssh "testparm -s --section-name=nas-backups --parameter-name='read only' 2>/dev/null")"
-    allow="$(hl_nas_ssh "testparm -s --section-name=nas-backups --parameter-name='hosts allow' 2>/dev/null" | norm)"
-    local_try="$(printf '%s' "$password" | hl_nas_ssh \
-      "PASSWD=\"\$(cat)\" smbclient -m SMB3 //127.0.0.1/nas-backups -U '${HL_SMB_LOGIN}' -c 'ls' 2>&1")"
-    if [[ "$ro" != "Yes" ]]; then
-      report FAIL "samba/nas-backups" "read only is '${ro}', not Yes"
-    elif [[ "$allow" != "$(printf '%s' "$HL_SMB_ADMIN_HOSTS" | norm)" ]]; then
-      report FAIL "samba/nas-backups" "hosts allow is '${allow}', config says '${HL_SMB_ADMIN_HOSTS}'"
-    elif ! grep -q 'NT_STATUS' <<<"$local_try"; then
-      report FAIL "samba/nas-backups" "127.0.0.1 is not an admin host but could list the share"
+  for person in ${HL_SMB_PEOPLE:-}; do
+    login="${person%%:*}" secret="${person#*:}"
+    pw="${!secret:-}"
+    pcache="${HOMELAB_SECRETS_DIR:-$HOME/.homelab-secrets}/${HL_ENV}/${secret}"
+    [[ -z "$pw" && -r "$pcache" ]] && pw="$(cat "$pcache")"
+    if [[ -z "$pw" ]]; then
+      report SKIP "samba/people" "${secret} is not in the environment or ${pcache}"
+      continue
+    fi
+    own="$(printf '%s' "$pw" | hl_nas_ssh "PASSWD=\"\$(cat)\" smbclient -m SMB3 //127.0.0.1/photos-${login} -U '${login}' -c 'ls' 2>&1")"
+    other="$(printf '%s' "$pw" | hl_nas_ssh "PASSWD=\"\$(cat)\" smbclient -m SMB3 //127.0.0.1/photos -U '${login}' -c 'ls' 2>&1")"
+    misc="$(printf '%s' "$pw" | hl_nas_ssh "PASSWD=\"\$(cat)\" smbclient -m SMB3 //127.0.0.1/share -U '${login}' -c 'ls' 2>&1")"
+    if grep -q 'NT_STATUS' <<<"$own"; then
+      report FAIL "samba/people" "${login} cannot list photos-${login} ($(grep -o -E 'NT_STATUS_[A-Z_]+' <<<"$own" | head -1))"
+    elif ! grep -q 'NT_STATUS' <<<"$other" || ! grep -q 'NT_STATUS' <<<"$misc"; then
+      report FAIL "samba/people" "${login} reaches the admin's photos or share"
     else
-      report PASS "samba/nas-backups" "read-only, only ${HL_SMB_ADMIN_HOSTS}; 127.0.0.1 refused ($(grep -o -E 'NT_STATUS_[A-Z_]+' <<<"$local_try" | head -1))"
+      report PASS "samba/people" "${login} lists photos-${login} only; photos and share refused"
+    fi
+  done
+  unset pw
+
+  if [[ -z "${HL_SMB_ADMIN_HOSTS:-}" || -z "${HL_SMB_ADMIN_VIEW:-}" ]]; then
+    report SKIP "samba/all-backups" "no samba.admin_hosts or admin_view in config/storage.yml"
+  else
+    ro="$(hl_nas_ssh "testparm -s --section-name=all-backups --parameter-name='read only' 2>/dev/null")"
+    allow="$(hl_nas_ssh "testparm -s --section-name=all-backups --parameter-name='hosts allow' 2>/dev/null" | norm)"
+    local_try="$(printf '%s' "$password" | hl_nas_ssh \
+      "PASSWD=\"\$(cat)\" smbclient -m SMB3 //127.0.0.1/all-backups -U '${HL_SMB_LOGIN}' -c 'ls' 2>&1")"
+    binds="$(hl_nas_ssh "for d in backups nas-backups; do echo \"\$d=\$(findmnt -n -o OPTIONS '${HL_SMB_ADMIN_VIEW}'/\$d | cut -d, -f1)\"; done")"
+    if [[ "$ro" != "Yes" ]]; then
+      report FAIL "samba/all-backups" "read only is '${ro}', not Yes"
+    elif [[ "$(tr '\n' ' ' <<<"$binds")" != "backups=ro nas-backups=ro " ]]; then
+      report FAIL "samba/all-backups" "the binds below ${HL_SMB_ADMIN_VIEW} are not both read-only mounts: $(tr '\n' ' ' <<<"$binds")"
+    elif [[ "$allow" != "$(printf '%s' "$HL_SMB_ADMIN_HOSTS" | norm)" ]]; then
+      report FAIL "samba/all-backups" "hosts allow is '${allow}', config says '${HL_SMB_ADMIN_HOSTS}'"
+    elif ! grep -q 'NT_STATUS' <<<"$local_try"; then
+      report FAIL "samba/all-backups" "127.0.0.1 is not an admin host but could list the share"
+    else
+      report PASS "samba/all-backups" "read-only binds of backups and nas-backups, only ${HL_SMB_ADMIN_HOSTS}; 127.0.0.1 refused ($(grep -o -E 'NT_STATUS_[A-Z_]+' <<<"$local_try" | head -1))"
     fi
   fi
   unset password
+fi
+
+# --------------------------------------------------------------------------
+# host firewall on the NAS (config/storage.yml firewall, deploy-storage.yml; audit S6)
+# --------------------------------------------------------------------------
+fw="$(hl_nas_ssh "sudo -n nft list chain inet homelab_fw input 2>&1" 2>/dev/null)"
+if grep -q 'policy drop' <<<"$fw" && grep -q 'tcp dport 2049 ip saddr @nfs_from accept' <<<"$fw"; then
+  report PASS "firewall/nas" "table inet homelab_fw loaded, input policy drop; SSH, Samba and NFS only from the firewall sources"
+else
+  report FAIL "firewall/nas" "table inet homelab_fw missing or not dropping: $(head -1 <<<"$fw")"
 fi

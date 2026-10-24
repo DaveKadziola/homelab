@@ -35,7 +35,7 @@ Scope: NAS disk layout and file access for people (Samba) on `ubuntu-nas`
   (`/srv/purple/backups`, bind-mounted to `/export/backups`) + Samba share `share` (installers,
   `/srv/purple/share`), mounted at `/srv/purple` outside the NFS tree. No size caps; `cap_gb` is
   removed.
-- Samba on `ubuntu-nas` from `deploy-storage.yml`: shares `share` and `media`, `photos` (an Immich external library, writable, 2026-10-23), plus `immich` (the Immich library, 2026-10-23), `backups` and `nas-backups` (owner's laptop only, 2026-10-23) read-only (added 2026-10-20 at the owner's request; a writable backups share is what ransomware on a client would use), one login
+- Samba on `ubuntu-nas` from `deploy-storage.yml`: shares `share` and `media`, `photos` (an Immich external library, writable, 2026-10-23), plus `immich` (the Immich library, 2026-10-23), `backups` and `all-backups` (every backup, owner's laptop only, 2026-10-23) read-only (added 2026-10-20 at the owner's request; a writable backups share is what ransomware on a client would use), one login
   (`homelab-admin`, username `admin`), SMB3 only, `hosts allow` = LAN + WireGuard.
 - The share is not backed up and not in offsite. A homelab backup of the media to pCloud is
   deferred until prod runs; the owner will adjust the pCloud targets.

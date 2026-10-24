@@ -425,6 +425,17 @@ services:
     login: none
     notes: Reads channel feeds; spends money only on videos approved in vsum-web.
 
+  - name: immich-album-creator
+    title: Immich album creator
+    priority: P2
+    stack: core
+    profile: media
+    container: homelab-core-immich-album-creator-1
+    check: container
+    config_as_code: yes
+    login: none
+    notes: Folders in the photos share become albums of their owner; API keys from utils/bootstrap/immich.sh.
+
   - name: diun
     title: Diun
     priority: P2

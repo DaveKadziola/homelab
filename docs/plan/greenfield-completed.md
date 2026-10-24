@@ -137,6 +137,15 @@ completed:
   - id: branch-develop
     content: "Done 2026-10-23: homelab-v2 is develop. Release #173 (v2.2.0) carried the workflows that accept develop to main; then environment dev got the branch policy develop, ruleset 25494699 moved to refs/heads/develop (rules unchanged), gh api branches/homelab-v2/rename renamed it at e2e46cb, and the old name redirects. The old dev branch was deleted first (tip 303ffc1). Router markers and config backups keep the name homelab-v2: it is the project name the router scripts search for."
     status: completed
+  - id: admins-alias
+    content: "Done 2026-10-24 (utils/opnsense-lockdown.sh admins, iot, ssh): static leases laptop 192.168.1.20 and S23 192.168.1.21; alias Admins with them and WireGuard 10.10.10.2-.5; admin ports on Proxmox, NAS and apps and the AdGuard UI blocked for everyone else on LAN and WireGuard; unbound 53530 closed; IOT keeps DNS, NTP, ping and the homelab flows (Kuma, prod runner, Beszel, photo watcher, NIC mail, Kuma to public Grocery), then the internet only; router root SSH by key only. Every probe passed (laptop as .100 and as .20, an IOT test client, NAS, Proxmox, prod runner); the NAS backup key still reads config.xml. Rescan from an IOT client: only DNS on the router, nothing on apps or LAN."
+    status: completed
+  - id: app-network-access
+    content: "Done 2026-10-24 (utils/opnsense-app-egress.sh): APP to the internet only on TCP 80, 443, 587, 22000, 22067, UDP 123, 22000 and ping, the rest blocked and logged; the unused APP -> NAS SSH rule removed (S25). Probes: https, http (apt), 587, ping pass, SSH out blocked; NFS and apt on ubuntu-apps work. Review the blocked APP and IOT log entries after 24 h."
+    status: completed
+  - id: pre-release-router-check
+    content: "Done 2026-10-24 before release PR #200: blocked entries in the OPNsense filter log since the phase 2 window and the Kuma alerts read. The only legitimate flow cut was Syncthing STUN from APP (UDP 3478 to 13 servers), now in AppEgressUdp. The rest is intended or old: non-Admins on the AdGuard UI (a LAN iPhone that is not the owner's stays out, operator 2026-10-24), the IPv6 default block on WireGuard, APP flows to private networks that were blocked before and are only logged now, APP UDP 9999 to 192.0.2.42 (not routable). The two Kuma backup alerts of the day came from the nfsd block size (#199). The S23 static lease 192.168.1.21 is deferred (operator 2026-10-24): admin access over WireGuard 10.10.10.2."
+    status: completed
 isProject: false
 ---
 

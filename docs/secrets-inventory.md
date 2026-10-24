@@ -60,6 +60,8 @@ Helper scripts:
 | `HA_BACKUP_PASSWORD` | dev, prod | secret | `homelab/HA_BACKUP_PASSWORD/<env>` | set 2026-10-20 | password of the Supervisor backups the NAS pulls; needed to restore |
 | `KUMA_ADMIN_PASSWORD` | dev, prod | secret | `homelab/KUMA_ADMIN_PASSWORD/<env>` | set 2026-10-20 | login `admin` of the Uptime Kuma add-on; `utils/kuma-sync.py` sets it up on a fresh Kuma |
 | `KUMA_PUSH_SECRET` | dev, prod | secret | `homelab/KUMA_PUSH_SECRET/<env>` | set 2026-10-20 | seed of the Kuma push tokens (backup freshness); the NAS gets it from the deploy |
+| `IMMICH_SCAN_API_KEY` | dev | secret | `homelab/IMMICH_SCAN_API_KEY/dev` | set | Immich admin API key (`library.read`, `library.update`) for the NAS photos watcher; pasted 2026-10-24 |
+| `IMMICH_SCAN_API_KEY` | prod | secret | `homelab/IMMICH_SCAN_API_KEY/prod` | set | Immich admin API key (`library.read`, `library.update`) for the NAS photos watcher; key `homelab-photos-scan` made through the API with the owner's approval, pasted 2026-10-24 |
 | `SMTP_USERNAME` | prod | secret | `homelab/SMTP_USERNAME/prod` | set 2026-10-21 | Proton address `homelab-prod@dkhomelabserver.xyz` (owner); sender of Kuma, Diun, Beszel mail |
 | `SMTP_PASSWORD` | prod | secret | `homelab/SMTP_PASSWORD/prod` | set 2026-10-21 | Proton SMTP token of `SMTP_USERNAME` (owner) |
 | `CLOUDFLARE_API_TOKEN` | prod | secret | `homelab/CLOUDFLARE_API_TOKEN/prod` | planned | Zone.DNS edit on `dkhomelabserver.xyz` only; Caddy wildcard certificate (owner); without it prod keeps proxy and auth off |
@@ -121,6 +123,10 @@ Helper scripts:
 | `VSUM_ELEVENLABS_KEY` | prod | secret | `homelab/VSUM_ELEVENLABS_KEY/prod` | set | the same restricted key as dev (owner's choice); set 2026-10-23 |
 | `VSUM_GIT_TOKEN` | prod | secret | `homelab/VSUM_GIT_TOKEN/prod` | set | the same read-only token as dev; set 2026-10-23 |
 | `VSUM_TRILIUM_TOKEN` | prod | secret | `homelab/VSUM_TRILIUM_TOKEN/prod` | set | ETAPI token from prod Trilium (owner, `knowledge/apps/vsum.md`); optional; pasted 2026-10-23 |
+| `SAMBA_USER1_PASSWORD` | dev | secret | `homelab/SAMBA_USER1_PASSWORD/dev` | set | generated 2026-10-23 |
+| `IMMICH_USER1_PASSWORD` | dev | secret | `homelab/IMMICH_USER1_PASSWORD/dev` | set | generated 2026-10-23 |
+| `SAMBA_USER1_PASSWORD` | prod | secret | `homelab/SAMBA_USER1_PASSWORD/prod` | set | generated 2026-10-23 |
+| `IMMICH_USER1_PASSWORD` | prod | secret | `homelab/IMMICH_USER1_PASSWORD/prod` | set | generated 2026-10-23 |
 
 ---
 

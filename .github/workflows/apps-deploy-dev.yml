@@ -66,12 +66,15 @@ jobs:
         env:
           HOMELAB_ENV: dev
           SAMBA_ADMIN_PASSWORD: ${{ secrets.SAMBA_ADMIN_PASSWORD }}
+          SAMBA_USER1_PASSWORD: ${{ secrets.SAMBA_USER1_PASSWORD }}
           # NAS backup jobs (run-nas.sh, check-fresh.py); an empty value is not written.
           HA_TOKEN: ${{ secrets.HA_TOKEN }}
           HA_SSH_PRIV: ${{ secrets.HA_SSH_PRIV }}
           HA_BACKUP_PASSWORD: ${{ secrets.HA_BACKUP_PASSWORD }}
           KUMA_PUSH_SECRET: ${{ secrets.KUMA_PUSH_SECRET }}
           OPNSENSE_BACKUP_SSH_PRIV: ${{ secrets.OPNSENSE_BACKUP_SSH_PRIV }}
+          # Photos watcher on the NAS (utils/photos-watch.py); empty: not written, unit stays stopped.
+          IMMICH_SCAN_API_KEY: ${{ secrets.IMMICH_SCAN_API_KEY }}
         run: |
           ansible-playbook -i environments/dev/hosts.ini playbooks/deploy-storage.yml
 
@@ -106,6 +109,7 @@ jobs:
           LINKWARDEN_ADMIN_PASSWORD: ${{ secrets.LINKWARDEN_ADMIN_PASSWORD }}
           LINKWARDEN_SECRET: ${{ secrets.LINKWARDEN_SECRET }}
           IMMICH_ADMIN_PASSWORD: ${{ secrets.IMMICH_ADMIN_PASSWORD }}
+          IMMICH_USER1_PASSWORD: ${{ secrets.IMMICH_USER1_PASSWORD }}
           JELLYFIN_ADMIN_PASSWORD: ${{ secrets.JELLYFIN_ADMIN_PASSWORD }}
           NAVIDROME_ADMIN_PASSWORD: ${{ secrets.NAVIDROME_ADMIN_PASSWORD }}
           SYNCTHING_ADMIN_PASSWORD: ${{ secrets.SYNCTHING_ADMIN_PASSWORD }}
@@ -148,6 +152,7 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           IMMICH_DB_PASSWORD: ${{ secrets.IMMICH_DB_PASSWORD }}
           SAMBA_ADMIN_PASSWORD: ${{ secrets.SAMBA_ADMIN_PASSWORD }}
+          SAMBA_USER1_PASSWORD: ${{ secrets.SAMBA_USER1_PASSWORD }}
           HA_TOKEN: ${{ secrets.HA_TOKEN }}
           AUTHELIA_ADMIN_PASSWORD: ${{ secrets.AUTHELIA_ADMIN_PASSWORD }}
           HOMARR_SECRET_KEY: ${{ secrets.HOMARR_SECRET_KEY }}
