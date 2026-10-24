@@ -45,7 +45,7 @@ Each row is the laptop script. It stops or reverts itself unless a check passes.
 | `opnsense-dhcp.sh` | IOT DHCP reservations for Proxmox and Home Assistant |
 | `opnsense-app-vlan.sh` | APP is a plain VLAN 51, not QinQ |
 | `opnsense-dmz.sh` | Move DMZ out of the APP subnet |
-| `opnsense-app-egress.sh` | APP may go to the internet on TCP 80/443/587/22000/22067, UDP 123/22000 and ping; the rest is blocked and logged |
+| `opnsense-app-egress.sh` | APP may go to the internet on TCP 80/443/587/22000/22067, UDP 123/3478/22000 and ping; the rest is blocked and logged |
 | `opnsense-lockdown.sh` | Phase 2, one step per run with probes and auto-revert: `admins` (static leases, alias Admins, admin ports and AdGuard UI only from Admins, 53530 closed), `iot` (IOT gets only what the homelab uses, then the internet), `ssh` (router root SSH by key only) |
 | `opnsense-nas-ports.sh` | APP may open only NFS (and SSH from the apps VM) on the NAS |
 | `opnsense-iot.sh` | Remove the IOT allow-all rule |
