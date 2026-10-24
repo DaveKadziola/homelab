@@ -29,6 +29,39 @@ todos:
   - id: homarr-dashboard-widgets
     content: "Not implemented. homarr_board.py writes only an application tile. Homarr image 2.6.0 had no options schema for weather or a clock. Nothing was guessed."
     status: pending
+  - id: container-file-access
+    content: "Operator 2026-10-24: browse container files from the laptop and a script that maps the drives there. Today: Dozzle for logs, Portainer and docker exec / docker cp over SSH for the rest; NAS data through the Samba shares share, media, photos, backups (ansible/playbooks/deploy-storage.yml:514-570). Docker volumes on the apps VM disk have no share. Check what Portainer already gives before adding a file browser or SFTP; read-only by default."
+    status: pending
+  - id: rebuild-data-safety
+    content: "Operator 2026-10-24: prove that a change that rebuilds a VM or recreates containers loses no data, config, database or credential, and that everything comes back from backups. A replace of ubuntu-apps wipes the Docker volumes (knowledge/deployment.md:55); the wipe drill passed on DEV 2026-10-19 (knowledge/rebuild-drill-2026-10-19b.md). List what no backup holds (the Samba share, media/sync, the media libraries) and what a prod rebuild needs by hand. DEV first."
+    status: pending
+  - id: postgres-unused-dbs
+    content: "Operator 2026-10-24: config/services.yml:59 creates homelab, linkwarden, firefly3, actual, trilium, grafana, easytodo, vsum. Users found: linkwarden (compose/core/docker-compose.yml:134), vsum (its depends_on), grocery (easytodo); no firefly3 or grafana service exists, Trilium and Actual keep their own files. Move an app to Postgres where upstream supports it; drop the rest from the list and, after a dump, from prod (asked each time)."
+    status: pending
+  - id: db-admin-tool
+    content: "Operator 2026-10-24, after postgres-unused-dbs: if apps stay on SQLite, consider CloudBeaver instead of pgAdmin, since it opens other engines too. Check how it reaches SQLite files inside other containers' volumes and that a running app's file is opened read-only."
+    status: pending
+  - id: joplin-to-trilium
+    content: "Operator 2026-10-24: a manual Joplin -> Trilium migration. Test the export/import formats on DEV, then write the steps in knowledge/apps/trilium.md."
+    status: pending
+  - id: trilium-ai-access
+    content: "Operator 2026-10-24: AI may read only the Trilium notes and knowledge base the operator allows; private notes never leave the home network. vsum already writes to Trilium with VSUM_TRILIUM_TOKEN (knowledge/apps/vsum.md:50). Open: whether a token can be limited to a subtree, and a local model vs OpenRouter."
+    status: pending
+  - id: ai-cost
+    content: "Operator 2026-10-24: keep AI costs low (coding agents, OpenRouter for vsum and ai-log-analysis). Measure the spend first, then credit limits per key, cheaper models for routine work, fewer tokens per task."
+    status: pending
+  - id: syncthing-smb-check
+    content: "Operator 2026-10-24: check that a file synced from the phone shows up on the laptop. Syncthing writes HomelabSync to media/sync on the SA500 (config/storage.yml:107, knowledge/apps/syncthing.md); the laptop sees it in the Samba share media, folder sync, not in share (deploy-storage.yml:521-526). Check on prod: the phone paired, the folder under HomelabSync, a test file visible over Samba, file ownership between the container and the Samba force user. media/sync has no backup."
+    status: pending
+  - id: backup-decrypt-drill
+    content: "Operator 2026-10-24: what is encrypted and how to read it back. On pCloud: postgres, volumes, homeassistant, repo-zip (config/storage.yml:126-129) through the rclone crypt remote pcloud-crypt, whose passwords are only in RCLONE_CONFIG (GH env prod, Bitwarden homelab/RCLONE_CONFIG/prod). On the NAS the dumps and tars are plain, the HA tars use HA_BACKUP_PASSWORD, VM dumps and router config sit unencrypted in NAS-private. Write and test the read-back from a clean machine (rclone config from Bitwarden, list, copy one dump, restore-pg on DEV); check the pCloud size and the age of .offsite-ok on prod."
+    status: pending
+  - id: disk-encryption
+    content: "Operator 2026-10-24: protect the data if the server is stolen, without a daily step. B14 chose no LUKS at the start and left LUKS with clevis/TPM for later (docs/plan/greenfield-notes.md:294,561). Compare TPM unlock with network unlock (Tang on another device) for the case where the whole box is taken. Data disks need a reformat: backups and a restore test first."
+    status: pending
+  - id: adguard-review
+    content: "Operator 2026-10-24: analyse AdGuard Home traffic (query log, top clients and domains, blocked share) and review the active filter lists; propose changes. AdGuard runs on the router: read only until the operator accepts a change."
+    status: pending
   - id: public-map-split
     content: "Operator 2026-10-22: the public repo stays a portfolio (architecture, how deploy works). The house map (addresses, domain, mail) moves to gitignored docs and/or a module from a private repo. Current files have to be rewritten with example addresses. Do not touch history yet: one rewrite is git-history-state, after this swap, not before."
     status: pending
@@ -40,6 +73,9 @@ todos:
     status: pending
   - id: subnet-refactor
     content: "At the very end, after opnsense-wan-audit (operator 2026-10-22): subnet refactor. The operator thinks the VLAN layout can be better. There is no design yet. Change nothing until a layout is approved. Decide with the layout whether ubuntu-apps needs its own host firewall (DOCKER-USER): on 2026-10-24 it is alone in the APP VLAN, so the router filters every packet to it (operator 2026-10-24: not before then)."
+    status: pending
+  - id: home-assistant-zigbee
+    content: "Operator 2026-10-24, after the homelab items above: Home Assistant (HAOS on the T620) with the Tuya devices through a Zigbee gateway, controlled from outside home. Open: the gateway (Tuya hub through the Tuya cloud vs a local Zigbee coordinator) and the remote path (the existing WireGuard vs a public URL)."
     status: pending
 isProject: false
 ---
