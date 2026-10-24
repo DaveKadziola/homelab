@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Let APP reach the internet, check from a test client on VLAN 51 behind Proxmox, keep or auto-revert.
+# Let APP reach the internet on the ports the apps use, check from a test client on VLAN 51 behind
+# Proxmox and from ubuntu-apps, keep or auto-revert.
 #
 # Usage:
 #   ./utils/opnsense-app-egress.sh --dry-run
@@ -19,11 +20,14 @@ R=(ssh -o StrictHostKeyChecking=accept-new -i "$KEY" "root@${LAN_HOST}")
 "${R[@]}" "env DRY_RUN=${DRY_RUN} REVERT_AFTER=${REVERT_AFTER} sh -s" < "${REPO_ROOT}/utils/opnsense-app-egress-remote.sh"
 [[ $DRY_RUN == 1 ]] && exit 0
 
+# The test client has no resolver that answers on VLAN 51, so the targets are resolved here.
+SMTP_IP="$(dig +short @"$LAN_HOST" smtp.protonmail.ch A | grep -m1 -E '^[0-9.]+$')"
+ARCHIVE_IP="$(dig +short @"$LAN_HOST" archive.ubuntu.com A | grep -m1 -E '^[0-9.]+$')"
 sleep 3
 # A test client in its own network namespace on Proxmox: vmbr1 VLAN 51, 192.168.50.61/26, gateway
 # 192.168.50.50 - what ubuntu-apps will see. Prints one line per probe; removed again.
 probe() {
-  "${PVE[@]}" 'sh -s' <<'P' 2>/dev/null
+  "${PVE[@]}" "SMTP_IP=${SMTP_IP} ARCHIVE_IP=${ARCHIVE_IP} bash -s" <<'P' 2>/dev/null
 bridge vlan add vid 51 dev vmbr1 self
 ip netns add apptest
 ip link add link vmbr1 name app51 type vlan id 51
@@ -41,6 +45,10 @@ q = struct.pack(">HHHHHH", random.randint(0, 65535), 0x0100, 1, 0, 0, 0) + b"\x0
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.settimeout(3); s.sendto(q, ("192.168.50.50", 53))
 d, src = s.recvfrom(512); print("dns", src[0])' 2>/dev/null || echo "dns fail"
 ip netns exec apptest timeout 3 bash -c "</dev/tcp/192.168.1.1/443" 2>/dev/null && echo "lan open" || echo "lan blocked"
+ip netns exec apptest curl -s -o /dev/null -w "http %{http_code}\n" --max-time 8 --resolve "archive.ubuntu.com:80:${ARCHIVE_IP}" http://archive.ubuntu.com/ubuntu/ || echo "http fail"
+ip netns exec apptest timeout 4 bash -c "</dev/tcp/${SMTP_IP}/587" 2>/dev/null && echo "smtp open" || echo "smtp closed"
+ip netns exec apptest timeout 4 bash -c "</dev/tcp/140.82.121.4/22" 2>/dev/null && echo "ssh-out open" || echo "ssh-out closed"
+ip netns exec apptest ping -c 1 -W 3 1.1.1.1 >/dev/null && echo "ping ok" || echo "ping fail"
 ip netns del apptest
 bridge vlan del vid 51 dev vmbr1 self
 P
@@ -51,15 +59,20 @@ check() { if "${@:2}"; then echo "ok    $1"; else echo "FAIL  $1"; fail=1; fi; }
 check "APP -> internet (https)" grep -q "^https [23]" <<<"$out"
 check "APP -> DNS" grep -q "^dns [0-9]" <<<"$out"
 check "APP -/-> LAN" grep -q "^lan blocked" <<<"$out"
+check "APP -> internet (http, apt)" grep -q "^http [23]" <<<"$out"
+check "APP -> mail (587)" grep -q "^smtp open" <<<"$out"
+check "APP -/-> internet SSH (22)" grep -q "^ssh-out closed" <<<"$out"
+check "APP -> ping" grep -q "^ping ok" <<<"$out"
 check "LAN -> internet (https)" curl -s -o /dev/null --max-time 8 https://github.com
 check "root ssh over LAN" "${R[@]}" -o BatchMode=yes true
+APPS=(ssh -o BatchMode=yes -i "${PROD_KEY:-$HOME/.ssh/homelab_prod_ed25519}" ubuntu-prod@192.168.50.30)
+check "ubuntu-apps: NFS from the NAS" "${APPS[@]}" 'timeout 10 ls /mnt/homelab/backups >/dev/null'
+check "ubuntu-apps: apt update" "${APPS[@]}" 'sudo timeout 120 apt-get update -qq'
 
+# No copy of config.xml on the laptop (audit S9): the router keeps the backup, the NAS a daily one.
 if [[ $fail == 0 ]]; then
   "${R[@]}" -o BatchMode=yes 'touch /tmp/homelab-appfw-keep; pkill -F /tmp/homelab-appfw-revert.pid' || true
   echo "all checks passed - change kept"
-  out="${REPO_ROOT}/opnsense/backups/config-$(date +%Y%m%d-%H%M%S).xml"
-  "${R[@]}" -o BatchMode=yes 'cat /conf/config.xml' > "$out"
-  chmod 600 "$out"; echo "local copy: $out"
 else
   echo "a check failed - not confirmed; the router restores its backup within ${REVERT_AFTER}s"
   exit 1
