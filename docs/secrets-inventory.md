@@ -35,7 +35,7 @@ Helper scripts:
 | `POSTGRES_PASSWORD` | dev | secret | `homelab/POSTGRES_PASSWORD/dev` | set | F1 2026-06-29 |
 | `POSTGRES_PASSWORD` | prod | secret | `homelab/POSTGRES_PASSWORD/prod` | set | F1 2026-06-29; rotated 2026-10-18 |
 | `PROXMOX_API_TOKEN_SECRET` | dev | secret | `homelab/PROXMOX_API_TOKEN_SECRET/dev` | set | placeholder — update at F3 |
-| `PROXMOX_API_TOKEN_SECRET` | prod | secret | `homelab/PROXMOX_API_TOKEN_SECRET/prod` | set | placeholder — update at F3 |
+| `PROXMOX_API_TOKEN_SECRET` | prod | secret | `homelab/PROXMOX_API_TOKEN_SECRET/prod` | set | token `homelab-prod@pam!terraform` (`Administrator`), created 2026-10-19 ([f3-proxmox.md](f3-proxmox.md) F3-02) |
 | `PROXMOX_API_TOKEN_SECRET` | prod-plan | secret | `homelab/PROXMOX_API_TOKEN_SECRET/prod-plan` | set | read-only token `homelab-prod@pam!plan` (`PVEAuditor`); `~/.homelab-secrets/prod-plan/` |
 | `PROXMOX_API_TOKEN_SECRET` | dev-plan | secret | `homelab/PROXMOX_API_TOKEN_SECRET/dev-plan` | set | read-only token `root@pam!plan` on the nested DEV PVE (`PVEAuditor`); `~/.homelab-secrets/dev-plan/` |
 | `TF_API_TOKEN`, `UBUNTU_DOCKER_PASSWORD` | dev-plan | secret | as in dev | set | `UBUNTU_DOCKER_PASSWORD`: the same SHA-512 hash as dev, or the plan shows the snippet as changed |
