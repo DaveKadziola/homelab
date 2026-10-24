@@ -7,6 +7,8 @@
 3. Terraform (infra workflows) and/or Ansible `deploy-core.yml` then `deploy-storage.yml` (apps workflows).
 4. Ansible syncs `compose/`, `config/`, `utils/bootstrap*` to `/opt/homelab/`, writes `.env` **without literal secret fallbacks**, copies secrets to `/opt/homelab/secrets/<env>/`, runs `utils/bootstrap-apps.sh` unless `HOMELAB_SKIP_BOOTSTRAP` is set.
 
+Apps Deploy Dev and Apps Deploy Prod are `workflow_run` runs, which `gh run list` lists under the default branch `main`; `--branch develop` misses them, so filter by workflow name and time (checked 2026-10-24).
+
 Manual DEV deploy from the laptop:
 
 ```bash
