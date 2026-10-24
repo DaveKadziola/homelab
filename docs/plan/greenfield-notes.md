@@ -1219,7 +1219,7 @@ Phase legend: **P0** start, **P1** soon, **P2** later, **?** decision / we skip 
 | **Apps VM + NAS**  | vzdump or rsync of volumes             | qmrestore / compose up           | Ansible                        |
 
 
-**ZeroByte** — ❌ rejected in favour of **rclone** (B16).
+**ZeroByte** — ❌ rejected in favour of **rclone** (B16); reasons in [`knowledge/backup.md`](../../knowledge/backup.md).
 
 **LUKS (B14):** ✅ **no LUKS at the start**; auto-unlock (clevis/TPM) → backlog.
 
