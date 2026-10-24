@@ -72,7 +72,7 @@ Source: `config/services.yml`, `compose/core/docker-compose.yml` (versions pinne
 | P2 | Diun | - | new image tags by mail through Proton SMTP once `SMTP_USERNAME` / `SMTP_PASSWORD` exist, else log only ([monitoring](monitoring.md)) |
 | P2 | vsum (web + worker) | 8088 | profile `vsum`; image built on the guest from the private repo at pinned `vsum_ref`; DB `vsum`; archive `media/vsum` on NFS; behind Authelia as `vsum.dkhomelabserver.xyz` |
 
-Reachability: LAN, WireGuard and IOT can open APP; APP reaches the internet and the NAS NFS only (`docs/network.md`).
+Reachability (2026-10-24): LAN and WireGuard open the apps; their admin ports only from `Admins`. IOT opens only the flows the homelab uses (Kuma, the prod runner, Beszel, the photo watcher, the NIC mail). APP reaches the NAS NFS and the internet on its listed ports only (`docs/network.md`).
 
 ## 5. Public access
 

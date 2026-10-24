@@ -105,7 +105,7 @@ P
     echo "   no key: ${deny##*$'\n'}"
     check "no password or keyboard-interactive offered" bash -c '[[ "$1" == *"(publickey)"* ]]' _ "$deny"
     check "sshd -T: password and kbd-interactive off" "${R[@]}" \
-      'sshd -T | grep -q "^passwordauthentication no" && sshd -T | grep -q "^kbdinteractiveauthentication no"'
+      'sshd -T | grep -ciE "^(passwordauthentication|kbdinteractiveauthentication) no" | grep -qx 2'
     ;;
   *) echo "unknown step: $STEP" >&2; exit 2 ;;
 esac
