@@ -143,6 +143,9 @@ completed:
   - id: app-network-access
     content: "Done 2026-10-24 (utils/opnsense-app-egress.sh): APP to the internet only on TCP 80, 443, 587, 22000, 22067, UDP 123, 22000 and ping, the rest blocked and logged; the unused APP -> NAS SSH rule removed (S25). Probes: https, http (apt), 587, ping pass, SSH out blocked; NFS and apt on ubuntu-apps work. Review the blocked APP and IOT log entries after 24 h."
     status: completed
+  - id: pre-release-router-check
+    content: "Done 2026-10-24 before release PR #200: blocked entries in the OPNsense filter log since the phase 2 window and the Kuma alerts read. The only legitimate flow cut was Syncthing STUN from APP (UDP 3478 to 13 servers), now in AppEgressUdp. The rest is intended or old: non-Admins on the AdGuard UI (a LAN iPhone that is not the owner's stays out, operator 2026-10-24), the IPv6 default block on WireGuard, APP flows to private networks that were blocked before and are only logged now, APP UDP 9999 to 192.0.2.42 (not routable). The two Kuma backup alerts of the day came from the nfsd block size (#199). The S23 static lease 192.168.1.21 is deferred (operator 2026-10-24): admin access over WireGuard 10.10.10.2."
+    status: completed
 isProject: false
 ---
 
