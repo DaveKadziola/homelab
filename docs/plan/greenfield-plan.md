@@ -54,7 +54,7 @@ todos:
     content: "Last (operator 2026-10-22): audit OPNsense rules. Only WireGuard and Grocery should leave on WAN. Read the rules, compare with docs/network.md (WAN 443/tcp and 51820/udp). Do not change the configuration until the audit shows a difference and the operator accepts it. Includes S7 from WireGuard and WAN (a scan from outside, e.g. a phone hotspot)."
     status: pending
   - id: subnet-refactor
-    content: "At the very end, after opnsense-wan-audit (operator 2026-10-22): subnet refactor. The operator thinks the VLAN layout can be better. There is no design yet. Change nothing until a layout is approved."
+    content: "At the very end, after opnsense-wan-audit (operator 2026-10-22): subnet refactor. The operator thinks the VLAN layout can be better. There is no design yet. Change nothing until a layout is approved. Decide with the layout whether ubuntu-apps needs its own host firewall (DOCKER-USER): on 2026-10-24 it is alone in the APP VLAN, so the router filters every packet to it (operator 2026-10-24: not before then)."
     status: pending
 isProject: false
 ---
