@@ -1,6 +1,6 @@
 # Backlog release phases - design
 
-Status: draft for operator review (revision 2: operator review and critic review applied)
+Status: draft for operator review (revision 3: operator review and two critic rounds applied)
 Date: 2026-10-24
 Source of the backlog: frontmatter of [`greenfield-plan.md`](greenfield-plan.md) on `develop`
 (commit 153a813).
@@ -22,11 +22,15 @@ Agreed with the operator on 2026-10-24:
   recorded on 2026-10-22 (`greenfield-plan.md:72`), so that its fixes can land in R2 (operator,
   approval of the phase structure). No R1 or R2 item changes a WAN rule or port forward; if a
   Phase 0 fix tagged R2 does, the operator repeats the outside scan in the R2 window.
-- Manual changes on prod hosts (Proxmox, Home Assistant, router) count as prod deployments and
-  are done in the window of a release, not on their own. The agent makes them through the
-  Remote Control session, only after the operator's explicit consent to that change. Each one
-  follows `AGENTS.md` section 11: old value saved, smallest change, effect verified, restore
-  command reported.
+- Manual changes on prod (the Proxmox host, Home Assistant, the router, the switch, and the
+  operational steps this plan lists on `ubuntu-apps` and `ubuntu-nas`: backup runs and
+  `pre-release-*` copies, stopping and starting containers for a tar or dump, hand tars, the NAS
+  tar check, DROP DATABASE / DROP ROLE, the native Beszel agent on `ubuntu-nas`, the Immich
+  volume switch) count as prod deployments and are done in the window of a release, not on their
+  own. Configuration of `ubuntu-apps` and `ubuntu-nas` still changes only through the release
+  deploy. The agent makes these changes through the Remote Control session, only after the
+  operator's explicit consent to that change. Each one follows `AGENTS.md` section 11: old value
+  saved, smallest change, effect verified, restore command reported.
 - Read-only prod work runs through a Remote Control session on the operator's laptop: the cloud
   workspace has no route to the home network.
 - Every phase has reviewer and critic agents whose job is to find what passes on DEV and fails
@@ -39,9 +43,18 @@ prints or copies a secret (`AGENTS.md` section 11):
 - unlocking Bitwarden (`bw login` / `bw unlock`, `knowledge/security.md:71-72`);
 - preparing the clean machine for backup-decrypt-drill and putting `RCLONE_CONFIG` on it (the
   laptop holds `~/.homelab-secrets/prod/RCLONE_CONFIG`, so it is not clean);
-- enrolling TFA for `root@pam` and the TFA login test;
-- creating Cloudflare tokens and OpenRouter keys in the provider accounts, and pasting each with
-  `utils/gen-app-credentials.sh --paste`;
+- enrolling TFA for `root@pam`, storing its recovery keys in Bitwarden, and the TFA login test;
+- pve-hardening secrets: copying the old `PROXMOX_API_TOKEN_ID` and secret into a separate
+  Bitwarden note before a new token exists, and putting them back on a rollback; moving the
+  Bitwarden note of the PVE root password to a name outside the secret pipeline and proving one
+  console login with it (section 3.3 item 5);
+- creating OpenRouter keys and pasting each with `utils/gen-app-credentials.sh --paste`;
+- creating the per-device Cloudflare tokens of admin-certs and storing them only in Bitwarden
+  with `utils/bw-store.py` (they are held by the device and are not GitHub secrets, so the
+  secret rule of sections 4 and 6 does not apply to them);
+- everything in the prod Trilium UI: reading the ETAPI token names, revoking or creating a token
+  (section 3.5);
+- running the NAS check of the `trilium_data` tars (section 3.5);
 - reading spend from accounts that have no credential in `~/.homelab-secrets` (ai-cost);
 - editing rulesets, approving `prod-approve` / `prod-gate`, merging release PRs.
 
@@ -54,12 +67,16 @@ configuration changes only with the operator's consent to that change; a plan th
 `ubuntu-apps` stops the release.
 
 This changes `PROJECT-CONTEXT.md` section 6, where the prod and router rows say "no". Before
-Phase 0 a docs PR into `develop` changes the prod row to "no, except manual changes on the
-Proxmox host and Home Assistant inside a release window, made by the agent through the Remote
-Control session after the operator's consent to each change (operator 2026-10-24);
-`ubuntu-apps` and `ubuntu-nas` change only through the release deploy", and the router row to
-"only inside a release window, through the Remote Control session, after the operator's consent
-to each change (operator 2026-10-24)".
+Phase 0 a docs PR into `develop` changes the prod row to "no, except inside a release window,
+through the Remote Control session, after the operator's consent to each change (operator
+2026-10-24): manual changes on the Proxmox host, Home Assistant and the switch, and the
+operational steps of `docs/plan/2026-10-24-backlog-release-phases-design.md` on `ubuntu-apps` and
+`ubuntu-nas`; the configuration of those two VMs changes only through the release deploy", and
+the router row to "only inside a release window, through the Remote Control session, after the
+operator's consent to each change (operator 2026-10-24)". The same PR replaces "Last (operator
+2026-10-22):" in `greenfield-plan.md:72` with "Phase 0 of
+docs/plan/2026-10-24-backlog-release-phases-design.md (operator 2026-10-24; was 'last',
+2026-10-22):" and leaves subnet-refactor as it is.
 
 ## 2. Invasiveness levels
 
@@ -98,7 +115,10 @@ results (for example a folder on the NAS, where the weekly audit reports go,
      `compose/core/docker-compose.yml:265,292`) and `compose/core/.env.example:15`; Caddy in
      `compose/core/caddy/Dockerfile`, `compose/core/docker-compose.yml:148` and `caddy_image` in
      `deploy-core.yml:24` (all three change together);
-   - the image digest running on DEV and on prod (`docker image inspect`, read-only). The deploy
+   - for registry images, the image digest running on DEV and on prod (`docker image inspect`,
+     read-only); local builds (Caddy, vsum, grocery, zotify) have no registry digest, so for them
+     the pinned base tag and module versions or the source ref (`vsum_ref`, `grocery_ref`) are
+     recorded. The deploy
      never pulls (`deploy-core.yml:575-577`), so the floating tags `postgres:16-alpine`
      (`compose/core/docker-compose.yml:12,36`), `valkey:8-alpine` (`:332`) and Immich's
      `14-vectorchord...` (`:343`) keep whatever was pulled first; for them the version the
@@ -109,8 +129,12 @@ results (for example a folder on the NAS, where the weekly audit reports go,
      patch updates for Syncthing, Portainer, Immich, Dozzle, Postgres 16 and Valkey 8, minor for
      Jellyfin and Homarr, an unclear state for Beszel and caddy-dns/cloudflare, and PostgreSQL 14
      in the Immich database image reaching end of life on 2026-11-12;
-   - the store check, on DEV, for every app that keeps state: record the store before the new
-     image starts and after it is healthy. Postgres stores: `pg_dump --schema-only` and the app's
+   - the store check, on DEV, for every app that keeps state, run on a copy so DEV's live store
+     is never migrated ahead of `develop`: a SQLite or BoltDB volume is copied into a scratch
+     volume and the new image starts in a separate compose project with no published ports; a
+     Postgres store is the DEV dump restored into a scratch database the new image points at. The
+     copies are removed afterwards (created by this task). Record the store before the new image
+     starts and after it is healthy. Postgres stores: `pg_dump --schema-only` and the app's
      migrations table. SQLite stores (Homarr `db.sqlite`, Jellyfin, Beszel, Navidrome): schema and
      migrations table read with python3 `sqlite3`. A store that cannot be compared this way (for
      example Portainer's `portainer.db`) counts as changed. A difference or an unknown makes the
@@ -119,7 +143,8 @@ results (for example a folder on the NAS, where the weekly audit reports go,
    `pcloud-crypt:homelab-backups` and check that every stream in `offsite.include` (postgres,
    volumes, homeassistant, repo-zip; `config/storage.yml:126-129`) is there. Copy one Postgres dump
    and the newest `homeassistant/ha-full-*.tar`. Restore the dump into a throwaway database on DEV
-   (`utils/backup/restore-pg.sh --env dev --db scratch --create`). Prove that the HA tar opens with
+   (`utils/backup/restore-pg.sh --env dev --db scratch --file <copied dump> --create`). Prove that
+   the HA tar opens with
    the prod `HA_BACKUP_PASSWORD`, entered by the operator, without restoring it onto the DEV HAOS
    twin (that would bring prod integrations and tokens to DEV, `AGENTS.md` section 1.4); the
    method is chosen in Phase 0. The copies and the scratch database are removed afterwards, after
@@ -132,8 +157,9 @@ results (for example a folder on the NAS, where the weekly audit reports go,
      `media/sync`, `media/vsum`, the SA500 media libraries (`knowledge/rebuild.md:129-131`). The
      NAS disks are attached with `backup=0` (`utils/pve-attach-nas-disks.sh:75`), so the VM dumps
      do not hold them either. For each, the containers that mount it read-write on prod (known:
-     Immich `media/immich`, Jellyfin `media/video`, Syncthing `media/sync`;
-     `compose/core/docker-compose.nfs.yml:9,22,27`) and where a copy exists outside the homelab
+     Immich `media/immich`, Jellyfin `media/video`, Syncthing `media/sync`, vsum-web and
+     vsum-worker `media/vsum`; `compose/core/docker-compose.nfs.yml:9,22,27,32,36`) and where a
+     copy exists outside the homelab
      (the separate pCloud media copy, `knowledge/backup.md:26`; the phone for `media/sync`);
    - every named volume and stateful bind mount in `compose/core/docker-compose.yml` and
      `docker-compose.nfs.yml` compared with `utils/backup/volumes.sh:14-21`. Today jellyfin_config,
@@ -143,18 +169,21 @@ results (for example a folder on the NAS, where the weekly audit reports go,
    - which tarred volumes hold SQLite or BoltDB files: `volumes.sh` tars them while the apps run
      (`utils/backup/volumes.sh:24-30`);
    - what a prod rebuild needs by hand;
-   - the volume-tar restore on DEV from DEV's own tars, never from prod tars (section 5). The
-     2026-10-19 drills did not exercise it (`knowledge/rebuild-drill-2026-10-19.md:46`,
-     `knowledge/rebuild-drill-2026-10-19b.md:36`). The commands used replace the one-line comment
-     in `knowledge/rebuild.md:122`, so the release gate repeats a written procedure; a failure
-     becomes an R1 item;
+   - the volume-tar restore on DEV from DEV's own tars, never from prod tars (section 5), plus a
+     hand tar and untar of one volume outside `volumes.sh` (DEV `jellyfin_config`) with the app
+     test after the untar. The 2026-10-19 drills did not exercise it
+     (`knowledge/rebuild-drill-2026-10-19.md:46`, `knowledge/rebuild-drill-2026-10-19b.md:36`).
+     The commands used replace the one-line comment in `knowledge/rebuild.md:122`; rollbacks and
+     the release gate (section 5 step 2) use that written procedure. A failure becomes an R1 item;
    - free space on `ubuntu-apps-dev` (`df`, `docker system df`) and in the nested pool
      (`lvs pve/data`) against the size of the newest prod dumps, for the gate in section 5.
 4. monitoring-audit: the failure list (`greenfield-plan.md:21`) against Uptime Kuma, Beszel, Diun,
    Trivy, the apt and NIC mails and the backup freshness check. Known gaps: no update report for
    OPNsense or Home Assistant; no scheduled certificate-expiry check by name (the `proxmox`
    monitor checks the IP with `ignore_tls`, `config/monitoring.yml:58`); no workflow syncs Kuma
-   monitors (`knowledge/monitoring.md:26-28`).
+   monitors (`knowledge/monitoring.md:26-28`). The audit also lists every host that opens a
+   connection to the Proxmox host on 22, 8006 or 3128 (read-only, `ss` on the host), for the PVE
+   firewall of pve-hardening.
 5. syncthing-smb-check: the operator puts one test file on the phone, which syncs it to prod
    `media/sync`; the agent checks it over the Samba share `media`, folder `sync`, and the file
    ownership between the container and the Samba force user. Deleting the test file afterwards is
@@ -164,19 +193,24 @@ results (for example a folder on the NAS, where the weekly audit reports go,
    read compared with `docs/network.md`; the operator puts the laptop on a phone hotspot and scans
    the WAN address once with WireGuard down and once through the laptop's existing Admins peer
    (assumption, checked first: the laptop still has that peer). A scan as a non-Admins peer needs
-   a temporary peer, which is a router change: asked for, done in the R1 window, removed after.
+   a temporary peer, which is a router change: it is done in the R1 window (section 3.2), and its
+   findings are reviewed after R1 and tagged R2.
 7. Repo and DEV only:
    - Portainer file-access check (what it already gives for Docker volumes);
    - Joplin -> Trilium export test on DEV with a synthetic Joplin export made for the test
      (nested notebooks, tags, an image, an attachment, a code block, a to-do), never the operator's
-     notebooks; the steps go to `knowledge/apps/trilium.md`;
+     notebooks; DEV Trilium holds only synthetic notes; the steps go to
+     `knowledge/apps/trilium.md`;
    - the trilium-ai-access questions (section 3.5);
    - the app database survey (section 3.6).
 8. Leftovers of the 2026-10-20 audit (`knowledge/security-audit-2026-10-20.md:243,248-264`):
    - HA listeners 111, 4357, 5355, 18555: which are reachable from LAN and IOT (HA `.20.13` is not
      in `HomelabServers`, `utils/opnsense-lockdown-remote.sh:166`);
    - HA authenticated checks with the prod `HA_TOKEN`: users, MFA, version, add-ons;
-   - which router GUI user has no TOTP, read from the newest NAS copy of `config.xml`;
+   - which router GUI user has no TOTP: a read-only script on the laptop parses the newest NAS
+     copy of `config.xml` and prints only each GUI user name and yes or no for a non-empty
+     `otp_seed`. The file holds OTP seeds, API keys and private keys, so it is never printed,
+     `cat`-ed or grepped in the session;
    - the switch configuration, read with the operator logged in.
    Lynis is not run: it needs an install on prod. It becomes a candidate R1 item for the operator
    to accept or drop.
@@ -201,8 +235,14 @@ One PR per item into `develop`, in this order:
    - deploy gate: add every source path that the deploy uses (`deploy-core.yml:405-411`,
      `deploy-storage.yml:678-679,769`, `apps-deploy-dev.yml:87`) to the regex at
      `apps-deploy-dev.yml:41`, and the same change to `tests-dev.yml:49`, which must stay
-     identical. GitHub reads `apps-deploy-dev.yml` from `main`, so until R1 is on `main` every item
-     PR needs the manual dispatch in section 4;
+     identical. GitHub reads `apps-deploy-dev.yml` from `main`, so until R1 is on `main` an item
+     PR whose files `main`'s gate does not match needs the manual dispatch in section 4;
+   - NAS tar check: a committed read-only Python script with `--dry-run` that lists each volume
+     tar, extracts its SQLite files into a temporary directory it names and removes, and prints
+     only file counts, sizes and `PRAGMA integrity_check`; tested on DEV against DEV tars. Until R1
+     is deployed it is not on the prod NAS, so for the R1 gate it runs from the laptop session over
+     SSH on stdin (`ssh <nas> sudo python3 - <tar> < script`), nothing installed; from R2 on the
+     deployed copy is used;
    - prod NFS render: CI Validate also renders the prod file set (base plus
      `docker-compose.nfs.yml`, prod profiles from `config/services.yml`) with the existing
      placeholders (today only the base file, `ci-validate.yml:54`);
@@ -211,16 +251,18 @@ One PR per item into `develop`, in this order:
      run since F3). In the same PR `tests/infra/run.sh:162-167` reports SKIP for `terraform/plan`
      on prod in every case (Infra Plan Prod covers it). For `infra/ansible/check` the PR either
      gives the test step the same environment as the step "Deploy compose/core"
-     (`apps-deploy-prod.yml:84-118`, plus `GROCERY_SECRET_KEY` in `tests/infra/run.sh:193`) or
+     (`apps-deploy-prod.yml:84-121`, plus `GROCERY_SECRET_KEY` in `tests/infra/run.sh:193`) or
      keeps it SKIP and records it in `tests/README.md` as a known prod gap. This cannot be proved
      on DEV: the first prod run after the release is read in full, and a new FAIL there blocks
      the tag (fix forward or revert).
-2. Image updates the store check cleared, patch first. `postgres:16-alpine` and `valkey:8-alpine`
-   have no tag to bump; if the operator chooses to pin them (section 9), the PR pins the exact tag
-   DEV tested, updates `knowledge/apps/diun.md:11`, and either makes Diun report the new tags (its
-   `includeTags` in `compose/core/diun/diun.yml:14` does not match `-alpine` tags) or records
-   where their updates are seen instead. An update of a host agent (Beszel on prod-nas, prod-pve,
-   prod-router) is a manual prod change in the release window, with consent per host.
+2. Image updates the store check cleared, patch first. The first image PR corrects
+   `knowledge/apps/diun.md:11` ("Upgrading = change the tag in compose") to name where the Immich
+   and Caddy versions are set. `postgres:16-alpine` and `valkey:8-alpine` have no tag to bump and
+   the deploy never pulls, so before an update they are pinned to the exact tag DEV tested; the
+   same PR either makes Diun report the new tags (its `includeTags` in
+   `compose/core/diun/diun.yml:14` does not match `-alpine` tags) or records where their updates
+   are seen instead. An update of a host agent (Beszel on prod-nas, prod-pve, prod-router) is a
+   manual prod change in the release window, with consent per host.
 3. postgres-init list cleanup: one PR removes the names the survey (section 3.6) confirmed unused
    from the loop at `compose/core/docker-compose.yml:45`, from `config/services.yml:59`,
    `knowledge/apps/postgres.md:9`, `knowledge/prod-target.md:55` and `used_by` in
@@ -228,7 +270,9 @@ One PR per item into `develop`, in this order:
    in R2 and never touches `homelab`.
 4. Monitoring gap fixes from Phase 0 (known: update reports for OPNsense and Home Assistant, a
    certificate-expiry check by name that alerts under 14 days, the threshold of
-   `tests/net/run.sh:136`). A change to `config/monitoring.yml` reaches Kuma only through
+   `tests/net/run.sh:136`; in R1 it covers the names that already have a Let's Encrypt
+   certificate, the Caddy wildcard and the public Grocery name; R2 item 4 adds the Proxmox and
+   HA names). A change to `config/monitoring.yml` reaches Kuma only through
    `utils/kuma-sync.py`, run by hand: `--env dev` before the DEV tests; on prod `--env prod
    --dry-run` and then `--env prod` from the laptop session in the R1 window, as a manual change
    with consent, with the dry-run output in the release PR.
@@ -244,20 +288,21 @@ One PR per item into `develop`, in this order:
    environment with a credit limit set from the ai-cost measurement, as for `vsum-homelab-prod`
    (`docs/secrets-inventory.md:122`); it does not reuse `VSUM_OPENROUTER_KEY`. It gets no Trilium
    credential (section 3.5).
-7. ai-cost follow-up: any cheaper model or token reduction the measurement supports for vsum or
-   ai-log-analysis becomes its own item (R1 if it only changes a model or prompt setting, R2 if it
-   changes an existing prod app's behaviour). Key limits are set by the operator in OpenRouter and
-   need no deploy.
+7. ai-cost follow-up for ai-log-analysis (new in R1): a cheaper model or fewer tokens if the
+   measurement supports it. The same kind of change for vsum, or any other app already on prod,
+   is R2 item 9. Key limits are set by the operator in OpenRouter and need no deploy.
 8. container-file-access (own brainstorming first, starting from the Phase 0 Portainer result):
    the laptop script that maps the drives (the Samba shares, plus container-file access if one is
    added); a file browser or SFTP for the Docker volumes only if the Portainer check shows a gap,
    read-only by default. `media/sync` and the media libraries are mounted read-only; no write
    access to a tree no backup holds.
 9. `utils/ha.py` TLS support: the REST and websocket clients take the scheme from `ha_url`
-   (`http`/`ws` or `https`/`wss`) and verify the certificate. While prod `ha_url` stays `http`
-   this changes nothing on prod; it shrinks the admin-certs window in R2.
+   (`http`/`ws` or `https`/`wss`), derive the default port from it (80 or 443; `ws_call` connects
+   to `u.port or 80` today, `utils/ha.py:132`) and verify the certificate; DEV test against a local
+   CA on the HAOS twin. While prod `ha_url` stays `http` this changes nothing on prod; it shrinks
+   the admin-certs window in R2.
 10. Homarr widgets, only if the Homarr update they need was cleared by the store check; otherwise
-    they follow it into R2.
+    they follow it into R2 item 7.
 11. Phase 0 fixes tagged R1, and trilium-ai-access if its design only adds (section 3.5).
 
 Router and host steps in the R1 window, each a separate change with the operator's consent:
@@ -270,6 +315,8 @@ Router and host steps in the R1 window, each a separate change with the operator
 - router access for the OPNsense update report if it needs more than the NAS backup key, which may
   only run `cat /conf/config.xml` (`utils/opnsense-backup-key.sh:2-3`); the method is chosen in
   that item's brainstorming and installed with a dry-run and an auto-revert;
+- the temporary non-Admins WireGuard peer for the S7 scan of Phase 0 step 6: dry-run, consent,
+  scan, removal checked; its findings are tagged R2;
 - the Kuma sync of item 4, Beszel agent updates of item 2, and any Phase 0 fix tagged R1 that
   changes the router or a prod host, listed before the release PR is opened.
 
@@ -277,27 +324,40 @@ R1 adds no real address, domain or client name to `docs/` or `knowledge/`. Code 
 from the existing sources (`config/*.yml`, the Ansible inventories) and adds no new literals, so
 public-map-split has nothing new to move.
 
-After R1, once the vsum token decision in section 3.5 is in effect, the operator can import the
-Joplin notes into prod Trilium by hand (it only adds data).
+After R1 the operator can import into prod Trilium by hand the Joplin notes that are fit for
+cloud processing (it only adds data). Private notes wait until no AI-path credential reaches prod
+Trilium: the vsum token revoked under option (a) of section 3.5 (proved by a 401 for that token),
+or replaced by R2 item 1.
 
 ### 3.3 Release 2 - changes to existing prod
 
-R2 PRs merge into `develop` only after the operator confirms R1 on prod (section 5). From the
-first R2 merge, `develop` carries changes that need the R2 window, so nothing is released from
-`develop` until R2 is complete. A prod fix that cannot wait is a separate release and the
-operator's decision each time: a PR into `main` from a branch cut from `main` (as #103 and #147
-did), holding only the fix, with the PR reviewer, the parity critic and section 5 step 1. It is
+R2 PRs merge into `develop` only after R1 is closed (section 5, last paragraph). From the first
+R2 merge, `develop` carries changes that need the R2 window, so nothing is released from
+`develop` until R2 is complete. A prod fix that cannot wait (including the rollback of an R1
+item) is a separate release and the operator's decision each time: a PR into `main` from a branch
+cut from `main` (as #103 and #147 did), holding only the fix, with the PR reviewer, the parity
+critic and section 5 steps 1, 3 and 4 (the window copies go to `pre-release-hotfix-<n>/`). It is
 not deployed on DEV first (Apps Deploy Dev runs only for `develop`), so the PR lists the fix as a
 prod check. Afterwards `main` is merged back into `develop` through a PR with a real merge commit,
 never a squash (6a581b1, 4b02915).
+
+In the R2 window, section 5 step 3 runs before any host change (the HA switch, pve-hardening
+(a)-(c)), so the window backup is taken from the unchanged state.
 
 One PR per item into `develop`, in this order:
 
 1. trilium-ai-access changes to existing tokens or apps, starting with `VSUM_TRILIUM_TOKEN`,
    unless it was already revoked in the R1 window (section 3.5).
-2. public-map-split (own brainstorming first; it changes where the deploy reads addresses).
-3. Immich Postgres 14 (placed early so its DEV rehearsal runs first; the prod date is the R2
-   window either way). Only with an upstream migration path. PostgreSQL 14 reaches end of life on
+2. public-map-split (own brainstorming first; it changes where the deploy reads addresses). The
+   NAS nftables sets `ssh_from`, `smb_from` and `nfs_from` are built from `config/storage.yml`
+   with policy drop (`deploy-storage.yml:843-857`), and `nft -c` checks only syntax, so example
+   or fallback addresses would lock SSH, NFS (the vzdump stream) and Samba out of the NAS. The PR
+   makes deploy-storage assert, before writing `nas-firewall.nft`, that `ssh_from` holds the
+   controller's own source address and the runner 192.168.20.14 and that `nfs_from` holds
+   `apps_host` and `vzdump.pve_host`. Before the release, a read-only `nft list table inet
+   homelab_fw` on prod is compared with the newly rendered sets; they must match.
+3. Immich Postgres 14 (placed early so its DEV rehearsal runs while the other items are built).
+   Only with an upstream migration path. PostgreSQL 14 reaches end of life on
    2026-11-12 (date confirmed in Phase 0 step 1), before R2 can ship, so Immich's database runs
    unpatched from then until R2. It publishes no port, but every service on the core compose
    default network can reach it (`compose/core/docker-compose.yml:342-363`). The Phase 0 review
@@ -314,7 +374,7 @@ One PR per item into `develop`, in this order:
      IP) and changes the Homarr link (`utils/gen-homarr-board.sh:136`); `utils/ha.py` already
      speaks TLS from R1 item 9. Everything that calls the HA API reads `ha_url`: the full HA backup
      (`ha-pull.sh` -> `ha.py backup`), the prod deploy step `ha.py bootstrap` / `deploy`
-     (`apps-deploy-prod.yml:127-133`) and the `ha` suite.
+     (`apps-deploy-prod.yml:127-134`) and the `ha` suite.
    - The switch stays on HTTP, from Admins only. It is on the LAN subnet, where the router does not
      filter (`docs/network.md:66`); the brainstorming states how that is enforced, and if the
      switch cannot enforce it, the operator decides.
@@ -322,6 +382,15 @@ One PR per item into `develop`, in this order:
      AdGuard redirect on IOT (`docs/network.md:91`; that redirect once broke Caddy's DNS-01,
      `knowledge/troubleshooting.md:69`), and that `hass.dkhomelabserver.xyz` resolves from the
      prod runner and the NAS.
+   - `ha_url` names the port HA serves TLS on (`https://hass.dkhomelabserver.xyz:<port>`), decided
+     in the brainstorming; HA serves on port 80 today (`config/storage.yml:60`).
+   - The same PR changes the Kuma `proxmox` monitor to `https://proxmox.<domain>:8006` without
+     `ignore_tls` and adds an HA https monitor, both with the 14-day expiry alert of R1 item 4,
+     synced with `kuma-sync.py --env prod --dry-run` and then a real run in the window.
+   - Before the window, the revert of the `ha_url` and Homarr-link change is prepared on the
+     hotfix path of section 3.3 (a PR into `main` from `main`, reviewed, Infra Plan Prod clean),
+     so it can merge inside the window. If it is not ready, the operator takes an HA full backup
+     by hand each day until a revert is on prod.
    - DEV has no Cloudflare token and no ACME on the nested PVE or the HAOS twin, so issuance and
      renewal are prod checks in the release PR. DEV tests the TLS client against a local CA on the
      twin.
@@ -331,8 +400,13 @@ One PR per item into `develop`, in this order:
      same token); a `privsep=1` token with that role on `/`; DEV's `PROXMOX_API_TOKEN_ID` and
      `PROXMOX_API_TOKEN_SECRET` set to it;
    - the provider PR gives Terraform the SSH key and removes `password` from
-     `terraform/providers.tf`, and updates `docs/f3-proxmox.md:144-149`, `knowledge/rebuild.md:45`
-     and the Proxmox line of section 6;
+     `terraform/providers.tf`; it edits every workflow that passes `TF_VAR_proxmox_ssh_password`
+     (`infra-apply-prod.yml`, `infra-apply-dev.yml`, `infra-plan.yml`, `infra-plan-dev.yml`,
+     `tests-dev.yml`) and keeps a placeholder for the plan jobs if the provider requires one;
+     Infra Plan Dev on the PR and Infra Plan Prod on the release PR must pass. It updates
+     `docs/f3-proxmox.md:144-149`, `knowledge/rebuild.md:45` and the Proxmox line of section 6.
+     If the operator chose option (b) for the Kuma monitor (section 9), the monitor change ships
+     in this PR and is synced with `kuma-sync.py --env prod` in the window;
    - proof on DEV: an apply that creates a VM and its snippet over SSH (the drill of
      `knowledge/rebuild-drill-2026-10-19b.md`), then Apps Deploy Dev with the 'Proxmox backup job'
      step showing ok.
@@ -341,32 +415,51 @@ One PR per item into `develop`, in this order:
    - (b) the runner key authorised for root, proved from the runner with a key-only SSH
      (`-o BatchMode=yes -o PasswordAuthentication=no`), plus a login test by the operator from a
      second session;
-   - (c) the role created with the same command as on DEV and its privilege list compared; the
-     new token created; the old prod `PROXMOX_API_TOKEN_ID` and secret copied into a separate
-     Bitwarden note (not into `~/.homelab-secrets/prod/`, which `sync-secrets-to-github.py --apply`
-     pushes); the operator swaps both values in environment `prod`;
+   - (c) in this order: the operator copies the old prod `PROXMOX_API_TOKEN_ID` and secret into a
+     separate Bitwarden note (not into `~/.homelab-secrets/prod/`, which
+     `sync-secrets-to-github.py --apply` pushes); the role is created with the same command as on
+     DEV and its privilege list compared; the new token is created only with the non-printing
+     pipeline of `docs/f3-proxmox.md:148-151` (`bw-store.py --env prod --stdin` then
+     `gh secret set` from the cache) plus `gh variable set PROXMOX_API_TOKEN_ID --env prod`, so
+     GitHub, the cache and Bitwarden match; `bw-store.py --env prod --dry-run` shows the new value
+     as `unchanged`. DEV follows the same order and keeps its old values in a note until the DEV
+     proof passes;
    - (d) the release merged; the refreshed plan of Infra Apply Prod passes with the new token; the
      'Proxmox backup job' step's own outcome is success (the step has `continue-on-error`);
-   - (e) `PasswordAuthentication no` and `X11Forwarding no` (S18, S27), then the key-only SSH
-     repeated from the runner and from an Admins host;
+   - (e) and (f) run with the console at hand, and before each one a timer is armed that undoes
+     it if the session drops (for example `systemd-run --on-active=10min /usr/sbin/pve-firewall
+     stop`, or a timer that copies the saved sshd file back and reloads ssh; general knowledge,
+     not verified here). The timer is cancelled only after a new key-only SSH from the runner, a
+     new SSH from an Admins host and a new 8006 login from the operator's browser all pass;
+   - (e) `PasswordAuthentication no` and `X11Forwarding no` (S18, S27): `sshd -t` first, then
+     reload, not restart;
    - (f) PVE firewall: 22 and 8006 from Admins and the runner 192.168.20.14, replacing the default
-     management set, plus the Kuma option the operator chose (section 9). Before
-     `pve-firewall start` the session confirms its own source address (`$SSH_CLIENT`) is in Admins;
-     the laptop on IOT Wi-Fi is not. Then the runner SSH and a manually started Infra Apply Prod
-     run are repeated. Beszel needs no inbound rule: the agent dials the hub
-     (`knowledge/apps/beszel.md:13`);
+     management set, plus the Kuma option the operator chose (section 9) and any other source the
+     Phase 0 connection list shows. Before `pve-firewall start` the session confirms its own
+     source address (`$SSH_CLIENT`) is in Admins; the laptop on IOT Wi-Fi is not. After the start:
+     `pve-firewall status` shows it enabled; the runner SSH and a manually started Infra Apply Prod
+     run pass; Kuma `proxmox` is up (options a and b) and Beszel shows `prod-pve` with a fresh
+     sample (the agent dials the hub, `knowledge/apps/beszel.md:13`); both go into the release
+     checklist;
    - (g) the old token and its Bitwarden note deleted only after (d) to (f) pass and the next
      04:30 dump made `storage/backup/fresh-vzdump` PASS with `pvesm status` showing `nas-backups`
-     active; `PROXMOX_SSH_PASSWORD` removed only after (e) passes. Each deletion is asked.
-   Restore commands: `pve-firewall stop`; sshd config back from the saved copy; the old token
-   values back in environment `prod` until (g).
+     active. `PROXMOX_SSH_PASSWORD` is the PVE root password (`docs/f3-proxmox.md:55-58`) and the
+     recovery path for a lost key (`knowledge/security.md:30`): after (e) passes, only the
+     GitHub `prod` secret and the `TF_VAR_proxmox_ssh_password` lines are removed, and the cache
+     file so `sync-secrets-to-github.py` cannot push it back; the Bitwarden copy stays under the
+     name the operator moved it to (section 1). Each deletion is asked.
+   Restore commands: `pve-firewall stop`; sshd config back from the saved copy and reload; the
+   old token values back in environment `prod` and the cache until (g).
 6. App moves to Postgres that the survey in section 3.6 allows (data migration, DEV first), then
-   DROP DATABASE and DROP ROLE of the names R1 removed from the loop. CloudBeaver replaces pgAdmin
-   only under the condition in section 3.6.
-7. Image updates the store check did not clear (changed store or unknown status).
+   DROP DATABASE and DROP ROLE of the names R1 removed from the loop, and of any database or role
+   outside the loop the operator chose to drop (known: `todo_grocery` / `prod_todo_grocery`).
+   CloudBeaver replaces pgAdmin only under the condition in section 3.6.
+7. Image updates the store check did not clear (changed store or unknown status), with the Homarr
+   widgets that depend on one.
 8. ai-log-analysis sending turned on, after the operator has reviewed the cleaned payload of at
    least one real weekly run on prod.
-9. Phase 0 fixes tagged R2.
+9. Phase 0 fixes tagged R2, including the findings of the non-Admins WireGuard scan and ai-cost
+   changes to vsum or other apps already on prod.
 
 ### 3.4 After R2 - history rewrite, prod run rejected
 
@@ -376,13 +469,14 @@ reachable from all branches, all 7 tags (v1.0.0 to v2.4.1) and the `refs/pull/*/
 rewriting only `main` and `develop` would leave the data public. Every step below is asked on its
 own, because none can be undone:
 
-1. Before: the only branches left on origin are `main` and `develop`, and no PR is open. Every
-   other branch (today `docs/prod-plan-lessons` with PR #204, `feat/vsum`, this plan's
-   `claude/...` branch) is merged or, with consent, deleted. A full copy of the old repository:
-   `git clone --mirror` and `git bundle create <name>.bundle --all`, checked with
-   `git bundle verify`, stored on the NAS outside any shared path and never pushed anywhere. The
-   operator saves both rulesets (`gh api repos/<owner>/homelab/rulesets/25494696` and
-   `/25494699`) as JSON next to it.
+1. Before, in this order: a full copy of the old repository (`git clone --mirror`, then
+   `git bundle create <name>.bundle --all`, `git bundle verify`, and `git bundle list-heads` must
+   show every branch and tag that `git ls-remote origin` lists), stored on the NAS outside any
+   shared path and never pushed anywhere. The operator saves both rulesets
+   (`gh api repos/<owner>/homelab/rulesets/25494696` and `/25494699`) as JSON next to it. Only
+   then is every branch other than `main` and `develop` (today `docs/prod-plan-lessons` with PR
+   #204, `feat/vsum`, this plan's `claude/...` branch) merged or, with consent, deleted, and no PR
+   is left open.
 2. Install git-filter-repo (not installed): package, version and source named first.
 3. Rewrite on a fresh mirror clone: all branches and all tags. Tags are rewritten and re-pushed
    under the same names (decision 0009 makes them the rollback points, and
@@ -394,13 +488,31 @@ own, because none can be undone:
    `non_fast_forward` and, on `develop`, `required_status_checks` all refuse a direct push). The
    agent force-pushes tags first, then `main` and `develop`. The push to `main` starts Infra Apply
    Prod; the operator rejects its `prod-approve`, so Apps Deploy Prod and its release job do not
-   run. The push to `develop` starts the DEV runs; the tree is unchanged, so the plan must show no
-   change. The operator restores both rulesets right after, and `gh api` output must match the
-   saved JSON.
-5. After: `git ls-remote origin` shows only rewritten refs; every local clone and runner checkout
-   is re-cloned. Old objects stay reachable through `refs/pull/*/head` and GitHub's cache until
-   GitHub Support purges them (general knowledge, not verified here; `greenfield-plan.md:69`); the
-   request text is shown to the operator before it is sent.
+   run. Infra Apply Dev runs on every push to `develop` without a gate, so before that push Infra
+   Plan Dev is dispatched on the current `develop` and must show no change. The operator restores
+   both rulesets right after, and `gh api` output must match the saved JSON.
+   Rollback: the old-to-new ref map is kept. If a push fails partway or a check fails after it,
+   with the rulesets still disabled, the old SHAs are force-pushed from the mirror for every ref
+   already pushed and `git ls-remote` is compared with the mirror before the rulesets are
+   restored.
+5. After:
+   - branches and tags in `git ls-remote origin` are the rewritten SHAs;
+   - every local clone and runner checkout is re-cloned safely: first `git status --porcelain
+     --ignored` and the local branches without a remote are listed; `opnsense/backups/` (the
+     restore source of router changes) and any gitignored house-map files are moved to
+     `<nas_private_root>` or handled as `knowledge/lessons-learned.md:30` says (operator's call);
+     local-only branches are bundled; the clone goes into a new directory, the ignored files are
+     copied across, and the old directory is deleted only after asking;
+   - every homelab commit hash cited in `knowledge/`, `docs/`, `PROJECT-CONTEXT.md` and
+     `README.md` is replaced from the commit map in a normal PR into `develop`, which reaches
+     `main` with the next release;
+   - old objects stay reachable through `refs/pull/*/head` and GitHub's cache until GitHub Support
+     purges them (general knowledge, not verified here; `greenfield-plan.md:69`); the request text
+     is shown to the operator before it is sent;
+   - done check, after Support confirms the purge: on a fresh clone that also fetches
+     `+refs/pull/*:refs/remotes/pull/*`, `git log --all -- <the removed paths>` prints nothing, and
+     `https://github.com/<owner>/homelab/commit/18dd8c6` returns 404. git-history-state and
+     security-public-repo close only when this passes.
 
 ### 3.5 trilium-ai-access - requirement
 
@@ -411,14 +523,24 @@ copy that reaches them; a prompt rule or a filter applied after the read does no
 
 Scope. This bar applies to the AI tools this plan deploys or changes (trilium-ai-access, vsum,
 ai-log-analysis). The coding agent that runs the phases is also a cloud model with shell access
-to DEV and prod through the Remote Control session (the laptop user's prod key has
-`sudo NOPASSWD: ALL` on `ubuntu-apps`, `docs/secrets-inventory.md:49`). For the agent the rule is
-a procedure, not a credential boundary, which does not meet the bar above; the operator accepts or
-rejects that in section 9. The procedure: the agent never opens, prints or queries note content
-from Trilium on DEV or prod (not the UI, not ETAPI, not `document.db`, not an extracted
-`trilium_data` tar). No copy of prod Trilium data is made on DEV or on any other host the agent
-works on. A check of a Trilium backup prints only counts, sizes, checksums and
-`PRAGMA integrity_check`.
+to DEV and prod through the Remote Control session: the laptop user's prod key has
+`sudo NOPASSWD: ALL` on `ubuntu-apps` and `ubuntu-nas`
+(`knowledge/security-audit-2026-10-20.md:128,239`), and the NAS holds the `trilium_data` tars. For
+the agent the rule is therefore a procedure, not a credential boundary, which does not meet the bar
+above; the operator chooses in section 9. The procedure (option (a) there):
+
+- the agent never opens, prints or queries prod note content: not the prod Trilium UI, not ETAPI
+  on prod, not prod `document.db`, not an extracted prod `trilium_data` tar;
+- the agent may run the backup jobs and copy, move or list backup artefacts on the NAS and
+  offsite as opaque files, but never extracts, opens or queries a `trilium_data` tar; the NAS
+  check of those tars is run by the operator;
+- DEV Trilium never receives prod data; on DEV the agent may read only the synthetic notes it
+  created for a test;
+- every step in the prod Trilium UI is the operator's (section 1).
+
+Option (b) is stricter and still does not meet the bar: the Remote Control session runs as a
+separate laptop user without `~/.ssh/homelab_prod_ed25519` and `~/.homelab-secrets/prod/`, and
+the operator runs every prod step that needs root on `ubuntu-apps` or `ubuntu-nas`.
 
 What exists on prod: profile `vsum` is on (`config/services.yml:31`). A prod ETAPI token
 `VSUM_TRILIUM_TOKEN` is set (`docs/secrets-inventory.md:125`) and answered 200 (commit 8db96c2).
@@ -441,23 +563,28 @@ Phase 0 answers, on DEV with test notes only:
    more than vsum needs.
 5. Where the "knowledge base" content lives, if it is not Trilium, and the same rule for it.
 6. Local model vs OpenRouter for the content that is allowed.
-7. On prod, read-only: the list of ETAPI token names in Trilium (Options -> ETAPI), to find every
-   holder.
+7. On prod: the list of ETAPI token names in Trilium (Options -> ETAPI), read by the operator in
+   the UI, to find every holder.
 
-If question 1 shows tokens cannot be limited, the operator chooses (section 9):
-(a) the agent revokes the prod vsum token in prod Trilium in the R1 window, with consent. vsum's
-note export stops (`knowledge/apps/vsum.md:14`); no data is lost. Removing the GitHub secret alone
-does not cut access (the deploy falls back to the runner cache, `deploy-core.yml:126-127`, and the
-token stays valid). Before revoking on prod, check on DEV how vsum behaves with a set but revoked
-token; the secret is emptied in the R1 deploy. Restore: create a new token and run
+If question 1 or question 4 shows that the existing prod vsum token reaches notes vsum does not
+need (which includes the case where tokens cannot be limited at all), the operator chooses
+(section 9):
+(a) revoke the prod vsum token in the R1 window. The operator revokes it in the prod Trilium UI;
+the agent proves the revocation with one ETAPI request using the cached old token, from a script
+that prints only the HTTP status (expect 401), and empties the secret in the R1 deploy. vsum's
+note export stops (`knowledge/apps/vsum.md:14`); no data is lost. Emptying the GitHub secret alone
+does not cut access: the token stays valid in Trilium, and the laptop cache
+`~/.homelab-secrets/prod/VSUM_TRILIUM_TOKEN` and Bitwarden still hold it
+(`sync-secrets-to-github.py --apply` would push it again). Before the prod step, check on DEV how
+vsum behaves with a set but revoked token. Restore: the operator creates a new token and runs
 `./utils/gen-app-credentials.sh --env prod --secret VSUM_TRILIUM_TOKEN --paste --rotate`.
-(b) the operator accepts the exposure until R2 item 1, recorded as a dated risk in
-`knowledge/apps/vsum.md`.
+(b) accept the exposure until R2 item 1, recorded as a dated risk in `knowledge/apps/vsum.md`.
+Under (b) private Joplin notes are imported only after R2 item 1.
 
 The design gets its own short brainstorming. It lands in R1 if it only adds (a new service, a new
 token) and in R2 item 1 if it changes an existing token or app. Until it lands, no AI tool gets a
 new Trilium credential and no existing one gets wider. Private notes are imported from Joplin only
-once no AI-path credential reaches them.
+once no AI-path credential reaches prod Trilium (section 3.2, last paragraph).
 
 ### 3.6 App databases and the admin tool
 
@@ -497,16 +624,17 @@ Every item reaches `develop` through a PR that merges itself after `validate` an
   match, `gh workflow run apps-deploy-dev.yml --ref develop -f sha=<merge sha>` runs before the
   next item starts.
 - A PR that changes `.github/workflows/apps-deploy-*.yml`, adds a deploy path, or adds a secret
-  name is checked on DEV by that manual dispatch, shows that each new secret has a line in
-  `apps-deploy-prod.yml` and is set in environment `prod` (`gh secret list --env prod`), and is
+  name is checked on DEV by that manual dispatch, meets the secret rule of section 6, and is
   listed in the release PR as a prod check.
 - After section 5 steps 1-2 pass, the release PR `develop` -> `main` is opened as a draft.
   Infra Plan Prod runs only on PRs into `main` (`infra-plan.yml:6-8`). The PR is marked ready for
   the operator only when step 4 holds and the parity and release critics have no open finding
-  other than the prod checks listed in the PR. Step 3 runs in the release window, before the
-  operator merges.
-- Rollback of an R1 or R2 item on prod is a revert PR into `develop` and another release PR,
-  which the operator merges and approves. It costs a release outside the two planned ones.
+  other than the prod checks listed in the PR. Step 3 runs in the release window, before any host
+  change of the window and before the operator merges.
+- Rollback of an item on prod costs a release outside the two planned ones. Before the first R2
+  merge it is a revert PR into `develop` and a release PR; after it, the hotfix path of section
+  3.3. A revert alone is the rollback only for an image update the store check cleared; every
+  other rollback is the item's own procedure in section 5.
 
 ## 5. Data safety
 
@@ -516,10 +644,10 @@ are not covered by the steps below. Before R1, because every prod deploy re-runs
 either a one-off copy on another disk or machine (target chosen by the operator; file count and
 size compared at source and copy) kept until the release is verified, or acceptance of the loss
 risk as decision 0002 does for `share`. Until that decision is carried out, no item updates an
-image that mounts the tree read-write (Immich, Jellyfin, Syncthing), changes its path, mount,
-ownership or Samba definition, or gives a new tool write access to it. Before and after each
-deploy that touches such a tree, a file listing (path, size, mtime) is compared; it only detects a
-loss.
+image that mounts the tree read-write (Immich, Jellyfin, Syncthing, vsum-web, vsum-worker; the
+full list from Phase 0 step 3), changes its path, mount, ownership or Samba definition, or gives a
+new tool write access to it. Before and after each deploy that touches such a tree, a file listing
+(path, size, mtime) is compared; it only detects a loss.
 
 Before every release:
 
@@ -527,54 +655,66 @@ Before every release:
    `utils/bw-store.py --pending` exits 0, and `utils/bw-store.py --env prod --dry-run` and
    `--env prod-plan --dry-run` list every note as `unchanged`. A generator exits 0 even when the
    vault is locked and leaves the value only in the cache and in GitHub (`utils/bw-store.py:17-20`).
-2. Restore gate on DEV. Freeze `develop` first: auto-merge off on every open PR, no merge from the
-   start of the gate until the release PR is merged; any merge repeats the gate. Dispatch Apps
-   Deploy Dev for the `develop` tip and wait for its post-deploy-tests. Take a fresh prod backup
-   (`homelab-backup` on apps, `homelab-nas-backup` on the NAS). Check free space on
-   `ubuntu-apps-dev` and `lvs pve/data`; if the artefacts do not fit, stop and ask. Copy the prod
-   Postgres dumps to a new scratch directory on the DEV apps guest outside `/mnt/homelab/backups`
-   (DEV retention keeps the newest files per prefix, `knowledge/backup.md:24`) and restore each
-   into a scratch database:
-   - shared Postgres: `utils/backup/restore-pg.sh --env dev --db <name>_check --file <dump> --create`;
-   - Immich: the same plus `--container homelab-core-immich-postgres-1 --user postgres
-     --password-secret IMMICH_DB_PASSWORD`.
-   The restore is proved by the row count of every table equal to the count in the dump, as in
-   `knowledge/rebuild-drill-2026-10-19b.md:23`. The checks read only counts, never row contents.
-   Prod volume tars are not restored on DEV: `trilium_data` holds every private note,
-   `syncthing_data` the prod device identity, `portainer_data` the prod grocery stack secrets
-   (`utils/bootstrap/portainer.sh:136-160`), and `homarr_data` is encrypted with the prod
-   `HOMARR_SECRET_KEY`. They are checked on the NAS by a committed read-only Python script, run by
-   the agent with consent (or by the operator, section 9): it lists each tar, extracts its SQLite
-   files into a temporary directory that it removes, and prints only file counts, sizes and
-   `PRAGMA integrity_check`. The procedure of restoring a volume tar is proved on DEV with DEV's
-   own tars (Phase 0 step 3). Then `utils/run-tests.sh --env dev --suite all` as the DEV health
-   check; it does not prove the restore (`utils/run-tests.sh:16,30`). Afterwards the `_check`
-   databases and the scratch directory, both created by this gate, are removed. The release PR
-   names the `develop` SHA and both results. This gate proves the procedure on the set taken at
-   the gate; the set from step 3 is the rollback copy.
-3. Release-window backup, before the operator merges the release PR:
+2. Restore gate on DEV.
+   - Freeze `develop`: auto-merge off on every open PR, no merge from the start of the gate until
+     the release PR is merged; any merge repeats the gate. Start only when
+     `gh run list --branch develop` (and the `workflow_run` runs listed under `main`,
+     `knowledge/deployment.md:10`) shows no Infra Apply Dev, Apps Deploy Dev or Tests Dev run
+     queued or in progress. Then dispatch Apps Deploy Dev for the `develop` tip, wait for its
+     post-deploy-tests and record the run ids.
+   - Take a fresh prod backup (`homelab-backup` on apps, `homelab-nas-backup` on the NAS). Check
+     free space on `ubuntu-apps-dev` and `lvs pve/data`; if the artefacts do not fit, stop and ask.
+   - Copy the prod Postgres dumps to a new scratch directory on the DEV apps guest outside
+     `/mnt/homelab/backups` (DEV retention keeps the newest files per prefix,
+     `knowledge/backup.md:24`) and restore each into a scratch database: shared Postgres with
+     `utils/backup/restore-pg.sh --env dev --db <name>_check --file <dump> --create`; Immich the
+     same plus `--container homelab-core-immich-postgres-1 --user postgres --password-secret
+     IMMICH_DB_PASSWORD`. Proof: the row count of every table equals the count in the dump, as in
+     `knowledge/rebuild-drill-2026-10-19b.md:23`. The checks read only counts, never row contents.
+   - Prod volume tars are not restored on DEV: `trilium_data` holds every private note,
+     `syncthing_data` the prod device identity, `portainer_data` the prod grocery stack secrets
+     (`utils/bootstrap/portainer.sh:136-160`), and `homarr_data` is encrypted with the prod
+     `HOMARR_SECRET_KEY`. They are checked on the NAS with the tar-check script of R1 item 1: the
+     agent runs it, with consent, for every tar except `trilium_data`, which the operator checks
+     (section 3.5).
+   - One DEV volume tar from DEV's own nightly set is restored with the written procedure of
+     Phase 0 step 3 and its app checked, so every release re-proves the untar that rollbacks rely
+     on.
+   - Then `utils/run-tests.sh --env dev --suite all` as the DEV health check; it does not prove
+     the restore (`utils/run-tests.sh:16,30`).
+   - Removing the `_check` databases and the scratch directory, both created by this gate, is
+     asked. The release PR names the `develop` SHA and the results. This gate proves the procedure
+     on the set taken at the gate; the set from step 3 is the rollback copy.
+3. Release-window backup, before any host change of the window and before the operator merges:
    - run `homelab-nas-backup` on the NAS, check that the Proxmox job `homelab-vms` produced that
      day's 04:30 dump (`check-fresh.py` shows the vzdump stream; it is the only copy of the
      volumes outside `volumes.sh`), then `homelab-backup` on apps. For the volume tars, the apps
      whose volume holds an embedded database (Homarr `db.sqlite`; Trilium, Actual and Portainer as
      Phase 0 confirms) are stopped while `volumes.sh` runs and started after, each checked to
-     answer; this is a prod service change with consent;
+     answer;
    - copy this run's files into `pre-release-<release>/` inside each shared stream folder
      (`postgres/`, `volumes/`, `homeassistant/`, `repo-zip/`): `hl_prune` and `ha.py backup` delete
      only files directly in the stream folder (`utils/backup/lib.sh:63-66`, `utils/ha.py:507-509`),
-     and retention keeps 2 per prefix (`config/storage.yml:112`). NAS-private files (OPNsense
-     `config-*.xml`, the vzdump of 101 and 102) go to `<nas_private_root>/pre-release-<release>/`,
-     off the shared tree and offsite;
+     and retention keeps 2 per prefix (`config/storage.yml:112`). The `trilium_data` tar is copied
+     as an opaque file (section 3.5). NAS-private files (OPNsense `config-*.xml`, the vzdump of 101
+     and 102) go to `<nas_private_root>/pre-release-<release>/`, off the shared tree and offsite;
    - run `utils/backup/rclone-offsite.sh` again and require `.offsite-ok` newer than the copy
      (`run-all.sh` ignores an offsite failure, and the previous night's marker passes the 26 h
      check);
    - the release PR lists every artefact, each non-empty and carrying this run's stamp: one dump
      per database in `pg_database` plus `immich`, one tar per volume in `volumes.sh`, the HA tar,
      the OPNsense config, the vzdump of 101 and 102. `check-fresh.py` alone does not count;
-   - an image update of an app whose state is not in `volumes.sh` goes ahead only with a tar of
-     that volume made in this window (stop, tar in the `volumes.sh` format, start), unless an
-     earlier R1 item added the volume to `volumes.sh`. Its rollback is a revert plus an untar of
-     that tar;
+   - an image update of an app whose state is not in the `volumes.sh` deployed on prod before this
+     release (Jellyfin's R1 update included: a `volumes.sh` change reaches prod only with the
+     release it ships in) goes ahead only with a hand tar of that volume made in this window:
+     stop, tar in the `volumes.sh` format directly into `volumes/pre-release-<release>/` (where
+     `hl_prune` does not look), start, and run the tar check on it before the deploy. Its rollback
+     is a revert plus an untar of that tar;
+   - for an image update the store check did not clear (R2 item 7): stop the app, take its
+     Postgres dump or volume tar (the copy above counts if the app was stopped for it), then
+     deploy. The restore of that kind of copy and an app test run on DEV with DEV's own data
+     before prod. Rollback: stop the app, restore that dump or untar that tar, then revert the
+     PR; writes after the backup are lost;
    - the `pre-release-*` folders stay until the next release passes its gate; deleting them is
      asked.
 4. Infra Plan Prod on the draft release PR must show no VM replace and no destroy. It plans with
@@ -587,40 +727,57 @@ Before every release:
    type to `prod-gate`; the operator rejects a plan that replaces or destroys a VM. After a
    rejection `main` is ahead of prod: the release merge is reverted on `main` through a PR, or
    fixed in `develop` and released again, before any other merge to `main`.
-5. Rollback of an image update by revert holds only for a pinned tag whose update the store check
-   cleared; a floating tag is pinned before it is updated.
+5. Rollback of an image update by revert holds only for a tag pinned before the update whose
+   update the store check cleared.
 
 Release 2, per item:
 
-- DROP DATABASE only for a name that R1 removed from the `postgres-init` loop and only once that R1
-  change runs on prod (otherwise the next deploy recreates it empty); after a dump that restores
-  on DEV, kept in `pre-release-r2/`. DROP ROLE of the same name goes with it; if it fails because
-  the role still owns objects, stop and report (no `DROP OWNED`). Each DROP is confirmed by the
-  operator. After the next nightly backup, check that the database was not recreated and the
-  pre-DROP dump is still there. Dropping `todo_grocery`, if the operator chooses it, also updates
+- DROP DATABASE of a loop name only for a name that R1 removed from the `postgres-init` loop and
+  only once that R1 change runs on prod (otherwise the next deploy recreates it empty), together
+  with DROP ROLE of the same name; a loop role is rebuilt by putting its name back in the loop.
+  A database or role outside the loop that the operator chose to drop (known: `todo_grocery` and
+  role `prod_todo_grocery`, `knowledge/apps/grocery.md:33`) has no loop precondition; before the
+  drop its role is saved with `pg_dumpall --roles-only` into the NAS `pre-release-r2/` folder.
+  That file holds prod password hashes, so it is never restored on DEV and never copied into the
+  repo or chat. Every DROP follows a dump that restores on DEV, kept in `pre-release-r2/`. If DROP
+  ROLE fails because the role still owns objects, stop and report (no `DROP OWNED`). Each DROP is
+  confirmed by the operator. After the next nightly backup, check that the database was not
+  recreated and the pre-DROP dump is still there. Dropping `todo_grocery` also updates
   `knowledge/rebuild.md:121`.
 - App moves to Postgres: the old file is kept next to the dump until the operator accepts the
   release.
+- Image updates the store check did not clear: step 3 above.
 - pve-hardening: the steps and restore commands in section 3.3 item 5.
-- admin-certs, in the window: HA's current http configuration saved; certificate installed and HA
-  switched; release merged (deploy-storage copies the new `ha.py` and `storage.yml` to the NAS);
-  `homelab-nas-backup.service` started by hand, `journalctl -u homelab-nas-backup` shows a new
-  `ha-full-*.tar` and `check-fresh.py --env prod --dry-run` reports `homeassistant` and
-  `homeassistant-yaml` fresh; `HL_SKIP_WHEN_UNREACHABLE=0 utils/run-tests.sh --env prod --suite ha`
-  passes with `api` PASS, not SKIP. If any check fails, HA goes back to its saved configuration
-  and the PR is reverted before the window closes. After the window, the issuer and notAfter of
-  both names are read and recorded.
-- Immich Postgres 14: rehearse on DEV by restoring the prod window dump into the target image in
-  a scratch database (no prod data into DEV's running Immich); record the restore time and the
-  peak memory of immich-postgres against `mem_limit` 768m; check that the target image provides
-  every extension the dump creates (`restore-pg.sh` stops at the first error). On prod, stop
-  immich-server, immich-machine-learning and the album creator before the window dump and keep
-  them stopped until the restored database is checked. The new major version runs on a new volume
-  (for example `immich_postgres_<major>`) filled from that dump; `immich_postgres` stays untouched.
-  Compare the `media/immich` file listing before and after, since the database must match the
-  files. Until the operator accepts the release, rollback is a revert that points compose back at
-  `immich_postgres`; writes made after the switch are lost. Deleting `immich_postgres` is a
-  separate step, asked after acceptance.
+- admin-certs, in the window, after step 3: HA's current http configuration saved; certificate
+  installed and HA switched; release merged (deploy-storage copies the new `storage.yml` with the
+  https `ha_url` to the NAS; `ha.py` speaks TLS since R1); `homelab-nas-backup.service` started by
+  hand, `journalctl -u homelab-nas-backup` shows a new `ha-full-*.tar` and
+  `check-fresh.py --env prod --dry-run` reports `homeassistant` and `homeassistant-yaml` fresh;
+  `HL_SKIP_WHEN_UNREACHABLE=0 utils/run-tests.sh --env prod --suite ha` passes with `api` PASS,
+  not SKIP. If any check fails, HA goes back to its saved configuration and the prepared revert
+  of section 3.3 item 4 merges before the window closes. After the window, the issuer and notAfter
+  of both names are read and recorded, and the Kuma certificate monitors are up.
+- Immich Postgres 14:
+  - rehearsal when the item's PR is built, not in the window: the newest nightly prod Immich dump
+    is restored on DEV into the target image in a scratch database (no prod data into DEV's
+    running Immich); record the restore time and the peak memory of immich-postgres against
+    `mem_limit` 768m; check that the target image provides every extension the dump creates
+    (`restore-pg.sh` stops at the first error);
+  - the item PR adds an assert before 'Start core stack' that the new volume already holds the
+    restored immich schema (for example a table count above 0), so a deploy without the restore
+    stops instead of initialising an empty database, running Immich's first-start bootstrap
+    (`utils/bootstrap/immich.sh`) and accepting uploads into it;
+  - in the window: stop immich-server, immich-machine-learning and the album creator; take the
+    window dump; create the new volume (for example `immich_postgres_<major>`), run a one-off
+    container of the target image on it, restore the window dump with
+    `restore-pg.sh --container <that container> --db immich --replace`, compare row counts with
+    the dump, stop the container. Only then does the operator merge; the deploy starts Immich on
+    the filled volume. `immich_postgres` stays untouched;
+  - compare the `media/immich` file listing before and after, since the database must match the
+    files;
+  - until the operator accepts the release, rollback is a revert that points compose back at
+    `immich_postgres`; writes made after the switch are lost. Deleting `immich_postgres` is a
+    separate step, asked after acceptance.
 
 After every release: the Bitwarden check of step 1 runs again (R2 creates secrets during the
 window: the PVE token, the Terraform SSH key, the Cloudflare tokens). `knowledge/` records the
@@ -636,7 +793,7 @@ Each phase has review roles run by separate agents that did not write the change
 | Completeness critic | end of Phase 0, before the operator review | every backlog item and audit question answered, every claim backed by a command or file, raw data kept off the repo |
 | PR reviewer (`agents/reviewer.md`) | every PR into `develop` | correctness, conventions, tests, secrets |
 | Parity critic | every PR, and the release PR as a whole | anything that behaves differently on prod than on DEV (list below) |
-| Release critic | before the draft release PR is marked ready (section 5 evidence, Infra Plan Prod log) | the combined diff `main..develop`, the data-safety evidence, the rollback of each item, what the DEV tests did not cover, SKIPs |
+| Release critic | before the draft release PR is marked ready (section 5 evidence, Infra Plan Prod log), and after the prod deploy (SKIP comparison, prod checks) | the combined diff `main..develop`, the data-safety evidence, the rollback of each item, what the DEV tests did not cover, SKIPs |
 
 A SKIP is not a pass (`rules/verification-and-diagnosis.md`). The release critic lists the SKIP
 ids of the DEV report (`tests-dev-report.json`) and, after the deploy, compares the SKIP ids of
@@ -683,6 +840,9 @@ The parity critic checks each change against the known differences:
   image, caddy-dns/cloudflare or the token: the built image lists the Cloudflare DNS module, prod
   smoke `proxy/*` is PASS, and the notAfter of the prod wildcard is recorded.
 - Proxy: HAProxy and ACME on the router exist only on prod.
+- Certificates after admin-certs: the PVE and HA certificates by DNS-01 and the https `ha_url`
+  exist only on prod; DEV uses http, or a local CA on the twin. A change to `utils/ha.py`,
+  `ha-pull.sh`, `ha-yaml.sh` or the HA tests needs a prod check.
 - Home Assistant: HAOS twin on DEV, T620 on prod. `utils/ha.py` installs only Terminal & SSH and
   Uptime Kuma (`utils/ha.py:627-636`); the prod Beszel add-on is installed by hand.
 - Monitoring agents: Beszel agents on prod-nas, prod-pve and prod-router are native installs that
@@ -698,13 +858,18 @@ The parity critic checks each change against the known differences:
   (`apps-deploy-dev.yml:5`): its `env:` lines, steps and deploy-paths regex are `main`'s until a
   release, and DEV stays green from the cache without a new `env:` line.
 - Secrets and environment values: environments `dev`, `dev-plan`, `prod`, `prod-plan`, plus the
-  approval-only `prod-approve` and `prod-gate`. DEV passes no `RCLONE_CONFIG`, `SMTP_*` or
-  `CLOUDFLARE_API_TOKEN`. Every secret name a PR adds must be in the `env:` block of the
-  `apps-deploy-prod.yml` step that reads it and listed by `gh secret list --env prod` before the
-  release PR is opened. A secret whose absence would silently turn off an item gets an assert
+  approval-only `prod-approve` and `prod-gate`. The plan environments hold their own read-only
+  tokens and copied variables, and the plan jobs pass a placeholder SSH password
+  (`infra-plan.yml:43-44`). DEV passes no `RCLONE_CONFIG`, `SMTP_*` or `CLOUDFLARE_API_TOKEN`. A
+  secret, variable or provider change names every environment it touches and every workflow that
+  passes it (the apps-deploy, infra-apply, infra-plan and tests-dev files); the PR's Infra Plan Dev
+  and the release PR's Infra Plan Prod must pass. Every secret name a PR adds must be in the
+  `env:` block of the step that reads it and listed by `gh secret list --env <env>` before the
+  release PR is opened (the per-device Cloudflare tokens are not GitHub secrets, section 1). A secret whose absence would silently turn off an item gets an assert
   guarded by its profile (like `VSUM_GIT_TOKEN`, `deploy-core.yml:152-159`), a prod post-deploy
   test, or a release-checklist line.
-- Images: after the prod deploy each updated image's digest on prod matches the one DEV tested.
+- Images: after the prod deploy each updated registry image's digest on prod matches the one DEV
+  tested; for local builds the pinned base tag and module versions or the source ref match.
 - Network flows: each change names the flows it adds (source, destination, port, protocol). Each
   must match a row of the `docs/network.md` Cross-VLAN table, and a flow into the NAS guest must
   match `config/storage.yml` `firewall`. A flow without a row needs a router or NAS firewall change
@@ -743,12 +908,13 @@ plan is written for.
 | --- | --- | --- | --- |
 | Non-public place for raw audit results | a NAS folder; another place | NAS folder next to the weekly audit reports | start of Phase 0 |
 | Clean machine for backup-decrypt-drill | throwaway VM; another user account | throwaway VM without `~/.homelab-secrets` | start of Phase 0 |
-| Coding agent and Trilium (section 3.5) | (a) procedure rule for the agent; (b) the operator runs every Trilium check and any prod read that needs root on `ubuntu-apps` | (a), with the operator running the NAS check of the Trilium tar | spec review |
-| vsum Trilium token, if tokens cannot be scoped | (a) revoke in the R1 window; (b) accept until R2 item 1 | (a) | Phase 0 review |
-| Trees without backup (`share`, `media/sync`, `media/vsum`, media libraries) | one-off copy before R1; accept the risk | copy `media/sync`; decide `share` and the libraries by size | Phase 0 review |
-| Stateful volumes outside `volumes.sh` | add to `volumes.sh` in R1; hand tar per update | add the ones R1 or R2 updates | Phase 0 review |
-| Floating tags `postgres:16-alpine`, `valkey:8-alpine` | pin to exact tag; explicit pull in the release | pin | Phase 0 review |
+| Coding agent and Trilium (section 3.5); neither option meets the "cannot read" bar | (a) procedure rule for the agent, the operator runs the Trilium tar check and every prod Trilium UI step; (b) a separate laptop user without the prod key for Remote Control, the operator runs every prod root step | (a) | spec review |
+| vsum Trilium token, if it reaches notes vsum does not need | (a) revoke in the R1 window; (b) accept until R2 item 1, and private Joplin notes wait until then | (a) | Phase 0 review |
+| Trees without backup (`share`, `media/sync`, `media/vsum`, media libraries) | one-off copy before R1; accept the risk | copy `media/sync` and `media/vsum`; decide `share` and the libraries by size | Phase 0 review |
+| Stateful volumes outside `volumes.sh` | add to `volumes.sh` in R1; hand tar per update | add the ones R1 or R2 updates; R1's own updates still need the hand tar (section 5 step 3) | Phase 0 review |
 | Immich Postgres 14 after 2026-11-12 | accept until R2; separate migration | accept until R2 if an upstream path exists | Phase 0 review |
-| PVE firewall and Kuma `proxmox` monitor | (a) 8006 from 192.168.20.13; (b) change the monitor; (c) accept it down | (a) | before the R2 window |
+| PVE firewall and Kuma `proxmox` monitor | (a) 8006 from 192.168.20.13; (b) change the monitor in the pve-hardening PR; (c) accept it down | (a) | Phase 0 review |
+| Access to app databases that stay outside Postgres (section 3.6) | wanted, CloudBeaver replaces pgAdmin; not wanted, pgAdmin stays | by the survey result | Phase 0 review |
+| Model tiers and review agents per PR (section 7) | keep; change after the ai-cost measurement | keep unless the measurement shows otherwise | Phase 0 review |
 | `todo_grocery` / `prod_todo_grocery` | keep; drop after dump | drop after dump | Phase 0 review |
 | Lynis | R1 item; drop | operator's call | Phase 0 review |
