@@ -854,6 +854,8 @@
                   tcp dport 22 ip saddr @ssh_from accept
                   tcp dport 445 ip saddr @smb_from accept
                   tcp dport 2049 ip saddr @nfs_from accept
+                  # Proxmox checks its NFS storage with rpcinfo first (utils/pve-backup-job.py).
+                  tcp dport 111 ip saddr {{ st.vzdump.pve_host }} accept
                   # Discovery broadcasts (Tuya, mDNS, SSDP, Syncthing) would fill the log.
                   meta pkttype { broadcast, multicast } drop
                   limit rate 10/minute log prefix "homelab-fw drop: "

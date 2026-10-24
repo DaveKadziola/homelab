@@ -3,22 +3,10 @@ name: Homelab greenfield dummy
 overview: Greenfield homelab v2 — iteration.
 todos:
   - id: security-audit-fixes
-    content: "Prod audit 2026-10-20 (knowledge/security-audit-2026-10-20.md); replaces audit-final and security-audit-hosts. Closed 2026-10-23: S4 (Caddy terminates TLS, Authelia is plain HTTP behind it), S5, S9 (the 15 laptop copies shredded; the NAS keeps opnsense/config-*.xml daily), S11 (curl: Actual bootstrapped true, Trilium isInitialized true), S21 (OPNsense 26.7.7, pkg audit -q lists nothing), S26 (the noble-security packages came through unattended-upgrades; the noble-updates ones applied by hand, containerd restarted, no container restarted). Accepted: S12 (key only), S22 (nfs-root-squash). Agreed fixes, one item each: admins-alias, host-firewalls, pve-hardening, runner-key-cleanup, sshd-x11, trivy-daily, admin-certs. S7 from WireGuard and WAN goes with opnsense-wan-audit. Closed 2026-10-24 by the router window (admins-alias): S16, S17, S24 on the router (53530, AdGuard UI) and S25; S1 and S2 from LAN and WireGuard for non-Admins (the host firewalls stay open in host-firewalls)."
-    status: in_progress
-  - id: host-firewalls
-    content: "Operator 2026-10-24: nftables firewall on the NAS only (S6, S24 on the NAS): SSH, Samba and NFS 2049 from config/storage.yml firewall, the rest dropped and logged, 5-minute rollback unless the play reconnects. apps gets no own firewall: it is alone in the APP VLAN, so the router filters every packet to it (phase 2). DEV first; prod with the next release."
+    content: "Prod audit 2026-10-20 (knowledge/security-audit-2026-10-20.md); replaces audit-final and security-audit-hosts. Closed 2026-10-23: S4 (Caddy terminates TLS, Authelia is plain HTTP behind it), S5, S9 (the 15 laptop copies shredded; the NAS keeps opnsense/config-*.xml daily), S11 (curl: Actual bootstrapped true, Trilium isInitialized true), S21 (OPNsense 26.7.7, pkg audit -q lists nothing), S26 (the noble-security packages came through unattended-upgrades; the noble-updates ones applied by hand, containerd restarted, no container restarted). Accepted: S12 (key only), S22 (nfs-root-squash). Agreed fixes, one item each: admins-alias, host-firewalls, pve-hardening, runner-key-cleanup, sshd-x11, trivy-daily, admin-certs. S7 from WireGuard and WAN goes with opnsense-wan-audit. Closed 2026-10-24 by the router window (admins-alias): S16, S17, S24 on the router (53530, AdGuard UI) and S25; S1 and S2 from LAN and WireGuard for non-Admins (the host firewalls stay open in host-firewalls). Closed 2026-10-24 with v2.4.0 (checked on prod): S6 on the NAS (host-firewalls; apps is filtered by the router, Proxmox goes with pve-hardening), S24 on the NAS (mountd and statd closed, rpcbind only from Proxmox), S15 (trivy-daily), S20 (runner-key-cleanup), S27 on the NAS and apps (sshd-x11). Left: pve-hardening, admin-certs."
     status: in_progress
   - id: pve-hardening
     content: "Operator 2026-10-23: TFA for root@pam; Terraform SSH by key, then PasswordAuthentication no (S18); PVE firewall with 22/8006 from Admins and the runner, overriding the default management set (S18, S24); X11Forwarding no (S27). Token: a role with the privileges the bpg provider needs, a new privsep=1 token tested on DEV, swap the secret, delete the old token after a real apply (S19). Console at hand."
-    status: pending
-  - id: runner-key-cleanup
-    content: "S20 (operator 2026-10-23): Apps Deploy Prod writes the ubuntu-prod key to ~/.ssh/homelab_prod_ed25519 on CT 110 and leaves it there, where the next job on that runner (Infra Plan Prod of any PR into main) can read it. Remove it at the end of each job. Sudo stays: Ansible become needs it."
-    status: pending
-  - id: sshd-x11
-    content: "S27 (operator 2026-10-23): X11Forwarding no on ubuntu-nas and ubuntu-apps through Ansible; Proxmox is in pve-hardening."
-    status: pending
-  - id: trivy-daily
-    content: "S15 (operator 2026-10-23): Trivy scans the running images on ubuntu-apps every day and mails only when the list of HIGH and CRITICAL findings with a fix changes. Not a merge gate."
     status: pending
   - id: admin-certs
     content: "S23 (operator 2026-10-23, simplest way): Proxmox and Home Assistant renew their own Let's Encrypt certificate (DNS-01, a Cloudflare token per device). proxmox.dkhomelabserver.xyz:8006 serves the self-signed PVE certificate; the ACME certificate for it on OPNsense never reaches the host. The switch stays on HTTP, from Admins only."

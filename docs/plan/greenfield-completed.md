@@ -146,6 +146,18 @@ completed:
   - id: pre-release-router-check
     content: "Done 2026-10-24 before release PR #200: blocked entries in the OPNsense filter log since the phase 2 window and the Kuma alerts read. The only legitimate flow cut was Syncthing STUN from APP (UDP 3478 to 13 servers), now in AppEgressUdp. The rest is intended or old: non-Admins on the AdGuard UI (a LAN iPhone that is not the owner's stays out, operator 2026-10-24), the IPv6 default block on WireGuard, APP flows to private networks that were blocked before and are only logged now, APP UDP 9999 to 192.0.2.42 (not routable). The two Kuma backup alerts of the day came from the nfsd block size (#199). The S23 static lease 192.168.1.21 is deferred (operator 2026-10-24): admin access over WireGuard 10.10.10.2."
     status: completed
+  - id: host-firewalls
+    content: "Done 2026-10-24 with v2.4.0 (#195, #197, #198, DEV first): nftables table inet homelab_fw on the NAS, SSH, Samba and NFS 2049 from config/storage.yml firewall, the rest dropped and logged. Checked on prod after the deploy: policy drop, service enabled, no rollback unit left. It cut the Proxmox storage check (rpcbind): storage option vers=4.2 and TCP 111 from the PVE host (knowledge/lessons-learned.md 2026-10-24). apps gets no own firewall (subnet-refactor)."
+    status: completed
+  - id: runner-key-cleanup
+    content: "Done (#153, prod with v2.3.0): after the v2.4.0 Apps Deploy Prod no homelab_prod_ed25519 is left under any home on CT 110 (checked 2026-10-24)."
+    status: completed
+  - id: sshd-x11
+    content: "Done (#154, prod with v2.3.0): sshd -T on prod ubuntu-nas and ubuntu-apps prints x11forwarding no (checked 2026-10-24). Proxmox is in pve-hardening."
+    status: completed
+  - id: trivy-daily
+    content: "Done (#155, #157, #176, prod with v2.3.0): homelab-trivy.timer on prod ubuntu-apps runs daily at 05:30 UTC, last run 2026-10-24 05:30 (checked 2026-10-24)."
+    status: completed
 isProject: false
 ---
 
