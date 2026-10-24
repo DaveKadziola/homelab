@@ -29,6 +29,16 @@ environments:
     # the export tree (the apps host, as root) reaches them, only the read-only Samba share
     # all-backups from samba.admin_hosts; not offsite.
     nas_private_root: /srv/homelab-nas-backups
+    # Host firewall on the NAS guest (deploy-storage.yml, homelab-firewall.service): only these
+    # sources open SSH, Samba and NFS; the rest is dropped and logged. NFS clients mount v4.2, so
+    # TCP 2049 is all NFS needs and rpcbind, mountd and statd stay closed (audit S6, S24). On DEV the
+    # guest is the apps host too: its Docker bridges and its own loopback mount pass.
+    firewall:
+      # The laptop (operator, runner) and the HAOS twin (Uptime Kuma).
+      ssh_from: [192.168.122.1, 192.168.122.60]
+      smb_from: [192.168.122.0/24]
+      # The nested PVE (storage nas-backups).
+      nfs_from: [192.168.122.219]
     # Samba runs on the NAS guest; DEV reaches it from the libvirt network only.
     samba:
       share_path: /srv/homelab-share
@@ -62,6 +72,15 @@ environments:
     vzdump: { pve_host: 192.168.20.20, vmids: [101, 102], schedule: "04:30", enabled: true }
     # On Purple next to the bind source /srv/purple/backups, outside the NFS tree (see dev).
     nas_private_root: /srv/purple/nas-backups
+    # Host firewall, see dev. IOT devices share the NAS subnet, so only the guest can filter them.
+    firewall:
+      # Admins (laptop, S23 on LAN and WireGuard; the same list as the OPNsense alias in
+      # utils/opnsense-lockdown-remote.sh), the prod runner (deploy, tests) and Uptime Kuma (nas-ssh).
+      ssh_from: [192.168.1.20, 192.168.1.21, 10.10.10.2, 10.10.10.3, 10.10.10.4, 10.10.10.5,
+                 192.168.20.14, 192.168.20.13]
+      smb_from: [192.168.1.0/24, 10.10.10.0/24]
+      # apps (the export) and Proxmox (storage nas-backups for the VM dumps).
+      nfs_from: [192.168.50.30, 192.168.20.20]
     # Bind mounts that place part of a passthrough fs into the NFS tree.
     binds:
       - { from: /srv/purple/backups, to: /export/backups, label: hl-purple }

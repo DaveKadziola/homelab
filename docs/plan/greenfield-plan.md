@@ -9,8 +9,8 @@ todos:
     content: "Before the next release to main (operator 2026-10-24): read the blocked APP and IOT entries in the OPNsense filter log (rules homelab-v2 APP block the rest and homelab-v2 IOT block the rest) and the Kuma alerts since the phase 2 window of 2026-10-24; any legitimate flow gets its own pass rule in utils/opnsense-app-egress-remote.sh or utils/opnsense-lockdown-remote.sh first. Check that the S23 takes its static lease 192.168.1.21 on LAN Wi-Fi."
     status: pending
   - id: host-firewalls
-    content: "Operator 2026-10-23: firewall on ubuntu-nas and ubuntu-apps through Ansible, DEV first, with auto-revert (S6). Apps: published ports only from Caddy, Kuma (T620) and Admins (DOCKER-USER); Postgres 5432 only from Admins, Kuma and the Docker bridge (S1); Dozzle 8080 only from Caddy and Kuma, because the direct port bypasses Authelia (S2). NAS: SSH from Admins and the runner, 445 from LAN and WireGuard, NFS from apps and Proxmox (S24)."
-    status: pending
+    content: "Operator 2026-10-24: nftables firewall on the NAS only (S6, S24 on the NAS): SSH, Samba and NFS 2049 from config/storage.yml firewall, the rest dropped and logged, 5-minute rollback unless the play reconnects. apps gets no own firewall: it is alone in the APP VLAN, so the router filters every packet to it (phase 2). DEV first; prod with the next release."
+    status: in_progress
   - id: pve-hardening
     content: "Operator 2026-10-23: TFA for root@pam; Terraform SSH by key, then PasswordAuthentication no (S18); PVE firewall with 22/8006 from Admins and the runner, overriding the default management set (S18, S24); X11Forwarding no (S27). Token: a role with the privileges the bpg provider needs, a new privsep=1 token tested on DEV, swap the secret, delete the old token after a real apply (S19). Console at hand."
     status: pending

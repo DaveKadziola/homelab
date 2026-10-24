@@ -772,6 +772,106 @@
             state: "{{ ('restarted' if watch_script.changed or watch_unit.changed else 'started') if scan_key.stat.exists else 'stopped' }}"
             daemon_reload: "{{ watch_unit.changed }}"
 
+
+    # Audit S6 and S24: IOT devices share the NAS subnet, so only the guest can filter them. Only the
+    # table inet homelab_fw: the stock nftables service stays off because its config flushes every
+    # ruleset, Docker's on DEV included.
+    - name: Host firewall
+      vars:
+        fw_changed: "{{ fw_rules.changed or fw_unit.changed }}"
+      block:
+        - name: Install nftables
+          ansible.builtin.apt:
+            name: nftables
+            state: present
+
+        - name: Write the firewall rules
+          ansible.builtin.copy:
+            dest: /etc/homelab/nas-firewall.nft
+            owner: root
+            group: root
+            mode: "0644"
+            validate: /usr/sbin/nft -c -f %s
+            content: |
+              #!/usr/sbin/nft -f
+              # From config/storage.yml environments.{{ homelab_env }}.firewall (deploy-storage.yml).
+              table inet homelab_fw
+              delete table inet homelab_fw
+              table inet homelab_fw {
+                set ssh_from { type ipv4_addr; flags interval; elements = { {{ st.firewall.ssh_from | join(', ') }} } }
+                set smb_from { type ipv4_addr; flags interval; elements = { {{ st.firewall.smb_from | join(', ') }} } }
+                set nfs_from { type ipv4_addr; flags interval; elements = { {{ st.firewall.nfs_from | join(', ') }} } }
+                chain input {
+                  type filter hook input priority filter; policy drop;
+                  ct state established,related accept
+                  ct state invalid drop
+                  iif "lo" accept
+                  iifname "docker0" accept
+                  iifname "br-*" accept
+                  meta l4proto { icmp, ipv6-icmp } accept
+                  tcp dport 22 ip saddr @ssh_from accept
+                  tcp dport 445 ip saddr @smb_from accept
+                  tcp dport 2049 ip saddr @nfs_from accept
+                  limit rate 10/minute log prefix "homelab-fw drop: "
+                }
+              }
+          register: fw_rules
+
+        - name: Install the firewall service
+          ansible.builtin.copy:
+            dest: /etc/systemd/system/homelab-firewall.service
+            owner: root
+            group: root
+            mode: "0644"
+            content: |
+              [Unit]
+              Description=Homelab host firewall (nftables table inet homelab_fw)
+              Wants=network-pre.target
+              Before=network-pre.target shutdown.target
+              Conflicts=shutdown.target
+              DefaultDependencies=no
+              [Service]
+              Type=oneshot
+              RemainAfterExit=yes
+              ExecStart=/usr/sbin/nft -f /etc/homelab/nas-firewall.nft
+              ExecStop=/usr/sbin/nft delete table inet homelab_fw
+              [Install]
+              WantedBy=sysinit.target
+          register: fw_unit
+
+        # If the runner cannot reconnect through the new rules, they go away again after 5 minutes.
+        - name: Clear a rollback left by an earlier run
+          when: fw_changed
+          ansible.builtin.systemd:
+            name: homelab-fw-rollback.timer
+            state: stopped
+          failed_when: false
+
+        - name: Arm the firewall rollback
+          when: fw_changed
+          ansible.builtin.command:
+            argv: [systemd-run, --unit, homelab-fw-rollback, --on-active=300, /bin/sh, -c,
+                   "nft delete table inet homelab_fw; systemctl disable homelab-firewall.service"]
+          changed_when: true
+
+        - name: Load the firewall
+          ansible.builtin.systemd:
+            name: homelab-firewall.service
+            enabled: true
+            state: "{{ 'restarted' if fw_changed else 'started' }}"
+            daemon_reload: "{{ fw_unit.changed }}"
+
+        - name: Drop the SSH connection so the next task opens a new one through the firewall
+          ansible.builtin.meta: reset_connection
+
+        - name: Reconnect through the firewall
+          ansible.builtin.ping:
+
+        - name: Cancel the firewall rollback
+          when: fw_changed
+          ansible.builtin.systemd:
+            name: homelab-fw-rollback.timer
+            state: stopped
   handlers:
     - name: Reload systemd
       ansible.builtin.systemd:

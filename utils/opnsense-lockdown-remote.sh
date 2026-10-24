@@ -44,6 +44,7 @@ changes = []
 
 LAPTOP = ("18:db:f2:44:28:f0", "192.168.1.20", "SparkyLinux", "Laptop (Admins)")
 PHONE = ("ce:bc:5b:b7:1a:65", "192.168.1.21", "SGS23", "Galaxy S23 (Admins)")
+# Also in config/storage.yml prod firewall.ssh_from (the NAS host firewall); change both.
 ADMINS = ["192.168.1.20", "192.168.1.21",          # laptop, S23 on LAN
           "10.10.10.2", "10.10.10.4",              # DaveAndroid-Internet, -Local (S23)
           "10.10.10.3", "10.10.10.5"]              # DavePC-Internet, -Local (laptop)

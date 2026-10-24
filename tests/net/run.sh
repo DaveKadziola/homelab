@@ -148,7 +148,7 @@ done < <(hl_config services "$HL_ENV")
 # cross-VLAN firewall paths (docs/network.md) — prod topology only
 # --------------------------------------------------------------------------
 if [[ "$HL_ENV" != "prod" ]]; then
-  report SKIP "firewall/nas-nfs" "APP -> NAS 2049/111 only exists in prod (docs/network.md)"
+  report SKIP "firewall/nas-nfs" "APP -> NAS 2049 only exists in prod (docs/network.md)"
   report SKIP "firewall/nas-portmap" "APP -> NAS 2049/111 only exists in prod (docs/network.md)"
   report SKIP "firewall/denied-iot" "APP -> IOT deny rule only exists in prod (docs/network.md)"
   report SKIP "firewall/dev-isolation" \
@@ -159,21 +159,23 @@ elif ! hl_host_up; then
   report "$status" "firewall/nas-portmap" "prod host ${HL_HOST} unreachable"
   report "$status" "firewall/denied-iot" "prod host ${HL_HOST} unreachable"
 else
-  # Allowed: APP -> NAS, NFS (2049) and portmapper (111).
-  for entry in "nas-nfs:2049" "nas-portmap:111"; do
-    ident="firewall/${entry%%:*}"
-    nas_port="${entry##*:}"
-    if hl_ssh "timeout 5 bash -c 'exec 3<>/dev/tcp/${NAS_IP}/${nas_port}'" 2>/dev/null; then
-      report PASS "$ident" "APP ${HL_HOST} -> NAS ${NAS_IP}:${nas_port} open, as docs/network.md allows"
-    else
-      report FAIL "$ident" "APP ${HL_HOST} -> NAS ${NAS_IP}:${nas_port} blocked, but docs/network.md allows it"
-    fi
-  done
+  # Allowed: APP -> NAS NFS (2049). The portmapper (111) passes the router but the NAS firewall
+  # drops it: the clients mount NFS v4.2, which needs only 2049 (config/storage.yml firewall).
+  if hl_ssh "timeout 5 bash -c 'exec 3<>/dev/tcp/${NAS_IP}/2049'" 2>/dev/null; then
+    report PASS "firewall/nas-nfs" "APP ${HL_HOST} -> NAS ${NAS_IP}:2049 open, as docs/network.md allows"
+  else
+    report FAIL "firewall/nas-nfs" "APP ${HL_HOST} -> NAS ${NAS_IP}:2049 blocked, but docs/network.md allows it"
+  fi
+  if hl_ssh "timeout 5 bash -c 'exec 3<>/dev/tcp/${NAS_IP}/111'" 2>/dev/null; then
+    report FAIL "firewall/nas-portmap" "APP ${HL_HOST} -> NAS ${NAS_IP}:111 open; the NAS firewall should drop it"
+  else
+    report PASS "firewall/nas-portmap" "APP ${HL_HOST} -> NAS ${NAS_IP}:111 closed by the NAS firewall"
+  fi
 
   # Denied: anything else from APP into IOT.
   if hl_ssh "timeout 5 bash -c 'exec 3<>/dev/tcp/${IOT_DENIED_HOST}/${IOT_DENIED_PORT}'" 2>/dev/null; then
     report FAIL "firewall/denied-iot" \
-      "APP ${HL_HOST} reached IOT ${IOT_DENIED_HOST}:${IOT_DENIED_PORT} — only 2049/111 to ${NAS_IP} should pass"
+      "APP ${HL_HOST} reached IOT ${IOT_DENIED_HOST}:${IOT_DENIED_PORT} — only 2049 to ${NAS_IP} should pass"
   else
     report PASS "firewall/denied-iot" \
       "APP ${HL_HOST} cannot reach IOT ${IOT_DENIED_HOST}:${IOT_DENIED_PORT}, as intended"

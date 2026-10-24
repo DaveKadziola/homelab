@@ -247,3 +247,13 @@ else
   fi
   unset password
 fi
+
+# --------------------------------------------------------------------------
+# host firewall on the NAS (config/storage.yml firewall, deploy-storage.yml; audit S6)
+# --------------------------------------------------------------------------
+fw="$(hl_nas_ssh "sudo -n nft list chain inet homelab_fw input 2>&1" 2>/dev/null)"
+if grep -q 'policy drop' <<<"$fw" && grep -q 'tcp dport 2049 ip saddr @nfs_from accept' <<<"$fw"; then
+  report PASS "firewall/nas" "table inet homelab_fw loaded, input policy drop; SSH, Samba and NFS only from the firewall sources"
+else
+  report FAIL "firewall/nas" "table inet homelab_fw missing or not dropping: $(head -1 <<<"$fw")"
+fi
