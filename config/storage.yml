@@ -69,9 +69,9 @@ environments:
       share_path: /srv/purple/share
       # LAN + WireGuard. IOT devices sit in the NAS subnet, the router cannot filter them.
       hosts_allow: [192.168.1.0/24, 10.10.10.0/24, 127.0.0.1]
-      # The only clients of the read-only share all-backups: the owner's laptop in LAN (until the
-      # OPNsense alias Admins lists the admin devices).
-      admin_hosts: [192.168.1.100]
+      # The only clients of the read-only share all-backups: the owner's laptop, its static LAN
+      # lease and its WireGuard peers (OPNsense alias Admins, since 2026-10-24).
+      admin_hosts: [192.168.1.20, 10.10.10.3, 10.10.10.5]
       # backups/ and nas-backups/ bound read-only here for all-backups; outside export_root.
       admin_view: /srv/backups-all
 
